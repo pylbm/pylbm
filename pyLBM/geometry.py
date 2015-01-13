@@ -16,7 +16,8 @@ import mpi4py.MPI as mpi
 
 from elements import *
 
-import logging
+from logs import setLogger
+log = setLogger(__name__)
 
 class Geometry:
     """
@@ -45,26 +46,25 @@ class Geometry:
 
     def __init__(self, dico):
         try:
-            boite = dico['box']
-            boitex = boite.get('x', None)
-            boitey = boite.get('y', None)
-            boitez = boite.get('z', None)
+            box = dico['box']
+            boxx = box.get('x', None)
+            boxy = box.get('y', None)
+            boxz = box.get('z', None)
         except KeyError:
-            print "'box' key not found in the geometry definitiion. Check the input dictionnary."
-            logging.error("'box' key not found in the geometry definitiion. Check the input dictionnary.")
+            log.error("'box' key not found in the geometry definition. Check the input dictionnary.")
             sys.exit()
 
-        if boitex is None:
-            print "'x' interval not found in the box definition of the geometry."
+        if boxx is None:
+            log.error("'x' interval not found in the box definition of the geometry.")
             sys.exit()
         else:
-            self.bounds = [boitex]
+            self.bounds = [boxx]
             self.dim = 1
-        if boitey is not None:
-            self.bounds.append(boitey)
+        if boxy is not None:
+            self.bounds.append(boxy)
             self.dim += 1
-            if boitez is not None:
-                self.bounds.append(boitez)
+            if boxz is not None:
+                self.bounds.append(boxz)
                 self.dim += 1
 
         # mpi support
@@ -81,6 +81,7 @@ class Geometry:
         self.bounds[:, 1] = self.bounds[:, 0] + t*(coords + 1)
         self.bounds[:, 0] = self.bounds[:, 0] + t*coords
 
+
         self.isInterface = [False]*2*self.dim
         for i in xrange(self.dim):
             voisins = self.comm.Shift(i, 1)
@@ -89,7 +90,6 @@ class Geometry:
             if voisins[1] != rank:
                 self.isInterface[i*2 + 1] = True
 
-        print self.isInterface
         self.list_elem = []
         self.list_tag = []
         self.list_label = []
@@ -130,11 +130,13 @@ class Geometry:
                     labelk = 0
                 self.add_elem(elementk, labelk, dico[k]['type'])
             """
+        log.info(self.__str__())
+
 
     def __str__(self):
         s = "Geometry informations\n"
-        s += "\t spatial dimension: dim={0:d}\n".format(self.dim)
-        s += "\t bounds of the box: bounds = " + self.bounds.__str__() + "\n"
+        s += "\t spatial dimension: {0:d}\n".format(self.dim)
+        s += "\t bounds of the box: " + self.bounds.__str__() + "\n"
         if (len(self.list_elem) != 0):
             s += "\t List of elements added or deleted in the box\n"
             for k in xrange(len(self.list_elem)):
