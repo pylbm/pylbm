@@ -8,13 +8,6 @@ import mpi4py.MPI as mpi
 import time
 
 import pyLBM
-from pyLBM.elements import *
-import pyLBM.geometry as pyLBMGeom
-import pyLBM.simulation as pyLBMSimu
-import pyLBM.domain as pyLBMDom
-import pyLBM.boundary as pyLBMBoundary
-import pyLBM.generator as pyLBMGen
-#import pyLBM.Scheme as pyLBMScheme
 
 from vispy import gloo
 from vispy import app
@@ -60,7 +53,7 @@ class Canvas(app.Canvas):
 
     def __init__(self, dico):
         coeff = 2
-        self.sol = pyLBMSimu.Simulation(dico, nv_on_beg=False)
+        self.sol = pyLBM.Simulation(dico, nv_on_beg=False)
         self.sol._m[:,:,1] = 1.
         H, W = self.sol._m.shape[:-1]
         W -= 2
@@ -208,7 +201,7 @@ if __name__ == "__main__":
                 1:{0:(initialization_q,)},
                 2:{0:(initialization_q,)},
                 },
-        'generator': pyLBMGen.CythonGenerator,
+        'generator': pyLBM.generator.CythonGenerator,
         }
 
     c = Canvas(dico)

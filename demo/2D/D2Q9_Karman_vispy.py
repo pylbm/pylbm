@@ -9,16 +9,6 @@ import mpi4py.MPI as mpi
 import time
 
 import pyLBM
-from pyLBM.elements import *
-import pyLBM.geometry as pyLBMGeom
-import pyLBM.stencil as pyLBMSten
-import pyLBM.domain as pyLBMDom
-import pyLBM.scheme as pyLBMScheme
-import pyLBM.simulation as pyLBMSimu
-import pyLBM.boundary as pyLBMBound
-import pyLBM.generator as pyLBMGen
-
-#import numba
 
 from vispy import gloo
 from vispy import app
@@ -64,7 +54,7 @@ class Canvas(app.Canvas):
 
     def __init__(self, dico):
         coeff = 2
-        self.sol = pyLBMSimu.Simulation(dico, nv_on_beg=False)
+        self.sol = pyLBM.Simulation(dico, nv_on_beg=False)
         self.indout = np.where(self.sol.domain.in_or_out == self.sol.domain.valout)
         W, H = self.sol._m.shape[:-1]
         W -= 2
@@ -228,7 +218,7 @@ if __name__ == "__main__":
 
     dico = {
         'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[0, 1, 0, 0]},
-        'elements':{0: {'element':Circle([0.75, 0.5*(ymin+ymax)+2*dx], rayon), 'label':2, 'del':0}},
+        'elements':{0: {'element':pyLBM.Circle([0.75, 0.5*(ymin+ymax)+2*dx], rayon), 'label':2, 'del':0}},
         'space_step':dx,
         'number_of_schemes':1,
         'scheme_velocity':la,
@@ -253,11 +243,11 @@ if __name__ == "__main__":
                                      }
         },
         'boundary_conditions':{
-            0:{'method':{0: pyLBMBound.bouzidi_bounce_back}, 'value':bc_rect},
-            1:{'method':{0: pyLBMBound.neumann_vertical}, 'value':None},
-            2:{'method':{0: pyLBMBound.bouzidi_bounce_back}, 'value':None},
+            0:{'method':{0: pyLBM.bc.bouzidi_bounce_back}, 'value':bc_rect},
+            1:{'method':{0: pyLBM.bc.neumann_vertical}, 'value':None},
+            2:{'method':{0: pyLBM.bc.bouzidi_bounce_back}, 'value':None},
         },
-        'generator': pyLBMGen.CythonGenerator,
+        'generator': pyLBM.generator.CythonGenerator,
     }
 
     Re = rhoo*uo*2*rayon/mu
