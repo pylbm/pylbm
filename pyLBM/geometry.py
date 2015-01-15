@@ -25,47 +25,46 @@ class Geometry:
 
     Parameters
     ----------
-    a dictionary that contains the following `key:value`
+    dico : a dictionary that contains the following `key:value`
        - 'geometry'
 
     Attributes
     ----------
-    dim        : number of spatial dimensions (example: 1, 2, or 3)
-    bounds     : a list that contains the bounds of the box ((x[0]min,x[0]max),...,(x[dim-1]min,x[dim-1]max))
+    dim : number of spatial dimensions (example: 1, 2, or 3)
+    bounds : a list that contains the bounds of the box ((x[0]min,x[0]max),...,(x[dim-1]min,x[dim-1]max))
     bounds_tag : a dictionary that contains the tag of all the bounds and the description
-    list_elem  : a list that contains each element added or deleted in the box
-    list_tag   : a list that contains the tag of each element
+    list_elem : a list that contains each element added or deleted in the box
+    list_tag : a list that contains the tag of each element
     list_label : a list that contains the label of each border
 
     Members
     -------
-    add_elem  : function that adds an element in the box
+    add_elem : function that adds an element in the box
     visualize : function to visualize the box
 
     """
 
     def __init__(self, dico):
+        self.dim = 1
         try:
             box = dico['box']
-            boxx = box.get('x', None)
-            boxy = box.get('y', None)
-            boxz = box.get('z', None)
+
+            try:
+                self.bounds = [box['x']]
+                boxy = box.get('y', None)
+                if boxy is not None:
+                    self.bounds.append(boxy)
+                    self.dim += 1
+                    boxz = box.get('z', None)
+                    if boxz is not None:
+                        self.bounds.append(boxz)
+                        self.dim += 1
+            except KeyError:
+                log.error("'x' interval not found in the box definition of the geometry.")
+                sys.exit()
         except KeyError:
             log.error("'box' key not found in the geometry definition. Check the input dictionnary.")
             sys.exit()
-
-        if boxx is None:
-            log.error("'x' interval not found in the box definition of the geometry.")
-            sys.exit()
-        else:
-            self.bounds = [boxx]
-            self.dim = 1
-        if boxy is not None:
-            self.bounds.append(boxy)
-            self.dim += 1
-            if boxz is not None:
-                self.bounds.append(boxz)
-                self.dim += 1
 
         # mpi support
         comm = mpi.COMM_WORLD
@@ -157,9 +156,9 @@ class Geometry:
 
         Parameters
         ----------
-        elem  : form of the part to add
+        elem : form of the part to add
         label : label on the boundary of this form
-        bw    : type of the form (0: solid, 1: fluid)
+        bw : type of the form (0: solid, 1: fluid)
 
         Examples
         --------

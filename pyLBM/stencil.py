@@ -9,40 +9,7 @@ from math import sqrt
 import viewer
 import utils
 import logging
-
-def permute_in_place(a):
-    """
-    Function permute_in_place
-    input: a object of type list
-    output: the set of all permutations of this list
-    the set is not created in the memory, so it can just be used in a loop
-    """
-    a.sort()
-    yield list(a)
-
-    if len(a) <= 1:
-        return
-
-    first = 0
-    last = len(a)
-    while 1:
-        i = last - 1
-
-        while 1:
-            i = i - 1
-            if a[i] < a[i + 1]:
-                j = last - 1
-                while not (a[i] < a[j]):
-                    j = j - 1
-                a[i], a[j] = a[j], a[i] # swap the values
-                r = a[i + 1:last]
-                r.reverse()
-                a[i + 1:last] = r
-                yield list(a)
-                break
-            if i == first:
-                a.reverse()
-                return
+import itertools
 
 class Velocity(object):
     """
@@ -190,7 +157,7 @@ class Velocity(object):
             for k in xrange(10):
                 for i in xrange(k + 1):
                     for j in xrange(i + 1):
-                        for (kk, ii, jj) in permute_in_place([k, i, j]):
+                        for (kk, ii, jj) in itertools.permutations([k, i, j]):
                             for pmk in sign[0: kk + 1]: # loop over + and - if kk > 0
                                 for pmi in sign[0:ii + 1]: # loop over + and - if ii > 0
                                     for pmj in sign[0:jj + 1]: # loop over + and - if jj > 0
@@ -225,7 +192,7 @@ class Velocity(object):
             for k in xrange(10):
                 for i in xrange(k + 1):
                     for j in xrange(i + 1):
-                        for (kk, ii, jj) in permute_in_place([k, i, j]):
+                        for (kk, ii, jj) in itertools.permutations([k, i, j]):
                             for pmk in sign[0:kk + 1]: # loop over + and - if kk > 0
                                 for pmi in sign[0:ii + 1]: # loop over + and - if ii > 0
                                     for pmj in sign[0:jj + 1]: # loop over + and - if jj > 0
