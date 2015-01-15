@@ -12,67 +12,63 @@ import re
 import sympy as sp
 
 
-def matMult(x, y, A, tab, ext, pref=''):
+def matMult(A, x, y, indent='', prefix='', suffix=''):
+    """
+    return a string representing the unroll matrix vector operation y = Ax
+
+    Parameters
+    ----------
+    A : the matrix coefficients
+    x : input vector in a string format
+    y : output vector in a string format where the matrix vector product is
+        stored
+    indent : string representing spaces or tabs which are set at the beginning
+             of each line
+    prefix : string
+    suffix : string
+
+    Returns
+    -------
+    string representing the unroll matrix vector operation y = Ax
+
+    Examples
+    --------
+
+    >>> import numpy as np
+    >>> A = np.arange(12).reshape(4,3)
+    >>> A[2, :] *= -1
+
+    >>> print matMult(A, 'm', 'f')
+    f[0] =  + m[1] + 2.0000000000000000*m[2]
+    f[1] =  + 3.0000000000000000*m[0] + 4.0000000000000000*m[1] + 5.0000000000000000*m[2]
+    f[2] =  - 6.0000000000000000*m[0] - 7.0000000000000000*m[1] - 8.0000000000000000*m[2]
+    f[3] =  + 9.0000000000000000*m[0] + 10.0000000000000000*m[1] + 11.0000000000000000*m[2]
+
+    >>> print matMult(A, 'm', 'f', '\t', prefix = 'i, j, ')
+        f[i, j, 0] =  + m[i, j, 1] + 2.0000000000000000*m[i, j, 2]
+        f[i, j, 1] =  + 3.0000000000000000*m[i, j, 0] + 4.0000000000000000*m[i, j, 1] + 5.0000000000000000*m[i, j, 2]
+        f[i, j, 2] =  - 6.0000000000000000*m[i, j, 0] - 7.0000000000000000*m[i, j, 1] - 8.0000000000000000*m[i, j, 2]
+        f[i, j, 3] =  + 9.0000000000000000*m[i, j, 0] + 10.0000000000000000*m[i, j, 1] + 11.0000000000000000*m[i, j, 2]
+
+    >>> print matMult(A, 'm', 'f', '\t', suffix = ', i, j')
+        f[0, i, j] =  + m[1, i, j] + 2.0000000000000000*m[2, i, j]
+        f[1, i, j] =  + 3.0000000000000000*m[0, i, j] + 4.0000000000000000*m[1, i, j] + 5.0000000000000000*m[2, i, j]
+        f[2, i, j] =  - 6.0000000000000000*m[0, i, j] - 7.0000000000000000*m[1, i, j] - 8.0000000000000000*m[2, i, j]
+        f[3, i, j] =  + 9.0000000000000000*m[0, i, j] + 10.0000000000000000*m[1, i, j] + 11.0000000000000000*m[2, i, j]
+
+    """
     nvk1, nvk2 = A.shape
     code = ''
 
     for i in xrange(nvk1):
-        code += tab + "{2}[{3}{0:d}{1}] = ".format(i, ext, y, pref)
-        first = True
+        code += indent + "{1}[{2}{0:d}{3}] = ".format(i, y, prefix, suffix)
         for j in xrange(nvk2):
             coef = A[i, j]
-            if coef > 0:
-                if coef == 1:
-                    if first:
-                        code += " {2}[{3}{0:d}{1}]".format(j, ext, x, pref)
-                    else:
-                        code += " + {2}[{3}{0:d}{1}]".format(j, ext, x, pref)
-                else:
-                    if first:
-                        code += " {1:.16f}*{3}[{4}{0:d}{2}]".format(j, coef, ext, x, pref)
-                    else:
-                        code += " + {1:.16f}*{3}[{4}{0:d}{2}]".format(j, coef, ext, x, pref)
-                first = False
+            scoef = '' if  abs(coef) == 1 else '{0:.16f}*'.format(abs(coef))
+            sign = ' + ' if coef > 0 else ' - '
 
-            elif (coef < 0):
-                first = False
-                if coef == -1:
-                    code += " - {2}[{3}{0:d}{1}]".format(j, ext, x, pref)
-                else:
-                    code += " - {1:.16f}*{3}[{4}{0:d}{2}]".format(j, -coef, ext, x, pref)
-
-        code += "\n"
-
-    return code
-
-def matMultVectorized(x, y, A, tab):
-    nvk1, nvk2 = A.shape
-    code = ''
-
-    for i in xrange(nvk1):
-        code += tab + "{1}[{0:d}] = ".format(i, y)
-        first = True
-        for j in xrange(nvk2):
-            coef = A[i, j]
-            if coef > 0:
-                if coef == 1:
-                    if first:
-                        code += " {1}[{0:d}]".format(j, x)
-                    else:
-                        code += " + {1}[{0:d}]".format(j, x)
-                else:
-                    if first:
-                        code += " {1:.16f}*{2}[{0:d}]".format(j, coef, x)
-                    else:
-                        code += " + {1:.16f}*{2}[{0:d}]".format(j, coef, x)
-                first = False
-
-            elif (coef < 0):
-                first = False
-                if coef == -1:
-                    code += " - {1}[{0:d}]".format(j, x)
-                else:
-                    code += " - {1:.16f}*{2}[{0:d}]".format(j, -coef, x)
+            if coef != 0:
+                code += "{1}{2}{3}[{4}{0:d}{5}]".format(j, sign, scoef, x, prefix, suffix)
 
         code += "\n"
 
@@ -189,12 +185,12 @@ class NumpyGenerator(Generator):
 
     def m2f(self, A, k, dim):
         self.code += "def m2f_{0:d}(m, f):\n".format(k)
-        self.code += matMultVectorized('m', 'f', A, '\t')
+        self.code += matMult(A, 'm', 'f', '\t')
         self.code += "\n"
 
     def f2m(self, A, k, dim, dtype = 'f8'):
         self.code += "def f2m_{0:d}(f, m):\n".format(k)
-        self.code += matMultVectorized('f', 'm', A, '\t')
+        self.code += matMult(A, 'f', 'm', '\t')
         self.code += "\n"
 
 
@@ -214,7 +210,7 @@ class NumbaGenerator(Generator):
 
         tab = "\t"*2
         ext = ', i'
-        self.code += matMult('m', 'f', A, tab, ext)
+        self.code += matMult(A, 'm', 'f', tab, suffix=ext)
         self.code += "\n"
 
     def f2m(self, A, k, dim, dtype = 'f8'):
@@ -226,7 +222,7 @@ class NumbaGenerator(Generator):
 
         tab = "\t"*2
         ext = ', i'
-        self.code += matMult('f', 'm', A, tab, ext)
+        self.code += matMult(A, 'f', 'm', tab, suffix=ext)
         self.code += "\n"
 
 class CythonGenerator(Generator):
@@ -254,7 +250,7 @@ from libc.stdlib cimport malloc, free
         tab = "\t"
         ext = ''
 
-        self.code += matMult('m', 'f', A, tab, ext)
+        self.code += matMult(A, 'm', 'f', tab)
         self.code += "\n"
 
         self.code += "def m2f({0}[:, ::1] m, {0}[:, ::1] f):\n".format(dtype)
@@ -267,7 +263,7 @@ from libc.stdlib cimport malloc, free
         ext = ''
         pref = 'i, '
 
-        self.code += matMult('m', 'f', A, tab, ext, pref)
+        self.code += matMult(A, 'm', 'f', tab, suffix=ext, prefix=pref)
         self.code += "\n"
 
     def f2m(self, A, k, dim, dtype = 'double'):
@@ -280,7 +276,7 @@ from libc.stdlib cimport malloc, free
         tab = "\t"
         ext = ''
 
-        self.code += matMult('f', 'm', A, tab, ext)
+        self.code += matMult(A, 'f', 'm', tab)
         self.code += "\n"
 
         self.code += "def f2m({0}[:, ::1] f, {0}[:, ::1] m):\n".format(dtype)
@@ -293,7 +289,7 @@ from libc.stdlib cimport malloc, free
         ext = ''
         pref = 'i, '
 
-        self.code += matMult('f', 'm', A, tab, ext, pref)
+        self.code += matMult(A, 'f', 'm', tab, suffix=ext, prefix=pref)
         self.code += "\n"
 
     def transport(self, ns, stencil, dtype = 'double'):
@@ -491,7 +487,7 @@ class CythonGeneratorOld(Generator):
         tab = "\t\t"
         ext = ', i'
 
-        self.code += matMult('m', 'f', A, tab, ext)
+        self.code += matMult(A, 'm', 'f', tab, suffix=ext)
         self.code += "\n"
 
     def f2m(self, A, k, dim, dtype = 'double'):
@@ -508,7 +504,7 @@ class CythonGeneratorOld(Generator):
 
         tab = "\t"*2
         ext = ', i'
-        self.code += matMult('f', 'm', A, tab, ext)
+        self.code += matMult(A, 'f', 'm', tab, suffix=ext)
         self.code += "\n"
 
     def transport(self, ns, stencil, dtype = 'double'):

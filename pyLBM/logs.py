@@ -17,7 +17,7 @@ def setLogger(name):
     #log.setLevel(level)
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(name)s on proc {0} \n%(message)s'.format(mpi.COMM_WORLD.Get_rank()))
     stream_handler = logging.StreamHandler()
-    stream_handler.setLevel(logging.DEBUG)
+    #stream_handler.setLevel(logging.DEBUG)
     stream_handler.setFormatter(formatter)
     log.addHandler(stream_handler)
     return log

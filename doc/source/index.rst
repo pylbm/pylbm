@@ -6,7 +6,7 @@
 Welcome to pyLBM's documentation!
 =================================
 
-pyLBM is a Lattice Boltzmann solver written in python 2.7. 
+pyLBM is a Lattice Boltzmann solver written in python 2.7.
 
 **ATTENTION :**
 
@@ -25,7 +25,7 @@ Requires:
 Optionnal:
 --------------
 
-   * cython 
+   * cython
 
 Contents:
 --------------
@@ -39,7 +39,7 @@ Contents:
    How to construct the domain <domain>
    How to build a LBM scheme <scheme>
    How to run a LBM simulation <simulation>
-
+   generator <generator>
 
 
 Indices and tables
@@ -48,4 +48,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
