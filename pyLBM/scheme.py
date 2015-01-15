@@ -85,8 +85,16 @@ class Scheme:
         self.s = [dico[k]['relaxation_parameters'] for k in xrange(self.nscheme)]
         self.create_moments_matrices()
 
-        self.nv_on_beg = nv_on_beg
+        #self.nv_on_beg = nv_on_beg
         self.generator = dico.get('generator', pyLBMGen.NumpyGenerator)()
+        print self.generator
+        if isinstance(self.generator,pyLBMGen.CythonGenerator):
+            self.nv_on_beg = False
+        else:
+            self.nv_on_beg = True
+        print "*"*50
+        print "Message from scheme.py: nv_on_beg = {0}".format(self.nv_on_beg)
+        print "*"*50
         self.generate()
 
         self.bc_compute = True

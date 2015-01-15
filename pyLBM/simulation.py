@@ -81,7 +81,8 @@ class Simulation:
 
         self.dim = self.domain.dim
 
-        self.nv_on_beg = nv_on_beg
+        #self.nv_on_beg = nv_on_beg
+        self.nv_on_beg = self.scheme.nv_on_beg
 
         if self.nv_on_beg:
             msize = [self.scheme.stencil.nv_ptr[-1]] + self.domain.Na[::-1]
