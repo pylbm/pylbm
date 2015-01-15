@@ -18,7 +18,7 @@ import pyLBM.simulation as pyLBMSimu
 import pyLBM.boundary as pyLBMBound
 import pyLBM.generator as pyLBMGen
 
-import numba
+#import numba
 
 from vispy import gloo
 from vispy import app
@@ -75,7 +75,7 @@ class Canvas(app.Canvas):
                                         ('a_texcoord', np.float32, 2) ])
         self.data['a_position'] = np.array([[0, 0], [coeff * W, 0], [0, coeff * H], [coeff * W, coeff * H]])
         self.data['a_texcoord'] = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
-        app.Canvas.__init__(self, close_keys='escape')
+        app.Canvas.__init__(self)#, close_keys='escape')
         self.title = "Solution t={0:f}".format(0.)
         deltarho = rhoo
         self.min, self.max = 0., 2*self.sol.domain.dx #-2*self.sol.domain.dx, 2*self.sol.domain.dx

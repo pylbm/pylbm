@@ -132,7 +132,7 @@ class Scheme:
         for v, p in zip(self.stencil.v, self.P):
             compt+=1
             lv = len(v)
-            self.M.append(zeros((lv, lv)))
+            self.M.append(zeros(lv, lv))
             if self.dim == 1:
                 for i in xrange(lv):
                     for j in xrange(lv):
