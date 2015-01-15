@@ -1,12 +1,10 @@
 import pyLBM
-from pyLBM.elements import *
-import pyLBM.geometry as LBMGeom
 
 solid, fluid = 0, 1
-Carre = Parallelogram((.1, .1), (.8, 0), (0, .8))
-Bande = Parallelogram((0, .4), (1, 0), (0, .2))
-Cercle = Circle((.5, .5), .25)
-petit_Carre = Parallelogram((.4, .5), (.1, .1), (.1, -.1))
+Carre = pyLBM.Parallelogram((.1, .1), (.8, 0), (0, .8))
+Bande = pyLBM.Parallelogram((0, .4), (1, 0), (0, .2))
+Cercle = pyLBM.Circle((.5, .5), .25)
+petit_Carre = pyLBM.Parallelogram((.4, .5), (.1, .1), (.1, -.1))
 dgeom = {
     'box':{'x': [0, 1], 'y': [0, 1], 'label':0},
     'elements':{
@@ -16,7 +14,7 @@ dgeom = {
         3:{'element':petit_Carre, 'del':solid},
     }
 }
-geom = LBMGeom.Geometry(dgeom)
+geom = pyLBM.Geometry(dgeom)
 geom.visualize(tag=False, viewlabel=False)
 """
 # arrondir les angles

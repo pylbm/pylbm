@@ -5,12 +5,6 @@ import sympy as sp
 from sympy.matrices import Matrix
 
 import pyLBM
-from pyLBM.elements import *
-import pyLBM.geometry as pyLBMGeom
-import pyLBM.simulation as pyLBMSimu
-import pyLBM.domain as pyLBMDom
-import pyLBM.boundary as pyLBMBoundary
-import pyLBM.generator as pyLBMGen
 
 import pylab as plt
 
@@ -77,10 +71,10 @@ def simu():
                 1:{0:(initialization_q,)},
                 2:{0:(initialization_q,)},
                 },
-        'generator': pyLBMGen.CythonGenerator,
+        'generator': pyLBM.generator.CythonGenerator,
         }
 
-    sol = pyLBMSimu.Simulation(dico)
+    sol = pyLBM.Simulation(dico)
 
     fig = plt.figure(0,figsize=(16, 8))
     fig.clf()
