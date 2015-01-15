@@ -108,7 +108,6 @@ class Velocity(object):
 
         Parameters
         ----------
-
         axis : if None, get the symmetric with the origin
                if 0, get the symmetric with the x axis
                if 1, get the symmetric with the y axis
@@ -116,7 +115,6 @@ class Velocity(object):
 
         Returns
         -------
-
         The symmetric of the velocity
 
         """
@@ -204,28 +202,29 @@ class Velocity(object):
                                         else:
                                             count +=1
 
-class itemproperty(property):
-    def __init__(self, fget=None, fset=None, fdel=None, doc=None):
-        super(itemproperty, self).__init__(fget, fset, fdel, doc)
-
-    def __get__(self, obj, objtype=None):
-        if obj is None:
-            return self
-        else:
-            return bounditemproperty(self, obj)
-
-class bounditemproperty(property):
-    def __init__(self, item_property, instance):
-        self.__item_property = item_property
-        self.__instance = instance
-
-    def __getitem__(self, key):
-        fget = self.__item_property.fget
-        if fget is None:
-            raise AttributeError("unreadable attribute item")
-        return fget(self.__instance, key)
-
 class OneStencil:
+    """
+    class that defines a stencil of a LBM scheme
+
+    Parameters
+    ----------
+    v : list of velocities
+    nv: size of the list (can be remove ?)
+    num2index : link between the velocity number and its position in the unique
+                velocities array
+
+    Attributes
+    ----------
+    v : list of velocities
+    nv: size of the list (can be remove ?)
+    num2index : link between the velocity number and its position in the unique
+                velocities array
+    num : the numbering of the velocities
+    vx : the x component of the velocities
+    vy : the y component of the velocities
+    vz : the z component of the velocities
+    """
+
     def __init__(self, v, nv, num2index):
         self.v = v
         self.nv = nv
@@ -271,7 +270,7 @@ class Stencil(list):
 
     Parameters
     ----------
-    stencil_dico: a dictionary that contains the following `key:value`
+    stencil_dico : a dictionary that contains the following `key:value`
 
         - 'dim': dim where dim is the value of the spatial dimension (1, 2 or 3)
         - 'number_of_schemes': nscheme where nscheme is the value of the number of used elementary schemes
@@ -280,19 +279,18 @@ class Stencil(list):
 
     Attributes
     ----------
-    dim       : the spatial dimension (1, 2 or 3)
-    unvtot    : the number of unique velocities involved in the stencils
-    vmax      : the maximal velocity in norm for each spatial direction
-    vmin      : the minimal velocity in norm for each spatial direction
+    dim : the spatial dimension (1, 2 or 3)
+    unvtot : the number of unique velocities involved in the stencils
+    vmax : the maximal velocity in norm for each spatial direction
+    vmin : the minimal velocity in norm for each spatial direction
     nstencils : the number of elementary stencil
-    nv        : the number of velocities for each elementary stencil
-    uniq_v    : unique velocities used for all stencils
-    v         : velocities for each elementary stencil
-    v_index   : ???
+    nv : the number of velocities for each elementary stencil
+    uniq_v : unique velocities used for all stencils
+    v : velocities for each elementary stencil
+    v_index : ???
 
     Methods
     -------
-
 
         .. image:: /images/Velocities_1D.jpeg
 
