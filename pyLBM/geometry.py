@@ -90,6 +90,11 @@ class Geometry:
             if voisins[1] != rank:
                 self.isInterface[i*2 + 1] = True
 
+        print "*"*40
+        print "Message from geometry.py (mpi test)"
+        print self.isInterface
+        print "*"*40
+
         self.list_elem = []
         self.list_tag = []
         self.list_label = []
@@ -184,7 +189,7 @@ class Geometry:
         self.list_label.append(loclabel)
         elem.label = loclabel
 
-    def visualize(self, tag=False):
+    def visualize(self, tag=False, viewlabel=False):
         plein = 'blue'
         fig = plt.figure(0,figsize=(8, 8))
         fig.clf()
@@ -200,28 +205,27 @@ class Geometry:
             plt.plot([xmin+l,xmin,xmin,xmin+l],[-h,-h,h,h],plein,lw=5)
             plt.plot([xmax-l,xmax,xmax,xmax-l],[-h,-h,h,h],plein,lw=5)
             plt.plot([xmin,xmax],[0.,0.],plein,lw=5)
-            plt.text(xmax-l, -2*h, '0', fontsize=18, horizontalalignment='center',verticalalignment='center')
-            plt.text(xmin+l, -2*h, '1', fontsize=18, horizontalalignment='center',verticalalignment='center')
+            if viewlabel:
+                plt.text(xmax-l, -2*h, '0', fontsize=18, horizontalalignment='center',verticalalignment='center')
+                plt.text(xmin+l, -2*h, '1', fontsize=18, horizontalalignment='center',verticalalignment='center')
             plt.axis('equal')
         elif (self.dim == 2):
             xmin = (float)(self.bounds[0][0])
             xmax = (float)(self.bounds[0][1])
             ymin = (float)(self.bounds[1][0])
             ymax = (float)(self.bounds[1][1])
-
             plt.fill([xmin,xmax,xmax,xmin], [ymin,ymin,ymax,ymax], fill=True, color=plein)
             if tag:
                 plt.text(0.5*(xmin+xmax), ymin, '0', fontsize=18, horizontalalignment='center',verticalalignment='bottom')
                 plt.text(xmax, 0.5*(ymin+ymax), '1', fontsize=18, horizontalalignment='right',verticalalignment='center')
                 plt.text(0.5*(xmin+xmax), ymax, '2', fontsize=18, horizontalalignment='center',verticalalignment='top')
                 plt.text(xmin, 0.5*(ymin+ymax), '3', fontsize=18, horizontalalignment='left',verticalalignment='center')
-            else:
+            if viewlabel:
                 plt.text(0.5*(xmin+xmax), ymin, self.list_label[0][0], fontsize=18, horizontalalignment='center',verticalalignment='bottom')
                 plt.text(xmax, 0.5*(ymin+ymax), self.list_label[0][1], fontsize=18, horizontalalignment='right',verticalalignment='center')
                 plt.text(0.5*(xmin+xmax), ymax, self.list_label[0][2], fontsize=18, horizontalalignment='center',verticalalignment='top')
                 plt.text(xmin, 0.5*(ymin+ymax), self.list_label[0][3], fontsize=18, horizontalalignment='left',verticalalignment='center')
-            #plt.axis('equal')
-            plt.axis([xmin, xmax, ymin, ymax])
+            plt.axis('equal')
             comptelem = 0
             for elem in self.list_elem:
                 if (elem.bw == 1):
@@ -237,7 +241,7 @@ class Geometry:
                     if tag:
                         plt.text(x, y, str(elem.tag[0]),
                                  fontsize=18, horizontalalignment='center',verticalalignment='center')
-                    else:
+                    if viewlabel:
                         plt.text(x, y, str(elem.label[0]),
                                  fontsize=18, horizontalalignment='center',verticalalignment='center')
                         comptelem += 1
@@ -256,7 +260,7 @@ class Geometry:
                                  fontsize=18, horizontalalignment='center',verticalalignment='center')
                         plt.text(0.5*(B[0]+C[0]), 0.5*(B[1]+C[1]), str(elem.tag[3]),
                                  fontsize=18, horizontalalignment='center',verticalalignment='center')
-                    else:
+                    if viewlabel:
                         plt.text(0.5*(A[0]+B[0]), 0.5*(A[1]+B[1]), str(elem.label[0]),
                                  fontsize=18, horizontalalignment='center',verticalalignment='center')
                         plt.text(0.5*(A[0]+D[0]), 0.5*(A[1]+D[1]), str(elem.label[1]),
@@ -271,13 +275,13 @@ class Geometry:
                     B = [A[k] + elem.v0[k] for k in xrange(2)]
                     D = [A[k] + elem.v1[k] for k in xrange(2)]
                     ax.add_patch(Polygon([A,B,D], closed=True, fill=True, color=coul))
-                    plt.text(0.5*(A[0]+B[0]), 0.5*(A[1]+B[1]), str(elem.tag[0]),
-                             fontsize=18, horizontalalignment='center',verticalalignment='center')
-                    plt.text(0.5*(A[0]+D[0]), 0.5*(A[1]+D[1]), str(elem.tag[1]),
-                             fontsize=18, horizontalalignment='center',verticalalignment='center')
-                    plt.text(0.5*(B[0]+D[0]), 0.5*(B[1]+D[1]), str(elem.tag[2]),
-                             fontsize=18, horizontalalignment='center',verticalalignment='center')
-
+                    if tag:
+                        plt.text(0.5*(A[0]+B[0]), 0.5*(A[1]+B[1]), str(elem.tag[0]),
+                                 fontsize=18, horizontalalignment='center',verticalalignment='center')
+                        plt.text(0.5*(A[0]+D[0]), 0.5*(A[1]+D[1]), str(elem.tag[1]),
+                                 fontsize=18, horizontalalignment='center',verticalalignment='center')
+                        plt.text(0.5*(B[0]+D[0]), 0.5*(B[1]+D[1]), str(elem.tag[2]),
+                                 fontsize=18, horizontalalignment='center',verticalalignment='center')
         plt.title("Geometry",fontsize=14)
         plt.draw()
         plt.hold(False)

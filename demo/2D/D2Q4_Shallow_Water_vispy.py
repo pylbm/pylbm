@@ -71,7 +71,7 @@ class Canvas(app.Canvas):
                                         ('a_texcoord', np.float32, 2) ])
         self.data['a_position'] = np.array([[0, 0], [coeff * W, 0], [0, coeff * H], [coeff * W, coeff * H]])
         self.data['a_texcoord'] = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
-        app.Canvas.__init__(self, close_keys='escape')
+        app.Canvas.__init__(self)#, close_keys='escape')
         self.title = "Solution t={0:f}".format(0.)
         self.min, self.max = rhoo-deltarho, rhoo+deltarho
         self.ccc = 1./(self.max-self.min)
@@ -143,8 +143,8 @@ class Canvas(app.Canvas):
         self.title = "Solution t={0:f}".format(self.sol.t)
         self.sol.scheme.f2m(self.sol._F, self.sol._m)
         self.texture.set_data(self.ccc*(self.sol._m[1:-1, 1:-1, 0].astype(np.float32) - self.min))
-        self.update()        
-        
+        self.update()
+
 
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
@@ -210,8 +210,7 @@ if __name__ == "__main__":
                 },
         'generator': pyLBMGen.CythonGenerator,
         }
-    
+
     c = Canvas(dico)
     c.show()
     app.run()
-

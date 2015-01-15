@@ -10,6 +10,8 @@ from elements import *
 import geometry as pyLBMGeom
 import stencil as pyLBMSten
 
+import pylab as plt
+
 class Domain:
     """
     Create a domain that defines the fluid part and the solid part and the distances between these two states.

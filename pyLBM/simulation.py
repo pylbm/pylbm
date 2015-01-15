@@ -230,13 +230,14 @@ class Simulation:
         #print self._F[self.domain.in_or_out==self.domain.valout, :].T
         #print self._F.T
 
-        self._Fold[:] = self._F[:]
+        #self._Fold[:] = self._F[:]
         if self.nv_on_beg:
             self.scheme.transport(self._F)
             self.scheme.f2m(self._F, self._m)
             self.scheme.relaxation(self._m)
             self.scheme.m2f(self._m, self._F)
         else:
+            self._Fold[:] = self._F[:]
             self.scheme.onetimestep(self._m, self._F, self._Fold, self.domain.in_or_out, self.domain.valin)
             ftmp = self._Fold
             self._Fold = self._F
@@ -253,16 +254,6 @@ class Simulation:
 
         self.t += self.dt
         self.nt += 1
-
-    def one_time_step_fast(self):
-        ##### NOT USED
-        self.scheme.m2f(self.m, self.f)
-        # Neuman condition for dim=1
-        for k in xrange(self.scheme.nscheme):
-            self.F[k][:,0] = self.F[k][:,1]
-            self.F[k][:,-1] = self.F[k][:,-2]
-        self.scheme.transport_f2m_relaxation(self)
-        self.t += self.dt
 
     def affiche_2D(self):
         fig = plt.figure(0,figsize=(8, 8))
