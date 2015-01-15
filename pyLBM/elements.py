@@ -10,22 +10,29 @@ class Circle:
     """
     Class Circle
 
-    * Arguments
-       - geomtype: geometrical type ( = 'Circle')
-       - center: 2-tuple for the coordinates of the center of the circle
-       - radius: positive float for the radius of the circle
+    Parameters
+    ----------
+    center : the coordinates of the center of the circle
+    radius : positive float for the radius of the circle
 
-    * Attributs
-       - geomtype: geometrical type ( = 'Circle')
-       - Center: 2-tuple for the coordinates of the center of the circle
-       - Radius: positive float for the radius of the circle
-       - number_of_bounds: number of bounds = 1
-       - description: a list that contains the description of the element
-       - tag: a list that contains the tag of the edges
-       - bw: integer
+    Attributs
+    ---------
+    geomtype: geometrical type ( = 'Circle')
+    center : the coordinates of the center of the circle
+    radius : positive float for the radius of the circle
+    number_of_bounds : 1
+    description : a list that contains the description of the element
+    tag : a list that contains the tag of the edges
+    bw : integer
              - 1 if the circle is added
              - 0 if the circle is deleted
              - 2 else
+
+    Methods
+    -------
+    get_bounds
+    point_inside
+    distance
     """
 
     def __init__(self, center, radius):
@@ -41,7 +48,6 @@ class Circle:
     def get_bounds(self):
         """
         return the bounds of the circle.
-
         """
         return self.center - self.radius, self.center + self.radius
 
@@ -49,14 +55,14 @@ class Circle:
         """
         return a boolean array which defines if a point is inside or outside of the circle.
 
-        * Parameters
+        Parameters
+        ----------
+        x : x coordinates of the points
+        y : y coordinates of the points
 
-            - x: x coordinates of the points
-            - y: y coordinates of the points
-
-        * Output
-
-            Array of boolean (1 inside the circle, 0 otherwise)
+        Returns
+        -------
+        Array of boolean (1 inside the circle, 0 otherwise)
 
         """
         v2 = np.asarray([x - self.center[0], y - self.center[1]])
@@ -67,15 +73,15 @@ class Circle:
         """
         Compute the distance in the v direction between the circle and the points defined by (x, y).
 
-        * Parameters
+        Parameters
+        ----------
+        x : x coordinates of the points
+        y : y coordinates of the points
+        v : direction of interest
 
-            - x: x coordinates of the points
-            - y: y coordinates of the points
-            - v: direction of interest
-
-        * Output
-
-            array of distances
+        Returns
+        -------
+        array of distances
 
         """
         p = np.asarray([x - self.center[0], y - self.center[1]])
@@ -119,21 +125,22 @@ class Parallelogram:
     """
     Class Parallelogram
 
-    * Arguments
-       - geomtype: geometrical type ( = 'Parallelogram')
-       - point: 2-tuple for the coordinates of the first point of the parallelogram
-       - vecta: 2-tuple for the coordinates of the first vector
-       - vectb: 2-tuple for the coordinates of the second vector
+    Parameters
+    ----------
+    point : the coordinates of the first point of the parallelogram
+    vecta : the coordinates of the first vector
+    vectb : the coordinates of the second vector
 
-    * Attributs
-       - geomtype: geometrical type ( = 'Parallelogram')
-       - Point: 2-tuple for the coordinates of the first point of the parallelogram
-       - Vecta: 2-tuple for the coordinates of the first vector
-       - Vectb: 2-tuple for the coordinates of the second vector
-       - number_of_bounds: number of bounds = 4
-       - description: a list that contains the description of the element
-       - tag: a list that contains the tag of the edges
-       - bw: integer
+    Attributs
+    ---------
+    geomtype : geometrical type ( = 'Parallelogram')
+    point : the coordinates of the first point of the parallelogram
+    vecta : the coordinates of the first vector
+    vectb : the coordinates of the second vector
+    number_of_bounds : 4
+    description : a list that contains the description of the element
+    tag : a list that contains the tag of the edges
+    bw: integer
              - 1 if the parallelogram is added
              - 0 if the parallelogram is deleted
              - 2 else
@@ -161,7 +168,6 @@ class Parallelogram:
     def get_bounds(self):
         """
         return the bounds of the parallelogram.
-
         """
         box = np.asarray([self.point, self.point + self.v0,
                           self.point + self.v0 + self.v1, self.point + self.v1])
@@ -171,14 +177,14 @@ class Parallelogram:
         """
         return a boolean array which defines if a point is inside or outside of the parallelogram.
 
-        * Parameters
+        Parameters
+        ----------
+        x : x coordinates of the points
+        y : y coordinates of the points
 
-            - x: x coordinates of the points
-            - y: y coordinates of the points
-
-        * Output
-
-            Array of boolean (1 inside the parallelogram, 0 otherwise)
+        Returns
+        -------
+        Array of boolean (1 inside the parallelogram, 0 otherwise)
 
         """
 
@@ -194,15 +200,15 @@ class Parallelogram:
         Compute the distance in the v direction between the parallelogram
         and the points defined by (x, y).
 
-        * Parameters
+        Parameters
+        ----------
+        x : x coordinates of the points
+        y : y coordinates of the points
+        v : direction of interest
 
-            - x: x coordinates of the points
-            - y: y coordinates of the points
-            - v: direction of interest
-
-        * Output
-
-            array of distances
+        Returns
+        -------
+        array of distances
 
         """
 
@@ -211,7 +217,6 @@ class Parallelogram:
         p = [[0, 0], [0, 0], self.v0, self.v1]
         vt = [self.v0, self.v1, self.v1, self.v0]
 
-        #return distance_lines(x - self.point[0], y - self.point[1], v, p, vt, dmax, self.tag)
         return distance_lines(x - self.point[0], y - self.point[1], v, p, vt, dmax, self.label)
 
     def __str__(self):
@@ -226,21 +231,22 @@ class Triangle:
     """
     Class Triangle
 
-    * Arguments
-       - geomtype: geometrical type ( = 'Triangle')
-       - point: 2-tuple for the coordinates of the first point of the triangle
-       - vecta: 2-tuple for the coordinates of the first vector
-       - vectb: 2-tuple for the coordinates of the second vector
+    Parameters
+    ----------
+    point: the coordinates of the first point of the triangle
+    vecta: the coordinates of the first vector
+    vectb: the coordinates of the second vector
 
-    * Attributs
-       - geomtype: geometrical type ( = 'Triangle')
-       - Point: 2-tuple for the coordinates of the first point of the triangle
-       - Vecta: 2-tuple for the coordinates of the first vector
-       - Vectb: 2-tuple for the coordinates of the second vector
-       - number_of_bounds: number of bounds = 1
-       - description: a list that contains the description of the element
-       - tag: a list that contains the tag of the edges
-       - bw: integer
+    Attributs
+    ---------
+    geomtype: geometrical type ( = 'Triangle')
+    point : the coordinates of the first point of the triangle
+    vecta : the coordinates of the first vector
+    vectb : the coordinates of the second vector
+    number_of_bounds : 1
+    description : a list that contains the description of the element
+    tag : a list that contains the tag of the edges
+    bw : integer
              - 1 if the circle is added
              - 0 if the circle is deleted
              - 2 else
@@ -276,14 +282,14 @@ class Triangle:
         """
         return a boolean array which defines if a point is inside or outside of the triangle.
 
-        * Parameters
+        Parameters
+        ----------
+        x : x coordinates of the points
+        y : y coordinates of the points
 
-            - x: x coordinates of the points
-            - y: y coordinates of the points
-
-        * Output
-
-            Array of boolean (1 inside the triangle, 0 otherwise)
+        Returns
+        -------
+        Array of boolean (1 inside the triangle, 0 otherwise)
 
         """
 
@@ -299,15 +305,15 @@ class Triangle:
         Compute the distance in the v direction between the triangle
         and the points defined by (x, y).
 
-        * Parameters
+        Parameters
+        ----------
+        x : x coordinates of the points
+        y : y coordinates of the points
+        v : direction of interest
 
-            - x: x coordinates of the points
-            - y: y coordinates of the points
-            - v: direction of interest
-
-        * Output
-
-            array of distances
+        Returns
+        -------
+        array of distances
 
         """
 
