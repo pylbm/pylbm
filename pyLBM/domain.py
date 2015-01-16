@@ -31,7 +31,7 @@ class Domain:
                 used to label each edge
 
         elements : TODO ............................
-        
+
         'space_step' : dx where dx is the value of the space step
         'number_of_scheme' : ns where ns is the value of the number of
             elementary schemes
@@ -135,7 +135,7 @@ class Domain:
         self.distance = self.valin*np.ones(s2, dtype = self.type)
         self.flag = self.valin*np.ones(s2, dtype = 'int')
 
-        self.__add_init(self.geom.list_label) # compute the distance and the flag for the primary box
+        self.__add_init(self.geom.box_label) # compute the distance and the flag for the primary box
         for elem in self.geom.list_elem: # treat each element of the geometry
             self.__add_elem(elem, elem.bw)
 
@@ -160,11 +160,11 @@ class Domain:
                 if (vk > 0):
                     for i in xrange(vk):
                         self.distance[k, xe - 1 - i] = (i + .5)/vk
-                        self.flag[k, xe - 1 - i] = label[0][0] # east border
+                        self.flag[k, xe - 1 - i] = label[0] # east border
                 elif (vk < 0):
                     for i in xrange(-vk):
                         self.distance[k, xb + i] = -(i + .5)/vk
-                        self.flag[k, xb + i] = label[0][1] # west border
+                        self.flag[k, xb + i] = label[1] # west border
 
         elif (self.dim == 2):
             vxmax, vymax = self.stencil.vmax[:2]
@@ -182,25 +182,25 @@ class Domain:
                         dvik = (i + .5)/vxk
                         indbordvik = np.where(dvik < self.distance[k, yb:ye, xe - 1 - i])
                         self.distance[k, yb + indbordvik[0], xe - 1 - i] = dvik
-                        self.flag[k, yb + indbordvik[0], xe - 1 - i] = label[0][1]
+                        self.flag[k, yb + indbordvik[0], xe - 1 - i] = label[1]
                 elif (vxk < 0):
                     for i in xrange(-vxk):
                         dvik = -(i + .5)/vxk
                         indbordvik = np.where(dvik < self.distance[k, yb:ye, xb + i])
                         self.distance[k, yb + indbordvik[0], xb + i] = dvik
-                        self.flag[k, yb + indbordvik[0], xb + i] = label[0][3]
+                        self.flag[k, yb + indbordvik[0], xb + i] = label[3]
                 if (vyk > 0):
                     for i in xrange(vyk):
                         dvik = (i + .5)/vyk
                         indbordvik = np.where(dvik < self.distance[k, ye - 1 - i, xb:xe])
                         self.distance[k, ye - 1 - i, xb + indbordvik[0]] = dvik
-                        self.flag[k, ye - 1 - i, xb + indbordvik[0]] = label[0][2]
+                        self.flag[k, ye - 1 - i, xb + indbordvik[0]] = label[2]
                 elif (vyk < 0):
                     for i in xrange(-vyk):
                         dvik = -(i + .5)/vyk
                         indbordvik = np.where(dvik < self.distance[k, yb + i, xb:xe])
                         self.distance[k, yb + i, xb + indbordvik[0]] = dvik
-                        self.flag[k, yb + i, xb + indbordvik[0]] = label[0][0]
+                        self.flag[k, yb + i, xb + indbordvik[0]] = label[0]
         return
 
     def __add_elem(self, elem, bw):
