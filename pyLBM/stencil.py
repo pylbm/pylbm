@@ -3,14 +3,19 @@
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
+#from __future__ import absolute_import
 
 import numpy as np
 from math import sqrt
-import viewer
-import utils
 import logging
-import itertools
-from . import geometry
+import sys
+from itertools import permutations
+
+from .utils import itemproperty
+from .geometry import get_box
+from .logs import setLogger
+
+log = setLogger(__name__)
 
 class Velocity(object):
     """
@@ -155,7 +160,7 @@ class Velocity(object):
             for k in xrange(10):
                 for i in xrange(k + 1):
                     for j in xrange(i + 1):
-                        for (kk, ii, jj) in itertools.permutations([k, i, j]):
+                        for (kk, ii, jj) in permutations([k, i, j]):
                             for pmk in sign[0: kk + 1]: # loop over + and - if kk > 0
                                 for pmi in sign[0:ii + 1]: # loop over + and - if ii > 0
                                     for pmj in sign[0:jj + 1]: # loop over + and - if jj > 0
@@ -190,7 +195,7 @@ class Velocity(object):
             for k in xrange(10):
                 for i in xrange(k + 1):
                     for j in xrange(i + 1):
-                        for (kk, ii, jj) in itertools.permutations([k, i, j]):
+                        for (kk, ii, jj) in permutations([k, i, j]):
                             for pmk in sign[0:kk + 1]: # loop over + and - if kk > 0
                                 for pmi in sign[0:ii + 1]: # loop over + and - if ii > 0
                                     for pmj in sign[0:jj + 1]: # loop over + and - if jj > 0
@@ -348,18 +353,18 @@ class Stencil(list):
         # through the geometrical box)
         self.dim = dico.get('dim', None)
         if self.dim is None:
-            self.dim, bounds = geometry.get_box(dico)
+            self.dim, bounds = get_box(dico)
 
-        # get the number of stencils (equal to the number of schemes)
-        kkk = 0
-        dummy = dico.get(kkk,None)
-        while dummy is not None:
-            kkk += 1
-            dummy = dico.get(kkk,None)
-        self.nstencils = kkk
-
-        # get the list of the velocities of each stencil
-        v_index = [np.asarray(dico[k]['velocities']) for k in xrange(self.nstencils)]
+        # get the schemes
+        try:
+            v_index = []
+            for s in dico['schemes']:
+                # get the list of the velocities of each stencil
+                v_index.append(np.asarray(s['velocities']))
+        except:
+            log.error("unable to read the scheme.")
+            sys.exit()
+        self.nstencils = len(v_index)
 
         # get the unique velocities involved in the stencil
         unique_indices = np.empty(0, dtype=np.int32)
@@ -410,7 +415,7 @@ class Stencil(list):
         vectorize = np.vectorize(lambda obj: obj.vx)
         return vectorize(self.unique_velocities)
 
-    @utils.itemproperty
+    @itemproperty
     def vx(self, k):
         """
         get the x component of the velocities for the stencil k
@@ -426,7 +431,7 @@ class Stencil(list):
         vectorize = np.vectorize(lambda obj: obj.vy)
         return vectorize(self.unique_velocities)
 
-    @utils.itemproperty
+    @itemproperty
     def vy(self, k):
         """
         get the y component of the velocities for the stencil k
@@ -442,7 +447,7 @@ class Stencil(list):
         vectorize = np.vectorize(lambda obj: obj.vz)
         return vectorize(self.unique_velocities)
 
-    @utils.itemproperty
+    @itemproperty
     def vz(self, k):
         """
         get the z component of the velocities for the stencil k
@@ -458,7 +463,7 @@ class Stencil(list):
         vectorize = np.vectorize(lambda obj: obj.num)
         return vectorize(self.unique_velocities)
 
-    @utils.itemproperty
+    @itemproperty
     def num(self, k):
         """
         get the numbering of the velocities for the stencil k

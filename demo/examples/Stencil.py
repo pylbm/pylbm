@@ -5,10 +5,10 @@ from pyLBM.viewer import MatplotlibViewer, VtkViewer
 if __name__ == "__main__":
     dsten = {
         'dim':2,
-        'number_of_schemes':3,
-        0:{'velocities':range(9)},
-        1:{'velocities':range(25)},
-        2:{'velocities':range(49)},
+        'schemes':[{'velocities':range(9)},
+                   {'velocities':range(25)},
+                   {'velocities':range(49)},
+                   ],
     }
     s = LBMStencil.Stencil(dsten)
     v = MatplotlibViewer()
@@ -19,7 +19,7 @@ if __name__ == "__main__":
     dsten = {
         'dim':3,
         'number_of_schemes':1,
-        0:{'velocities':range(19)},
+        'schemes':[{'velocities':range(19)},]
     }
     s = LBMStencil.Stencil(dsten)
     v = VtkViewer()

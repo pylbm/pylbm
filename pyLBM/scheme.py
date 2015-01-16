@@ -80,9 +80,10 @@ class Scheme:
         self.dim = self.stencil.dim
         self.la = dico['scheme_velocity']
         self.nscheme = self.stencil.nstencils
-        self.P = [dico[k]['polynomials'] for k in xrange(self.nscheme)]
-        self.EQ = [dico[k]['equilibrium'] for k in xrange(self.nscheme)]
-        self.s = [dico[k]['relaxation_parameters'] for k in xrange(self.nscheme)]
+        scheme = dico['schemes']
+        self.P = [s['polynomials'] for s in scheme]
+        self.EQ = [s['equilibrium'] for s in scheme]
+        self.s = [s['relaxation_parameters'] for s in scheme]
         self.create_moments_matrices()
 
         #self.nv_on_beg = nv_on_beg

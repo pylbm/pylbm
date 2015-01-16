@@ -127,8 +127,8 @@ class Canvas(app.Canvas):
     def maj(self):
         self.title = "Solution t={0:f}".format(self.sol.t)
         self.texture.set_data(self.ccc*(self.sol._m[0, 1:-1, 1:-1].astype(np.float32) - self.min))
-        self.update()        
-        
+        self.update()
+
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 
 u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
@@ -159,21 +159,22 @@ if __name__ == "__main__":
         'scheme_velocity':la,
         'number_of_schemes':3,
         'init':'moments',
-        0:{'velocities':vitesse,
-           'polynomials':polynomes,
-           'relaxation_parameters':[0., 2., 2., 1.5],
-           'equilibrium':Matrix([u[0][0], u[1][0], u[2][0], 0.]),
-        },
-        1:{'velocities':vitesse,
-           'polynomials':polynomes,
-           'relaxation_parameters':[0., 1.5, 1.5, 1.2],
-           'equilibrium':Matrix([u[1][0], u[1][0]**2/u[0][0] + 0.5*g*u[0][0]**2, u[1][0]*u[2][0]/u[0][0], 0.]),
-        },
-        2:{'velocities':vitesse,
-           'polynomials':polynomes,
-           'relaxation_parameters':[0., 1.5, 1.5, 1.2],
-           'equilibrium':Matrix([u[2][0], u[1][0]*u[2][0]/u[0][0], u[2][0]**2/u[0][0] + 0.5*g*u[0][0]**2, 0.]),
-        },
+        'schemes':[{'velocities':vitesse,
+                    'polynomials':polynomes,
+                    'relaxation_parameters':[0., 2., 2., 1.5],
+                    'equilibrium':Matrix([u[0][0], u[1][0], u[2][0], 0.]),
+                    },
+                    {'velocities':vitesse,
+                    'polynomials':polynomes,
+                    'relaxation_parameters':[0., 1.5, 1.5, 1.2],
+                    'equilibrium':Matrix([u[1][0], u[1][0]**2/u[0][0] + 0.5*g*u[0][0]**2, u[1][0]*u[2][0]/u[0][0], 0.]),
+                    },
+                    {'velocities':vitesse,
+                    'polynomials':polynomes,
+                    'relaxation_parameters':[0., 1.5, 1.5, 1.2],
+                    'equilibrium':Matrix([u[2][0], u[1][0]*u[2][0]/u[0][0], u[2][0]**2/u[0][0] + 0.5*g*u[0][0]**2, 0.]),
+                    },
+        ],
         'init':{'type':'moments',
                 0:{0:(initialization_rho,)},
                 1:{0:(initialization_q,)},
@@ -181,8 +182,7 @@ if __name__ == "__main__":
                 },
         'generator': pyLBMGen.NumpyGenerator,
         }
-    
+
     c = Canvas(dico)
     c.show()
     app.run()
-
