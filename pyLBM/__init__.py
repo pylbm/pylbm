@@ -1,3 +1,9 @@
+# Authors:
+#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Benjamin Graille <benjamin.graille@math.u-psud.fr>
+#
+# License: BSD 3 clause
+
 from domain import Domain
 from stencil import Stencil
 from simulation import Simulation

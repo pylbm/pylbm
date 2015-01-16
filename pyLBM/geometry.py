@@ -26,7 +26,15 @@ class Geometry:
     Parameters
     ----------
     dico : a dictionary that contains the following `key:value`
-       - 'geometry'
+
+        box : a dictionary that contains the following `key:value`
+            x : a list of the bounds in the first direction
+            y : a list of the bounds in the second direction (optional)
+            z : a list of the bounds in the third direction (optional)
+            label : an integer or a list of integers (length twice the number of dimensions)
+                used to label each edge
+
+        elements : TODO .....................
 
     Attributes
     ----------
@@ -41,6 +49,10 @@ class Geometry:
     -------
     add_elem : function that adds an element in the box
     visualize : function to visualize the box
+
+    Examples
+    --------
+    see demo/examples/geometry/*.py
 
     """
 
@@ -280,6 +292,13 @@ class Geometry:
                         plt.text(0.5*(A[0]+D[0]), 0.5*(A[1]+D[1]), str(elem.tag[1]),
                                  fontsize=18, horizontalalignment='center',verticalalignment='center')
                         plt.text(0.5*(B[0]+D[0]), 0.5*(B[1]+D[1]), str(elem.tag[2]),
+                                 fontsize=18, horizontalalignment='center',verticalalignment='center')
+                    if viewlabel:
+                        plt.text(0.5*(A[0]+B[0]), 0.5*(A[1]+B[1]), str(elem.label[0]),
+                                 fontsize=18, horizontalalignment='center',verticalalignment='center')
+                        plt.text(0.5*(A[0]+D[0]), 0.5*(A[1]+D[1]), str(elem.label[1]),
+                                 fontsize=18, horizontalalignment='center',verticalalignment='center')
+                        plt.text(0.5*(B[0]+D[0]), 0.5*(B[1]+D[1]), str(elem.label[2]),
                                  fontsize=18, horizontalalignment='center',verticalalignment='center')
         plt.title("Geometry",fontsize=14)
         plt.draw()

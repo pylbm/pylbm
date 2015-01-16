@@ -11,34 +11,54 @@ import geometry as pyLBMGeom
 import stencil as pyLBMSten
 
 import pylab as plt
+import matplotlib.cm as cm
+
 
 class Domain:
     """
-    Create a domain that defines the fluid part and the solid part and the distances between these two states.
+    Create a domain that defines the fluid part and the solid part
+    and computes the distances between these two states.
 
     Parameters
     ----------
-    geom : a geometry (object of the class :py:class:`pyLBM.geometry.Geometry`)
     dico : a dictionary that contains the following `key:value`
 
-          'dim' : the spatial dimension (1, 2, or 3)
-          'space_step' :dx where dx is the value of the space step
-          'number_of_scheme' : ns where ns is the value of the number of
-              elementary schemes
-          0:dico0, 1:dico1, ..., (nscheme-1):dico(nscheme-1) where k:dicok
+        box : a dictionary that contains the following `key:value`
+            x : a list of the bounds in the first direction
+            y : a list of the bounds in the second direction (optional)
+            z : a list of the bounds in the third direction (optional)
+            label : an integer or a list of integers (length twice the number of dimensions)
+                used to label each edge
+
+        elements : TODO ............................
+        
+        'space_step' : dx where dx is the value of the space step
+        'number_of_scheme' : ns where ns is the value of the number of
+            elementary schemes
+        0:dico0, 1:dico1, ..., (nscheme-1):dico(nscheme-1) where k:dicok
               contains the velocities of the kth stencil
               (dicok['velocities'] is the list of the velocity indices for the
                kth stencil)
 
+    optional parameters :
+        if the geometry and/or the stencil were previously generated,
+        it can be used directly as following
+            >>> Domain(dico, geometry = geom, stencil = sten)
+        if geom is an object of the class :py:class:`pyLBM.geometry.Geometry`
+        and sten an object of the class :py:class:`pyLBM.stencil.Stencil`
+        In that case, dico does not need to contain the informations for generate
+        the geometry and/or the stencil
+
+
     Warning
     -------
-      the sizes of the box must be a multiple of the space step dx
+    ``the sizes of the box must be a multiple of the space step dx``
 
     Attributes
     ----------
     dim : number of spatial dimensions (example: 1, 2, or 3)
     bounds : a list that contains the bounds of the box
-            [[x[0]min,x[0]max],...,[x[dim-1]min,x[dim-1]max]]
+        [[x[0]min,x[0]max],...,[x[dim-1]min,x[dim-1]max]]
     dx : space step (example: 0.1, 1.e-3)
     type : type of data (example: 'float64')
     stencil : the stencil of velocities (object of the class
@@ -67,6 +87,15 @@ class Domain:
            In 2D, flag[k, j, i] is the flag of the border reached by the point
            (x[0][i], x[1][j]) in the direction of kth velocity
            ...
+
+    Members
+    -------
+    visualize : Visualize the domain by creating a plot
+
+    Examples
+    --------
+    see demo/examples/domain/*.py
+
     """
     def __init__(self, dico, geometry=None, stencil=None):
         self.type = 'float64'
@@ -112,7 +141,7 @@ class Domain:
 
     def __str__(self):
         s = "Domain informations\n"
-        s += "\t spatial dimension: dim={0:d}\n".format(self.dim)
+        s += "\t spatial dimension: {0:d}\n".format(self.dim)
         s += "\t bounds of the box: bounds = " + self.bounds.__str__() + "\n"
         s += "\t space step: dx={0:10.3e}\n".format(self.dx)
         s += "\t Number of points in each direction: N=" + self.N.__str__() + ", Na=" + self.Na.__str__() + "\n"
@@ -240,17 +269,88 @@ class Domain:
                 dist_view[k][ind4[0][ind3[0]], ind4[1][ind3[0]]] = alpha[ind4[0][ind3[0]], ind4[1][ind3[0]]]
                 flag_view[k][ind4[0][ind3[0]], ind4[1][ind3[0]]] = border[ind4[0][ind3[0]], ind4[1][ind3[0]]]
 
+    def visualize(self, opt=0):
+        """
+        Visualize the domain by creating a plot
+
+        optional argument ``opt`` if the spatial dimension dim is 2
+
+        * If dim=1 or (dim=2 and opt=0)
+             - plot a star on inner points and a square on outer points
+             - plot the flag on the boundary (each boundary point + s[k]*unique_velocities[k] for each velocity k)
+        * If dim=2 and opt=1
+             - plot a imshow figure, white for inner domain and black for outer domain
+        """
+        fig = plt.figure(0,figsize=(8, 8))
+        fig.clf()
+        plt.ion()
+        if (self.dim == 1):
+            x = self.x[0]
+            y = np.zeros(x.shape)
+            vkmax = self.stencil.vmax[0]
+            plt.hold(True)
+            for k in xrange(self.stencil.unvtot):
+                vk = self.stencil.unique_velocities[k].vx
+                coul = (1.-(vkmax+vk)*0.5/vkmax, 0., (vkmax+vk)*0.5/vkmax)
+                indbord = np.where(self.distance[k,:]<=1)
+                #plt.scatter(x[indbord]+self.dx*self.distance[k,[indbord]]*vk, y[indbord], 1000*self.dx, c=coul, marker='^')
+                for i in indbord[0]:
+                    plt.text(x[i]+self.dx*self.distance[k,i]*vk, y[i],str(self.flag[k,i]),
+                             fontsize=18, horizontalalignment='center',verticalalignment='center')
+                    plt.plot([x[i],x[i]+self.dx*self.distance[k,i]*vk],[y[i],y[i]],c=coul)
+            indin = np.where(self.in_or_out==self.valin)
+            plt.scatter(x[indin],y[indin], 1000*self.dx, c='k', marker='*')
+            indout = np.where(self.in_or_out==self.valout)
+            plt.scatter(x[indout],y[indout], 1000*self.dx, c='k', marker='s')
+        if (self.dim == 2):
+            x = self.x[0][np.newaxis, :]
+            y = self.x[1][:, np.newaxis]
+            if (opt==0):
+                plt.imshow(self.in_or_out>=0, origin='lower', cmap=cm.gray, interpolation='nearest')
+            else:
+                vxkmax = self.stencil.vmax[0]
+                vykmax = self.stencil.vmax[1]
+                plt.hold(True)
+                for k in xrange(self.stencil.unvtot):
+                    vxk = self.stencil.unique_velocities[k].vx
+                    vyk = self.stencil.unique_velocities[k].vy
+                    coul = (1.-(vxkmax+vxk)*0.5/vxkmax, (vykmax+vyk)*0.5/vykmax, (vxkmax+vxk)*0.5/vxkmax)
+                    indbordy, indbordx = np.where(self.distance[k,:]<=1)
+                    #plt.scatter(x[0, indbordx]+self.dx*self.distance[k, indbordy, indbordx]*vxk, y[indbordy, 0]+self.dx*self.distance[k, indbordy, indbordx]*vyk, 1000*self.dx, c=coul, marker='^')
+                    for i in xrange(indbordx.shape[0]):
+                        plt.text(x[0,indbordx[i]]+self.dx*self.distance[k,indbordy[i],indbordx[i]]*vxk,
+                                 y[indbordy[i],0]+self.dx*self.distance[k,indbordy[i],indbordx[i]]*vyk,
+                                 str(self.flag[k,indbordy[i],indbordx[i]]),
+                                 fontsize=18, horizontalalignment='center',verticalalignment='center')
+                        plt.plot([x[0,indbordx[i]],x[0,indbordx[i]]+self.dx*self.distance[k,indbordy[i],indbordx[i]]*vxk],
+                                 [y[indbordy[i],0],y[indbordy[i],0]+self.dx*self.distance[k,indbordy[i],indbordx[i]]*vyk],c=coul)
+
+                indiny, indinx = np.where(self.in_or_out==self.valin)
+                plt.scatter(x[0, indinx], y[indiny, 0], 500*self.dx, c='k', marker='*')
+                indouty, indoutx = np.where(self.in_or_out==self.valout)
+                plt.scatter(x[0, indoutx], y[indouty, 0], 500*self.dx, c='k', marker='s')
+        plt.title("Domain",fontsize=14)
+        plt.draw()
+        plt.hold(False)
+        plt.ioff()
+        plt.show()
+
+
 def verification(dom, with_color=False):
     """
     Function that writes all the informations of a domain
 
-    * Arguments
-       - ``dom``: a valid object of the class :py:class:`LBMpy.Domain.Domain`
-       - ``with_color``: a boolean (False by default) to use color in the shell
-    * Output
-       - print the number of points
-       - print the array ``in_or_out`` (999 for inner points and -1 for outer points)
-       - for each velocity v, print the distance to the border and the flag of the reached border (for each boundary point)
+    Parameters
+    ----------
+    dom : a valid object of the class :py:class:`LBMpy.domain.Domain`
+    with_color : a boolean (False by default) to use color in the shell
+
+    Returns
+    -------
+    print the number of points
+    print the array ``in_or_out`` (999 for inner points and -1 for outer points)
+    for each velocity v, print the distance to the border and the flag of the reached border (for each boundary point)
+
     """
     # some terminal colors
     if with_color:
@@ -333,74 +433,6 @@ def verification(dom, with_color=False):
                 print
             print '*'*50
 
-def visualize(dom, opt=0):
-    """
-    Visualize a domain by creating a plot
-    ``Visualize(dom)`` where ``dom`` is
-    a valid object of the class :py:class:`LBMpy.Domain.Domain`
-
-    optional argument ``opt`` if the spatial dimension dim is 2
-
-    * If dim=1 or (dim=2 and opt=0)
-         - plot a star on inner points and a square on outer points
-         - plot a the flag on the boundary (each boundary point + s[k]*unique_velocities[k] for each velocity k)
-    * If dim=2 and opt=1
-         - plot a imshow figure, white for inner domain and black for outer domain
-    """
-    fig = plt.figure(0,figsize=(8, 8))
-    fig.clf()
-    plt.ion()
-    if (dom.dim == 1):
-        x = dom.x[0]
-        y = np.zeros(x.shape)
-        vkmax = dom.stencil.vmax[0]
-        plt.hold(True)
-        for k in xrange(dom.stencil.unvtot):
-            vk = dom.stencil.unique_velocities[k].vx
-            coul = (1.-(vkmax+vk)*0.5/vkmax, 0., (vkmax+vk)*0.5/vkmax)
-            indbord = np.where(dom.distance[k,:]<=1)
-            #plt.scatter(x[indbord]+dom.dx*dom.distance[k,[indbord]]*vk, y[indbord], 1000*dom.dx, c=coul, marker='^')
-            for i in indbord[0]:
-                plt.text(x[i]+dom.dx*dom.distance[k,i]*vk, y[i],str(dom.flag[k,i]),
-                         fontsize=18, horizontalalignment='center',verticalalignment='center')
-                plt.plot([x[i],x[i]+dom.dx*dom.distance[k,i]*vk],[y[i],y[i]],c=coul)
-        indin = np.where(dom.in_or_out==dom.valin)
-        plt.scatter(x[indin],y[indin], 1000*dom.dx, c='k', marker='*')
-        indout = np.where(dom.in_or_out==dom.valout)
-        plt.scatter(x[indout],y[indout], 1000*dom.dx, c='k', marker='s')
-    if (dom.dim == 2):
-        x = dom.x[0][np.newaxis, :]
-        y = dom.x[1][:, np.newaxis]
-        if (opt==0):
-            plt.imshow(dom.in_or_out>=0, origin='lower', cmap=cm.gray, interpolation='nearest')
-        else:
-            vxkmax = dom.stencil.vmax[0]
-            vykmax = dom.stencil.vmax[1]
-            plt.hold(True)
-            for k in xrange(dom.stencil.unvtot):
-                vxk = dom.stencil.unique_velocities[k].vx
-                vyk = dom.stencil.unique_velocities[k].vy
-                coul = (1.-(vxkmax+vxk)*0.5/vxkmax, (vykmax+vyk)*0.5/vykmax, (vxkmax+vxk)*0.5/vxkmax)
-                indbordy, indbordx = np.where(dom.distance[k,:]<=1)
-                #plt.scatter(x[0, indbordx]+dom.dx*dom.distance[k, indbordy, indbordx]*vxk, y[indbordy, 0]+dom.dx*dom.distance[k, indbordy, indbordx]*vyk, 1000*dom.dx, c=coul, marker='^')
-                for i in xrange(indbordx.shape[0]):
-                    plt.text(x[0,indbordx[i]]+dom.dx*dom.distance[k,indbordy[i],indbordx[i]]*vxk,
-                             y[indbordy[i],0]+dom.dx*dom.distance[k,indbordy[i],indbordx[i]]*vyk,
-                             str(dom.flag[k,indbordy[i],indbordx[i]]),
-                             fontsize=18, horizontalalignment='center',verticalalignment='center')
-                    plt.plot([x[0,indbordx[i]],x[0,indbordx[i]]+dom.dx*dom.distance[k,indbordy[i],indbordx[i]]*vxk],
-                             [y[indbordy[i],0],y[indbordy[i],0]+dom.dx*dom.distance[k,indbordy[i],indbordx[i]]*vyk],c=coul)
-
-            indiny, indinx = np.where(dom.in_or_out==dom.valin)
-            plt.scatter(x[0, indinx], y[indiny, 0], 500*dom.dx, c='k', marker='*')
-            indouty, indoutx = np.where(dom.in_or_out==dom.valout)
-            plt.scatter(x[0, indoutx], y[indouty, 0], 500*dom.dx, c='k', marker='s')
-    plt.title("Domain",fontsize=14)
-    plt.draw()
-    plt.hold(False)
-    plt.ioff()
-    plt.show()
-
 
 if __name__ == "__main__":
     from pyLBM.geometry import Geometry
@@ -422,7 +454,7 @@ if __name__ == "__main__":
     dom = Domain(dico, geom)
     print dom.N, dom.x[0]
     print geom
-    visualize(dom)
+    dom.visualize()
     """
     testok = True
     compt = 0
