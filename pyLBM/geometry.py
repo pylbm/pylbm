@@ -19,6 +19,41 @@ from elements import *
 from logs import setLogger
 log = setLogger(__name__)
 
+def get_box(dico):
+    """
+    return the dimension and the bounds of the box defined in the dictionnary.
+
+    Parameters
+    ----------
+    dico : a dictionnary
+
+    Returns
+    -------
+    dim : the dimension of the box
+    bounds: the bounds of the box
+    
+    """
+    try:
+        box = dico['box']
+        try:
+            bounds = [box['x']]
+            dim = 1
+            boxy = box.get('y', None)
+            if boxy is not None:
+                bounds.append(boxy)
+                dim += 1
+                boxz = box.get('z', None)
+                if boxz is not None:
+                    bounds.append(boxz)
+                    dim += 1
+        except KeyError:
+            log.error("'x' interval not found in the box definition of the geometry.")
+            sys.exit()
+    except KeyError:
+        log.error("'box' key not found in the geometry definition. Check the input dictionnary.")
+        sys.exit()
+    return dim, bounds
+
 class Geometry:
     """
     Create a geometry that defines the fluid part and the solid part.
@@ -57,26 +92,7 @@ class Geometry:
     """
 
     def __init__(self, dico):
-        self.dim = 1
-        try:
-            box = dico['box']
-
-            try:
-                self.bounds = [box['x']]
-                boxy = box.get('y', None)
-                if boxy is not None:
-                    self.bounds.append(boxy)
-                    self.dim += 1
-                    boxz = box.get('z', None)
-                    if boxz is not None:
-                        self.bounds.append(boxz)
-                        self.dim += 1
-            except KeyError:
-                log.error("'x' interval not found in the box definition of the geometry.")
-                sys.exit()
-        except KeyError:
-            log.error("'box' key not found in the geometry definition. Check the input dictionnary.")
-            sys.exit()
+        self.dim, self.bounds = get_box(dico)
 
         # mpi support
         comm = mpi.COMM_WORLD
@@ -101,10 +117,7 @@ class Geometry:
             if voisins[1] != rank:
                 self.isInterface[i*2 + 1] = True
 
-        print "*"*40
-        print "Message from geometry.py (mpi test)"
-        print self.isInterface
-        print "*"*40
+        log.info("Message from geometry.py (isInterface):\n {0}".format(self.isInterface))
 
         self.list_elem = []
         self.list_tag = []
@@ -236,7 +249,7 @@ class Geometry:
                 plt.text(xmax, 0.5*(ymin+ymax), self.list_label[0][1], fontsize=18, horizontalalignment='right',verticalalignment='center')
                 plt.text(0.5*(xmin+xmax), ymax, self.list_label[0][2], fontsize=18, horizontalalignment='center',verticalalignment='top')
                 plt.text(xmin, 0.5*(ymin+ymax), self.list_label[0][3], fontsize=18, horizontalalignment='left',verticalalignment='center')
-            plt.axis('equal')
+            plt.axis([xmin,xmax,ymin,ymax])
             comptelem = 0
             for elem in self.list_elem:
                 if (elem.bw == 1):
@@ -245,7 +258,7 @@ class Geometry:
                     coul = 'white'
                 else:
                     coul = 'black'
-                if (elem.geomtype=='Circle'):
+                if isinstance(elem, Circle):
                     ax.add_patch(Ellipse(elem.center, 2*elem.radius, 2*elem.radius, fill=True, color=coul))
                     theta = elem.center[0] + 2*elem.center[1]+10*elem.radius
                     x, y = elem.center[0] + elem.radius*cos(theta), elem.center[1] + elem.radius*sin(theta)

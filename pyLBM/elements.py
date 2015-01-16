@@ -15,8 +15,8 @@ class Circle:
     center : the coordinates of the center of the circle
     radius : positive float for the radius of the circle
 
-    Attributs
-    ---------
+    Attributes
+    ----------
     geomtype: geometrical type ( = 'Circle')
     center : the coordinates of the center of the circle
     radius : positive float for the radius of the circle
@@ -34,13 +34,13 @@ class Circle:
     point_inside
     distance
     """
+    number_of_bounds = 1
 
     def __init__(self, center, radius):
         self.geomtype = 'Circle'
         self.center = np.asarray(center)
         self.radius = radius
         self.bw = 2
-        self.number_of_bounds = 1
         self.tag = []
         self.label = []
         self.description = ['circle centered in ({0:f},{1:f}) with radius {2:f}'.format(self.center[0], self.center[1], self.radius)]
@@ -131,8 +131,8 @@ class Parallelogram:
     vecta : the coordinates of the first vector
     vectb : the coordinates of the second vector
 
-    Attributs
-    ---------
+    Attributes
+    ----------
     geomtype : geometrical type ( = 'Parallelogram')
     point : the coordinates of the first point of the parallelogram
     vecta : the coordinates of the first vector
@@ -237,8 +237,8 @@ class Triangle:
     vecta: the coordinates of the first vector
     vectb: the coordinates of the second vector
 
-    Attributs
-    ---------
+    Attributes
+    ----------
     geomtype: geometrical type ( = 'Triangle')
     point : the coordinates of the first point of the triangle
     vecta : the coordinates of the first vector

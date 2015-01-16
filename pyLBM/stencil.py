@@ -10,6 +10,7 @@ import viewer
 import utils
 import logging
 import itertools
+from . import geometry
 
 class Velocity(object):
     """
@@ -81,7 +82,7 @@ class Velocity(object):
             elif vx is not None:
                 self.dim = 1
             else:
-                raise TypeError('The parameters could not be all None when creating a velocity')
+                raise TypeError("The parameters could not be all None when creating a velocity")
 
         if num is None:
             self._set_num()
@@ -90,8 +91,7 @@ class Velocity(object):
 
     @property
     def v(self):
-        l = [self.vx, self.vy, self.vz]
-        return l[:self.dim]
+        return [self.vx, self.vy, self.vz][:self.dim]
 
     def __str__(self):
         s = '(%d: %d'%(self.num, self.vx)
@@ -344,22 +344,11 @@ class Stencil(list):
     """
     def __init__(self, dico):
         super(Stencil, self).__init__()
-        # get the dimension of the stencil (given in the dictionnary or computed through the geometrical box)
-        self.dim = dico.get('dim',None)
+        # get the dimension of the stencil (given in the dictionnary or computed
+        # through the geometrical box)
+        self.dim = dico.get('dim', None)
         if self.dim is None:
-            try:
-                boite = dico['box']
-                boitex = boite['x']
-                boitey = boite.get('y',None)
-                boitez = boite.get('z',None)
-                self.dim = 1
-                if boitey is not None:
-                    self.dim += 1
-                if boitez is not None:
-                    self.dim += 1
-            except:
-                logging.critical('Error in the creation of the stencil: the spatial dimension cannot be determined')
-                sys.exit()
+            self.dim, bounds = geometry.get_box(dico)
 
         # get the number of stencils (equal to the number of schemes)
         kkk = 0
@@ -427,7 +416,7 @@ class Stencil(list):
         get the x component of the velocities for the stencil k
         """
         vectorize = np.vectorize(lambda obj: obj.vx)
-        return vectorize(self.v[k])
+        return vectorize(self[k])
 
     @property
     def uvy(self):
@@ -443,7 +432,7 @@ class Stencil(list):
         get the y component of the velocities for the stencil k
         """
         vectorize = np.vectorize(lambda obj: obj.vy)
-        return vectorize(self.v[k])
+        return vectorize(self[k])
 
     @property
     def uvz(self):
@@ -459,7 +448,7 @@ class Stencil(list):
         get the z component of the velocities for the stencil k
         """
         vectorize = np.vectorize(lambda obj: obj.vz)
-        return vectorize(self.v[k])
+        return vectorize(self[k])
 
     @property
     def unum(self):
