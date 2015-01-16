@@ -45,7 +45,7 @@ class Velocity(object):
     Methods
     -------
     get_symmetric
-        return the symmetric velocity with a direction
+        return the symmetric velocity for a given direction
 
     Examples
     --------

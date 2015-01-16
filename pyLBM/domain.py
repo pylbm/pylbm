@@ -5,10 +5,15 @@
 # License: BSD 3 clause
 
 import numpy as np
+import logging
+import sys
 
-from elements import *
+from .elements import *
 import geometry as pyLBMGeom
 import stencil as pyLBMSten
+
+from .logs import setLogger
+log = setLogger(__name__)
 
 import pylab as plt
 import matplotlib.cm as cm
@@ -137,7 +142,7 @@ class Domain:
 
         self.__add_init(self.geom.box_label) # compute the distance and the flag for the primary box
         for elem in self.geom.list_elem: # treat each element of the geometry
-            self.__add_elem(elem, elem.bw)
+            self.__add_elem(elem)
 
     def __str__(self):
         s = "Domain informations\n"
@@ -203,12 +208,12 @@ class Domain:
                         self.flag[k, yb + i, xb + indbordvik[0]] = label[0]
         return
 
-    def __add_elem(self, elem, bw):
+    def __add_elem(self, elem):
         """
         Add an element
 
-            - if bw=0 as a solid part.
-            - if bw=1 as a fluid part.
+            - if elem.isfluid = False as a solid part. (bw=0)
+            - if elem.isfluid = True as a fluid part.  (bw=1)
 
         """
         # compute the box around the element adding vmax safety points
@@ -231,7 +236,7 @@ class Domain:
         dist_view = self.distance[:, nmin[1]:nmax[1], nmin[0]:nmax[0]]
         flag_view = self.flag[:, nmin[1]:nmax[1], nmin[0]:nmax[0]]
 
-        if bw == 0: # add a solid part
+        if not elem.isfluid: # add a solid part
             ind_solid = elem.point_inside(gridx, gridy)
             ind_fluid = np.logical_not(ind_solid)
             ioo_view[ind_solid] = self.valout
@@ -248,20 +253,20 @@ class Domain:
                 alpha, border = elem.distance(gridx, gridy, (self.dx*vxk, self.dx*vyk), 1.)
                 indx = np.logical_and(np.logical_and(alpha > 0, ind_fluid), condx)
 
-                if bw == 1:
+                if elem.isfluid:
                     # take all points in the fluid in the ioo_view
                     indfluidinbox = ioo_view == self.valin
                     # take only points which
                     borderToInt = np.logical_and(np.logical_not(condx), indfluidinbox)
                     dist_view[k][borderToInt] = self.valin
                     flag_view[k][borderToInt] = self.valin
-                if bw == 0:
+                else:
                     dist_view[k][ind_solid] = self.valin
                     flag_view[k][ind_solid] = self.valin
 
                 #set distance
                 ind4 = np.where(indx)
-                if bw == 0:
+                if not elem.isfluid:
                     ind3 = np.where(alpha[ind4] < dist_view[k][ind4])
                 else:
                     ind3 = np.where(np.logical_or(alpha[ind4] > dist_view[k][ind4], dist_view[k][ind4] == self.valin))
@@ -435,36 +440,13 @@ def verification(dom, with_color=False):
 
 
 if __name__ == "__main__":
-    from pyLBM.geometry import Geometry
-
-    dim = 2
-    dgeom = {'dim': dim,
-             'box':{'x': [0, 2], 'y': [0, 1], 'label': [0, 0, 0, 0]},
+    dico = {
+        'box':{'x': [0, 1], 'y': [0, 1], 'label':0},
+        'elements':[pyLBM.Circle((0.5,0.5), 0.2, label = 1)],
+        'space_step':0.05,
+        'schemes':[{'velocities':range(9)}]
     }
-
-    dico = {'dim': dim,
-            'geometry': dgeom,
-            'space_step':0.2,
-            'number_of_schemes':1,
-            0:{'velocities':range(9)},
-            #1:{'velocities':range(33)}
-    }
-    geom = Geometry(dgeom)
-
-    dom = Domain(dico, geom)
-    print dom.N, dom.x[0]
-    print geom
-    dom.visualize()
-    """
-    testok = True
-    compt = 0
-    while testok:
-        testok = test_1D(compt)
-        compt += 1
-    """
-    # testok = True
-    # compt = 0
-    # while testok:
-    #     testok = test_2D(compt)
-    #     compt += 1
-    # #"""
+    dom = pyLBM.Domain(dico)
+    dom.visualize(opt=0)
+    dom.visualize(opt=1)
+    verification(dom, with_color = True)

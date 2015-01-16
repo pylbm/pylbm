@@ -5,6 +5,7 @@
 # License: BSD 3 clause
 
 import sys
+import logging
 from math import sin, cos
 import matplotlib
 import matplotlib.pyplot as plt
@@ -14,9 +15,9 @@ from matplotlib.patches import Ellipse, Polygon
 
 import mpi4py.MPI as mpi
 
-from elements import *
+from .elements import *
 
-from logs import setLogger
+from .logs import setLogger
 log = setLogger(__name__)
 
 def get_box(dico):
@@ -139,30 +140,6 @@ class Geometry:
             for elemk in elem:
                 #self.add_elem(elemk)
                 self.list_elem.append(elemk)
-            #
-            # k = 0
-            # test = 1
-            # while (test == 1):
-            #     elemk = elem.get(k, None)
-            #     if elemk is not None:
-            #         k += 1
-            #         try:
-            #             labelk = elemk['label']
-            #         except:
-            #             labelk = 0
-            #         self.add_elem(elemk['element'], labelk, elemk['del'])
-            #     else:
-            #         test = 0
-
-            """
-            for k in elem:
-                elementk = dico[k]['element']
-                try:
-                    labelk = dico[k]['label']
-                except:
-                    labelk = 0
-                self.add_elem(elementk, labelk, dico[k]['type'])
-            """
         log.info(self.__str__())
 
 
@@ -190,24 +167,6 @@ class Geometry:
         """
 
         self.list_elem.append(elem)
-        # add a different tag for each bounds of the form
-        #self.list_tag.append([self.next_tag + k for k in xrange(elem.number_of_bounds)])
-
-        # # for each bounds af the form add a description
-        # for i in xrange(elem.number_of_bounds):
-        #     self.bounds_tag[self.next_tag + i] = elem.description[i]
-        #self.next_tag += elem.number_of_bounds
-
-        # don't understand what is elem.tag
-        #elem.tag = self.list_tag[-1]
-
-        # set a label to the boundaries
-        #if isinstance(label, int):
-        #    loclabel = [label]*elem.number_of_bounds
-        #else:
-        #    loclabel = label.copy()
-        #self.list_label.append(loclabel)
-        #elem.label = loclabel
 
     def visualize(self, viewlabel=False):
         plein = 'blue'
@@ -258,12 +217,9 @@ class Geometry:
         """
            return the list of all the labels used in the geometry
         """
-        L = np.empty(0, dtype=np.int32)
-        for l in self.box_label:
-            L = np.union1d(L, l)
+        L = np.array(self.box_label, dtype=np.int32)
         for elem in self.list_elem:
-            for l in elem.label:
-                L = np.union1d(L, l)
+            L = np.union1d(L, elem.label)
         #for l in self.list_label:
         #    L = np.union1d(L, l)
         return L
@@ -276,28 +232,21 @@ def test_1D(number):
     * ``Test_1D(0)`` for the segment (0,1)
     * ``Test_1D(1)`` for the segment (-1,2)
     """
-    dim = 1
-    print "\n\nTest number {0:d} in {1:d}D:".format(number, dim)
     if number == 0:
-        dgeom = {'geometry':
-                     {'dim': dim,
-                      'box':{'x': [0, 1]},
-                      }
-                 }
-        geom = Geometry(dgeom['geometry'])
+        dgeom = {'box':{'x': [0, 1]}}
     elif number == 1:
-        dgeom = {'geometry':
-                     {'dim': dim,
-                      'box':{'x': [-1, 2]},
-                      }
-                 }
-        geom = Geometry(dgeom['geometry'])
-    try:
+        dgeom = {'box':{'x': [-1, 2]}}
+    else:
+        dgeom = None
+
+    if dgeom is not None:
+        geom = Geometry(dgeom)
+        print "\n\nTest number {0:d} in {1:d}D:".format(number, geom.dim)
         print geom
-    except:
+        geom.visualize()
+        return 1
+    else:
         return 0
-    geom.visualize()
-    return 1
 
 def test_2D(number):
     """
@@ -308,45 +257,39 @@ def test_2D(number):
     * ``Test_2D(2)`` for the circular cavity
     * ``Test_2D(3)`` for the square cavity with a triangular obstacle
     """
-    dim = 2
-    solid = 0
-    fluid = 1
-
-    dgeom = {'geometry':
-                 {'dim': dim,
-                  }
-             }
-    print "\n\nTest number {0:d} in {1:d}D:".format(number, dim)
     if number == 0:
-        dgeom['geometry']['box'] = {'x': [0, 1], 'y': [0, 1]}
-        geom = Geometry(dgeom['geometry'])
+        dgeom = {'box':{'x': [0, 1], 'y': [0, 1]}}
     elif number == 1:
-        dgeom['geometry']['box'] = {'x': [0, 2], 'y': [0, 1]}
-        geom = Geometry(dgeom['geometry'])
-        geom.add_elem(Circle((0.5, 0.5), 0.1), 0, solid)
+        dgeom = {'box':{'x': [0, 2], 'y': [0, 1]},
+                 'elements':[Circle((0.5, 0.5), 0.1)]
+                }
     elif number == 2:
-        dgeom['geometry']['box'] = {'x': [0, 2], 'y': [0, 1]}
-        geom = Geometry(dgeom['geometry'])
-        geom.add_elem(Parallelogram((0, 0), (2, 0), (0, 1)), 0, solid)
-        geom.add_elem(Parallelogram((0, 0.4), (2, 0), (0, 0.2)), 0, fluid)
-        geom.add_elem(Circle((1, 0.5), 0.5), 0, fluid)
-        geom.add_elem(Circle((1, 0.5), 0.2), 0, solid)
+        dgeom = {'box':{'x': [0, 2], 'y': [0, 1]},
+                 'elements':[Parallelogram((0, 0), (2, 0), (0, 1)),
+                             Parallelogram((0, .4), (2, 0), (0, .2), isfluid=True),
+                             Circle((1, .5), 0.5, isfluid=True),
+                             Circle((1, .5), 0.2, isfluid=False)
+                             ]
+                }
     elif number == 3:
-        dgeom['geometry']['box'] = {'x': [0, 1], 'y': [0, 1]}
-        geom = Geometry(dgeom['geometry'])
-        geom.add_elem(Triangle((0.3, 0.3), (0.5, -0.1), (0.3, 0.5)), 0, solid)
+        dgeom = {'box':{'x': [0, 1], 'y': [0, 1]},
+                 'elements':[Triangle((0.3, 0.3), (0.5, -0.1), (0.3, 0.5))]}
     elif (number==4):
-        dgeom['geometry']['box'] = {'x': [0, 2], 'y': [0, 1]}
-        geom = Geometry(dgeom['geometry'])
-        geom.add_elem(Parallelogram((0.4, 0.4), (0., 0.2), (0.2, 0.)), 0, solid)
-        geom.add_elem(Parallelogram((1.4, 0.5), (0.1, 0.1), (0.1, -0.1)), 0, solid)
-    try:
+        dgeom = {'box':{'x': [0, 2], 'y': [0, 1]},
+                 'elements':[Parallelogram((0.4, 0.4), (0., 0.2), (0.2, 0.)),
+                             Parallelogram((1.4, 0.5), (0.1, 0.1), (0.1, -0.1))
+                            ]
+                }
+    else:
+        dgeom = None
+    if dgeom is not None:
+        geom = Geometry(dgeom)
+        print "\n\nTest number {0:d} in {1:d}D:".format(number, geom.dim)
         print geom
-        #geom.visualize()
-    except:
+        geom.visualize()
+        return 1
+    else:
         return 0
-    geom.visualize()
-    return 1
 
 if __name__ == "__main__":
     k = 1
