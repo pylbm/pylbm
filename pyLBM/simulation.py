@@ -147,91 +147,44 @@ class Simulation:
         return s
 
     def initialization(self, dico):
-        dico_init = dico['init']
-        if (self.dim == 1):
-            if (dico_init['type'] == 'moments'):
-                for k in xrange(self.scheme.nscheme):
-                    for l in dico_init[k].keys():
-                        f = dico_init[k][l][0]
-                        if len(dico_init[k][l])==2:
-                            args = dico_init[k][l][1]
-                        else:
-                            args = ()
-                        self.m[k][l] = f(self.domain.x[0], *args)
-                self.scheme.equilibrium(self._m, self.nv_on_beg)
-                self.scheme.m2f(self._m, self._F)
-            elif (dico_init['type'] == 'densities'):
-                for k in xrange(self.scheme.nscheme):
-                    for l in dico_init[k].keys():
-                        f = dico_init[k][l][0]
-                        if len(dico_init[k][l])==2:
-                            args = dico_init[k][l][1]
-                        else:
-                            args = ()
-                        self.F[k][l] = f(self.domain.x[0], *args)
-                self.scheme.f2m(self._F, self._m)
-            else:
-                print "Error in the choice of initialization\n"
-                sys.exit()
-        elif (self.dim == 2):
-            if (dico_init['type'] == 'moments'):
-                for k in xrange(self.scheme.nscheme):
-                    for l in dico_init[k].keys():
-                        f = dico_init[k][l][0]
-                        if len(dico_init[k][l])==2:
-                            args = dico_init[k][l][1]
-                        else:
-                            args = ()
+        inittype = dico['inittype']
+        if self.dim == 1:
+            x = self.domain.x[0]
+            coords = (x,)
+        elif self.dim == 2:
+            x = self.domain.x[0][:,np.newaxis]
+            y = self.domain.x[1][np.newaxis, :]
+            coords = (x, y)
 
-                        if self.nv_on_beg:
-                            self._m[self.scheme.stencil.nv_ptr[k] + l] = f(self.domain.x[0][:,np.newaxis], self.domain.x[1][np.newaxis,:], *args)
-                        else:
-                            self._m[:, :, self.scheme.stencil.nv_ptr[k] + l] = f(self.domain.x[0][:,np.newaxis], self.domain.x[1][np.newaxis,:], *args)
+        schemes = dico['schemes']
+        for ns, s in enumerate(schemes):
+            for k, v in s['init'].iteritems():
+                f = v[0]
+                extraargs = v[1] if len(v) == 2 else ()
+                fargs = coords + extraargs
+                if inittype == 'moments':
+                    if self.nv_on_beg:
+                        self._m[self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
+                    else:
+                        self._m[:, :, self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
+                else:
+                    if self.nv_on_beg:
+                        self._F[self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
+                    else:
+                        self._F[:, :, self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
 
-                self.scheme.equilibrium(self._m)
-                self.scheme.m2f(self._m, self._F)
-
-            elif (dico_init['type'] == 'densities'):
-                for k in xrange(self.scheme.nscheme):
-                    for l in dico_init[k].keys():
-                        f = dico_init[k][l][0]
-                        if len(dico_init[k][l])==2:
-                            args = dico_init[k][l][1]
-                        else:
-                            args = ()
-
-                        if self.nv_on_beg:
-                            self._F[self.scheme.stencil.nv_ptr[k] + l] = f(self.domain.x[0][:,np.newaxis], self.domain.x[1][np.newaxis,:], *args)
-                        else:
-                            self._F[:, :, self.scheme.stencil.nv_ptr[k] + l] = f(self.domain.x[0][:,np.newaxis], self.domain.x[1][np.newaxis,:], *args)
-
-                self.scheme.f2m(self._F, self._m)
-            else:
-                print "Error in the choice of initialization\n"
-                sys.exit()
+        if inittype == 'moments':
+            self.scheme.equilibrium(self._m)
+            self.scheme.m2f(self._m, self._F)
         else:
-            print "Dimension 3 not yet implemented !!! Sorry"
-            sys.exit()
+            self.scheme.f2m(self._F, self._m)
 
         if not self.nv_on_beg:
             self._Fold[:] = self._F[:]
 
     def one_time_step(self):
-        np.set_printoptions(threshold=1e12)
-
-        #print '1'*50
-        #print self._F[self.domain.in_or_out==self.domain.valin, 1].T
-        #print self._F.T
         self.scheme.set_boundary_conditions(self._F, self._m, self.bc, self.nv_on_beg)
-        #print '2'*50
-        #print self._F[self.domain.in_or_out==self.domain.valin, 1].T
-        #print self._F.T
 
-        #print 'b'*50
-        #print self._F[self.domain.in_or_out==self.domain.valout, :].T
-        #print self._F.T
-
-        #self._Fold[:] = self._F[:]
         if self.nv_on_beg:
             self.scheme.transport(self._F)
             self.scheme.f2m(self._F, self._m)
@@ -243,15 +196,6 @@ class Simulation:
             ftmp = self._Fold
             self._Fold = self._F
             self._F = ftmp
-
-        #print '3'*50
-        #print self._F[self.domain.in_or_out==self.domain.valin, 1].T
-        #self._F[self.domain.in_or_out==self.domain.valout, :] = 0.
-        #print self._F.T
-
-        #if self.nt == 3:
-        #    import sys
-        #    sys.exit()
 
         self.t += self.dt
         self.nt += 1
