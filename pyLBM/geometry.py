@@ -17,7 +17,7 @@ import mpi4py.MPI as mpi
 
 from .elements import *
 
-from .logs import setLogger
+from .logs import setLogger, compute_lvl
 log = setLogger(__name__)
 
 def get_box(dico):
@@ -92,6 +92,8 @@ class Geometry:
     """
 
     def __init__(self, dico):
+        self.lvl = compute_lvl(dico.get('logs', None))
+        self.log = setLogger(__name__, lvl = self.lvl)
         self.dim, self.bounds = get_box(dico)
 
         # mpi support
@@ -117,7 +119,7 @@ class Geometry:
             if voisins[1] != rank:
                 self.isInterface[i*2 + 1] = True
 
-        log.info("Message from geometry.py (isInterface):\n {0}".format(self.isInterface))
+        self.log.info("Message from geometry.py (isInterface):\n {0}".format(self.isInterface))
 
         self.list_elem = []
         #self.list_label = []
@@ -140,7 +142,7 @@ class Geometry:
             for elemk in elem:
                 #self.add_elem(elemk)
                 self.list_elem.append(elemk)
-        log.info(self.__str__())
+        self.log.info(self.__str__())
 
 
     def __str__(self):

@@ -11,7 +11,6 @@ from vispy import app
 from vispy.gloo import gl
 from vispy.util.transforms import ortho
 
-
 VERT_SHADER = """
 // Uniforms
 uniform mat4 u_model;
@@ -184,6 +183,7 @@ if __name__ == "__main__":
         #         2:{0:(initialization_q,)},
         #         },
         'generator': pyLBMGen.CythonGenerator,
+        'logs':'DEBUG',
         }
 
     c = Canvas(dico)

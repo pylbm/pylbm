@@ -11,6 +11,9 @@ import os
 import re
 import sympy as sp
 
+from .logs import setLogger
+log = setLogger(__name__)
+
 
 def matMult(A, x, y, indent='', prefix='', suffix=''):
     """
@@ -85,7 +88,11 @@ class Generator:
 
         atexit.register(self.exit)
 
-        print self.f.name
+        s = "*"*50
+        s += "\nTemporary file use for code generator :\n{0}\n"
+        s += "*"*50
+        log.info(s.format(self.f.name))
+        #print self.f.name
 
     def setup(self):
         pass
@@ -125,7 +132,6 @@ class NumpyGenerator(Generator):
                 s2 = ''
                 toInput = False
                 v = stencil.v[k][i].v
-                print v
                 for iv in xrange(len(v)-1, -1, -1):
                     if v[iv] > 0:
                         toInput = True
