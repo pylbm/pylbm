@@ -93,7 +93,7 @@ class Scheme:
         self.create_moments_matrices()
 
         #self.nv_on_beg = nv_on_beg
-        self.generator = dico.get('generator', pyLBMGen.NumpyGenerator)()
+        self.generator = dico.get('generator', pyLBMGen.NumpyGenerator)(log=self.log)
         self.log.info("Generator used for the scheme functions:\n{0}\n".format(self.generator))
         #print self.generator
         if isinstance(self.generator,pyLBMGen.CythonGenerator):
@@ -160,12 +160,13 @@ class Scheme:
                     for j in xrange(lv):
                         self.M[-1][i, j] = p[i].subs([(X, v[j].vx), (Y, v[j].vy), (Z, v[j].vz)])
             else:
-                print 'Function create_moments_matrices: the dimension is not correct'
+                self.log.error('Function create_moments_matrices: the dimension is not correct')
             try:
                 self.invM.append(self.M[-1].inv())
             except:
-                print 'Function create_moments_matrices: M is not invertible'
-                print 'The choice of polynomials is odd in the elementary scheme number {0:d}'.format(compt)
+                s = 'Function create_moments_matrices: M is not invertible\n'
+                s += 'The choice of polynomials is odd in the elementary scheme number {0:d}'.format(compt)
+                self.log.error(s)
                 sys.exit()
 
         self.MnumGlob = np.zeros((self.stencil.nv_ptr[-1], self.stencil.nv_ptr[-1]))

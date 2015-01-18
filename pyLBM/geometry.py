@@ -18,9 +18,9 @@ import mpi4py.MPI as mpi
 from .elements import *
 
 from .logs import setLogger, compute_lvl
-log = setLogger(__name__)
+#log = setLogger(__name__)
 
-def get_box(dico):
+def get_box(dico, log = None):
     """
     return the dimension and the bounds of the box defined in the dictionnary.
 
@@ -48,10 +48,12 @@ def get_box(dico):
                     bounds.append(boxz)
                     dim += 1
         except KeyError:
-            log.error("'x' interval not found in the box definition of the geometry.")
+            if log is not None:
+                log.error("'x' interval not found in the box definition of the geometry.")
             sys.exit()
     except KeyError:
-        log.error("'box' key not found in the geometry definition. Check the input dictionnary.")
+        if log is not None:
+            log.error("'box' key not found in the geometry definition. Check the input dictionnary.")
         sys.exit()
     return dim, bounds
 
@@ -94,7 +96,7 @@ class Geometry:
     def __init__(self, dico):
         self.lvl = compute_lvl(dico.get('logs', None))
         self.log = setLogger(__name__, lvl = self.lvl)
-        self.dim, self.bounds = get_box(dico)
+        self.dim, self.bounds = get_box(dico, self.log)
 
         # mpi support
         comm = mpi.COMM_WORLD
@@ -119,12 +121,9 @@ class Geometry:
             if voisins[1] != rank:
                 self.isInterface[i*2 + 1] = True
 
-        self.log.info("Message from geometry.py (isInterface):\n {0}".format(self.isInterface))
+        self.log.debug("Message from geometry.py (isInterface):\n {0}".format(self.isInterface))
 
         self.list_elem = []
-        #self.list_label = []
-
-        #self.next_tag = 2*self.dim
 
         try:
             dummylab = dico['box']['label']
@@ -140,15 +139,14 @@ class Geometry:
         elem = dico.get('elements', None)
         if elem is not None:
             for elemk in elem:
-                #self.add_elem(elemk)
                 self.list_elem.append(elemk)
-        self.log.info(self.__str__())
+        self.log.debug(self.__str__())
 
 
     def __str__(self):
         s = "Geometry informations\n"
         s += "\t spatial dimension: {0:d}\n".format(self.dim)
-        s += "\t bounds of the box: " + self.bounds.__str__() + "\n"
+        s += "\t bounds of the box: \n" + self.bounds.__str__() + "\n"
         if (len(self.list_elem) != 0):
             s += "\t List of elements added or deleted in the box\n"
             for k in xrange(len(self.list_elem)):

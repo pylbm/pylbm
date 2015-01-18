@@ -147,6 +147,8 @@ class Domain:
         for elem in self.geom.list_elem: # treat each element of the geometry
             self.__add_elem(elem)
 
+        self.log.info(self.__str__())
+
     def __str__(self):
         s = "Domain informations\n"
         s += "\t spatial dimension: {0:d}\n".format(self.dim)

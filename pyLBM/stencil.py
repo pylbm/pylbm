@@ -13,9 +13,9 @@ from itertools import permutations
 
 from .utils import itemproperty
 from .geometry import get_box
-from .logs import setLogger
+from .logs import setLogger, compute_lvl
 
-log = setLogger(__name__)
+#log = setLogger(__name__)
 
 class Velocity(object):
     """
@@ -351,9 +351,11 @@ class Stencil(list):
         super(Stencil, self).__init__()
         # get the dimension of the stencil (given in the dictionnary or computed
         # through the geometrical box)
+        self.lvl = compute_lvl(dico.get('logs', None))
+        self.log = setLogger(__name__, lvl = self.lvl)
         self.dim = dico.get('dim', None)
         if self.dim is None:
-            self.dim, bounds = get_box(dico)
+            self.dim, bounds = get_box(dico, self.log)
 
         # get the schemes
         try:
@@ -362,7 +364,7 @@ class Stencil(list):
                 # get the list of the velocities of each stencil
                 v_index.append(np.asarray(s['velocities']))
         except:
-            log.error("unable to read the scheme.")
+            self.log.error("unable to read the scheme.")
             sys.exit()
         self.nstencils = len(v_index)
 
@@ -406,6 +408,9 @@ class Stencil(list):
 
         for k in xrange(self.nstencils):
             self.append(OneStencil(self.v[k], self.nv[k], self.num2index[k]))
+
+        if self.log is not None:
+            self.log.debug(self.__str__())
 
     @property
     def uvx(self):
