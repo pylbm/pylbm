@@ -20,6 +20,10 @@ import matplotlib.cm as cm
 import stencil as pyLBMSten
 import generator as pyLBMGen
 
+from .logs import setLogger, compute_lvl
+#log = setLogger(__name__)
+
+
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
 
@@ -73,6 +77,8 @@ class Scheme:
 
     """
     def __init__(self, dico, stencil=None, nv_on_beg=True):
+        self.lvl = compute_lvl(dico.get('logs', None))
+        self.log = setLogger(__name__, lvl = self.lvl)
         if stencil is not None:
             self.stencil = stencil
         else:
@@ -87,15 +93,14 @@ class Scheme:
         self.create_moments_matrices()
 
         #self.nv_on_beg = nv_on_beg
-        self.generator = dico.get('generator', pyLBMGen.NumpyGenerator)()
-        print self.generator
+        self.generator = dico.get('generator', pyLBMGen.NumpyGenerator)(log=self.log)
+        self.log.info("Generator used for the scheme functions:\n{0}\n".format(self.generator))
+        #print self.generator
         if isinstance(self.generator,pyLBMGen.CythonGenerator):
             self.nv_on_beg = False
         else:
             self.nv_on_beg = True
-        print "*"*50
-        print "Message from scheme.py: nv_on_beg = {0}".format(self.nv_on_beg)
-        print "*"*50
+        self.log.debug("Message from scheme.py: nv_on_beg = {0}".format(self.nv_on_beg))
         self.generate()
 
         self.bc_compute = True
@@ -155,12 +160,13 @@ class Scheme:
                     for j in xrange(lv):
                         self.M[-1][i, j] = p[i].subs([(X, v[j].vx), (Y, v[j].vy), (Z, v[j].vz)])
             else:
-                print 'Function create_moments_matrices: the dimension is not correct'
+                self.log.error('Function create_moments_matrices: the dimension is not correct')
             try:
                 self.invM.append(self.M[-1].inv())
             except:
-                print 'Function create_moments_matrices: M is not invertible'
-                print 'The choice of polynomials is odd in the elementary scheme number {0:d}'.format(compt)
+                s = 'Function create_moments_matrices: M is not invertible\n'
+                s += 'The choice of polynomials is odd in the elementary scheme number {0:d}'.format(compt)
+                self.log.error(s)
                 sys.exit()
 
         self.MnumGlob = np.zeros((self.stencil.nv_ptr[-1], self.stencil.nv_ptr[-1]))

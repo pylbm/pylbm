@@ -11,6 +11,9 @@ import os
 import re
 import sympy as sp
 
+from .logs import setLogger
+#log = setLogger(__name__)
+
 
 def matMult(A, x, y, indent='', prefix='', suffix=''):
     """
@@ -75,7 +78,8 @@ def matMult(A, x, y, indent='', prefix='', suffix=''):
     return code
 
 class Generator:
-    def __init__(self, build_dir=None, suffix='.py'):
+    def __init__(self, build_dir=None, suffix='.py', log = None):
+        self.log = log
         self.build_dir = build_dir
         if build_dir is None:
             self.build_dir = tempfile.mkdtemp(suffix='LBM') + '/'
@@ -85,7 +89,9 @@ class Generator:
 
         atexit.register(self.exit)
 
-        print self.f.name
+        if self.log is not None:
+            self.log.info("Temporary file use for code generator :\n{0}".format(self.f.name))
+            #print self.f.name
 
     def setup(self):
         pass
@@ -100,6 +106,8 @@ class Generator:
         pass
 
     def compile(self):
+        if self.log is not None:
+            self.log.debug(self.code)
         self.f.write(self.code)
         self.f.close()
 
@@ -107,13 +115,14 @@ class Generator:
         return self.f.name.replace(self.build_dir, "").split('.')[0]
 
     def exit(self):
-        print "delete generator"
+        if self.log is not None:
+            self.log.info("delete generator")
+            #print "delete generator"
         os.unlink(self.f.name)
 
 class NumpyGenerator(Generator):
-    def __init__(self, build_dir=None):
-        Generator.__init__(self, build_dir)
-
+    def __init__(self, build_dir=None, log=None):
+        Generator.__init__(self, build_dir, log=log)
         sys.path.append(self.build_dir)
 
     def transport(self, ns, stencil, dtype = 'f8'):
@@ -125,7 +134,6 @@ class NumpyGenerator(Generator):
                 s2 = ''
                 toInput = False
                 v = stencil.v[k][i].v
-                print v
                 for iv in xrange(len(v)-1, -1, -1):
                     if v[iv] > 0:
                         toInput = True
@@ -195,8 +203,8 @@ class NumpyGenerator(Generator):
 
 
 class NumbaGenerator(Generator):
-    def __init__(self, build_dir=None):
-        Generator.__init__(self, build_dir)
+    def __init__(self, build_dir=None, log=None):
+        Generator.__init__(self, build_dir, log=log)
 
     def setup(self):
         self.code += "import numba\n"
@@ -226,8 +234,8 @@ class NumbaGenerator(Generator):
         self.code += "\n"
 
 class CythonGenerator(Generator):
-    def __init__(self, build_dir=None):
-        Generator.__init__(self, build_dir, suffix='.pyx')
+    def __init__(self, build_dir=None, log=None):
+        Generator.__init__(self, build_dir, suffix='.pyx', log=log)
 
     def setup(self):
         self.code += """

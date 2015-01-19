@@ -12,8 +12,8 @@ from .elements import *
 import geometry as pyLBMGeom
 import stencil as pyLBMSten
 
-from .logs import setLogger
-log = setLogger(__name__)
+from .logs import setLogger, compute_lvl
+#log = setLogger(__name__)
 
 import pylab as plt
 import matplotlib.cm as cm
@@ -103,6 +103,8 @@ class Domain:
 
     """
     def __init__(self, dico, geometry=None, stencil=None):
+        self.lvl = compute_lvl(dico.get('logs', None))
+        self.log = setLogger(__name__, lvl = self.lvl)
         self.type = 'float64'
         if geometry is not None:
             self.geom = geometry
@@ -113,8 +115,9 @@ class Domain:
         else:
             self.stencil = pyLBMSten.Stencil(dico)
         if self.geom.dim != self.stencil.dim:
-            print 'Error in the dimension: stencil and geometry dimensions are different'
-            print 'geometry: {0:d}, stencil: {1:d}'.format(self.geom.dim, self.sten.dim)
+            s = 'Error in the dimension: stencil and geometry dimensions are different'
+            s += 'geometry: {0:d}, stencil: {1:d}'.format(self.geom.dim, self.sten.dim)
+            self.log.error(s)
             sys.exit()
         else:
             self.dim = self.geom.dim # spatial dimension
@@ -143,6 +146,8 @@ class Domain:
         self.__add_init(self.geom.box_label) # compute the distance and the flag for the primary box
         for elem in self.geom.list_elem: # treat each element of the geometry
             self.__add_elem(elem)
+
+        self.log.info(self.__str__())
 
     def __str__(self):
         s = "Domain informations\n"

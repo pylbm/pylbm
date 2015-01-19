@@ -19,7 +19,7 @@ if __name__ == "__main__":
     dsten = {
         'dim':3,
         'number_of_schemes':1,
-        'schemes':[{'velocities':range(19)},]
+        'schemes':[{'velocities':range(19)},],
     }
     s = LBMStencil.Stencil(dsten)
     v = VtkViewer()

@@ -9,7 +9,7 @@ import logging
 from optparse import OptionParser
 
 parser = OptionParser()
-parser.add_option("--log", dest="loglevel", default="WARNING", 
+parser.add_option("--log", dest="loglevel", default="WARNING",
                   help="Set the log level (DEBUG, WARNING, ...)")
 (options, args) = parser.parse_args()
 
@@ -23,12 +23,8 @@ r.handlers = []
 
 def setLogger(name):
     log = logging.getLogger(name)
-    #level = logging.getLogger().level
-    #print level
-    #log.setLevel(level)
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(name)s on proc {0} \n%(message)s\n'.format(mpi.COMM_WORLD.Get_rank()))
     stream_handler = logging.StreamHandler()
-    #stream_handler.setLevel(logging.DEBUG)
     stream_handler.setFormatter(formatter)
     log.addHandler(stream_handler)
     return log

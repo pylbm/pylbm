@@ -3,14 +3,11 @@ import sympy as sp
 from sympy.matrices import Matrix, zeros
 
 import pyLBM
-import pyLBM.simulation as pyLBMSimu
-import pyLBM.generator as pyLBMGen
 
 from vispy import gloo
 from vispy import app
 from vispy.gloo import gl
 from vispy.util.transforms import ortho
-
 
 VERT_SHADER = """
 // Uniforms
@@ -50,7 +47,7 @@ class Canvas(app.Canvas):
 
     def __init__(self, dico):
         coeff = 3
-        self.sol = pyLBMSimu.Simulation(dico, nv_on_beg=False)
+        self.sol = pyLBM.Simulation(dico, nv_on_beg=False)
         H, W = self.sol._m.shape[:-1]
         W -= 2
         H -= 2
@@ -183,7 +180,8 @@ if __name__ == "__main__":
         #         1:{0:(initialization_q,)},
         #         2:{0:(initialization_q,)},
         #         },
-        'generator': pyLBMGen.CythonGenerator,
+        'generator': pyLBM.generator.CythonGenerator,
+        'logs':'DEBUG',
         }
 
     c = Canvas(dico)
