@@ -6,16 +6,23 @@
 
 import mpi4py.MPI as mpi
 import logging
-from optparse import OptionParser
+#from optparse import OptionParser
+from argparse import ArgumentParser
 
-parser = OptionParser()
-parser.add_option("--log", dest="loglevel", default="WARNING",
+#parser = OptionParser()
+parser = ArgumentParser()
+#parser.add_option("--log", dest="loglevel", default="WARNING",
+#                  help="Set the log level (DEBUG, WARNING, ...)")
+parser.add_argument("--log", dest="loglevel", default="WARNING",
                   help="Set the log level (DEBUG, WARNING, ...)")
-(options, args) = parser.parse_args()
+#(options, args) = parser.parse_args()
+args = parser.parse_args()
 
-numeric_level = getattr(logging, options.loglevel.upper(), None)
+#numeric_level = getattr(logging, options.loglevel.upper(), None)
+numeric_level = getattr(logging, args.loglevel.upper(), None)
 if not isinstance(numeric_level, int):
-    raise ValueError('Invalid log level: %s' % options.loglevel)
+    #raise ValueError('Invalid log level: %s' % options.loglevel)
+    raise ValueError('Invalid log level: %s' % args.loglevel)
 logging.basicConfig(level=numeric_level)
 
 r = logging.getLogger()
