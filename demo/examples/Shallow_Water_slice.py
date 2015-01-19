@@ -13,10 +13,12 @@ X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
 
 def initialization_rho(x,y):
-    return rhoo + deltarho * ((x-0.5*(xmin+xmax))**2+(y-0.5*(ymin+ymax))**2 < 0.5**2)
+    #return rhoo * np.ones((x.shape[0], y.shape[0]), dtype='float64') + deltarho * ((x-0.5*(xmin+xmax))**2+(y-0.5*(ymin+ymax))**2 < 0.25**2)
+    return rhoo * np.ones((y.shape[0], x.shape[0]), dtype='float64') + deltarho * ((x-0.5*(xmin+xmax))**2+(y-0.5*(ymin+ymax))**2 < 0.25**2)
 
 def initialization_q(x,y):
-    return np.zeros((x.shape[0], y.shape[0]))
+    #return np.zeros((x.shape[0], y.shape[0]), dtype='float64')
+    return np.zeros((y.shape[0], x.shape[0]), dtype='float64')
 
 def plot_radial(sol, num=0):
     plt.clf()
@@ -84,8 +86,7 @@ def simu():
     while (sol.t<Tf):
         sol.one_time_step()
         im += 1
-        sol.scheme.f2m(sol._F, sol._m)
-        #sol.scheme.f2m(sol.F[:][:][:], sol.m[:][:][:])
+        sol.f2m()
         plot_radial(sol,im)
     plt.ioff()
     plt.show()

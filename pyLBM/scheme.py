@@ -76,7 +76,7 @@ class Scheme:
         :py:class:`LBMpy.Solution.Solution`
 
     """
-    def __init__(self, dico, stencil=None, nv_on_beg=True):
+    def __init__(self, dico, stencil=None):
         if stencil is not None:
             self.stencil = stencil
         else:

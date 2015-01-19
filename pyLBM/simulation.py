@@ -51,7 +51,7 @@ class Simulation:
         - F:          a numpy array that contains the values of the distribution functions in each point
 
     """
-    def __init__(self, dico, domain=None, scheme=None, type='float64', nv_on_beg=True):
+    def __init__(self, dico, domain=None, scheme=None, type='float64'):
         self.type = type
         self.order = 'C'
 
@@ -70,7 +70,7 @@ class Simulation:
             if scheme is not None:
                 self.scheme = scheme
             else:
-                self.scheme = Scheme(dico, nv_on_beg=nv_on_beg)
+                self.scheme = Scheme(dico)
         except KeyError:
             log.error('Error in the creation of the scheme: wrong dictionnary')
             sys.exit()
@@ -109,6 +109,16 @@ class Simulation:
 
         log.info('Initialization')
         self.initialization(dico)
+
+        #computational time measurement
+        self.cpu_time = {'relaxation':0.,
+                         'transport':0.,
+                         'f2m_m2f':0.,
+                         'boundary_conditions':0.,
+                         'total':0.,
+                         'number_of_iterations':0,
+                         'MLUPS':0.,
+                         }
 
     @utils.item2property
     def m(self, i, j):
@@ -162,8 +172,10 @@ class Simulation:
             x = self.domain.x[0]
             coords = (x,)
         elif self.dim == 2:
-            x = self.domain.x[0][:,np.newaxis]
-            y = self.domain.x[1][np.newaxis, :]
+            #x = self.domain.x[0][:,np.newaxis]
+            #y = self.domain.x[1][np.newaxis, :]
+            x = self.domain.x[0][np.newaxis, :]
+            y = self.domain.x[1][: ,np.newaxis]
             coords = (x, y)
 
         schemes = dico['schemes']
@@ -192,14 +204,43 @@ class Simulation:
         if not self.nv_on_beg:
             self._Fold[:] = self._F[:]
 
+    def transport(self):
+        t = time.time()
+        self.scheme.transport(self._F)
+        self.cpu_time['transport'] += time.time() - t
+
+    def relaxation(self):
+        t = time.time()
+        self.scheme.relaxation(self._m)
+        self.cpu_time['relaxation'] += time.time() - t
+
+    def f2m(self):
+        t = time.time()
+        self.scheme.f2m(self._F, self._m)
+        self.cpu_time['f2m_m2f'] += time.time() - t
+
+    def m2f(self):
+        t = time.time()
+        self.scheme.m2f(self._m, self._F)
+        self.cpu_time['f2m_m2f'] += time.time() - t
+
+    def equilibrium(self):
+        self.scheme.equilibrium(self._m)
+
     def one_time_step(self):
+        t = time.time()
         self.scheme.set_boundary_conditions(self._F, self._m, self.bc, self.nv_on_beg)
+        self.cpu_time['boundary_conditions'] += time.time() - t
 
         if self.nv_on_beg:
-            self.scheme.transport(self._F)
-            self.scheme.f2m(self._F, self._m)
-            self.scheme.relaxation(self._m)
-            self.scheme.m2f(self._m, self._F)
+            self.transport()
+            self.f2m()
+            self.relaxation()
+            self.m2f()
+            #self.scheme.transport(self._F)
+            #self.scheme.f2m(self._F, self._m)
+            #self.scheme.relaxation(self._m)
+            #self.scheme.m2f(self._m, self._F)
         else:
             self._Fold[:] = self._F[:]
             self.scheme.onetimestep(self._m, self._F, self._Fold, self.domain.in_or_out, self.domain.valin)
@@ -209,6 +250,13 @@ class Simulation:
 
         self.t += self.dt
         self.nt += 1
+        self.cpu_time['total'] += time.time() - t
+        self.cpu_time['number_of_iterations'] += 1
+        dummy = self.cpu_time['number_of_iterations']
+        for n in self.domain.N:
+            dummy *= n
+        dummy /= self.cpu_time['total'] * 1.e6
+        self.cpu_time['MLUPS'] = dummy
 
     def affiche_2D(self):
         fig = plt.figure(0,figsize=(8, 8))

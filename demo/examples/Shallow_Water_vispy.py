@@ -50,10 +50,8 @@ class Canvas(app.Canvas):
 
     def __init__(self, dico):
         coeff = 3
-        self.sol = pyLBMSimu.Simulation(dico, nv_on_beg=True)
-        H, W = self.sol._m.shape[1:]
-        W -= 2
-        H -= 2
+        self.sol = pyLBMSimu.Simulation(dico)
+        H, W = self.sol.domain.N
         self.W, self.H = W, H
         # A simple texture quad
         self.data = np.zeros(4, dtype=[ ('a_position', np.float32, 2),
@@ -66,7 +64,7 @@ class Canvas(app.Canvas):
         self.ccc = 1./(self.max-self.min)
         self.size = W * coeff, H * coeff
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
-        self.texture = gloo.Texture2D(self.ccc*(self.sol._m[0, 1:-1, 1:-1].astype(np.float32) - self.min))
+        self.texture = gloo.Texture2D(self.ccc*(self.sol.m[0][0][1:-1, 1:-1].astype(np.float32) - self.min))
         self.texture.interpolation = gl.GL_LINEAR
 
         self.program['u_texture'] = self.texture
@@ -115,6 +113,8 @@ class Canvas(app.Canvas):
         if event.text == 'n':
             self.go_on()
             self.maj()
+        if event.text == 't':
+            print "MLUPS: {0:5.1f}".format(self.sol.cpu_time['MLUPS'])
 
     def on_timer(self, event):
         self.go_on()
@@ -126,7 +126,7 @@ class Canvas(app.Canvas):
 
     def maj(self):
         self.title = "Solution t={0:f}".format(self.sol.t)
-        self.texture.set_data(self.ccc*(self.sol._m[0, 1:-1, 1:-1].astype(np.float32) - self.min))
+        self.texture.set_data(self.ccc*(self.sol.m[0][0][1:-1, 1:-1].astype(np.float32) - self.min))
         self.update()
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
@@ -134,10 +134,12 @@ X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
 
 def initialization_rho(x,y):
-    return rhoo * np.ones((x.shape[0], y.shape[0]), dtype='float64') + deltarho * ((x-0.5*(xmin+xmax))**2+(y-0.5*(ymin+ymax))**2 < 0.25**2)
+    #return rhoo * np.ones((x.shape[0], y.shape[0]), dtype='float64') + deltarho * ((x-0.5*(xmin+xmax))**2+(y-0.5*(ymin+ymax))**2 < 0.25**2)
+    return rhoo * np.ones((y.shape[0], x.shape[0]), dtype='float64') + deltarho * ((x-0.5*(xmin+xmax))**2+(y-0.5*(ymin+ymax))**2 < 0.25**2)
 
 def initialization_q(x,y):
-    return np.zeros((x.shape[0], y.shape[0]), dtype='float64')
+    #return np.zeros((x.shape[0], y.shape[0]), dtype='float64')
+    return np.zeros((y.shape[0], x.shape[0]), dtype='float64')
 
 if __name__ == "__main__":
     # parameters
