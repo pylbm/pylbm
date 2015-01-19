@@ -9,8 +9,8 @@ import logging
 from optparse import OptionParser
 
 parser = OptionParser()
-parser.add_option("-l", "--log", dest="loglevel", default="WARNING"
-                  )
+parser.add_option("--log", dest="loglevel", default="WARNING", 
+                  help="Set the log level (DEBUG, WARNING, ...)")
 (options, args) = parser.parse_args()
 
 numeric_level = getattr(logging, options.loglevel.upper(), None)
