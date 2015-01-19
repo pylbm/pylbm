@@ -25,7 +25,8 @@ from .boundary import Boundary
 
 from pyLBM import utils
 
-from .logs import setLogger, compute_lvl
+from .logs import setLogger
+log = setLogger(__name__)
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
@@ -53,9 +54,6 @@ class Simulation:
     def __init__(self, dico, domain=None, scheme=None, type='float64', nv_on_beg=True):
         self.type = type
         self.order = 'C'
-
-        self.lvl = compute_lvl(dico.get('logs', None))
-        log = setLogger(__name__, lvl = self.lvl)
 
         try:
             if domain is not None:

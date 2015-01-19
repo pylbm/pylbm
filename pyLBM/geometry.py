@@ -17,10 +17,10 @@ import mpi4py.MPI as mpi
 
 from .elements import *
 
-from .logs import setLogger, compute_lvl
-#log = setLogger(__name__)
+from .logs import setLogger
+log = setLogger(__name__)
 
-def get_box(dico, log = None):
+def get_box(dico):
     """
     return the dimension and the bounds of the box defined in the dictionnary.
 
@@ -48,12 +48,10 @@ def get_box(dico, log = None):
                     bounds.append(boxz)
                     dim += 1
         except KeyError:
-            if log is not None:
-                log.error("'x' interval not found in the box definition of the geometry.")
+            log.error("'x' interval not found in the box definition of the geometry.")
             sys.exit()
     except KeyError:
-        if log is not None:
-            log.error("'box' key not found in the geometry definition. Check the input dictionnary.")
+        log.error("'box' key not found in the geometry definition. Check the input dictionnary.")
         sys.exit()
     return dim, bounds
 
@@ -94,8 +92,6 @@ class Geometry:
     """
 
     def __init__(self, dico):
-        self.lvl = compute_lvl(dico.get('logs', None))
-        self.log = setLogger(__name__, lvl = self.lvl)
         self.dim, self.bounds = get_box(dico, self.log)
 
         # mpi support
@@ -121,7 +117,7 @@ class Geometry:
             if voisins[1] != rank:
                 self.isInterface[i*2 + 1] = True
 
-        self.log.debug("Message from geometry.py (isInterface):\n {0}".format(self.isInterface))
+        log.debug("Message from geometry.py (isInterface):\n {0}".format(self.isInterface))
 
         self.list_elem = []
 
@@ -140,7 +136,7 @@ class Geometry:
         if elem is not None:
             for elemk in elem:
                 self.list_elem.append(elemk)
-        self.log.debug(self.__str__())
+        log.debug(self.__str__())
 
 
     def __str__(self):
