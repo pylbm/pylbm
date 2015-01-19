@@ -92,7 +92,7 @@ class Geometry:
     """
 
     def __init__(self, dico):
-        self.dim, self.bounds = get_box(dico, self.log)
+        self.dim, self.bounds = get_box(dico)
 
         # mpi support
         comm = mpi.COMM_WORLD

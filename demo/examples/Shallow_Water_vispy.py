@@ -178,7 +178,6 @@ if __name__ == "__main__":
                     },
         ],
         'generator': pyLBMGen.NumpyGenerator,
-        'logs':'INFO',
         }
 
     c = Canvas(dico)

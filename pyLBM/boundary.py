@@ -6,6 +6,10 @@
 
 import numpy as np
 
+from .logs import setLogger
+log = setLogger(__name__)
+
+
 class Boundary_Velocity:
     """
     Indices and distances for the label and the velocity ksym

@@ -55,22 +55,24 @@ class Simulation:
         self.type = type
         self.order = 'C'
 
+        log.info('Build the domain')
         try:
             if domain is not None:
                 self.domain = domain
             else:
                 self.domain = Domain(dico)
         except KeyError:
-            print 'Error in the creation of the domain: wrong dictionnary'
+            log.error('Error in the creation of the domain: wrong dictionnary')
             sys.exit()
 
+        log.info('Build the scheme')
         try:
             if scheme is not None:
                 self.scheme = scheme
             else:
                 self.scheme = Scheme(dico, nv_on_beg=nv_on_beg)
         except KeyError:
-            print 'Error in the creation of the scheme: wrong dictionnary'
+            log.error('Error in the creation of the scheme: wrong dictionnary')
             sys.exit()
 
         self.t = 0.
@@ -79,11 +81,13 @@ class Simulation:
         try:
             assert self.domain.dim == self.scheme.dim
         except:
-            print 'Solution: the dimension of the domain and of the scheme are not the same\n'
+            log.error('Solution: the dimension of the domain and of the scheme are not the same\n')
             sys.exit()
 
         self.dim = self.domain.dim
 
+
+        log.info('Build arrays')
         #self.nv_on_beg = nv_on_beg
         self.nv_on_beg = self.scheme.nv_on_beg
 
@@ -100,7 +104,10 @@ class Simulation:
         # self.m = [np.empty([self.scheme.stencil.nv[k]] + self.domain.Na, dtype=self.type, order=self.order) for k in range(self.scheme.nscheme)]
         # self.F = [np.empty([self.scheme.stencil.nv[k]] + self.domain.Na, dtype=self.type, order=self.order) for k in range(self.scheme.nscheme)]
 
+        log.info('Build boundary conditions')
         self.bc = Boundary(self.domain, dico)
+
+        log.info('Initialization')
         self.initialization(dico)
 
     @utils.item2property

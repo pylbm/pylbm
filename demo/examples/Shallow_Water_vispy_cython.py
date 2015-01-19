@@ -181,7 +181,6 @@ if __name__ == "__main__":
         #         2:{0:(initialization_q,)},
         #         },
         'generator': pyLBM.generator.CythonGenerator,
-        'logs':'DEBUG',
         }
 
     c = Canvas(dico)
