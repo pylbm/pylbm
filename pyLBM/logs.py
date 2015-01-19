@@ -6,9 +6,20 @@
 
 import mpi4py.MPI as mpi
 import logging
+from optparse import OptionParser
+
+parser = OptionParser()
+parser.add_option("-l", "--log", dest="loglevel", default="WARNING"
+                  )
+(options, args) = parser.parse_args()
+
+numeric_level = getattr(logging, options.loglevel.upper(), None)
+if not isinstance(numeric_level, int):
+    raise ValueError('Invalid log level: %s' % options.loglevel)
+logging.basicConfig(level=numeric_level)
+
 r = logging.getLogger()
 r.handlers = []
-
 
 def setLogger(name):
     log = logging.getLogger(name)
