@@ -6,8 +6,8 @@
 
 import numpy as np
 
-from .logs import setLogger
-log = setLogger(__name__)
+from .logs import __setLogger
+log = __setLogger(__name__)
 
 
 class Boundary_Velocity:

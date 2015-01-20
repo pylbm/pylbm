@@ -25,8 +25,8 @@ from .boundary import Boundary
 
 from pyLBM import utils
 
-from .logs import setLogger
-log = setLogger(__name__)
+from .logs import __setLogger
+log = __setLogger(__name__)
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]

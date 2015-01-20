@@ -17,8 +17,8 @@ import mpi4py.MPI as mpi
 
 from .elements import *
 
-from .logs import setLogger
-log = setLogger(__name__)
+from .logs import __setLogger
+log = __setLogger(__name__)
 
 def get_box(dico):
     """

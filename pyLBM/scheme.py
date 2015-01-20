@@ -20,8 +20,8 @@ import matplotlib.cm as cm
 import stencil as pyLBMSten
 import generator as pyLBMGen
 
-from .logs import setLogger
-log = setLogger(__name__)
+from .logs import __setLogger
+log = __setLogger(__name__)
 
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')

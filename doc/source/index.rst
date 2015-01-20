@@ -3,29 +3,37 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to pyLBM's documentation!
-=================================
+pyLBM
+=====
 
-pyLBM is a Lattice Boltzmann solver written in python 2.7.
+pyLBM is an all-in-one package for numerical simulations using
+Lattice Boltzmann solvers.
+It is written in python 2.7 for the moment.
 
-**ATTENTION :**
+pyLBM is licensed under the BSD license, enabling reuse with few restrictions.
 
-**Il faudra peut-être mettre ici une explication sur le fait que nous avons plusieurs schémas élementaires**
+Getting Started
+---------------
+
+   * Getting pyLBM <download>
+   * Install <install>
+   * Tests <tests>
 
 Requires:
 --------------
 
    * numpy
    * sympy
-   * cmath
    * matplotlib
-   * mpi4py
    * time
 
 Optionnal:
 --------------
 
    * cython
+   * mpi4py
+   * vtk
+   * vispy
 
 Contents:
 --------------
@@ -33,14 +41,13 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   Learning by example <examples>
+   Learning by example
    The geometry of the simulation <geometry>
-   The stencil of velocities <stencil>
-   How to construct the domain <domain>
-   How to build a LBM scheme <scheme>
-   How to run a LBM simulation <simulation>
-   generator <generator>
-
+   The stencil of velocities
+   How to construct the domain
+   How to build a LBM scheme
+   How to run a LBM simulation
+   generator
 
 Indices and tables
 ==================

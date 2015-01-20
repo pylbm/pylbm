@@ -12,8 +12,8 @@ from .elements import *
 import geometry as pyLBMGeom
 import stencil as pyLBMSten
 
-from .logs import setLogger
-log = setLogger(__name__)
+from .logs import __setLogger
+log = __setLogger(__name__)
 
 import pylab as plt
 import matplotlib.cm as cm

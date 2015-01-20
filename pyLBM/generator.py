@@ -11,8 +11,8 @@ import os
 import re
 import sympy as sp
 
-from .logs import setLogger
-log = setLogger(__name__)
+from .logs import __setLogger
+log = __setLogger(__name__)
 
 
 def matMult(A, x, y, indent='', prefix='', suffix=''):

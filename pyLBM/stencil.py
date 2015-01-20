@@ -9,12 +9,80 @@ import numpy as np
 from math import sqrt
 import logging
 import sys
-from itertools import permutations
+#from itertools import permutations
 
 from .utils import itemproperty
 from .geometry import get_box
-from .logs import setLogger
-log = setLogger(__name__)
+from .logs import __setLogger
+log = __setLogger(__name__)
+
+def permute_in_place(a):
+    """
+    Function that returns an iterator of all the permutations of a list
+
+    Parameters
+    ----------
+    a: list
+
+
+    Returns
+    -------
+    Return successive permutations of elements in the list a
+
+    The set of all the permutations is not created in the memory,
+    so it can just be used in a loop.
+
+    It can be used as permutations() of the itertools package but avoids the
+    multiple occurences of a same output list.
+
+    Example:
+    --------
+
+    .. code::python
+        >>> import itertools
+        >>> for k in itertools.permutations([0, 0, 1]):
+        ...     print k
+        ...
+        (0, 0, 1)
+        (0, 1, 0)
+        (0, 0, 1)
+        (0, 1, 0)
+        (1, 0, 0)
+        (1, 0, 0)
+
+        >>> for k in permute_in_place([0, 0, 1]):
+        ...     print k
+        ...
+        [0, 0, 1]
+        [0, 1, 0]
+        [1, 0, 0]
+    """
+    a.sort()
+    yield list(a)
+
+    if len(a) <= 1:
+        return
+
+    first = 0
+    last = len(a)
+    while 1:
+        i = last - 1
+
+        while 1:
+            i = i - 1
+            if a[i] < a[i + 1]:
+                j = last - 1
+                while not (a[i] < a[j]):
+                    j = j - 1
+                a[i], a[j] = a[j], a[i] # swap the values
+                r = a[i + 1:last]
+                r.reverse()
+                a[i + 1:last] = r
+                yield list(a)
+                break
+            if i == first:
+                a.reverse()
+                return
 
 class Velocity(object):
     """
@@ -123,7 +191,8 @@ class Velocity(object):
 
         """
         if axis >= self.dim:
-            raise ValueError("axis must be less than the dimension of the velocity (axis:%d, dim:%d)"%(axis, self.dim))
+            log.error("axis must be less than the dimension of the velocity (axis:%d, dim:%d)".format(axis, self.dim))
+            sys.exit()
 
         svx = -self.vx
         svy = None if self.vy is None else -self.vy
@@ -142,6 +211,7 @@ class Velocity(object):
         if self.dim == 1:
             avx = abs(self.vx)
             self.num = (2*avx) - (1 if self.vx>0 else 0)
+            return
         elif self.dim == 2:
             avx = abs(self.vx)
             avy = abs(self.vy)
@@ -153,13 +223,14 @@ class Velocity(object):
             q = 8*min(avx, avy)*abs(T3)
             r = self._R2[T1 + 1, T2 + 1, T3 + 1]
             self.num = int(p + q + r)
+            return
         elif self.dim == 3:
             count = 0
             sign = [1, -1]
-            for k in xrange(10):
+            for k in xrange(100):
                 for i in xrange(k + 1):
                     for j in xrange(i + 1):
-                        for (kk, ii, jj) in permutations([k, i, j]):
+                        for (kk, ii, jj) in permute_in_place([k, i, j]):
                             for pmk in sign[0: kk + 1]: # loop over + and - if kk > 0
                                 for pmi in sign[0:ii + 1]: # loop over + and - if ii > 0
                                     for pmj in sign[0:jj + 1]: # loop over + and - if jj > 0
@@ -168,11 +239,14 @@ class Velocity(object):
                                             return
                                         else:
                                             count +=1
+        log.error("The number of the velocity {0} is not found".format(self.__str__()))
+        sys.exit()
 
     def _set_coord(self):
         if self.dim == 1:
             n = self.num + 1
             self.vx = (1 - 2*(n % 2))*(n / 2)
+            return
         elif self.dim == 2:
             n = (int)(sqrt(self.num)+1)/2
             p = self.num - (2*n-1)**2
@@ -188,13 +262,14 @@ class Velocity(object):
                 vx, vy = Lx[p%8], Ly[p%8]
             self.vx = vx
             self.vy = vy
+            return
         elif self.dim == 3:
             count = 0
             sign = [1, -1]
-            for k in xrange(10):
+            for k in xrange(100):
                 for i in xrange(k + 1):
                     for j in xrange(i + 1):
-                        for (kk, ii, jj) in permutations([k, i, j]):
+                        for (kk, ii, jj) in permute_in_place([k, i, j]):
                             for pmk in sign[0:kk + 1]: # loop over + and - if kk > 0
                                 for pmi in sign[0:ii + 1]: # loop over + and - if ii > 0
                                     for pmj in sign[0:jj + 1]: # loop over + and - if jj > 0
@@ -205,6 +280,8 @@ class Velocity(object):
                                             return
                                         else:
                                             count +=1
+        log.error("The velocity number {0} cannot be computed".format(self.num))
+        sys.exit()
 
 class OneStencil:
     """
@@ -506,7 +583,8 @@ class Stencil(list):
 
         """
         if self.dim == 3 and not viewer.is3d:
-            raise ValueError("viewer doesn't support 3D visualization")
+            #raise ValueError("viewer doesn't support 3D visualization")
+            log.error("viewer doesn't support 3D visualization")
 
         xmin = xmax = 0
         ymin = ymax = 0

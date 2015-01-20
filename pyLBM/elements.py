@@ -14,8 +14,8 @@ import matplotlib.colors as colors
 import matplotlib.cm as cm
 from matplotlib.patches import Ellipse, Polygon
 
-from logs import setLogger
-log = setLogger(__name__)
+from .logs import __setLogger
+log = __setLogger(__name__)
 
 class Circle:
     """
