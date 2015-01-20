@@ -9,6 +9,7 @@ import logging
 #from optparse import OptionParser
 from argparse import ArgumentParser
 
+### optparse package (deprecated)
 # parser = OptionParser()
 # parser.add_option("--log", dest="loglevel", default="WARNING",
 #                   help="Set the log level (DEBUG, WARNING, ...)")
@@ -17,15 +18,17 @@ from argparse import ArgumentParser
 # if not isinstance(numeric_level, int):
 #     raise ValueError('Invalid log level: %s' % options.loglevel)
 
-parser = ArgumentParser()
-parser.add_argument("--log", dest="loglevel", default="WARNING",
-                    help="Set the log level (DEBUG, WARNING, ...)")
-args = parser.parse_args()
-numeric_level = getattr(logging, args.loglevel.upper(), None)
-if not isinstance(numeric_level, int):
-    raise ValueError('Invalid log level: %s'.format(args.loglevel))
+### argparse package (better choice)
+# parser = ArgumentParser()
+# parser.add_argument("--log", dest="loglevel", default="WARNING",
+#                     help="Set the log level (DEBUG, WARNING, ...)")
+# args = parser.parse_args()
+# numeric_level = getattr(logging, args.loglevel.upper(), None)
+# if not isinstance(numeric_level, int):
+#     raise ValueError('Invalid log level: %s'.format(args.loglevel))
 
-logging.basicConfig(level=numeric_level)
+### for both packages
+# logging.basicConfig(level=numeric_level)
 r = logging.getLogger()
 r.handlers = []
 
