@@ -22,10 +22,8 @@ The class Geometry
 
 .. autoclass:: pyLBM.Geometry
    :members:
-   :private-members:
-   :special-members:
 
-The classes of elements
+The module of the elements
 ------------------------------
 
 .. automodule:: pyLBM.elements
