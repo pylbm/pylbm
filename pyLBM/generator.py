@@ -104,7 +104,7 @@ class Generator:
         pass
 
     def compile(self):
-        log.debug(self.code)
+        log.info("*"*30 + "\n" + self.code + "\n" + "*"*30)
         self.f.write(self.code)
         self.f.close()
 
@@ -451,7 +451,8 @@ def make_ext(modname, pyxfilename):
 
     return Extension(name = modname,
                      sources=[pyxfilename],
-                     extra_compile_args = ['-O3', '-w'])
+                     extra_compile_args = ['-O3', '-w']
+                    )
             """
         else:
             code = """
