@@ -54,7 +54,7 @@ class Canvas(app.Canvas):
 
     def __init__(self, dico):
         coeff = 2
-        self.sol = pyLBM.Simulation(dico, nv_on_beg=False)
+        self.sol = pyLBM.Simulation(dico)
         self.indout = np.where(self.sol.domain.in_or_out == self.sol.domain.valout)
         W, H = self.sol._m.shape[:-1]
         W -= 2
@@ -218,30 +218,30 @@ if __name__ == "__main__":
 
     dico = {
         'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[0, 1, 0, 0]},
-        'elements':{0: {'element':pyLBM.Circle([0.75, 0.5*(ymin+ymax)+2*dx], rayon), 'label':2, 'del':0}},
+        'elements':[pyLBM.Circle([0.75, 0.5*(ymin+ymax)+2*dx], rayon, label=2)],
         'space_step':dx,
-        'number_of_schemes':1,
         'scheme_velocity':la,
-        0:{'velocities':range(9),
-           'polynomials':Matrix([1,
+        'inittype': 'moments',
+        'schemes':[{'velocities':range(9),
+                   'polynomials':Matrix([1,
                                  LA*X, LA*Y,
                                  3*(X**2+Y**2)-4,
                                  0.5*(9*(X**2+Y**2)**2-21*(X**2+Y**2)+8),
                                  3*X*(X**2+Y**2)-5*X, 3*Y*(X**2+Y**2)-5*Y,
                                  X**2-Y**2, X*Y]),
-            'relaxation_parameters':s,
-            'equilibrium':Matrix([u[0][0],
+                    'relaxation_parameters':s,
+                    'equilibrium':Matrix([u[0][0],
                                   u[0][1], u[0][2],
                                   -2*u[0][0] + 3*q2,
                                   u[0][0]+1.5*q2,
                                   -u[0][1]/LA, -u[0][2]/LA,
                                   qx2-qy2, qxy]),
+                    'init':{0:(initialization_rho,),
+                            1:(initialization_qx,),
+                            2:(initialization_qy,)
+                            },
         },
-        'init':{'type':'moments', 0:{0:(initialization_rho,),
-                                     1:(initialization_qx,),
-                                     2:(initialization_qy,)
-                                     }
-        },
+        ],
         'boundary_conditions':{
             0:{'method':{0: pyLBM.bc.bouzidi_bounce_back}, 'value':bc_rect},
             1:{'method':{0: pyLBM.bc.neumann_vertical}, 'value':None},
