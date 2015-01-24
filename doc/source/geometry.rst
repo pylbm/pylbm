@@ -99,6 +99,8 @@ a circle with a center of (.5, .5) and a radius of .125
 
 In this example, the circle is labelized by 1 while the edges of the square by 0.
 
+
+
 Examples in 3D
 ==============================
 
