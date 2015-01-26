@@ -113,17 +113,27 @@ def bouzidi_anti_bounce_back(f, bv, num2index, feq, nv_on_beg):
     iy = bv.indices[0, mask]
     ix = bv.indices[1, mask]
     s = 2.*bv.distance[mask]
-    f[k, ix, iy] = - s*f[ksym, ix + v.vx, iy + v.vy] - (1.-s)*f[ksym, ix + 2*v.vx, iy + 2*v.vy]
-    if feq is not None:
-        f[k, ix, iy] += feq[k, mask] + feq[ksym, mask]
+    if nv_on_beg:
+        f[k, iy, ix] = - s*f[ksym, iy + v.vy, ix + v.vx] - (1.-s)*f[ksym, iy + 2*v.vy, ix + 2*v.vx]
+        if feq is not None:
+            f[k, iy, ix] += feq[k, mask] + feq[ksym, mask]
+    else:
+        f[iy, ix, k] = - s*f[iy + v.vy, ix + v.vx, ksym] - (1.-s)*f[iy + 2*v.vy, ix + 2*v.vx, ksym]
+        if feq is not None:
+            f[iy, ix, k] += feq[mask, k] + feq[mask, ksym]
 
     mask = np.logical_not(mask)
     iy = bv.indices[0, mask]
     ix = bv.indices[1, mask]
     s = 0.5/bv.distance[mask]
-    f[k, ix, iy] = - s*f[ksym, ix + v.vx, iy + v.vy] - (1.-s)*f[k, ix + v.vx, iy + v.vy]
-    if feq is not None:
-        f[k, ix, iy] += feq[k, mask] + feq[ksym, mask]
+    if nv_on_beg:
+        f[k, iy, ix] = - s*f[ksym, iy + v.vy, ix + v.vx] - (1.-s)*f[k, iy + v.vy, ix + v.vx]
+        if feq is not None:
+            f[k, iy, ix] += feq[k, mask] + feq[ksym, mask]
+    else:
+        f[iy, ix, k] = - s*f[iy + v.vy, ix + v.vx, ksym] - (1.-s)*f[iy + v.vy, ix + v.vx, k]
+        if feq is not None:
+            f[iy, ix, k] += feq[mask, k] + feq[mask, ksym]
 
 def neumann_vertical(f, bv, num2index, feq, nv_on_beg):
     v = bv.v
