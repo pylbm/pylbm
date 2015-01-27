@@ -24,6 +24,11 @@ def init_un(x,y):
     uu[y.size/2, x.size/2] = 1.
     return uu
 
+def init_zero(x,y):
+    uu = np.zeros((y.size, x.size), dtype='float64')
+    uu[y.size/2, x.size/2] = 1.
+    return uu
+
 def bounce_back(sol):
     sten = sol.scheme.stencil
     ns = sol.scheme.nscheme
@@ -92,12 +97,12 @@ def plot_F(sol):
     for k in xrange(Sten.nv[num_scheme]):
         vx = (int)(Sten.vx[num_scheme][k])
         vy = (int)(Sten.vy[num_scheme][k])
-        numim = ny*(vxm-vx) + vy+vym + 1
-        plt.subplot(ny*100+nx*10+numim)
-        plt.imshow(np.float32((sol.F[num_scheme][k][1:-1,1:-1])).transpose(), origin='lower', cmap=cm.jet, interpolation='nearest')
+        numim = nx*(vym-vy) + vx+vxm + 1
+        plt.subplot(nx*100+ny*10+numim)
+        plt.imshow(np.float32((sol.F[num_scheme][k][1:-1,1:-1])), origin='lower', cmap=cm.jet, interpolation='nearest')
         plt.title('({1:d},{2:d}) at t = {0:f}'.format(sol.t, vx, vy))
     plt.draw()
-    plt.pause(3.e0)
+    plt.pause(2.)
 
 def plot_m(sol,valeq):
     for i in xrange(3):
@@ -146,15 +151,15 @@ def test_transport():
                       'polynomials':polynomes,
                       'relaxation_parameters':s,
                       'equilibrium':equilibre,
-                      'init':{0:(init_un,),
+                      'init':{0:(init_zero,),
                               1:(init_un,),
-                              2:(init_un,),
-                              3:(init_un,),
-                              4:(init_un,),
-                              5:(init_un,),
-                              6:(init_un,),
-                              7:(init_un,),
-                              8:(init_un,),
+                              2:(init_zero,),
+                              3:(init_zero,),
+                              4:(init_zero,),
+                              5:(init_zero,),
+                              6:(init_zero,),
+                              7:(init_zero,),
+                              8:(init_zero,),
                               },
                     },
                     ],
@@ -181,8 +186,8 @@ def test_transport():
         # sol.scheme.transport(sol._F)
         # sol.scheme.f2m(sol._F, sol._m)
         sol.m2f()
-        #sol.boundary_condition()
-        CL(sol)
+        sol.boundary_condition()
+        #CL(sol)
         sol.transport()
         sol.f2m()
         sol.t += sol.dt

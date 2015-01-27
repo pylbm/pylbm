@@ -237,12 +237,13 @@ class Simulation:
         self.scheme.equilibrium(self._m)
 
     def boundary_condition(self):
+        t = time.time()
         self.scheme.set_boundary_conditions(self._F, self._m, self.bc, self.nv_on_beg)
+        self.cpu_time['boundary_conditions'] += time.time() - t
 
     def one_time_step(self):
         t = time.time()
         self.boundary_condition()
-        self.cpu_time['boundary_conditions'] += time.time() - t
 
         if self.nv_on_beg:
             self.transport()

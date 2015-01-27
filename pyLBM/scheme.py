@@ -314,17 +314,25 @@ class Scheme:
                                 else:
                                     mloc = np.ascontiguousarray(m[iy, ix, :])
                                 floc = np.zeros(mloc.shape)
-                                print "#"*50
-                                print ix
-                                print iy
-                                print "#"*50
                                 bc.value_bc[l](floc, mloc,
                                                bc.domain.x[0][ix] + s*bv.v.vx*bc.domain.dx,
                                                bc.domain.x[1][iy] + s*bv.v.vy*bc.domain.dx, self)
+                                if nv_on_beg:
+                                    bc.floc[l][n][k] = floc[self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]]
+                                else:
+                                    bc.floc[l][n][k] = floc[:, self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]]
                             else:
-                                floc = None
+                                bc.floc[l][n][k] = None
 
-                            bc.floc[l][n][k] = floc
+                            # ####### TEST for Poiseuille flow
+                            # if floc is not None:
+                            #     print "#"*50
+                            #     print "label: {0}, scheme: {1}, velocity: {2}".format(l, n, k)
+                            #     if (n == 0):
+                            #         print floc[4*n, :] - floc[4*n+2, :]
+                            #     else:
+                            #         print floc[4*n, :] + floc[4*n+2, :]
+                            # ####### FIN TEST
                             #bc.floc[l][n][k] = None
                         if nv_on_beg:
                             bc.method_bc[l][n](f[self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]], bv, self.stencil[n].num2index, bc.floc[l][n][k], nv_on_beg)
