@@ -283,10 +283,10 @@ class Domain:
 
         optional argument ``opt`` if the spatial dimension dim is 2
 
-        * If dim=1 or (dim=2 and opt=0)
+        * If dim=1 or (dim=2 and opt=1)
              - plot a star on inner points and a square on outer points
              - plot the flag on the boundary (each boundary point + s[k]*unique_velocities[k] for each velocity k)
-        * If dim=2 and opt=1
+        * If dim=2 and opt=0
              - plot a imshow figure, white for inner domain and black for outer domain
         """
         fig = plt.figure(0,figsize=(8, 8))

@@ -167,7 +167,10 @@ class Simulation:
         return s
 
     def initialization(self, dico):
-        inittype = dico['inittype']
+        # type of initialization
+        # by default, the initialization is on the moments
+        # else, it could be distributions
+        inittype = dico.get('inittype', 'moments')
         if self.dim == 1:
             x = self.domain.x[0]
             coords = (x,)
@@ -189,11 +192,17 @@ class Simulation:
                         self._m[self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
                     else:
                         self._m[:, :, self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
-                else:
+                elif inittype == 'distributions':
                     if self.nv_on_beg:
                         self._F[self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
                     else:
                         self._F[:, :, self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
+                else:
+                    sss = 'Error in the creation of the scheme: wrong dictionnary\n'
+                    sss += 'the key `inittype` should be moments or distributions'
+                    log.error(sss)
+                    sys.exit()
+
 
         if inittype == 'moments':
             self.scheme.equilibrium(self._m)
@@ -227,20 +236,20 @@ class Simulation:
     def equilibrium(self):
         self.scheme.equilibrium(self._m)
 
-    def one_time_step(self):
+    def boundary_condition(self):
         t = time.time()
         self.scheme.set_boundary_conditions(self._F, self._m, self.bc, self.nv_on_beg)
         self.cpu_time['boundary_conditions'] += time.time() - t
+
+    def one_time_step(self):
+        t = time.time()
+        self.boundary_condition()
 
         if self.nv_on_beg:
             self.transport()
             self.f2m()
             self.relaxation()
             self.m2f()
-            #self.scheme.transport(self._F)
-            #self.scheme.f2m(self._F, self._m)
-            #self.scheme.relaxation(self._m)
-            #self.scheme.m2f(self._m, self._F)
         else:
             self._Fold[:] = self._F[:]
             self.scheme.onetimestep(self._m, self._F, self._Fold, self.domain.in_or_out, self.domain.valin)

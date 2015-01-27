@@ -12,48 +12,79 @@ import matplotlib.colors as colors
 import matplotlib.cm as cm
 
 import pyLBM
-from pyLBM.elements import *
-import pyLBM.geometry as pyLBMGeom
-import pyLBM.simulation as pyLBMSimu
-import pyLBM.domain as pyLBMDom
-import pyLBM.generator as pyLBMGen
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
 
 def init_m(x,y,val):
-    return val*np.ones((y.shape[0], x.shape[0]), dtype='float64')
+    return val*np.ones((y.size, x.size), dtype='float64')
 
 def init_un(x,y):
-    uu = np.zeros((y.shape[0], x.shape[0]), dtype='float64')
-    uu[y.shape[0]/2, x.shape[0]/2] = 1.
+    uu = np.zeros((y.size, x.size), dtype='float64')
+    uu[y.size/2, x.size/2] = 1.
+    return uu
+
+def init_zero(x,y):
+    uu = np.zeros((y.size, x.size), dtype='float64')
+    uu[y.size/2, x.size/2] = 1.
     return uu
 
 def bounce_back(sol):
-    ns = sol.Scheme.nscheme
+    sten = sol.scheme.stencil
+    ns = sol.scheme.nscheme
     for n in xrange(ns):
-        for k in xrange(sol.Scheme.Stencil.nv[n]):
-            ksym = sol.Scheme.Stencil.numV_sym[n][k]
-            vk_dom = sol.Scheme.Stencil.numv[n][k]
-            vkx, vky = (int)(sol.Scheme.Stencil.V[n][0,k]), (int)(sol.Scheme.Stencil.V[n][1,k])
-            ind_vk_y, ind_vk_x = np.where(sol.Domain.distance[vk_dom,:,:]<sol.Domain.valin)
-            sol.F[n][ksym, ind_vk_x+vkx, ind_vk_y+vky] = sol.F[n][k, ind_vk_x, ind_vk_y]
-    
+        for v in sten.v[n]:
+            ksym = sten[n].num2index[v.get_symmetric().num]
+            k = sten[n].num2index[v.num]
+            num = sten.unum2index[v.num]
+            vkx, vky = v.vx, v.vy
+            ind_vk_y, ind_vk_x = np.where(sol.domain.distance[num,:,:]<sol.domain.valin)
+            sol.F[n][ksym][ind_vk_y+vky, ind_vk_x+vkx] = sol.F[n][k][ind_vk_y, ind_vk_x]
+    # f = sol.F[0]
+    # f[1][1:-1, 0] = f[3][1:-1, 1]
+    # f[2][0, 1:-1] = f[4][1, 1:-1]
+    # f[3][1:-1, -1] = f[1][1:-1, -2]
+    # f[4][-1, 1:-1] = f[2][-2, 1:-1]
+    # f[5][:-2, 0] = f[7][1:-1, 1]
+    # f[5][0, :-2] = f[7][1, 1:-1]
+    # f[6][:-2, -1] = f[8][1:-1, -2]
+    # f[6][0, 2:] = f[8][1, 1:-1]
+    # f[7][2:, -1] = f[5][1:-1, -2]
+    # f[7][-1, 2:] = f[5][-2, 1:-1]
+    # f[8][2:, 0] = f[6][1:-1, 1]
+    # f[8][-1, :-2] = f[6][-2, 1:-1]
+
+def CL(sol):
+    f = sol.F[0]
+    f[1][1:-1, 0] = -f[3][1:-1, 1]
+    f[2][0, 1:-1] = f[4][1, 1:-1]
+    f[3][1:-1, -1] = -f[1][1:-1, -2]
+    f[4][-1, 1:-1] = f[2][-2, 1:-1]
+    f[5][:-2, 0] = -f[7][1:-1, 1]
+    f[5][0, :-2] = f[7][1, 1:-1]
+    f[6][:-2, -1] = -f[8][1:-1, -2]
+    f[6][0, 2:] = f[8][1, 1:-1]
+    f[7][2:, -1] = -f[5][1:-1, -2]
+    f[7][-1, 2:] = f[5][-2, 1:-1]
+    f[8][2:, 0] = -f[6][1:-1, 1]
+    f[8][-1, :-2] = f[6][-2, 1:-1]
+
 def periodique(sol):
-    ns = sol.Scheme.nscheme
-    xb = sol.Domain.indbe[0][0]
-    xe = sol.Domain.indbe[0][1]
-    yb = sol.Domain.indbe[1][0]
-    ye = sol.Domain.indbe[1][1]
+    ns = sol.scheme.nscheme
+    xb = sol.domain.indbe[0][0]
+    xe = sol.domain.indbe[0][1]
+    yb = sol.domain.indbe[1][0]
+    ye = sol.domain.indbe[1][1]
     for n in xrange(ns):
-        sol.F[n][:, 0:xb,  yb:ye] = sol.F[n][:, xe-xb:xe, yb:ye   ] # E -> W
-        sol.F[n][:, xe:,   yb:ye] = sol.F[n][:, xb:xb+xb, yb:ye   ] # W -> E
-        sol.F[n][:, xb:xe, 0:yb ] = sol.F[n][:, xb:xe,    ye-yb:ye] # N -> S
-        sol.F[n][:, xb:xe, ye:  ] = sol.F[n][:, xb:xe,    yb:yb+yb] # S -> N
-        sol.F[n][:, 0:xb,  0:yb ] = sol.F[n][:, xe-xb:xe, ye-yb:ye] # NE -> SW
-        sol.F[n][:, 0:xb,  ye:  ] = sol.F[n][:, xe-xb:xe, yb:yb+yb] # SE -> NW
-        sol.F[n][:, xe:,   0:yb ] = sol.F[n][:, xb:xb+xb, ye-yb:ye] # NW -> SE
-        sol.F[n][:, xe:,   ye:  ] = sol.F[n][:, xb:xb+xb, yb:yb+yb] # SW -> NE
+        for l in xrange(sol.scheme.stencil.nv[n]):
+            sol.F[n][l][yb:ye, 0 :xb] = sol.F[n][l][yb:ye,    xe-xb:xe] # E -> W
+            sol.F[n][l][yb:ye, xe:  ] = sol.F[n][l][yb:ye,    xb:xb+xb] # W -> E
+            sol.F[n][l][0 :yb, xb:xe] = sol.F[n][l][ye-yb:ye, xb:xe   ] # N -> S
+            sol.F[n][l][ye:,   xb:xe] = sol.F[n][l][yb:yb+yb, xb:xe   ] # S -> N
+            sol.F[n][l][0 :yb, 0 :xb] = sol.F[n][l][ye-yb:ye, xe-xb:xe] # NE -> SW
+            sol.F[n][l][ye:,   0 :xb] = sol.F[n][l][yb:yb+yb, xe-xb:xe] # SE -> NW
+            sol.F[n][l][0 :yb, xe:  ] = sol.F[n][l][ye-yb:ye, xb:xb+xb] # NW -> SE
+            sol.F[n][l][ye:,   xe:  ] = sol.F[n][l][yb:yb+yb, xb:xb+xb] # SW -> NE
 
 
 def plot_F(sol):
@@ -62,15 +93,16 @@ def plot_F(sol):
     vym  = Sten.vmax[1]
     nx   = 1+2*vxm
     ny   = 1+2*vym
-    for k in xrange(Sten.nv[0]):
-        vx = (int)(Sten.vx[0][k])
-        vy = (int)(Sten.vy[0][k])
+    num_scheme = 0
+    for k in xrange(Sten.nv[num_scheme]):
+        vx = (int)(Sten.vx[num_scheme][k])
+        vy = (int)(Sten.vy[num_scheme][k])
         numim = nx*(vym-vy) + vx+vxm + 1
         plt.subplot(nx*100+ny*10+numim)
-        plt.imshow(np.float32((sol._F[k, 1:-1,1:-1])).transpose(), origin='lower', cmap=cm.jet, interpolation='nearest')
+        plt.imshow(np.float32((sol.F[num_scheme][k][1:-1,1:-1])), origin='lower', cmap=cm.jet, interpolation='nearest')
         plt.title('({1:d},{2:d}) at t = {0:f}'.format(sol.t, vx, vy))
     plt.draw()
-    plt.pause(1.e0)
+    plt.pause(2.)
 
 def plot_m(sol,valeq):
     for i in xrange(3):
@@ -78,7 +110,7 @@ def plot_m(sol,valeq):
             k = 3*i+j
             plt.subplot(331+k)
             plt.plot(sol.t,sol.m[0][k,3,3],'k*',[sol.t,sol.t+sol.dt],[valeq[k],valeq[k]],'r')
-            plt.title('m[{1:d}] at t = {0:f}'.format(sol.t, k))    
+            plt.title('m[{1:d}] at t = {0:f}'.format(sol.t, k))
 
 def test_transport():
     # parameters
@@ -111,35 +143,36 @@ def test_transport():
                         qx2-qy2, qxy])
 
     dico   = {
-        'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[-1,-1,-1,-1]},
+        'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[0, 1, 0, 1]},
         'space_step':dx,
         'scheme_velocity':la,
-        'number_of_schemes':1,
-        'init':'moments',
-        0:{'velocities':vitesse,
-           'polynomials':polynomes,
-           'relaxation_parameters':s,
-           'equilibrium':equilibre,
+        'inittype':'distributions',
+        'schemes':[{'velocities':vitesse,
+                      'polynomials':polynomes,
+                      'relaxation_parameters':s,
+                      'equilibrium':equilibre,
+                      'init':{0:(init_zero,),
+                              1:(init_un,),
+                              2:(init_zero,),
+                              3:(init_zero,),
+                              4:(init_zero,),
+                              5:(init_zero,),
+                              6:(init_zero,),
+                              7:(init_zero,),
+                              8:(init_zero,),
+                              },
+                    },
+                    ],
+        #'generator': pyLBM.generator.CythonGenerator,
+        'boundary_conditions':{
+            0:{'method':{0: pyLBM.bc.bouzidi_bounce_back}, 'value':None},
+            1:{'method':{0: pyLBM.bc.bouzidi_anti_bounce_back}, 'value':None},
         },
-        'init':{'type':'densities',
-                0:{0:(init_un,),
-                   1:(init_un,),
-                   2:(init_un,),
-                   3:(init_un,),
-                   4:(init_un,),
-                   5:(init_un,),
-                   6:(init_un,),
-                   7:(init_un,),
-                   8:(init_un,),
-                   },
-                },
-        'generator': pyLBMGen.CythonGenerator,
         }
-    
 
-    sol = pyLBMSimu.Simulation(dico, nv_on_beg=False)
-    print sol._F
-    stop
+
+    sol = pyLBM.Simulation(dico)
+    #print sol._F
     #print sol.scheme.generator.code
 
     fig = plt.figure(0,figsize=(16, 8))
@@ -147,13 +180,18 @@ def test_transport():
     plt.ion()
     plot_F(sol)
     while (sol.t<Tf-0.5*sol.dt):
-        sol.scheme.m2f(sol._m, sol._F)
-        #periodique(sol)
-        #bounce_back(sol)
-        sol.scheme.transport(sol._F)
-        sol.scheme.f2m(sol._F, sol._m)
+        # sol.scheme.m2f(sol._m, sol._F)
+        # #periodique(sol)
+        # bounce_back(sol)
+        # sol.scheme.transport(sol._F)
+        # sol.scheme.f2m(sol._F, sol._m)
+        sol.m2f()
+        sol.boundary_condition()
+        #CL(sol)
+        sol.transport()
+        sol.f2m()
         sol.t += sol.dt
-        plot_F(sol)        
+        plot_F(sol)
     plt.ioff()
     plt.show()
 
@@ -163,14 +201,14 @@ def test_relaxation():
     xmin, xmax, ymin, ymax = -1.5, 1.5, -1.5, 1.5
     dx = 1. # spatial step
     la = 1. # velocity of the scheme
-    Tf = 50
+    Tf = 10
     rhoo = 1.
     s  = [0., 0., 0., 1.9, 1.8, 1.7, 1.75, 1.85, 1.95]
 
     rhoi = 1.
     qxi = -0.2
     qyi = 1.2
-    
+
     dummy = 1./(LA**2*rhoo)
     qx2 = dummy*u[0][1]**2
     qy2 = dummy*u[0][2]**2
@@ -204,7 +242,7 @@ def test_relaxation():
                  'init_args':{0:(rhoi,), 1:(qxi,), 2:(qyi,)}
                  }
             }
-    
+
     geom = pyLBMGeom.Geometry(dico)
     dom = pyLBMDom.Domain(geom,dico)
     sol = pyLBMSimu.Simulation(dico, geom)
@@ -221,7 +259,7 @@ def test_relaxation():
         sol.Scheme.f2m(sol.F, sol.m)
         sol.Scheme.relaxation(sol.m)
         sol.t += sol.dt
-        plot_m(sol,valeq)        
+        plot_m(sol,valeq)
     plt.ioff()
     plt.show()
 

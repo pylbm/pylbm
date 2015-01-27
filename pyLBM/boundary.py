@@ -80,9 +80,6 @@ def bouzidi_bounce_back(f, bv, num2index, feq, nv_on_beg):
         if feq is not None and np.any(mask):
             f[iy, ix, k] += feq[mask, k] - feq[mask, ksym]
 
-    #print "bb1"*20
-    #print f[iy, ix, k].T
-
     mask = np.logical_not(mask)
     iy = bv.indices[0, mask]
     ix = bv.indices[1, mask]
@@ -93,16 +90,8 @@ def bouzidi_bounce_back(f, bv, num2index, feq, nv_on_beg):
             f[k, iy, ix] += feq[k, mask] - feq[ksym, mask]
     else:
         f[iy, ix, k] = s*f[iy + v.vy, ix + v.vx, ksym] + (1.-s)*f[iy + v.vy, ix + v.vx, k]
-        #print s, ix, iy
-        #f[iy, ix, k] = s*f[iy + v.vy, ix + v.vx, k]
-        #f[iy, ix, k] = s*f[iy + v.vy, ix + v.vx, k]
-        #print f[:, :, k].T
         if feq is not None and np.any(mask):
             f[iy, ix, k] += feq[mask, k] - feq[mask, ksym]
-
-    #print "bb2"*20
-    #print f[iy, ix, k].T
-    #return f
 
 def bouzidi_anti_bounce_back(f, bv, num2index, feq, nv_on_beg):
     v = bv.v
