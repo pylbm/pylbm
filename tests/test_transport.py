@@ -12,11 +12,6 @@ import matplotlib.colors as colors
 import matplotlib.cm as cm
 
 import pyLBM
-from pyLBM.elements import *
-import pyLBM.geometry as pyLBMGeom
-import pyLBM.simulation as pyLBMSimu
-import pyLBM.domain as pyLBMDom
-import pyLBM.generator as pyLBMGen
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
@@ -38,7 +33,7 @@ def bounce_back(sol):
             vkx, vky = (int)(sol.Scheme.Stencil.V[n][0,k]), (int)(sol.Scheme.Stencil.V[n][1,k])
             ind_vk_y, ind_vk_x = np.where(sol.Domain.distance[vk_dom,:,:]<sol.Domain.valin)
             sol.F[n][ksym, ind_vk_x+vkx, ind_vk_y+vky] = sol.F[n][k, ind_vk_x, ind_vk_y]
-    
+
 def periodique(sol):
     ns = sol.Scheme.nscheme
     xb = sol.Domain.indbe[0][0]
@@ -78,7 +73,7 @@ def plot_m(sol,valeq):
             k = 3*i+j
             plt.subplot(331+k)
             plt.plot(sol.t,sol.m[0][k,3,3],'k*',[sol.t,sol.t+sol.dt],[valeq[k],valeq[k]],'r')
-            plt.title('m[{1:d}] at t = {0:f}'.format(sol.t, k))    
+            plt.title('m[{1:d}] at t = {0:f}'.format(sol.t, k))
 
 def test_transport():
     # parameters
@@ -86,7 +81,7 @@ def test_transport():
     xmin, xmax, ymin, ymax = -0.5, 4.5, -0.5, 4.5
     dx = 1. # spatial step
     la = 1. # velocity of the scheme
-    Tf = 5
+    Tf = 50
 
     rhoo = 1.
     s  = [0.,0.,0.,1.,1.,1.,1.,1.,1.]
@@ -114,8 +109,7 @@ def test_transport():
         'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[-1,-1,-1,-1]},
         'space_step':dx,
         'scheme_velocity':la,
-        'number_of_schemes':1,
-        'init':'moments',
+        'inittype':'distributions',
         0:{'velocities':vitesse,
            'polynomials':polynomes,
            'relaxation_parameters':s,
@@ -135,9 +129,9 @@ def test_transport():
                 },
         'generator': pyLBMGen.CythonGenerator,
         }
-    
 
-    sol = pyLBMSimu.Simulation(dico, nv_on_beg=False)
+
+    sol = pyLBMSimu.Simulation(dico)
     print sol._F
     stop
     #print sol.scheme.generator.code
@@ -153,7 +147,7 @@ def test_transport():
         sol.scheme.transport(sol._F)
         sol.scheme.f2m(sol._F, sol._m)
         sol.t += sol.dt
-        plot_F(sol)        
+        plot_F(sol)
     plt.ioff()
     plt.show()
 
@@ -170,7 +164,7 @@ def test_relaxation():
     rhoi = 1.
     qxi = -0.2
     qyi = 1.2
-    
+
     dummy = 1./(LA**2*rhoo)
     qx2 = dummy*u[0][1]**2
     qy2 = dummy*u[0][2]**2
@@ -204,7 +198,7 @@ def test_relaxation():
                  'init_args':{0:(rhoi,), 1:(qxi,), 2:(qyi,)}
                  }
             }
-    
+
     geom = pyLBMGeom.Geometry(dico)
     dom = pyLBMDom.Domain(geom,dico)
     sol = pyLBMSimu.Simulation(dico, geom)
@@ -221,7 +215,7 @@ def test_relaxation():
         sol.Scheme.f2m(sol.F, sol.m)
         sol.Scheme.relaxation(sol.m)
         sol.t += sol.dt
-        plot_m(sol,valeq)        
+        plot_m(sol,valeq)
     plt.ioff()
     plt.show()
 

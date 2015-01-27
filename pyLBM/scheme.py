@@ -314,6 +314,10 @@ class Scheme:
                                 else:
                                     mloc = np.ascontiguousarray(m[iy, ix, :])
                                 floc = np.zeros(mloc.shape)
+                                print "#"*50
+                                print ix
+                                print iy
+                                print "#"*50
                                 bc.value_bc[l](floc, mloc,
                                                bc.domain.x[0][ix] + s*bv.v.vx*bc.domain.dx,
                                                bc.domain.x[1][iy] + s*bv.v.vy*bc.domain.dx, self)

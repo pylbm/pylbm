@@ -216,8 +216,6 @@ class Geometry:
         L = np.array(self.box_label, dtype=np.int32)
         for elem in self.list_elem:
             L = np.union1d(L, elem.label)
-        #for l in self.list_label:
-        #    L = np.union1d(L, l)
         return L
 
 
