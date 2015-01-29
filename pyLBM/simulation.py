@@ -105,7 +105,11 @@ class Simulation:
         # self.F = [np.empty([self.scheme.stencil.nv[k]] + self.domain.Na, dtype=self.type, order=self.order) for k in range(self.scheme.nscheme)]
 
         log.info('Build boundary conditions')
-        self.bc = Boundary(self.domain, dico)
+        if self.dim == 1:
+            log.debug("Boundary conditions in 1D not yet implemented")
+            self.bc = None
+        else:
+            self.bc = Boundary(self.domain, dico)
 
         log.info('Initialization')
         self.initialization(dico)
@@ -191,7 +195,15 @@ class Simulation:
                     if self.nv_on_beg:
                         self._m[self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
                     else:
-                        self._m[:, :, self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
+                        log.debug('tricky for the treatment of the dimension')
+                        if self.dim == 1:
+                            self._m[:, self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
+                        elif self.dim == 2:
+                            self._m[:, :, self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
+                        elif self.dim == 3:
+                            self._m[:, :, :, self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
+                        else:
+                            log.error('Problem of dimension in initialization')
                 elif inittype == 'distributions':
                     if self.nv_on_beg:
                         self._F[self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
@@ -238,7 +250,19 @@ class Simulation:
 
     def boundary_condition(self):
         t = time.time()
-        self.scheme.set_boundary_conditions(self._F, self._m, self.bc, self.nv_on_beg)
+        if self.dim == 1:
+            # periodic for the moment
+            log.debug("Boundary condition in 1D: only Neumann are implemented")
+            if self.nv_on_beg:
+                self._F[:,  0] = self._F[:,  1]
+                self._F[:, -1] = self._F[:, -2]
+            else:
+                self._F[ 0, :] = self._F[ 1, :]
+                self._F[-1, :] = self._F[-2, :]
+        elif self.dim == 2:
+            self.scheme.set_boundary_conditions(self._F, self._m, self.bc, self.nv_on_beg)
+        else:
+            log.error("Boundary conditions not yet implemented in 3D (maybe in another release)")
         self.cpu_time['boundary_conditions'] += time.time() - t
 
     def one_time_step(self):
