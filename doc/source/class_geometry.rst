@@ -1,4 +1,6 @@
-The class Geometry
+.. _linking-class-geometry:
+
+the class Geometry
 ------------------------------
 
 .. autoclass:: pyLBM.Geometry

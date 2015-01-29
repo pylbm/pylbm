@@ -49,10 +49,10 @@ def get_box(dico):
                     dim += 1
         except KeyError:
             log.error("'x' interval not found in the box definition of the geometry.")
-            sys.exit()
+            #sys.exit()
     except KeyError:
         log.error("'box' key not found in the geometry definition. Check the input dictionnary.")
-        sys.exit()
+        #sys.exit()
     return dim, bounds
 
 class Geometry:
@@ -62,27 +62,26 @@ class Geometry:
     Parameters
     ----------
     dico : a dictionary that contains the following `key:value`
-        - box : a dictionary
+        - box : a dictionary for the definition of the computed box
         - elements : a list of elements (optional)
-
-    The dictionary that defines the box should contains the following `key:value`
-        - x : a list of the bounds in the first direction
-        - y : a list of the bounds in the second direction (optional)
-        - z : a list of the bounds in the third direction (optional)
-        - label : an integer or a list of integers (length twice the number of dimensions) used to label each edge (optional)
+        The dictionary that defines the box should contains the following `key:value`
+            - x : a list of the bounds in the first direction
+            - y : a list of the bounds in the second direction (optional)
+            - z : a list of the bounds in the third direction (optional)
+            - label : an integer or a list of integers (length twice the number of dimensions) used to label each edge (optional)
 
     Attributes
     ----------
     dim : number of spatial dimensions (example: 1, 2, or 3)
-    bounds : a list that contains the bounds of the box ((x[0]min,x[0]max),...,(x[dim-1]min,x[dim-1]max))
-    bounds_tag : a dictionary that contains the tag of all the bounds and the description
+    bounds : a numpy array that contains the bounds of the box
+    box_label : a list of the four labels for the bottom, left, top, and right edges
     list_elem : a list that contains each element added or deleted in the box
-    # (to remove) list_label : a list that contains the label of each border
 
     Members
     -------
     add_elem : function that adds an element in the box
     visualize : function to visualize the box
+    list_of_labels : return a list of all the unique labels of the geometry
 
     Examples
     --------
@@ -150,20 +149,23 @@ class Geometry:
 
     def add_elem(self, elem):
         """
-        add a solid or a fluid part in the domain.
+        add a solid or a fluid part in the domain
 
         Parameters
         ----------
-        elem : form of the part to add (or to del)
-
-        Examples
-        --------
-
+        elem : a geometric element to add (or to del)
         """
 
         self.list_elem.append(elem)
 
     def visualize(self, viewlabel=False):
+        """
+        plot a view of the geometry
+
+        Parameters
+        ----------
+        viewlabel : boolean to activate the labels mark (optional)
+        """
         plein = 'blue'
         fig = plt.figure(0,figsize=(8, 8))
         fig.clf()
