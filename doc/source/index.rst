@@ -41,13 +41,8 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   Learning by example
-   The geometry of the simulation <geometry>
-   The stencil of velocities
-   How to construct the domain
-   How to build a LBM scheme
-   How to run a LBM simulation
-   generator
+   Learning by example <learning>
+   The geometry of the simulation <learning_geometry>
 
 Indices and tables
 ==================

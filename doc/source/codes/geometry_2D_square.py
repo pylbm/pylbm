@@ -5,9 +5,9 @@
 # License: BSD 3 clause
 
 """
-Example of a 1D geometry: the segment [0,1]
+Example of a 2D geometry: the square [0,1]x[0,1]
 """
 import pyLBM
-dgeom = {'box':{'x': [0, 1], 'label': [0,1]},}
-geom = pyLBM.Geometry(dgeom)
-geom.visualize(viewlabel = True)
+d = {'box':{'x': [0, 1], 'y': [0, 1]}}
+g = pyLBM.Geometry(d)
+g.visualize()
