@@ -1,163 +1,229 @@
+##############################################################################
+# Solver D2Q4^3 for a Poiseuille flow
+#
+# d_t(p) + d_x(ux) + d_y(uy) = 0
+# d_t(ux) + d_x(ux^2) + d_y(ux*uy) + d_x(p) = mu (d_xx+d_yy)(ux)
+# d_t(uy) + d_x(ux*uy) + d_y(uy^2) + d_y(p) = mu (d_xx+d_yy)(uy)
+#
+# in a tunnel of width .5 and length 1.
+#
+#   ------------------------------------
+#       ->      ->      ->      ->
+#       -->     -->     -->     -->
+#       ->      ->      ->      ->
+#   ------------------------------------
+#
+# the solution is
+# ux = umax (1 - 4 * (y/L)^2) if L is the width of the tunnel
+# uy = 0
+# p = -C x with C = mu * umax * 8/L^2
+#
+# the variables of the three D2Q4 are p, ux, and uy
+# initialization with 0.
+# boundary conditions
+#     - ux=uy=0. on bottom and top
+#     - p given on left and right to constrain the pressure gradient
+#     - ux and uy given on left to accelerate the convergence (optional)
+#
+##############################################################################
+
 import sys
+import time
+import os
+
 import cmath
 from math import pi, sqrt
 import numpy as np
 import sympy as sp
 from sympy.matrices import Matrix, zeros
 import mpi4py.MPI as mpi
-import time
+
+import pyLBM
 
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.cm as cm
 
-import pyLBM
-from pyLBM.elements import *
-import pyLBM.geometry as pyLBMGeom
-import pyLBM.stencil as pyLBMSten
-import pyLBM.domain as pyLBMDom
-import pyLBM.scheme as pyLBMScheme
-import pyLBM.simulation as pyLBMSimu
-import pyLBM.boundary as pyLBMBound
-import pyLBM.generator as pyLBMGen
-
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 
 u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
 
-def bc_Dirichlet(f, m, x, y, scheme):
-    m[0][0] = rhoo + (x-0.5*Longueur) * grad_pression
-    m[1][0] = rhoo * max_velocity * (1. - 4. * y**2 / Largeur**2)
-    m[2][0] = 0.
+def initialization_rho(x,y):
+    return np.zeros((y.size, x.size), dtype='float64')
+
+def initialization_qx(x,y):
+    return np.zeros((y.size, x.size), dtype='float64')
+
+def initialization_qy(x,y):
+    return np.zeros((y.size, x.size), dtype='float64')
+
+def bc_in(f, m, x, y, scheme):
+    ######### BEGIN OF WARNING #########
+    # the order depends on the compilater
+    # through the variable nv_on_beg
+    #m[:, 0] = rhoo + (xmin-0.5*Longueur) * grad_pression
+    #m[:, 4] = rhoo*max_velocity * (1. - 4.*y**2/Largeur**2)
+    #m[:, 8] = 0.
+    m[0, :] = (x-0.5*Longueur) * grad_pression *cte
+    m[4, :] = max_velocity * (1. - 4.*y**2/Largeur**2)
+    m[8, :] = 0.
+    #########  END OF WARNING  #########
     scheme.equilibrium(m)
     scheme.m2f(m, f)
 
-def initialization_rho(x,y):
-    return rhoo + (x-0.5*Longueur) * grad_pression
+def bc_out(f, m, x, y, scheme):
+    ######### BEGIN OF WARNING #########
+    # the order depends on the compilater
+    # through the variable nv_on_beg
+    #m[:, 0] = rhoo + (xmax-0.5*Longueur) * grad_pression
+    #m[:, 4] = 0.
+    #m[:, 8] = 0.
+    m[0, :] = (x-0.5*Longueur) * grad_pression *cte
+    m[4, :] = 0.
+    m[8, :] = 0.
+    #########  END OF WARNING  #########
+    scheme.equilibrium(m)
+    scheme.m2f(m, f)
 
-def initialization_qx(x,y):
-    return rhoo * max_velocity * (1. - 4. * y**2 / Largeur**2)
-
-def initialization_qy(x,y):
-    return np.zeros((x.shape[0], y.shape[0]), dtype='float64')
-
-def plot_quiver(sol):
-    pas = 4
+def plot_coupe(sol, num):
+    nx, ny = sol.domain.N
+    x = sol.domain.x[1][1:-1]
+    ya = sol.m[1][0][1:-1, 1]
+    yb = sol.m[1][0][1:-1, nx/2]
+    yc = sol.m[1][0][1:-1, -2]
+    y = sol.domain.x[0][1:-1]
+    z = sol.m[1][0][ny/2, 1:-1]
     plt.clf()
-    X, Y = np.meshgrid(sol.domain.x[0][1:-1:pas], sol.domain.x[1][1:-1:pas])
-    u = sol.m[0][1,1:-1:pas,1:-1:pas].transpose()
-    v = sol.m[0][2,1:-1:pas,1:-1:pas].transpose()
-    normu = np.sqrt(sol.m[0][1,1:-1,1:-1]**2+sol.m[0][2,1:-1,1:-1]**2).max()
-    nv = u**2+v**2
-    plt.quiver(X, Y, u, v, nv, pivot='mid', scale=normu*10)
-    plt.title('Velocity at t = {0:f}'.format(sol.t))
+    plt.hold(True)
+    plt.plot(x + xmin, ya, 'k-', label='x={0}'.format(xmin))
+    plt.plot(x + 0.5*(xmin+xmax), yb, 'r-', label='x={0}'.format((xmin+xmax)/2))
+    plt.plot(x + xmax, yc, 'b-', label='x={0}'.format(xmax))
+    plt.plot(y, z, 'g-', label='y={0}'.format((ymin+ymax)/2))
+    plt.hold(False)
+    plt.title("slice of the solution, t = {0}".format(sol.t))
+    plt.legend(loc=0)
     plt.draw()
     plt.pause(1.e-3)
 
-def plot_coupe(sol):
-    plt.clf()
-    nt = int(sol.domain.N[0]/2)
+def run(dico):
+    sol = pyLBM.Simulation(dico)
+    im = 0
+    c = 0
+    plot_coupe(sol,im)
+    while (sol.t<Tf):
+        sol.one_time_step()
+        c += 1
+        if c == 128:
+            im += 1
+            sol.f2m()
+            plot_coupe(sol,im)
+            c = 0
+    plt.show()
+
+
+    print "*"*50
+    rho = sol.m[0][0][1:-1, 1:-1]
+    qx = sol.m[1][0][1:-1, 1:-1]
+    qy = sol.m[2][0][1:-1, 1:-1]
+    x = sol.domain.x[0][1:-1]
     y = sol.domain.x[1][1:-1]
-    plt.plot(y, sol.m[1][0, nt, 1:-1], 'r*',
-        y, rhoo*max_velocity * (1.-4.*y**2/Largeur**2), 'k-',
-        y, sol.m[2][0, nt, 1:-1], 'rd')
-    plt.title('Velocity at t = {0:f}'.format(sol.t))
-    plt.axis([ymin,ymax,-0.1*max_velocity,1.2*max_velocity])
-    plt.draw()
-    plt.pause(1.e-3)
+    x = x[np.newaxis, :]
+    y = y[:, np.newaxis]
+    coeff = sol.domain.dx / np.sqrt(Largeur*Longueur)
+    Err_rho = coeff * np.linalg.norm(rho - (x-0.5*Longueur) * grad_pression)
+    Err_qx = coeff * np.linalg.norm(qx - max_velocity * (1 - 4 * y**2 / Largeur**2))
+    Err_qy = coeff * np.linalg.norm(qy)
+    print "Norm of the error on rho: {0:10.3e}".format(Err_rho)
+    print "Norm of the error on qx:  {0:10.3e}".format(Err_qx)
+    print "Norm of the error on qy:  {0:10.3e}".format(Err_qy)
+
+    plt.figure(2)
+    plt.clf()
+    plt.imshow(np.float32(qx - max_velocity * (1 - 4 * y**2 / Largeur**2)), origin='lower', cmap=cm.gray)
+    plt.colorbar()
+    plt.show()
+
+    print "*"*50
+    ttot = sol.cpu_time['total']
+    print "total:      {0:10.3e}".format(ttot)
+    t = sol.cpu_time['relaxation']
+    print "relaxation: {0:10.3e} = {1:4.2f}%".format(t, t/ttot*100)
+    t = sol.cpu_time['transport']
+    print "transport:  {0:10.3e} = {1:4.2f}%".format(t, t/ttot*100)
+    t = sol.cpu_time['f2m_m2f']
+    print "f2m, m2f:   {0:10.3e} = {1:4.2f}%".format(t, t/ttot*100)
+    t = sol.cpu_time['boundary_conditions']
+    print "bouzidi:    {0:10.3e} = {1:4.2f}%".format(t, t/ttot*100)
+    print "MLUPS: {0:5.1f}".format(sol.cpu_time['MLUPS'])
+    print "*"*50
 
 if __name__ == "__main__":
     # parameters
-    dim = 2 # spatial dimension
-    dx = 1./128 # spatial step
+    Tf = 200.
+    Longueur = 1.
+    Largeur = .5
+    xmin, xmax, ymin, ymax = 0., Longueur, -.5*Largeur, .5*Largeur
+    dx = 1./64 # spatial step
     la = 1. # velocity of the scheme
-    Tf = 20
-    Longueur = 2
-    Largeur = 1
     max_velocity = 0.1
-    rhoo = 1.
-    murho = 1.e-3
     mu   = 0.00185
-    xmin, xmax, ymin, ymax = 0.0, Longueur, -0.5*Largeur, 0.5*Largeur
-    grad_pression = - max_velocity * 8.0 / (Largeur)**2 * 3.0/(la**2*rhoo) * mu
-    NbImages = 80 # number of figures
-    sigmarho = 2.*murho/(la*dx)
-    sigmaq  = 2.*mu/(la*dx)
-    srho = [0, 1.0/(sigmarho+0.5), 1.0/(sigmarho+0.5), 1.0/(sigmarho+0.5)]
-    sq  = [0, 1.0/(sigmaq+0.5), 1.0/(sigmaq+0.5), 1.0/(sigmaq+0.5)]
+    zeta = 1.e-5
+    #grad_pression = - max_velocity * 8.0 / (Largeur)**2 * 3. /(la**2) * mu
+    grad_pression = -mu * max_velocity * 8./Largeur**2
+    cte = 3.
 
-    ## D2Q4 twisted
-    #vitesse = range(5,9)
-    #polynomes = Matrix([1, LA*X, LA*Y, X*Y])
-    # D2Q4
-    vitesse = range(1,5)
+    dummy = 3.0/(la*dx)
+    s1 = 1.0/(0.5+zeta*dummy)
+    s2 = 1.0/(0.5+mu*dummy)
+
+    vitesse = range(1, 5)
     polynomes = Matrix([1, LA*X, LA*Y, X**2-Y**2])
 
     dico = {
-        'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[0,0,0,0]},
+        'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[0, 1, 0, 2]},
         'space_step':dx,
-        'number_of_schemes':1,
         'scheme_velocity':la,
-        0:{'velocities':vitesse,
-           'polynomials':polynomes,
-           'relaxation_parameters':srho,
-           'equilibrium':Matrix([u[0][0], u[1][0], u[2][0], 0.]),
-        },
-        1:{'velocities':vitesse,
-           'polynomials':polynomes,
-           'relaxation_parameters':sq,
-           'equilibrium':Matrix([u[1][0], u[1][0]**2/u[0][0] + u[0][0]/3, u[1][0]*u[2][0]/u[0][0], 0.]),
-        },
-        2:{'velocities':vitesse,
-           'polynomials':polynomes,
-           'relaxation_parameters':sq,
-           'equilibrium':Matrix([u[2][0], u[1][0]*u[2][0]/u[0][0], u[2][0]**2/u[0][0] + u[0][0]/3, 0.]),
-        },
-        'init':{'type':'moments',
-                0:{0:(initialization_rho,)},
-                1:{0:(initialization_qx,)},
-                2:{0:(initialization_qy,)}
-        },
+        'inittype': 'moments',
+        'schemes':[{'velocities':vitesse,
+                    'polynomials':polynomes,
+                    'relaxation_parameters':[0., s1, s1, 1.],
+                    'equilibrium':Matrix([u[0][0], u[1][0], u[2][0], 0.]),
+                    'init':{0:(initialization_rho,)},
+                    },
+                    {'velocities':vitesse,
+                    'polynomials':polynomes,
+                    'relaxation_parameters':[0., s2, s2, 1.],
+                    'equilibrium':Matrix([u[1][0], u[1][0]**2 + u[0][0]/cte, u[1][0]*u[2][0], 0.]),
+                    'init':{0:(initialization_qx,)},
+                    },
+                    {'velocities':vitesse,
+                    'polynomials':polynomes,
+                    'relaxation_parameters':[0., s2, s2, 1.],
+                    'equilibrium':Matrix([u[2][0], u[1][0]*u[2][0], u[2][0]**2 + u[0][0]/cte, 0.]),
+                    'init':{0:(initialization_qy,)},
+                    },
+        ],
         'boundary_conditions':{
-            0:{'method':{0: pyLBMBound.bouzidi_anti_bounce_back,
-                         1: pyLBMBound.bouzidi_anti_bounce_back,
-                         2: pyLBMBound.bouzidi_anti_bounce_back
+            0:{'method':{0: pyLBM.bc.bouzidi_bounce_back,
+                         1: pyLBM.bc.bouzidi_anti_bounce_back,
+                         2: pyLBM.bc.bouzidi_anti_bounce_back
                          },
-                'value':bc_Dirichlet
+                'value':None,
             },
-            1:{'method':{0: pyLBMBound.neumann_vertical,
-                         1: pyLBMBound.neumann_vertical,
-                         2: pyLBMBound.neumann_vertical
+            1:{'method':{0: pyLBM.bc.bouzidi_anti_bounce_back,
+                         1: pyLBM.bc.neumann_vertical,
+                         2: pyLBM.bc.neumann_vertical
                          },
-                'value':None
+                'value':bc_out,
+            },
+            2:{'method':{0: pyLBM.bc.bouzidi_anti_bounce_back,
+                         1: pyLBM.bc.bouzidi_anti_bounce_back,
+                         2: pyLBM.bc.bouzidi_anti_bounce_back
+                         },
+                'value':bc_in,
             },
         },
-        'generator': pyLBMGen.CythonGenerator,
     }
 
-    sol = pyLBMSimu.Simulation(dico)
-    
-    fig = plt.figure(0,figsize=(16, 8))
-    fig.clf()
-    plt.ion()
-    #plot_quiver(sol)
-    plot_coupe(sol)
-    #plot_stream(sol)
-    #plot_vorticity(sol)
-
-    compt = 0
-    Ncompt = (int)(Tf/(NbImages*sol.dt))
-    im = 0
-    while (sol.t<Tf):
-        sol.one_time_step()
-        compt += 1
-        if (compt%Ncompt==0):
-            im += 1
-            #plot_quiver(sol)
-            plot_coupe(sol)
-            #plot_stream(sol)
-            #plot_vorticity(sol)
-        
-    plt.ioff()
-    plt.show()
+    run(dico)
