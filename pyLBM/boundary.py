@@ -26,9 +26,12 @@ class Boundary_Velocity:
         self.v = domain.stencil.unique_velocities[ksym]
         v = self.v.get_symmetric()
         num = domain.stencil.unum2index[v.num]
+
         ind = np.where(domain.flag[num] == self.label)
-        self.indices = np.array([ind[0] + v.vy, ind[1] + v.vx])
-        self.distance = np.array(domain.distance[num, ind[0], ind[1]])
+        self.indices = np.array(ind)
+        if self.indices.size != 0:
+            self.indices += np.asarray(v.v[::-1])[:, np.newaxis]
+        self.distance = np.array(domain.distance[(num,) + ind])
 
 class Boundary:
     def __init__(self, domain, dico):

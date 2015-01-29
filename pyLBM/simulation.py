@@ -105,11 +105,7 @@ class Simulation:
         # self.F = [np.empty([self.scheme.stencil.nv[k]] + self.domain.Na, dtype=self.type, order=self.order) for k in range(self.scheme.nscheme)]
 
         log.info('Build boundary conditions')
-        if self.dim == 1:
-            log.debug("Boundary conditions in 1D not yet implemented")
-            self.bc = None
-        else:
-            self.bc = Boundary(self.domain, dico)
+        self.bc = Boundary(self.domain, dico)
 
         log.info('Initialization')
         self.initialization(dico)
