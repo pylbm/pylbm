@@ -1,5 +1,3 @@
-.. _linking-class-geometry:
-
 the class Geometry
 ------------------------------
 
