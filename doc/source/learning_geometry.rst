@@ -76,20 +76,30 @@ If no labels are given in the dictionary, the default value is 0.
 
 A square with a hole
 ------------------------------
+:download:`script 1<codes/geometry_2D_square_hole.py>`
+:download:`script 2<codes/geometry_2D_square_triangle.py>`
 
-The second example is the same square with a hole.
-A solid disc lies in the fluid domain defined by
-a circle with a center of (.5, .5) and a radius of .125
-(:py:class:`pyLBM.Circle`)::
+The unit square [0,1]x[0,1] can be holed with a circle (script 1)
+or with a triangular or with a parallelogram (script 3)
 
-    dgeom = {
-        'box':{'x': [0, 1], 'y': [0, 1], 'label':0},
-        'elements':[pyLBM.Circle((0.5,0.5), 0.125, label = 1)],
-    }
-    geom = pyLBM.Geometry(dgeom)
-    geom.visualize(viewlabel=True)
+In the first example,
+a solid disc lies in the fluid domain defined by
+a circle with a center of (0.5, 0.5) and a radius of 0.125
+(:py:class:`pyLBM.Circle`)
 
+.. literalinclude:: codes/geometry_2D_square_hole.py
+    :lines: 11-
+    :linenos:
+
+The dictionary of the geometry then contains an additional key ``elements``
+that is a list of elements.
 In this example, the circle is labelized by 1 while the edges of the square by 0.
+
+The element can be also a triangle
+
+.. literalinclude:: codes/geometry_2D_square_triangle.py
+    :lines: 11-
+    :linenos:
 
 
 
