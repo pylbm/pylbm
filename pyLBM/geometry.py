@@ -62,13 +62,18 @@ class Geometry:
     Parameters
     ----------
     dico : a dictionary that contains the following `key:value`
+
         - box : a dictionary for the definition of the computed box
         - elements : a list of elements (optional)
-        The dictionary that defines the box should contains the following `key:value`
-            - x : a list of the bounds in the first direction
-            - y : a list of the bounds in the second direction (optional)
-            - z : a list of the bounds in the third direction (optional)
-            - label : an integer or a list of integers (length twice the number of dimensions) used to label each edge (optional)
+
+    Notes
+    ----------
+    The dictionary that defines the box should contains the following `key:value`
+
+        - x : a list of the bounds in the first direction
+        - y : a list of the bounds in the second direction (optional)
+        - z : a list of the bounds in the third direction (optional)
+        - label : an integer or a list of integers (length twice the number of dimensions) used to label each edge (optional)
 
     Attributes
     ----------
