@@ -19,16 +19,16 @@ from argparse import ArgumentParser
 #     raise ValueError('Invalid log level: %s' % options.loglevel)
 
 ### argparse package (better choice)
-# parser = ArgumentParser()
-# parser.add_argument("--log", dest="loglevel", default="WARNING",
-#                     help="Set the log level (DEBUG, WARNING, ...)")
-# args = parser.parse_args()
-# numeric_level = getattr(logging, args.loglevel.upper(), None)
-# if not isinstance(numeric_level, int):
-#     raise ValueError('Invalid log level: %s'.format(args.loglevel))
+parser = ArgumentParser()
+parser.add_argument("--log", dest="loglevel", default="WARNING",
+                    help="Set the log level (DEBUG, WARNING, ...)")
+args = parser.parse_args()
+numeric_level = getattr(logging, args.loglevel.upper(), None)
+if not isinstance(numeric_level, int):
+    raise ValueError('Invalid log level: %s'.format(args.loglevel))
 
 ### for both packages
-# logging.basicConfig(level=numeric_level)
+logging.basicConfig(level=numeric_level)
 r = logging.getLogger()
 r.handlers = []
 
