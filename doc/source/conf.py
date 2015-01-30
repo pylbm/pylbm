@@ -34,8 +34,6 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.pngmath', 'numpydoc',
               'sphinxarg.ext']
               #'matplotlib.sphinxext.plot_directive']
 
-#extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.todo', 'sphinx.ext.coverage', 'sphinx.ext.pngmath', 'sphinx.ext.mathjax', 'sphinx.ext.ifconfig', 'sphinx.ext.viewcode']
-
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -110,28 +108,13 @@ html_theme_path = [themedir]
 #html_theme = "sphinx_rtd_theme"
 #html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
-if 'scipyorg' in tags:
-    # Build for the scipy.org website
-    html_theme_options = {
-        "edit_link": True,
-        "sidebar": "right",
-        "scipy_org_logo": True,
-        "rootlinks": [("http://scipy.org/", "Scipy.org"),
-                      ("http://docs.scipy.org/", "Docs")]
-    }
-else:
-    # Default build
-    html_theme_options = {
-        #"edit_link": False,
-        #"sidebar": "left",
-        #"scipy_org_logo": False,
-        #"rootlinks": []
-    }
-    #html_sidebars = {'index': 'indexsidebar.html'}
-
-#html_additional_pages = {
-#    'index': 'indexcontent.html',
-#}
+html_theme_options = {
+    "edit_link": True,
+    "sidebar": "right",
+    "scipy_org_logo": True,
+    "rootlinks": [("http://math.u-psud.fr/~pyLBM", "pyLBM"),
+                  ("http://math.u-psud.fr/~pyLBM/doc", "Docs")]
+}
 
 html_title = "%s v%s Manual" % (project, version)
 html_static_path = ['_static']
@@ -146,7 +129,6 @@ htmlhelp_basename = 'numpy'
 
 pngmath_use_preview = True
 pngmath_dvipng_args = ['-gamma', '1.5', '-D', '96', '-bg', 'Transparent']
-
 
 # -- Options for HTML output ---------------------------------------------------
 

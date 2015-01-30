@@ -1,5 +1,5 @@
 The Geometry of the simulation
-##############################
+******************************
 
 With pyLBM, the numerical simulations can be performed in a domain
 with a complex geometry. This geometry is construct without considering a
@@ -19,9 +19,6 @@ In 2D, the elementary shapes are
 
 In 3D, the elementary shapes are not yet implemented.
 
-
-Examples
-******************************
 
 Several examples of geometries can be found in
 demo/examples/geometry/
@@ -78,6 +75,7 @@ A square with a hole
 ------------------------------
 :download:`script 1<codes/geometry_2D_square_hole.py>`
 :download:`script 2<codes/geometry_2D_square_triangle.py>`
+:download:`script 3<codes/geometry_2D_square_parallelogram.py>`
 
 The unit square [0,1]x[0,1] can be holed with a circle (script 1)
 or with a triangular or with a parallelogram (script 3)
@@ -95,12 +93,44 @@ The dictionary of the geometry then contains an additional key ``elements``
 that is a list of elements.
 In this example, the circle is labelized by 1 while the edges of the square by 0.
 
-The element can be also a triangle
+The element can be also a triangle (:py:class:`pyLBM.Triangle`)
 
 .. literalinclude:: codes/geometry_2D_square_triangle.py
     :lines: 11-
     :linenos:
 
+or a parallelogram (:py:class:`pyLBM.Parallelogram`)
+
+.. literalinclude:: codes/geometry_2D_square_parallelogram.py
+    :lines: 11-
+    :linenos:
+
+A complex cavity
+------------------------------
+:download:`script <codes/geometry_2D_cavity.py>`
+
+A complex geometry can be build by using a list of elements. In this example,
+the box is fixed to the unit square [0,1]x[0,1]. A square hole is added with the
+argument ``isfluid=False``. A strip and a circle are then added with the argument
+``isfluid=True``. Finally, a square hole is put. The dictionary ``elements``
+contains the list of all the previous elements. Note that the order of
+the elements in the list is relevant.
+
+.. literalinclude:: codes/geometry_2D_cavity.py
+    :lines: 11-19
+    :linenos:
+
+.. image:: /images/geometry_2D_cavity_1.png
+
+Once the geometry is built, it can be modified by adding or deleting
+other elements. For instance, the four corners of the cavity can be rounded
+in this way.
+
+.. literalinclude:: codes/geometry_2D_cavity.py
+    :lines: 21-
+    :linenos:
+
+.. image:: /images/geometry_2D_cavity_2.png
 
 
 Examples in 3D

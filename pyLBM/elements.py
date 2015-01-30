@@ -23,8 +23,8 @@ class Circle:
 
     Parameters
     ----------
-    center : the coordinates of the center of the circle
-    radius : positive float for the radius of the circle
+    center : a list that contains the two coordinates of the center
+    radius : a positive float for the radius
     label : list of one integer (default [0])
     isfluid : boolean
              - True if the circle is added
@@ -47,8 +47,6 @@ class Circle:
     point_inside
     distance
     """
-    number_of_bounds = 1
-
     number_of_bounds = 1 # number of edges
 
     def __init__(self, center, radius, label = 0, isfluid = False):

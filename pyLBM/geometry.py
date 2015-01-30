@@ -90,7 +90,7 @@ class Geometry:
 
     Examples
     --------
-    see demo/examples/geometry/*.py
+    see demo/examples/geometry/
 
     """
 

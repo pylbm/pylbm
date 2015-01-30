@@ -28,22 +28,19 @@ class Domain:
     ----------
     dico : a dictionary that contains the following `key:value`
 
-        box : a dictionary that contains the following `key:value`
-            x : a list of the bounds in the first direction
-            y : a list of the bounds in the second direction (optional)
-            z : a list of the bounds in the third direction (optional)
-            label : an integer or a list of integers (length twice the number of dimensions)
-                used to label each edge
+        - box : a dictionary that contains the following `key:value`
+        - elements : the list of the elements (todo)
+        - space_step : the spatial step
+        - schemes : the several schemes (todo)
 
-        elements : TODO ............................
+    Notes
+    ----------
+    The dictionary that defines the box should contains the following `key:value`
 
-        'space_step' : dx where dx is the value of the space step
-        'number_of_scheme' : ns where ns is the value of the number of
-            elementary schemes
-        0:dico0, 1:dico1, ..., (nscheme-1):dico(nscheme-1) where k:dicok
-              contains the velocities of the kth stencil
-              (dicok['velocities'] is the list of the velocity indices for the
-               kth stencil)
+        - x : a list of the bounds in the first direction
+        - y : a list of the bounds in the second direction (optional)
+        - z : a list of the bounds in the third direction (optional)
+        - label : an integer or a list of integers (length twice the number of dimensions) used to label each edge (optional)
 
     optional parameters :
         if the geometry and/or the stencil were previously generated,
