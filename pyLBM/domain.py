@@ -28,10 +28,13 @@ class Domain:
     ----------
     dico : a dictionary that contains the following `key:value`
 
-        - box : a dictionary that contains the following `key:value`
-        - elements : the list of the elements (todo)
+        - box : a dictionary that defines the computational box
+        - elements : the list of the elements
+          (available elements are given in the module :py:class:`pyLBM.elements`)
         - space_step : the spatial step
-        - schemes : the several schemes (todo)
+        - schemes : a list of dictionaries,
+          each of them defining a elementary scheme
+          (see :py:class:`pyLBM.Scheme`)
 
     Notes
     ----------
@@ -40,64 +43,87 @@ class Domain:
         - x : a list of the bounds in the first direction
         - y : a list of the bounds in the second direction (optional)
         - z : a list of the bounds in the third direction (optional)
-        - label : an integer or a list of integers (length twice the number of dimensions) used to label each edge (optional)
+        - label : an integer or a list of integers
+          (length twice the number of dimensions)
+          used to label each edge (optional)
 
-    optional parameters :
-        if the geometry and/or the stencil were previously generated,
-        it can be used directly as following
-            >>> Domain(dico, geometry = geom, stencil = sten)
-        if geom is an object of the class :py:class:`pyLBM.geometry.Geometry`
-        and sten an object of the class :py:class:`pyLBM.stencil.Stencil`
-        In that case, dico does not need to contain the informations for generate
-        the geometry and/or the stencil
+    See :py:class:`pyLBM.geometry.Geometry` for more details.
 
+    If the geometry and/or the stencil were previously generated,
+    it can be used directly as following
 
-    Warning
-    -------
-    ``the sizes of the box must be a multiple of the space step dx``
+    >>> Domain(dico, geometry = geom, stencil = sten)
+
+    where geom is an object of the class :py:class:`pyLBM.geometry.Geometry`
+    and sten an object of the class :py:class:`pyLBM.stencil.Stencil`
+    In that case, dico does not need to contain the informations for generate
+    the geometry and/or the stencil
+
+    Warnings
+    --------
+    the sizes of the box must be a multiple of the space step dx
 
     Attributes
     ----------
-    dim : number of spatial dimensions (example: 1, 2, or 3)
-    bounds : a list that contains the bounds of the box
-        [[x[0]min,x[0]max],...,[x[dim-1]min,x[dim-1]max]]
-    dx : space step (example: 0.1, 1.e-3)
-    type : type of data (example: 'float64')
-    stencil : the stencil of velocities (object of the class
-             :py:class:`pyLBM.stencil.Stencil`)
-    N : number of points in each direction
-    Na : augmented number of points (Na = N + 2*vmax in each direction)
-    indbe : list of indices for the loops in the inner dommain
-            indbe[k][0]:indebe[k][1] is the list of indices in the kth direction
-    x : coordinates of th domain
-    in_or_out : NumPy array that defines the fluid and the solid part
-                fluid part : value=valin
-                solid part : value=valout
-    distance : NumPy array that defines the distances to the borders.
-               The distance is scaled by dx and is not equal to valin only for
-               the points that reach the border with the specified velocity.
-               In 1D, distance[k, i] is the distance between the point x[0][i]
-               and the border in the direction of the kth velocity.
-               In 2D, distance[k, j, i] is the distance between the point
-               (x[0][i], x[1][j]) and the border in the direction of kth
-               velocity
-               ...
-    flag : NumPy array that defines the flag of the border reached with the
-           specified velocity
-           In 1D, flag[k, i] is the flag of the border reached by the point
-           x[0][i] in the direction of the kth velocity
-           In 2D, flag[k, j, i] is the flag of the border reached by the point
-           (x[0][i], x[1][j]) in the direction of kth velocity
-           ...
+    dim : int
+      number of spatial dimensions (example: 1, 2, or 3)
+    bounds : numpy array
+      the bounds of the box in each spatial direction
+    dx : double
+      space step (example: 0.1, 1.e-3)
+    type : string
+      type of data (example: 'float64')
+    stencil :
+      the stencil of the velocities (object of the class
+      :py:class:`pyLBM.stencil.Stencil`)
+    N : int
+      number of points in each direction
+    Na : int
+      augmented number of points (Na = N + 2*vmax in each direction)
+    indbe : numpy array
+      list of indices for the loops in the inner dommain
+      indbe[k][0]:indebe[k][1] is the list of indices in the kth direction
+    x : numpy array
+      coordinates of the domain
+    in_or_out : numpy array
+      defines the fluid and the solid part
+      (fluid: value=valin, solid: value=valout)
+    distance : numpy array
+      defines the distances to the borders.
+      The distance is scaled by dx and is not equal to valin only for
+      the points that reach the border with the specified velocity.
+    flag : numpy array
+      NumPy array that defines the flag of the border reached with the
+      specified velocity
 
-    Members
+
+    Methods
     -------
     visualize : Visualize the domain by creating a plot
 
     Examples
     --------
-    see demo/examples/domain/*.py
+    see demo/examples/domain/
 
+    Notes
+    -----
+
+    In 1D, distance[k, i] is the distance between the point x[0][i]
+    and the border in the direction of the kth velocity.
+
+    In 2D, distance[k, j, i] is the distance between the point
+    (x[0][i], x[1][j]) and the border in the direction of kth
+    velocity
+
+    ...
+
+    In 1D, flag[k, i] is the flag of the border reached by the point
+    x[0][i] in the direction of the kth velocity
+
+    In 2D, flag[k, j, i] is the flag of the border reached by the point
+    (x[0][i], x[1][j]) in the direction of kth velocity
+
+    ...
     """
     def __init__(self, dico, geometry=None, stencil=None):
         self.type = 'float64'
@@ -276,14 +302,19 @@ class Domain:
 
     def visualize(self, opt=0):
         """
-        Visualize the domain by creating a plot
+        Visualize the domain by creating a plot.
 
-        optional argument ``opt`` if the spatial dimension dim is 2
+        Parameters
+        ----------
+        opt : int, optional
+          optional argument for 2D geometries
 
-        * If dim=1 or (dim=2 and opt=1)
+        Returns
+        -------
+        If dim=1 or (dim=2 and opt=1)
              - plot a star on inner points and a square on outer points
              - plot the flag on the boundary (each boundary point + s[k]*unique_velocities[k] for each velocity k)
-        * If dim=2 and opt=0
+        If dim=2 and opt=0
              - plot a imshow figure, white for inner domain and black for outer domain
         """
         fig = plt.figure(0,figsize=(8, 8))

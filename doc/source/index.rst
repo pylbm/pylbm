@@ -3,8 +3,6 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-pyLBM
-=====
 
 pyLBM is an all-in-one package for numerical simulations using
 Lattice Boltzmann solvers.
@@ -13,14 +11,14 @@ It is written in python 2.7 for the moment.
 pyLBM is licensed under the BSD license, enabling reuse with few restrictions.
 
 Getting Started
----------------
+---------------------------
 
    * Getting pyLBM <download>
    * Install <install>
    * Tests <tests>
 
 Requires:
---------------
+---------------------------
 
    * numpy
    * sympy
@@ -28,15 +26,15 @@ Requires:
    * time
 
 Optionnal:
---------------
+---------------------------
 
    * cython
    * mpi4py
    * vtk
    * vispy
 
-Contents:
---------------
+Documentation for users:
+---------------------------
 
 .. toctree::
    :maxdepth: 2
@@ -44,8 +42,19 @@ Contents:
    Learning by example <learning>
    The geometry of the simulation <learning_geometry>
 
+Documentation of the code:
+---------------------------
+
+.. toctree::
+  :maxdepth: 2
+
+  The class geometry <class_geometry>
+  The module elements <module_elements>
+  The class domain <class_domain>
+  The class simulation <class_simulation>
+
 Indices and tables
-==================
+---------------------------
 
 * :ref:`genindex`
 * :ref:`modindex`

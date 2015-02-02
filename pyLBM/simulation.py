@@ -33,22 +33,37 @@ u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
 
 class Simulation:
     """
-    Simulation class
+    create a class simulation
 
-    * Arguments ####### A REPRENDRE
+    Parameters
+    ----------
 
-        - Domain: object of class :py:class:`LBMpy.Domain.Domain`
-        - Scheme: object of class :py:class:`LBMpy.Scheme.Scheme`
-        - type:   optional argument (default value is 'float64')
+    domain : object of class :py:class:`pyLBM.Domain`
+    scheme : object of class :py:class:`pyLBM.Scheme`
+    type :   optional argument (default value is 'float64')
 
-    * Attributs
+    Attributs
+    ---------
 
-        - dim:        spatial dimension
-        - type:       the type of the values
-        - Domain:     the Domain given in argument
-        - Scheme:     the Scheme given in argument
-        - m:          a numpy array that contains the values of the moments in each point
-        - F:          a numpy array that contains the values of the distribution functions in each point
+    dim :        spatial dimension
+    type :       the type of the values
+    domain :     the domain given in argument
+    scheme :     the scheme given in argument
+    _m :         a numpy array that contains the values of the moments in each point
+    _F :         a numpy array that contains the values of the distribution functions in each point
+
+    Methods
+    -------
+
+    initialization :     initialize all the array
+    transport :          compute the transport phase (modifies the array _F)
+    relaxation :         compute the relaxation phase (modifies the array _m)
+    equilibrium :        compute the equilibrium
+    f2m :                compute the moments _m from the distribution _F
+    m2f :                compute the distribution _F from the moments _m
+    boundary_condition : compute the boundary conditions (modifies the array _F)
+    one_time_step :      compute a complet time step combining
+      boundary_condition, transport, f2m, relaxation, m2f
 
     """
     def __init__(self, dico, domain=None, scheme=None, type='float64'):

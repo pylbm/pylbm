@@ -62,14 +62,12 @@ class Geometry:
     Parameters
     ----------
     dico : a dictionary that contains the following `key:value`
-
-        - box : a dictionary for the definition of the computed box
-        - elements : a list of elements (optional)
+          - box : a dictionary for the definition of the computed box
+          - elements : a list of elements (optional)
 
     Notes
     ----------
     The dictionary that defines the box should contains the following `key:value`
-
         - x : a list of the bounds in the first direction
         - y : a list of the bounds in the second direction (optional)
         - z : a list of the bounds in the third direction (optional)
@@ -77,12 +75,16 @@ class Geometry:
 
     Attributes
     ----------
-    dim : number of spatial dimensions (example: 1, 2, or 3)
-    bounds : a numpy array that contains the bounds of the box
-    box_label : a list of the four labels for the bottom, left, top, and right edges
-    list_elem : a list that contains each element added or deleted in the box
+    dim : int
+      number of spatial dimensions (1, 2, or 3)
+    bounds : numpy array
+      the bounds of the box in each spatial direction
+    box_label : list of integers
+      a list of the four labels for the bottom, left, top, and right edges
+    list_elem : list of elements
+      a list that contains each element added or deleted in the box
 
-    Members
+    Methods
     -------
     add_elem : function that adds an element in the box
     visualize : function to visualize the box
@@ -158,6 +160,7 @@ class Geometry:
 
         Parameters
         ----------
+
         elem : a geometric element to add (or to del)
         """
 
@@ -169,6 +172,7 @@ class Geometry:
 
         Parameters
         ----------
+
         viewlabel : boolean to activate the labels mark (optional)
         """
         plein = 'blue'

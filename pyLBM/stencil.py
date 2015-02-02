@@ -132,6 +132,15 @@ class Velocity(object):
      vx: 1
      vy: 1
 
+    Notes
+    ------
+
+    .. image:: /images/Velocities_1D.jpeg
+
+    .. image:: /images/Velocities_2D.jpeg
+
+
+
     """
     _d = 1e3
     _R2 = np.array([[[5, 6, 4], [_d, _d, 2], [2, 5, 3]],
@@ -180,10 +189,9 @@ class Velocity(object):
 
         Parameters
         ----------
-        axis : if None, get the symmetric with the origin
-               if 0, get the symmetric with the x axis
-               if 1, get the symmetric with the y axis
-               if 2, get the symmetric with the z axis
+        axis : the axis of the symmetry, optional
+          (None involves the symmetric with the origin,
+          0 with the x axis, 1 with the y axis, and 2 with the z axis)
 
         Returns
         -------
@@ -285,25 +293,33 @@ class Velocity(object):
 
 class OneStencil:
     """
-    class that defines a stencil of a LBM scheme
+    Create a stencil of a LBM scheme.
 
     Parameters
     ----------
-    v : list of velocities
-    nv: size of the list (can be remove ?)
-    num2index : link between the velocity number and its position in the unique
-                velocities array
+    v : list
+        the list of the velocities of that stencil
+    nv: int
+        size of the list
+    num2index : list of integers
+        link between the velocity number and its position in the unique
+        velocities array
 
     Attributes
     ----------
     v : list of velocities
-    nv: size of the list (can be remove ?)
+    nv : size of the list v
     num2index : link between the velocity number and its position in the unique
-                velocities array
+        velocities array
     num : the numbering of the velocities
     vx : the x component of the velocities
     vy : the y component of the velocities
     vz : the z component of the velocities
+
+    Notes
+    -----
+    The attributes num, vx, vy, and vz are just the properties of the velocities
+    that are called.
     """
 
     def __init__(self, v, nv, num2index):
@@ -346,68 +362,78 @@ class OneStencil:
 
 class Stencil(list):
     """
-    A class to define the stencil in velocities of the scheme.
+    Create the stencil of velocities used by the scheme.
     A specific numbering is used in order to simplify the creation of the schemes.
 
     Parameters
     ----------
-    stencil_dico : a dictionary that contains the following `key:value`
+    dico : a dictionary that contains the following `key:value`
 
-        - 'dim': dim where dim is the value of the spatial dimension (1, 2 or 3)
-        - 'number_of_schemes': nscheme where nscheme is the value of the number of used elementary schemes
-        - 0: dico0, 1: dico1, ..., (nscheme-1): dico(nscheme-1) where k: dicok contains the velocities of the kth stencil
-          (dicok['velocities'] is the list of the velocity indices for the kth stencil)
+        - dim : the value of the spatial dimension (1, 2 or 3)
+        - schemes : a list of the dictionaries that contain the key:value velocities
+
+          [{'velocities':[...]}, {'velocities':[...]}, {'velocities':[...]}, ...]
 
     Attributes
     ----------
-    dim : the spatial dimension (1, 2 or 3)
-    unvtot : the number of unique velocities involved in the stencils
-    vmax : the maximal velocity in norm for each spatial direction
-    vmin : the minimal velocity in norm for each spatial direction
-    nstencils : the number of elementary stencil
-    nv : the number of velocities for each elementary stencil
-    uniq_v : unique velocities used for all stencils
-    v : velocities for each elementary stencil
-    v_index : ???
+    dim : int
+      the spatial dimension (1, 2 or 3)
 
-    Methods
-    -------
+    unique_velocities : numpy array
+      array of all velocities involved in the stencils.
+      each unique velocity appeared only once.
+    unvtot : int
+      the number of unique velocities involved in the stencils.
+      unvtot = size(unique_velocties)
+    vmax : int
+      the maximal velocity in norm for each spatial direction.
+    vmin : int
+      the minimal velocity in norm for each spatial direction.
 
-        .. image:: /images/Velocities_1D.jpeg
-
-        .. image:: /images/Velocities_2D.jpeg
+    nstencils : int
+      the number of elementary stencils.
+    nv : list of integers
+      the number of velocities for each elementary stencil
+    v : list of velocities
+      list of all the velocities for each elementary stencil
+    nv_ptr : list of integers
+      used to obtain the list of the velocities involved in a stencil.
+      For instance, the list for the kth stencil is
+      v[nv_ptr[k]:nv_ptr[k+1]]
 
     Examples
     --------
 
     >>> s = Stencil({'dim': 1,
-                     'number_of_schemes': 1,
-                     0:{'velocities': range(9)}
-                     })
+                 'schemes':[{'velocities': range(9)}, ],
+                    })
     >>> s
     Stencil informations
-             * spatial dimension: dim=1
-             * maximal velocity in each direction: [4 None None]
-             * Informations for each elementary stencil:
-                    stencil 0
-                     - number of velocities: 9
-                     - velocities: (0: 0), (1: 1), (2: -1), (3: 2), (4: -2), (5: 3), (6: -3), (7: 4), (8: -4),
+	  * spatial dimension: 1
+	  * maximal velocity in each direction: [4 None None]
+	  * minimal velocity in each direction: [-4 None None]
+	  * Informations for each elementary stencil:
+	    	stencil 0
+		    - number of velocities:  9
+		    - velocities: (0: 0), (1: 1), (2: -1), (3: 2), (4: -2), (5: 3), (6: -3), (7: 4), (8: -4),
+
     >>> s = Stencil({'dim': 2,
-                     'number_of_schemes': 2,
-                     0:{'velocities': range(9)},
-                     1:{'velocities': range(50)}
-                     })
+                     'schemes':[{'velocities':range(9)},
+                                {'velocities':range(50)},
+                               ],
+                    })
     >>> s
     Stencil informations
-             * spatial dimension: 2
-             * maximal velocity in each direction: [4 3 None]
-             * Informations for each elementary stencil:
-                    stencil 0
-                     - number of velocities: 9
-                     - velocities: (0: 0, 0), (1: 1, 0), (2: 0, 1), (3: -1, 0), (4: 0, -1), (5: 1, 1), (6: -1, 1), (7: -1, -1), (8: 1, -1),
-                    stencil 1
-                     - number of velocities: 50
-                     - velocities: (0: 0, 0), (1: 1, 0), (2: 0, 1), (3: -1, 0), (4: 0, -1), (5: 1, 1), (6: -1, 1), (7: -1, -1), (8: 1, -1), (9: 2, 0), (10: 0, 2), (11: -2, 0), (12: 0, -2), (13: 2, 2), (14: -2, 2), (15: -2, -2), (16: 2, -2), (17: 2, 1), (18: 1, 2), (19: -1, 2), (20: -2, 1), (21: -2, -1), (22: -1, -2), (23: 1, -2), (24: 2, -1), (25: 3, 0), (26: 0, 3), (27: -3, 0), (28: 0, -3), (29: 3, 3), (30: -3, 3), (31: -3, -3), (32: 3, -3), (33: 3, 1), (34: 1, 3), (35: -1, 3), (36: -3, 1), (37: -3, -1), (38: -1, -3), (39: 1, -3), (40: 3, -1), (41: 3, 2), (42: 2, 3), (43: -2, 3), (44: -3, 2), (45: -3, -2), (46: -2, -3), (47: 2, -3), (48: 3, -2), (49: 4, 0),
+	  * spatial dimension: 2
+	  * maximal velocity in each direction: [4 3 None]
+	  * minimal velocity in each direction: [-3 -3 None]
+	  * Informations for each elementary stencil:
+	    	stencil 0
+		    - number of velocities:  9
+		    - velocities: (0: 0, 0), (1: 1, 0), (2: 0, 1), (3: -1, 0), (4: 0, -1), (5: 1, 1), (6: -1, 1), (7: -1, -1), (8: 1, -1),
+		    stencil 1
+		    - number of velocities: 50
+		    - velocities: (0: 0, 0), (1: 1, 0), (2: 0, 1), (3: -1, 0), (4: 0, -1), (5: 1, 1), (6: -1, 1), (7: -1, -1), (8: 1, -1), (9: 2, 0), (10: 0, 2), (11: -2, 0), (12: 0, -2), (13: 2, 2), (14: -2, 2), (15: -2, -2), (16: 2, -2), (17: 2, 1), (18: 1, 2), (19: -1, 2), (20: -2, 1), (21: -2, -1), (22: -1, -2), (23: 1, -2), (24: 2, -1), (25: 3, 0), (26: 0, 3), (27: -3, 0), (28: 0, -3), (29: 3, 3), (30: -3, 3), (31: -3, -3), (32: 3, -3), (33: 3, 1), (34: 1, 3), (35: -1, 3), (36: -3, 1), (37: -3, -1), (38: -1, -3), (39: 1, -3), (40: 3, -1), (41: 3, 2), (42: 2, 3), (43: -2, 3), (44: -3, 2), (45: -3, -2), (46: -2, -3), (47: 2, -3), (48: 3, -2), (49: 4, 0),
 
     get the x component of the unique velocities
 

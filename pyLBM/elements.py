@@ -32,14 +32,27 @@ class Circle:
 
     Attributes
     ----------
-    number_of_bounds : 1
-    center : the coordinates of the center of the circle
-    radius : positive float for the radius of the circle
-    label : the list of the label of the edge
+    number_of_bounds : int
+      1
+    center : numpy array
+      the coordinates of the center of the circle
+    radius : double
+      positive float for the radius of the circle
+    label : list of integers
+      the list of the label of the edge
     isfluid : boolean
-             - True if the circle is added
-             - False if the circle is deleted
-    description : a list that contains the description of the element
+      True if the circle is added
+      and False if the circle is deleted
+
+    Examples
+    --------
+
+    the circle centered in (0, 0) with radius 1
+
+    >>> center = [0., 0.]
+    >>> radius = 1.
+    >>> Circle(center, radius)
+        Circle([0 0],1) (solid)
 
     Methods
     -------
@@ -60,7 +73,7 @@ class Circle:
         str = 'circle centered in '
         str += '({0:f},{1:f})'.format(self.center[0], self.center[1])
         str += ' with radius {0:f}'.format(self.radius)
-        self.description = [str]
+        #self.description = [str]
         log.info(self.__str__())
 
     def get_bounds(self):
@@ -140,6 +153,10 @@ class Circle:
             s += '(solid)'
         return s
 
+    def __repr__(self):
+        return self.__str__()
+
+
     def _visualize(self, ax, coul, viewlabel):
         ax.add_patch(Ellipse(self.center, 2*self.radius, 2*self.radius, fill=True, color=coul))
         if viewlabel:
@@ -163,17 +180,32 @@ class Parallelogram:
              - True if the parallelogram is added
              - False if the parallelogram is deleted
 
+    Examples
+    --------
+
+    the square [0,1]x[0,1]
+
+    >>> point = [0., 0.]
+    >>> vecta = [1., 0.]
+    >>> vectb = [0., 1.]
+    >>> Parallelogram(point, vecta, vectb)
+        Parallelogram([0 0],[0 1],[1 0]) (solid)
+
     Attributes
     ----------
-    number_of_bounds : 4
-    point : the coordinates of the first point of the parallelogram
-    vecta : the coordinates of the first vector
-    vectb : the coordinates of the second vector
-    label : the list of the four labels of the edges
+    number_of_bounds : int
+      4
+    point : numpy array
+      the coordinates of the first point of the parallelogram
+    vecta : numpy array
+      the coordinates of the first vector
+    vectb : numpy array
+      the coordinates of the second vector
+    label : list of integers
+      the list of the label of the edge
     isfluid : boolean
-             - True if the parallelogram is added
-             - False if the parallelogram is deleted
-    description : a list that contains the description of the element
+      True if the parallelogram is added
+      and False if the parallelogram is deleted
 
     Methods
     -------
@@ -197,12 +229,12 @@ class Parallelogram:
         b = self.point + self.v0
         c = self.point + self.v1
         d = self.point + self.v0 + self.v1
-        self.description = [
-            'edge 0: ({0:f},{1:f})->({2:f},{3:f})'.format(a[0], a[1], b[0], b[1]),
-            'edge 1: ({0:f},{1:f})->({2:f},{3:f})'.format(b[0], b[1], d[0], d[1]),
-            'edge 2: ({0:f},{1:f})->({2:f},{3:f})'.format(d[0], d[1], c[0], c[1]),
-            'edge 3: ({0:f},{1:f})->({2:f},{3:f})'.format(c[0], c[1], a[0], a[1])
-            ]
+        # self.description = [
+        #     'edge 0: ({0:f},{1:f})->({2:f},{3:f})'.format(a[0], a[1], b[0], b[1]),
+        #     'edge 1: ({0:f},{1:f})->({2:f},{3:f})'.format(b[0], b[1], d[0], d[1]),
+        #     'edge 2: ({0:f},{1:f})->({2:f},{3:f})'.format(d[0], d[1], c[0], c[1]),
+        #     'edge 3: ({0:f},{1:f})->({2:f},{3:f})'.format(c[0], c[1], a[0], a[1])
+        #     ]
         log.info(self.__str__())
 
     def get_bounds(self):
@@ -272,6 +304,9 @@ class Parallelogram:
             s += '(solid)'
         return s
 
+    def __repr__(self):
+        return self.__str__()
+
     def _visualize(self, ax, coul, viewlabel):
         A = [self.point[k] for k in xrange(2)]
         B = [A[k] + self.v0[k] for k in xrange(2)]
@@ -307,17 +342,32 @@ class Triangle:
              - True if the triangle is added
              - False if the triangle is deleted
 
+    Examples
+    --------
+
+    the bottom half square of [0,1]x[0,1]
+
+    >>> point = [0., 0.]
+    >>> vecta = [1., 0.]
+    >>> vectb = [0., 1.]
+    >>> Triangle(point, vecta, vectb)
+        Triangle([0 0],[0 1],[1 0]) (solid)
+
     Attributes
     ----------
-    number_of_bounds : 3
-    point : the coordinates of the first point of the triangle
-    vecta : the coordinates of the first vector
-    vectb : the coordinates of the second vector
-    label : the list of the three labels of the edges
+    number_of_bounds : int
+      3
+    point : numpy array
+      the coordinates of the first point of the triangle
+    vecta : numpy array
+      the coordinates of the first vector
+    vectb : numpy array
+      the coordinates of the second vector
+    label : list of integers
+      the list of the label of the edge
     isfluid : boolean
-             - True if the triangle is added
-             - False if the triangle is deleted
-    description : a list that contains the description of the element
+      True if the triangle is added
+      and False if the triangle is deleted
 
     Methods
     -------
@@ -340,11 +390,11 @@ class Triangle:
         a = self.point
         b = self.point + self.v0
         c = self.point + self.v1
-        self.description = [
-            'edge 0: ({0:f},{1:f})->({2:f},{3:f})'.format(a[0], a[1], b[0], b[1]),
-            'edge 1: ({0:f},{1:f})->({2:f},{3:f})'.format(b[0], b[1], c[0], c[1]),
-            'edge 2: ({0:f},{1:f})->({2:f},{3:f})'.format(c[0], c[1], a[0], a[1])
-            ]
+        # self.description = [
+        #     'edge 0: ({0:f},{1:f})->({2:f},{3:f})'.format(a[0], a[1], b[0], b[1]),
+        #     'edge 1: ({0:f},{1:f})->({2:f},{3:f})'.format(b[0], b[1], c[0], c[1]),
+        #     'edge 2: ({0:f},{1:f})->({2:f},{3:f})'.format(c[0], c[1], a[0], a[1])
+        #     ]
         log.info(self.__str__())
 
     def get_bounds(self):
@@ -425,6 +475,9 @@ class Triangle:
         else:
             s += '(solid)'
         return s
+
+    def __repr__(self):
+        return self.__str__()
 
     def _visualize(self, ax, coul, viewlabel):
         A = [self.point[k] for k in xrange(2)]

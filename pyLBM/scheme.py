@@ -29,51 +29,68 @@ u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
 
 class Scheme:
     """
-    Scheme class
+    Create the class with all the needed informations for each elementary scheme.
 
-    * Arguments
+    Parameters
+    ----------
+    dico : a dictionary that contains the following `key:value`
+      - dim : spatial dimension (optional if the `box` is given)
+      - scheme_velocity : the value of the ratio space step over time step
+        (la = dx / dt)
+      - schemes : a list of dictionaries, one for each scheme
+      - generator : a generator for the code, optional (see :py:class:`pyLBM.generator.Generator`)
 
-        - dim:        spatial dimension
-        - Stencil:    a stencil of velocities (object of class :py:class:`LBMpy.Stencil.Stencil`)
-        - P:          list of polynomials that define the moments
-        - EQ:         list of the equilibrium functions
-        - s:          list of relaxation parameters
-        - la:         scheme velocity
+    Other parameters
+    ----------------
+    Each dictionary of the list `schemes` should contains the following `key:value`
+      - velocities : list of the velocities number
+      - polynomials : sympy matrix of the polynomial functions that define the moments
+      - equilibrium : sympy matrix of the values that define the equilibrium
+      - relaxation_parameters : list of the value of the relaxation parameters
+      - init : a dictionary to define the initial conditions (see examples)
 
-    * Attributs
+    Attributes
+    ----------
+    dim : int
+      spatial dimension
+    la : double
+      scheme velocity, ratio dx/dt
+    nscheme : int
+      number of elementary schemes
+    stencil : object of class :py:class:`pyLBM.stencil.Stencil`
+      a stencil of velocities
+    P : list of sympy matrix
+      list of polynomials that define the moments
+    EQ : list of sympy matrix
+      list of the equilibrium functions
+    s  : list of list of doubles
+      relaxation parameters
+      (exemple: s[k][l] is the parameter associated to the lth moment in the kth scheme)
+    M : sympy matrix
+      the symbolic matrix of the moments
+    Mnum : numpy array
+      the numeric matrix of the moments (m = Mnum F)
+    invM : sympy matrix
+      the symbolic inverse matrix
+    invMnum : numpy array
+      the numeric inverse matrix (F = invMnum m)
+    generator : object of the class :py:class:`pyLBM.generator.Generator`
+      the used generator (:py:class:`pyLBM.generator.NumpyGenerator`, :py:class:`pyLBM.generator.CythonGenerator`, ...)
 
-        - dim:        spatial dimension
-        - la:         scheme velocity
-        - nscheme:    number of elementary schemes
-        - Stencil:    a stencil of velocities (object of class :py:class:`LBMpy.Stencil.Stencil`)
-        - P:          list of polynomials that define the moments
-        - EQ:         list of the equilibrium functions
-        - s:          list of relaxation parameters
-        - M:          the symbolic matrix of the moments
-        - Mnum:       the numeric matrix of the moments (m = Mnum F)
-        - invM:       the symbolic inverse matrix
-        - invMnum:    the numeric inverse matrix (F = invMnum m)
+    Members
+    -------
 
-        - Code_Transport:     Code of the function Transport
-        - Code_Equilibrium:   Code of the function Equilibrium
-        - Code_Relaxation:    Code of the function Relaxation
-        - Code_m2F:           Code of the function m2F
-        - Code_F2m:           Code of the function F2m
+    create_moments_matrix : Function that creates the moments matrices
+    create_relaxation_function : Function that creates the relaxation function
+    create_equilibrium_function : Function that creates the equilibrium function
+    create_transport_function : Function that creates the transport function
+    create_f2m_function :Function that creates the function f2m
+    create_m2f_function :Function that creates the function m2f
 
 
-    * Members
-
-        - __str__:    Function used to print informations of the scheme
-        - create_moments_matrix: Function that creates the moments matrices
-        - create_relaxation_function: Function that creates the relaxation function
-        - create_equilibrium_function: Function that creates the equilibrium function
-        - create_transport_function: Function that creates the transport function
-        - create_f2m_function:Function that creates the function f2m
-        - create_m2f_function:Function that creates the function m2f
-
-        All the created functions relaxation, equilibrium, transport, f2m, and m2f
-        are member functions of the class :py:class:`LBMpy.Scheme.Scheme` and have a unique argument of type
-        :py:class:`LBMpy.Solution.Solution`
+    Notes
+    ------
+    If the stencil has already been computed, it can be pass in argument.
 
     """
     def __init__(self, dico, stencil=None):
@@ -133,10 +150,6 @@ class Scheme:
     def create_moments_matrices(self):
         """
         Create the moments matrices M and M^{-1} used to transform the repartition functions into the moments
-
-        Example
-
-        >>> create_moments_matrices()
         """
         self.M, self.invM = [], []
         self.Mnum, self.invMnum = [], []
@@ -182,6 +195,9 @@ class Scheme:
                     self.invMnumGlob[self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j] = self.invMnum[k][i, j]
 
     def generate(self):
+        """
+        Generate the code by using the appropriated generator
+        """
         self.generator.setup()
 
         if self.nv_on_beg:
