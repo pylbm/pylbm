@@ -22,11 +22,12 @@ def permute_in_place(a):
 
     Parameters
     ----------
-    a: list
 
+    a: list
 
     Returns
     -------
+
     Return successive permutations of elements in the list a
 
     The set of all the permutations is not created in the memory,
@@ -90,6 +91,7 @@ class Velocity(object):
 
     Parameters
     ----------
+
     dim : int, optional
          The dimension of the velocity.
     num : int, optional
@@ -103,6 +105,7 @@ class Velocity(object):
 
     Attributes
     ----------
+
     dim : The dimension of the velocity.
     num : The number of the velocity in the numbering convention of Lattice-Boltzmann scheme.
     vx : The x component of the velocity vector.
@@ -111,8 +114,9 @@ class Velocity(object):
 
     Methods
     -------
-    get_symmetric
-        return the symmetric velocity for a given direction
+
+    get_symmetric :
+      get the symmetric velocity for a given direction
 
     Examples
     --------
@@ -189,18 +193,19 @@ class Velocity(object):
 
         Parameters
         ----------
+
         axis : the axis of the symmetry, optional
           (None involves the symmetric with the origin,
           0 with the x axis, 1 with the y axis, and 2 with the z axis)
 
         Returns
         -------
+
         The symmetric of the velocity
 
         """
         if axis >= self.dim:
             log.error("axis must be less than the dimension of the velocity (axis:%d, dim:%d)".format(axis, self.dim))
-            sys.exit()
 
         svx = -self.vx
         svy = None if self.vy is None else -self.vy
@@ -248,7 +253,6 @@ class Velocity(object):
                                         else:
                                             count +=1
         log.error("The number of the velocity {0} is not found".format(self.__str__()))
-        sys.exit()
 
     def _set_coord(self):
         if self.dim == 1:
@@ -289,7 +293,6 @@ class Velocity(object):
                                         else:
                                             count +=1
         log.error("The velocity number {0} cannot be computed".format(self.num))
-        sys.exit()
 
 class OneStencil:
     """
@@ -297,29 +300,43 @@ class OneStencil:
 
     Parameters
     ----------
+
     v : list
-        the list of the velocities of that stencil
-    nv: int
-        size of the list
+      the list of the velocities of that stencil
+    nv : int
+      size of the list
     num2index : list of integers
-        link between the velocity number and its position in the unique
-        velocities array
+      link between the velocity number and its position in the unique
+      velocities array
 
     Attributes
     ----------
-    v : list of velocities
-    nv : size of the list v
-    num2index : link between the velocity number and its position in the unique
-        velocities array
-    num : the numbering of the velocities
-    vx : the x component of the velocities
-    vy : the y component of the velocities
-    vz : the z component of the velocities
+
+    v : list
+      the list of the velocities of that stencil
+    nv : int
+      size of the list v
+    num2index : list of integers
+      link between the velocity number and its position in the unique
+      velocities array
+
+    Methods
+    -------
+
+    num :
+      the numbering of the velocities
+    vx :
+      the x component of the velocities
+    vy :
+      the y component of the velocities
+    vz :
+      the z component of the velocities
 
     Notes
     -----
-    The attributes num, vx, vy, and vz are just the properties of the velocities
-    that are called.
+
+    The member methods num, vx, vy, and vz are just the properties of the velocities
+    that are called by using decorators.
     """
 
     def __init__(self, v, nv, num2index):
@@ -367,18 +384,18 @@ class Stencil(list):
 
     Parameters
     ----------
-    dico : a dictionary that contains the following `key:value`
 
-        - dim : the value of the spatial dimension (1, 2 or 3)
-        - schemes : a list of the dictionaries that contain the key:value velocities
+    dico : a dictionary that contains the following `key:value`
+      - dim : the value of the spatial dimension (1, 2 or 3)
+      - schemes : a list of the dictionaries that contain the key:value velocities
 
           [{'velocities':[...]}, {'velocities':[...]}, {'velocities':[...]}, ...]
 
     Attributes
     ----------
+
     dim : int
       the spatial dimension (1, 2 or 3)
-
     unique_velocities : numpy array
       array of all velocities involved in the stencils.
       each unique velocity appeared only once.
@@ -389,7 +406,6 @@ class Stencil(list):
       the maximal velocity in norm for each spatial direction.
     vmin : int
       the minimal velocity in norm for each spatial direction.
-
     nstencils : int
       the number of elementary stencils.
     nv : list of integers
@@ -400,6 +416,35 @@ class Stencil(list):
       used to obtain the list of the velocities involved in a stencil.
       For instance, the list for the kth stencil is
       v[nv_ptr[k]:nv_ptr[k+1]]
+
+    Methods
+    -------
+
+    uvx :
+      get the x component of the unique velocities
+    uvy :
+      get the y component of the unique velocities
+    uvz :
+      get the z component of the unique velocities
+    vx :
+      get the x component of the velocities for the stencil k
+    vy :
+      get the y component of the velocities for the stencil k
+    vz :
+      get the z component of the velocities for the stencil k
+    unum :
+      get the numbering of the unique velocities
+    num :
+      get the numbering of the velocities for the stencil k
+    visualize :
+      plot the stencil of velocities
+
+    Notes
+    -----
+
+    The member methods uvx, uvy, uvz, vx, vy, vz
+    are just the properties of the velocities
+    that are called by using decorators.
 
     Examples
     --------
@@ -465,7 +510,6 @@ class Stencil(list):
                 v_index.append(np.asarray(s['velocities']))
         except:
             log.error("unable to read the scheme.")
-            sys.exit()
         self.nstencils = len(v_index)
 
         # get the unique velocities involved in the stencil
@@ -601,6 +645,7 @@ class Stencil(list):
 
         Parameters
         ----------
+
         viewer : package used to plot the figure (could be matplotlib, vtk, ...)
             see viewer for more information
         k : list of stencil index to plot

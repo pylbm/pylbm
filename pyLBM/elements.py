@@ -56,9 +56,12 @@ class Circle:
 
     Methods
     -------
-    get_bounds
-    point_inside
-    distance
+    get_bounds :
+      return the bounds of the circle
+    point_inside :
+      return True or False if the points are in or out the circle
+    distance :
+      get the distance of a point to the circle
     """
     number_of_bounds = 1 # number of edges
 
@@ -78,7 +81,7 @@ class Circle:
 
     def get_bounds(self):
         """
-        return the bounds of the circle.
+        Get the bounds of the circle.
         """
         return self.center - self.radius, self.center + self.radius
 
@@ -86,15 +89,21 @@ class Circle:
         """
         return a boolean array which defines
         if a point is inside or outside of the circle.
+
+        Notes
+        -----
+
         the edge of the circle is considered as inside.
 
         Parameters
         ----------
+
         x : x coordinates of the points
         y : y coordinates of the points
 
         Returns
         -------
+
         Array of boolean (True inside the circle, False otherwise)
         """
         v2 = np.asarray([x - self.center[0], y - self.center[1]])
@@ -107,12 +116,14 @@ class Circle:
 
         Parameters
         ----------
+
         x : x coordinates of the points
         y : y coordinates of the points
         v : direction of interest
 
         Returns
         -------
+
         array of distances
 
         """
@@ -172,6 +183,7 @@ class Parallelogram:
 
     Parameters
     ----------
+
     point : the coordinates of the first point of the parallelogram
     vecta : the coordinates of the first vector
     vectb : the coordinates of the second vector
@@ -193,6 +205,7 @@ class Parallelogram:
 
     Attributes
     ----------
+
     number_of_bounds : int
       4
     point : numpy array
@@ -209,9 +222,12 @@ class Parallelogram:
 
     Methods
     -------
-    get_bounds
-    point_inside
-    distance
+    get_bounds :
+      return the bounds of the parallelogram
+    point_inside :
+      return True or False if the points are in or out the parallelogram
+    distance :
+      get the distance of a point to the parallelogram
     """
 
     number_of_bounds = 4 # number of edges
@@ -249,15 +265,21 @@ class Parallelogram:
         """
         return a boolean array which defines
         if a point is inside or outside of the parallelogram.
+
+        Notes
+        -----
+
         the edges of the parallelogram are considered as inside.
 
         Parameters
         ----------
+
         x : x coordinates of the points
         y : y coordinates of the points
 
         Returns
         -------
+
         Array of boolean (True inside the parallelogram, False otherwise)
 
         """
@@ -277,12 +299,14 @@ class Parallelogram:
 
         Parameters
         ----------
+
         x : x coordinates of the points
         y : y coordinates of the points
         v : direction of interest
 
         Returns
         -------
+
         array of distances
 
         """
@@ -334,6 +358,7 @@ class Triangle:
 
     Parameters
     ----------
+
     point: the coordinates of the first point of the triangle
     vecta: the coordinates of the first vector
     vectb: the coordinates of the second vector
@@ -355,6 +380,7 @@ class Triangle:
 
     Attributes
     ----------
+
     number_of_bounds : int
       3
     point : numpy array
@@ -371,9 +397,12 @@ class Triangle:
 
     Methods
     -------
-    get_bounds
-    point_inside
-    distance
+    get_bounds :
+      return the bounds of the triangle
+    point_inside :
+      return True or False if the points are in or out the triangle
+    distance :
+      get the distance of a point to the triangle
     """
 
     number_of_bounds = 3 # number of edges
@@ -410,15 +439,21 @@ class Triangle:
         """
         return a boolean array which defines
         if a point is inside or outside of the triangle.
+
+        Notes
+        -----
+
         the edges of the triangle are considered as inside.
 
         Parameters
         ----------
+
         x : x coordinates of the points
         y : y coordinates of the points
 
         Returns
         -------
+
         Array of boolean (True inside the triangle, False otherwise)
 
         """
@@ -437,12 +472,14 @@ class Triangle:
 
         Parameters
         ----------
+
         x : x coordinates of the points
         y : y coordinates of the points
         v : direction of interest
 
         Returns
         -------
+        
         array of distances
 
         """

@@ -26,6 +26,7 @@ class Domain:
 
     Parameters
     ----------
+
     dico : a dictionary that contains the following `key:value`
 
         - box : a dictionary that defines the computational box
@@ -37,7 +38,8 @@ class Domain:
           (see :py:class:`pyLBM.Scheme`)
 
     Notes
-    ----------
+    -----
+
     The dictionary that defines the box should contains the following `key:value`
 
         - x : a list of the bounds in the first direction
@@ -61,10 +63,12 @@ class Domain:
 
     Warnings
     --------
+
     the sizes of the box must be a multiple of the space step dx
 
     Attributes
     ----------
+
     dim : int
       number of spatial dimensions (example: 1, 2, or 3)
     bounds : numpy array
@@ -99,10 +103,13 @@ class Domain:
 
     Methods
     -------
-    visualize : Visualize the domain by creating a plot
+
+    visualize :
+      Visualize the domain by creating a plot
 
     Examples
     --------
+
     see demo/examples/domain/
 
     Notes

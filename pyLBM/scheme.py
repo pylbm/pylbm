@@ -17,8 +17,8 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.cm as cm
 
-import stencil as pyLBMSten
-import generator as pyLBMGen
+from .stencil import Stencil
+from .generator import *
 
 from .logs import __setLogger
 log = __setLogger(__name__)
@@ -33,6 +33,7 @@ class Scheme:
 
     Parameters
     ----------
+
     dico : a dictionary that contains the following `key:value`
       - dim : spatial dimension (optional if the `box` is given)
       - scheme_velocity : the value of the ratio space step over time step
@@ -40,8 +41,9 @@ class Scheme:
       - schemes : a list of dictionaries, one for each scheme
       - generator : a generator for the code, optional (see :py:class:`pyLBM.generator.Generator`)
 
-    Other parameters
-    ----------------
+    Notes
+    -----
+
     Each dictionary of the list `schemes` should contains the following `key:value`
       - velocities : list of the velocities number
       - polynomials : sympy matrix of the polynomial functions that define the moments
@@ -49,8 +51,11 @@ class Scheme:
       - relaxation_parameters : list of the value of the relaxation parameters
       - init : a dictionary to define the initial conditions (see examples)
 
+    If the stencil has already been computed, it can be pass in argument.
+
     Attributes
     ----------
+
     dim : int
       spatial dimension
     la : double
@@ -77,27 +82,46 @@ class Scheme:
     generator : object of the class :py:class:`pyLBM.generator.Generator`
       the used generator (:py:class:`pyLBM.generator.NumpyGenerator`, :py:class:`pyLBM.generator.CythonGenerator`, ...)
 
-    Members
+    Methods
     -------
 
-    create_moments_matrix : Function that creates the moments matrices
-    create_relaxation_function : Function that creates the relaxation function
-    create_equilibrium_function : Function that creates the equilibrium function
-    create_transport_function : Function that creates the transport function
-    create_f2m_function :Function that creates the function f2m
-    create_m2f_function :Function that creates the function m2f
+    create_moments_matrix :
+      Create the moments matrices
+    create_relaxation_function :
+      Create the relaxation function
+    create_equilibrium_function :
+      Create the equilibrium function
+    create_transport_function :
+      Create the transport function
+    create_f2m_function :
+      Create the function f2m
+    create_m2f_function :
+      Create the function m2f
 
+    generate :
+      Generate the code
 
-    Notes
-    ------
-    If the stencil has already been computed, it can be pass in argument.
+    equilibrium :
+      Compute the equilibrium
+    transport :
+      Transport phase
+    relaxation :
+      Relaxation phase
+    f2m :
+      Compute the moments from the distribution functions
+    m2f :
+      Compute the distribution functions from the moments
+    onetimestep :
+      One time step of the Lattice Boltzmann method
+    set_boundary_conditions :
+      Apply the boundary conditions
 
     """
     def __init__(self, dico, stencil=None):
         if stencil is not None:
             self.stencil = stencil
         else:
-            self.stencil = pyLBMSten.Stencil(dico)
+            self.stencil = Stencil(dico)
         self.dim = self.stencil.dim
         self.la = dico['scheme_velocity']
         self.nscheme = self.stencil.nstencils
@@ -108,10 +132,10 @@ class Scheme:
         self.create_moments_matrices()
 
         #self.nv_on_beg = nv_on_beg
-        self.generator = dico.get('generator', pyLBMGen.NumpyGenerator)()
+        self.generator = dico.get('generator', NumpyGenerator)()
         log.info("Generator used for the scheme functions:\n{0}\n".format(self.generator))
         #print self.generator
-        if isinstance(self.generator,pyLBMGen.CythonGenerator):
+        if isinstance(self.generator, CythonGenerator):
             self.nv_on_beg = False
         else:
             self.nv_on_beg = True
@@ -197,6 +221,13 @@ class Scheme:
     def generate(self):
         """
         Generate the code by using the appropriated generator
+
+        Notes
+        -----
+
+        The code can be viewed. If S is the scheme
+
+        >>> print S.generator.code
         """
         self.generator.setup()
 
@@ -216,6 +247,7 @@ class Scheme:
         self.generator.compile()
 
     def m2f(self, m, f):
+        """ Compute the distribution functions f from the moments m """
         exec "from %s import *"%self.generator.get_module()
         if self.nv_on_beg:
             space_size = np.prod(m.shape[1:])
@@ -228,11 +260,10 @@ class Scheme:
             exec "m2f(m.reshape(({0}, {1})), f.reshape(({0}, {1})))".format(space_size, self.stencil.nv_ptr[-1])
 
     def f2m(self, f, m):
+        """ Compute the moments m from the distribution functions f """
         exec "from %s import *"%self.generator.get_module()
-
         if self.nv_on_beg:
             space_size = np.prod(m.shape[1:])
-
             for k in xrange(self.nscheme):
                 s = slice(self.stencil.nv_ptr[k], self.stencil.nv_ptr[k + 1])
                 nv = self.stencil.nv[k]
@@ -243,12 +274,13 @@ class Scheme:
 
 
     def transport(self, f):
+        """ The transport phase on the distribution functions f """
         exec "from %s import *"%self.generator.get_module()
         exec "transport(f)"
 
     def equilibrium(self, m):
+        """ Compute the equilibrium """
         exec "from %s import *"%self.generator.get_module()
-
         if self.nv_on_beg:
             space_size = np.prod(m.shape[1:])
             exec "equilibrium(m.reshape(({0}, {1})))".format(self.stencil.nv_ptr[-1], space_size)
@@ -257,8 +289,8 @@ class Scheme:
             exec "equilibrium(m.reshape(({0}, {1})))".format(space_size, self.stencil.nv_ptr[-1])
 
     def relaxation(self, m):
+        """ The relaxation phase on the moments m """
         exec "from %s import *"%self.generator.get_module()
-
         if self.nv_on_beg:
             space_size = np.prod(m.shape[1:])
             exec "relaxation(m.reshape(({0}, {1})))".format(self.stencil.nv_ptr[-1], space_size)
@@ -267,16 +299,48 @@ class Scheme:
             exec "relaxation(m.reshape(({0}, {1})))".format(space_size, self.stencil.nv_ptr[-1])
 
     def onetimestep(self, m, f, fcuurent, in_or_out, valin):
+        """ Compute one time step of the Lattice Boltzmann method """
         exec "from %s import *"%self.generator.get_module()
         exec "onetimestep(m, f, fcuurent, in_or_out, valin)"
 
     def set_boundary_conditions(self, f, m, bc, nv_on_beg):
-        # periodic conditions
-        ###################################################################################
-        #                 |   0     ...        N-1    |
-        # 0 1 ... lbord-1 | lbord   ...     N+lbord-1 | N+lbord ... Na-1 = N+2lbord-1
-        #
-        ###################################################################################
+        """
+        Compute the boundary conditions
+
+        Parameters
+        ----------
+
+        f : numpy array
+          the array of the distribution functions
+        m : numpy array
+          the array of the moments
+        bc : :py:class:`pyLBM.boundary.Boundary`
+          the class that contains all the informations needed
+          for the boundary conditions
+
+        Returns
+        -------
+
+        Modify the array of the distribution functions f in the phantom border area
+        according to the labels. In the direction parallel to the bounday, N denotes
+        the number of inner points, phantom cells are added to take into account
+        the boundary conditions.
+
+        Notes
+        -----
+
+        If n is the number of outer cells on each bound and N the number of inner cells,
+        the following representation could be usefull (Na = N+2*n)
+
+         +---------------+----------------+-----------------+
+         | n outer cells | N inner cells  | n outer cells   |
+         +===============+================+=================+
+         |               | 0 ...  N-1     |                 |
+         +---------------+----------------+-----------------+
+         | 0  ...  n-1   | n ... N+n-1    | N+n  ... Na-1   |
+         +---------------+----------------+-----------------+
+
+        """
         if nv_on_beg:
             Na = f.shape[1:]
             lbord = [self.stencil.vmax[k] for k in xrange(self.dim)]

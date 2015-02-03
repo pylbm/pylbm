@@ -8,7 +8,7 @@ import mpi4py.MPI as mpi
 import logging
 from argparse import ArgumentParser
 
-INIT_LOG = False
+INIT_LOG = True
 
 def init_logs():
     parser = ArgumentParser()

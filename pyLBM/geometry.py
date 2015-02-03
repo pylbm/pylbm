@@ -5,7 +5,6 @@
 # License: BSD 3 clause
 
 import sys
-import logging
 from math import sin, cos
 import matplotlib
 import matplotlib.pyplot as plt
@@ -26,13 +25,14 @@ def get_box(dico):
 
     Parameters
     ----------
+
     dico : a dictionnary
 
     Returns
     -------
+
     dim : the dimension of the box
     bounds: the bounds of the box
-
     """
     try:
         box = dico['box']
@@ -49,10 +49,8 @@ def get_box(dico):
                     dim += 1
         except KeyError:
             log.error("'x' interval not found in the box definition of the geometry.")
-            #sys.exit()
     except KeyError:
         log.error("'box' key not found in the geometry definition. Check the input dictionnary.")
-        #sys.exit()
     return dim, bounds
 
 class Geometry:
@@ -61,20 +59,23 @@ class Geometry:
 
     Parameters
     ----------
+
     dico : a dictionary that contains the following `key:value`
-          - box : a dictionary for the definition of the computed box
-          - elements : a list of elements (optional)
+      - box : a dictionary for the definition of the computed box
+      - elements : a list of elements (optional)
 
     Notes
-    ----------
+    -----
+
     The dictionary that defines the box should contains the following `key:value`
-        - x : a list of the bounds in the first direction
-        - y : a list of the bounds in the second direction (optional)
-        - z : a list of the bounds in the third direction (optional)
-        - label : an integer or a list of integers (length twice the number of dimensions) used to label each edge (optional)
+      - x : a list of the bounds in the first direction
+      - y : a list of the bounds in the second direction (optional)
+      - z : a list of the bounds in the third direction (optional)
+      - label : an integer or a list of integers (length twice the number of dimensions) used to label each edge (optional)
 
     Attributes
     ----------
+
     dim : int
       number of spatial dimensions (1, 2, or 3)
     bounds : numpy array
@@ -86,14 +87,18 @@ class Geometry:
 
     Methods
     -------
-    add_elem : function that adds an element in the box
-    visualize : function to visualize the box
-    list_of_labels : return a list of all the unique labels of the geometry
+
+    add_elem :
+      function that adds an element in the box
+    visualize :
+      function to visualize the box
+    list_of_labels :
+      return a list of all the unique labels of the geometry
 
     Examples
     --------
-    see demo/examples/geometry/
 
+    see demo/examples/geometry/
     """
 
     def __init__(self, dico):
@@ -163,7 +168,6 @@ class Geometry:
 
         elem : a geometric element to add (or to del)
         """
-
         self.list_elem.append(elem)
 
     def visualize(self, viewlabel=False):
@@ -221,7 +225,7 @@ class Geometry:
 
     def list_of_labels(self):
         """
-           return the list of all the labels used in the geometry
+        Get the list of all the labels used in the geometry.
         """
         L = np.unique(self.box_label)
         for elem in self.list_elem:
