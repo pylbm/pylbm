@@ -31,35 +31,53 @@ class Domain:
 
         - box : a dictionary that defines the computational box
         - elements : the list of the elements
-          (available elements are given in the module :py:class:`pyLBM.elements`)
+          (available elements are given in the module :py:mod:`elements <pyLBM.elements>`)
         - space_step : the spatial step
         - schemes : a list of dictionaries,
-          each of them defining a elementary scheme
-          (see :py:class:`pyLBM.Scheme`)
+          each of them defining a elementary :py:class:`Scheme <pyLBM.scheme.Scheme>`
 
     Notes
     -----
 
     The dictionary that defines the box should contains the following `key:value`
 
-        - x : a list of the bounds in the first direction
-        - y : a list of the bounds in the second direction (optional)
-        - z : a list of the bounds in the third direction (optional)
-        - label : an integer or a list of integers
-          (length twice the number of dimensions)
-          used to label each edge (optional)
+    - x : a list of the bounds in the first direction
+    - y : a list of the bounds in the second direction (optional)
+    - z : a list of the bounds in the third direction (optional)
+    - label : an integer or a list of integers
+      (length twice the number of dimensions)
+      used to label each edge (optional)
 
-    See :py:class:`pyLBM.geometry.Geometry` for more details.
+    See :py:class:`Geometry <pyLBM.geometry.Geometry>` for more details.
 
     If the geometry and/or the stencil were previously generated,
     it can be used directly as following
 
     >>> Domain(dico, geometry = geom, stencil = sten)
 
-    where geom is an object of the class :py:class:`pyLBM.geometry.Geometry`
-    and sten an object of the class :py:class:`pyLBM.stencil.Stencil`
+    where geom is an object of the class
+    :py:class:`Geometry <pyLBM.geometry.Geometry>`
+    and sten an object of the class
+    :py:class:`Stencil <pyLBM.stencil.Stencil>`
     In that case, dico does not need to contain the informations for generate
     the geometry and/or the stencil
+
+    In 1D, distance[k, i] is the distance between the point x[0][i]
+    and the border in the direction of the kth velocity.
+
+    In 2D, distance[k, j, i] is the distance between the point
+    (x[0][i], x[1][j]) and the border in the direction of kth
+    velocity
+
+    In 3D, TODO
+
+    In 1D, flag[k, i] is the flag of the border reached by the point
+    x[0][i] in the direction of the kth velocity
+
+    In 2D, flag[k, j, i] is the flag of the border reached by the point
+    (x[0][i], x[1][j]) in the direction of kth velocity
+
+    In 3D, TODO
 
     Warnings
     --------
@@ -79,7 +97,7 @@ class Domain:
       type of data (example: 'float64')
     stencil :
       the stencil of the velocities (object of the class
-      :py:class:`pyLBM.stencil.Stencil`)
+      :py:class:`Stencil <pyLBM.stencil.Stencil>`)
     N : int
       number of points in each direction
     Na : int
@@ -112,25 +130,7 @@ class Domain:
 
     see demo/examples/domain/
 
-    Notes
-    -----
 
-    In 1D, distance[k, i] is the distance between the point x[0][i]
-    and the border in the direction of the kth velocity.
-
-    In 2D, distance[k, j, i] is the distance between the point
-    (x[0][i], x[1][j]) and the border in the direction of kth
-    velocity
-
-    ...
-
-    In 1D, flag[k, i] is the flag of the border reached by the point
-    x[0][i] in the direction of the kth velocity
-
-    In 2D, flag[k, j, i] is the flag of the border reached by the point
-    (x[0][i], x[1][j]) in the direction of kth velocity
-
-    ...
     """
     def __init__(self, dico, geometry=None, stencil=None):
         self.type = 'float64'

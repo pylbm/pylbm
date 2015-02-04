@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>First steps &mdash; pyLBM v0 Manual</title>
+    
+    <link rel="stylesheet" type="text/css" href="_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="_static/css/spc-extend.css">
+    <link rel="stylesheet" href="_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     'v0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  false
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/js/copybutton.js"></script>
+    <link rel="top" title="pyLBM v0 Manual" href="#" >
+    <link rel="next" title="The Geometry of the simulation" href="learning_geometry.html" > 
+  </head>
+  <body>
+
+<div class="container">
+  <!--
+  <div class="top-scipy-org-logo-header">
+    <a href="#">
+      <img style="border: 0;" alt="SciPy" src="_static/img/pyLBM_logo.gif"></a>
+    </div>
+  </div>
+  -->
+  <H1>pyLBM</H1> Lattice Boltzmann solver
+</div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+        <li class="active"><a href="http://math.u-psud.fr/~pyLBM">pyLBM</a></li>
+        <li class="active"><a href="http://math.u-psud.fr/~pyLBM/doc">Docs</a></li>
+	 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="learning_geometry.html" title="The Geometry of the simulation"
+           accesskey="N">next</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <p>pyLBM is an all-in-one package for numerical simulations using
+Lattice Boltzmann solvers.
+It is written in python 2.7 for the moment.</p>
+<p>pyLBM is licensed under the BSD license,
+enabling reuse with few restrictions.</p>
+<div class="section" id="first-steps">
+<h1>First steps<a class="headerlink" href="#first-steps" title="Permalink to this headline">¶</a></h1>
+<p>pyLBM can be a simple way to make numerical simulations
+by using the Lattice Boltzmann method.
+The module can be downloaded <a class="reference external" href="http://www.math.u-psud.fr/~pyLBM/">here</a>.
+Before installing, please check the required and optional modules (see below).</p>
+<p>Once the module is installed by the command:</p>
+<div class="highlight-python"><div class="highlight"><pre>python setup.py install
+</pre></div>
+</div>
+<p>you just have to understand how build a dictionary that will be
+understood by pyLBM to perform the simulation.
+The dictionary should contain all the needed informations as</p>
+<ul class="simple">
+<li>the geometry (see <a class="reference internal" href="learning_geometry.html"><em>here</em></a> for documentation)</li>
+<li>the scheme (see <a class="reference internal" href="learning_scheme.html"><em>here</em></a> for documentation)</li>
+<li>the boundary conditions (see <a class="reference internal" href="learning_bounds.html"><em>here</em></a> for documentation)</li>
+<li>another informations like the space step, the scheme velocity, the generator
+of the functions...</li>
+</ul>
+</div>
+<div class="section" id="documentation-for-users">
+<h1>Documentation for users:<a class="headerlink" href="#documentation-for-users" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="learning_geometry.html">The geometry of the simulation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="learning_geometry.html#examples-in-1d">Examples in 1D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="learning_geometry.html#examples-in-2d">Examples in 2D</a></li>
+<li class="toctree-l2"><a class="reference internal" href="learning_geometry.html#examples-in-3d">Examples in 3D</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="learning_scheme.html">The scheme</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="learning_scheme.html#the-elementary-scheme">The elementary scheme</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="learning_bounds.html">The boundary conditions</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="documentation-of-the-code">
+<h1>Documentation of the code:<a class="headerlink" href="#documentation-of-the-code" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="class_geometry.html">The class Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_elements.html">The module elements</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="class_circle.html">The class Circle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class_parallelogram.html">The class Parallelogram</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class_triangle.html">The class Triangle</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="module_stencil.html">The module stencil</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="class_stencil.html">the class Stencil</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class_onestencil.html">the class OneStencil</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class_velocity.html">the class Velocity</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="class_domain.html">The class Domain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="class_scheme.html">The class Scheme</a></li>
+<li class="toctree-l1"><a class="reference internal" href="class_simulation.html">The class Simulation</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="requires">
+<h1>Requires:<a class="headerlink" href="#requires" title="Permalink to this headline">¶</a></h1>
+<blockquote>
+<div><ul class="simple">
+<li>numpy</li>
+<li>sympy</li>
+<li>matplotlib</li>
+<li>time</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="optionals">
+<h1>Optionals:<a class="headerlink" href="#optionals" title="Permalink to this headline">¶</a></h1>
+<blockquote>
+<div><ul class="simple">
+<li>cython</li>
+<li>mpi4py</li>
+<li>vtk</li>
+<li>vispy</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+          </div>
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">First steps</a></li>
+<li><a class="reference internal" href="#documentation-for-users">Documentation for users:</a></li>
+<li><a class="reference internal" href="#documentation-of-the-code">Documentation of the code:</a></li>
+<li><a class="reference internal" href="#requires">Requires:</a></li>
+<li><a class="reference internal" href="#optionals">Optionals:</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+  <h4>Next topic</h4>
+  <p class="topless"><a href="learning_geometry.html"
+                        title="next chapter">The Geometry of the simulation</a></p>
+
+        </div>
+      </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2015, Benjamin Graille, Loïc Gouarin.
+      </li>
+      <li>
+      Last updated on Feb 04, 2015.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.3b2.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

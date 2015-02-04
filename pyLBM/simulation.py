@@ -38,32 +38,57 @@ class Simulation:
     Parameters
     ----------
 
-    domain : object of class :py:class:`pyLBM.Domain`
-    scheme : object of class :py:class:`pyLBM.Scheme`
+    dico : dictionary
+    domain : object of class :py:class:`Domain<pyLBM.domain.Domain>`, optional
+    scheme : object of class :py:class:`Scheme<pyLBM.scheme.Scheme>`, optional
     type :   optional argument (default value is 'float64')
 
-    Attributs
-    ---------
+    Attributes
+    ----------
 
-    dim :        spatial dimension
-    type :       the type of the values
-    domain :     the domain given in argument
-    scheme :     the scheme given in argument
-    _m :         a numpy array that contains the values of the moments in each point
-    _F :         a numpy array that contains the values of the distribution functions in each point
+    dim : int
+      spatial dimension
+    type : float64
+      the type of the values
+    domain : :py:class:`Domain<pyLBM.domain.Domain>`
+      the domain given in argument
+    scheme : :py:class:`Scheme<pyLBM.scheme.Scheme>`
+      the scheme given in argument
+    m : numpy array
+      a numpy array that contains the values of the moments in each point
+    F : numpy array
+      a numpy array that contains the values of the distribution functions in each point
 
     Methods
     -------
 
-    initialization :     initialize all the array
-    transport :          compute the transport phase (modifies the array _F)
-    relaxation :         compute the relaxation phase (modifies the array _m)
-    equilibrium :        compute the equilibrium
-    f2m :                compute the moments _m from the distribution _F
-    m2f :                compute the distribution _F from the moments _m
-    boundary_condition : compute the boundary conditions (modifies the array _F)
-    one_time_step :      compute a complet time step combining
+    initialization :
+      initialize all the array
+    transport :
+      compute the transport phase (modifies the array _F)
+    relaxation :
+      compute the relaxation phase (modifies the array _m)
+    equilibrium :
+      compute the equilibrium
+    f2m :
+      compute the moments _m from the distribution _F
+    m2f :
+      compute the distribution _F from the moments _m
+    boundary_condition :
+      compute the boundary conditions (modifies the array _F)
+    one_time_step :
+      compute a complet time step combining
       boundary_condition, transport, f2m, relaxation, m2f
+
+    Examples
+    --------
+
+    TODO
+
+    Notes
+    -----
+
+    Explain how we can access to the data m and F with examples
 
     """
     def __init__(self, dico, domain=None, scheme=None, type='float64'):
@@ -182,6 +207,28 @@ class Simulation:
         return s
 
     def initialization(self, dico):
+        """
+        initialize all the numy array with the initial conditions
+
+        Parameters
+        ----------
+
+        dico : the dictionary with the `key:value` 'init'
+
+        Returns
+        -------
+
+        set the initial values to the numpy arrays _F and _m
+
+        Notes
+        -----
+
+        The initial values are set to _m, the array _F is then initialized
+        with the equilibrium values.
+        If the initial values have to be set to _F, use the optional
+        `key:value` 'inittype' with the value 'distributions'
+        (default value is set to 'moments').
+        """
         # type of initialization
         # by default, the initialization is on the moments
         # else, it could be distributions
@@ -237,29 +284,64 @@ class Simulation:
             self._Fold[:] = self._F[:]
 
     def transport(self):
+        """
+        compute the transport phase on distribution functions
+        (the array _F is modified)
+        """
         t = time.time()
         self.scheme.transport(self._F)
         self.cpu_time['transport'] += time.time() - t
 
     def relaxation(self):
+        """
+        compute the relaxation phase on moments
+        (the array _m is modified)
+        """
         t = time.time()
         self.scheme.relaxation(self._m)
         self.cpu_time['relaxation'] += time.time() - t
 
     def f2m(self):
+        """
+        compute the moments from the distribution functions
+        (the array _m is modified)
+        """
         t = time.time()
         self.scheme.f2m(self._F, self._m)
         self.cpu_time['f2m_m2f'] += time.time() - t
 
     def m2f(self):
+        """
+        compute the distribution functions from the moments
+        (the array _F is modified)
+        """
         t = time.time()
         self.scheme.m2f(self._m, self._F)
         self.cpu_time['f2m_m2f'] += time.time() - t
 
     def equilibrium(self):
+        """
+        set the moments to the equilibrium values
+        (the array _m is modified)
+
+        Notes
+        -----
+
+        Another moments vector can be set to equilibrium values:
+        use directly the method of the class Scheme
+        """
         self.scheme.equilibrium(self._m)
 
     def boundary_condition(self):
+        """
+        perform the boundary conditions
+
+        Notes
+        -----
+
+        The array _F is modified in the phantom array (outer points)
+        according to the specified boundary conditions.
+        """
         t = time.time()
         if self.dim == 1:
             # periodic for the moment
@@ -277,6 +359,21 @@ class Simulation:
         self.cpu_time['boundary_conditions'] += time.time() - t
 
     def one_time_step(self):
+        """
+        compute one time step
+
+        Notes
+        -----
+
+        Modify the arrays _F and _m in order to go further of dt.
+        This function is equivalent to successively use
+
+        - boundary_condition
+        - transport
+        - f2m
+        - relaxation
+        - m2f
+        """
         t = time.time()
         self.boundary_condition()
 

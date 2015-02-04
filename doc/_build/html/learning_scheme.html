@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>The Scheme &mdash; pyLBM v0 Manual</title>
+    
+    <link rel="stylesheet" type="text/css" href="_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="_static/css/spc-extend.css">
+    <link rel="stylesheet" href="_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     'v0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  false
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/js/copybutton.js"></script>
+    <link rel="top" title="pyLBM v0 Manual" href="index.html" >
+    <link rel="next" title="The Boundary Conditions" href="learning_bounds.html" >
+    <link rel="prev" title="The Geometry of the simulation" href="learning_geometry.html" > 
+  </head>
+  <body>
+
+<div class="container">
+  <!--
+  <div class="top-scipy-org-logo-header">
+    <a href="index.html">
+      <img style="border: 0;" alt="SciPy" src="_static/img/pyLBM_logo.gif"></a>
+    </div>
+  </div>
+  -->
+  <H1>pyLBM</H1> Lattice Boltzmann solver
+</div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+        <li class="active"><a href="http://math.u-psud.fr/~pyLBM">pyLBM</a></li>
+        <li class="active"><a href="http://math.u-psud.fr/~pyLBM/doc">Docs</a></li>
+	
+        <li class="active"><a href="index.html">pyLBM v0 Manual</a></li>
+	 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="learning_bounds.html" title="The Boundary Conditions"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="learning_geometry.html" title="The Geometry of the simulation"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="the-scheme">
+<h1>The Scheme<a class="headerlink" href="#the-scheme" title="Permalink to this headline">¶</a></h1>
+<p>With pyLBM, elementary schemes can be gathered and coupled through the
+equilibrium in order to simplify the implementation of the vectorial schemes.
+Of course, the user can implement a single elementary scheme and then recover the
+classical framework of the d&#8217;Humières schemes.</p>
+<p>For pyLBM, the scheme (<a class="reference internal" href="class_scheme.html#pyLBM.scheme.Scheme" title="pyLBM.scheme.Scheme"><code class="xref py py-class docutils literal"><span class="pre">pyLBM.scheme.Scheme</span></code></a>) is performed
+through a dictionary. The generalized d&#8217;Humières framework for vectorial schemes
+is used. In the first section, we describe how build an elementary scheme. Then
+the vectorial schemes are introduced as coupled elementary schemes.</p>
+<div class="section" id="the-elementary-scheme">
+<h2>The elementary scheme<a class="headerlink" href="#the-elementary-scheme" title="Permalink to this headline">¶</a></h2>
+<p>First, we need to define a stencil of velocities, build from a list of velocities
+(<a class="reference internal" href="class_stencil.html#pyLBM.stencil.Stencil" title="pyLBM.stencil.Stencil"><code class="xref py py-class docutils literal"><span class="pre">pyLBM.stencil.Stencil</span></code></a>)</p>
+<div class="section" id="examples-in-1d">
+<h3>Examples in 1D<a class="headerlink" href="#examples-in-1d" title="Permalink to this headline">¶</a></h3>
+<p><a class="reference download internal" href="_downloads/scheme_D1Q2.py"><code class="xref download docutils literal"><span class="pre">script</span></code></a></p>
+<div class="highlight-python"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13</pre></div></td><td class="code"><div class="highlight"><pre><span class="n">d</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="s">&#39;dim&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+  <span class="s">&#39;scheme_velocity&#39;</span><span class="p">:</span><span class="mf">1.</span><span class="p">,</span>
+  <span class="s">&#39;schemes&#39;</span><span class="p">:[{</span>
+    <span class="s">&#39;velocities&#39;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span>
+    <span class="s">&#39;polynomials&#39;</span><span class="p">:</span> <span class="n">Matrix</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="n">X</span><span class="p">]),</span>
+    <span class="s">&#39;equilibrium&#39;</span><span class="p">:</span> <span class="n">Matrix</span><span class="p">([</span><span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="o">.</span><span class="mi">5</span><span class="o">*</span><span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]]),</span>
+    <span class="s">&#39;relaxation_parameters&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.9</span><span class="p">],</span>
+    <span class="p">},</span>
+  <span class="p">],</span>
+<span class="p">}</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">pyLBM</span><span class="o">.</span><span class="n">Scheme</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+</pre></div>
+</td></tr></table></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+          </div>
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">The Scheme</a><ul>
+<li><a class="reference internal" href="#the-elementary-scheme">The elementary scheme</a><ul>
+<li><a class="reference internal" href="#examples-in-1d">Examples in 1D</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="learning_geometry.html"
+                        title="previous chapter">The Geometry of the simulation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="learning_bounds.html"
+                        title="next chapter">The Boundary Conditions</a></p>
+
+        </div>
+      </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2015, Benjamin Graille, Loïc Gouarin.
+      </li>
+      <li>
+      Last updated on Feb 04, 2015.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.3b2.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

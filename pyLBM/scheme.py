@@ -39,17 +39,19 @@ class Scheme:
       - scheme_velocity : the value of the ratio space step over time step
         (la = dx / dt)
       - schemes : a list of dictionaries, one for each scheme
-      - generator : a generator for the code, optional (see :py:class:`pyLBM.generator.Generator`)
+      - generator : a generator for the code, optional
+        (see :py:class:`Generator <pyLBM.generator.Generator>`)
 
     Notes
     -----
 
     Each dictionary of the list `schemes` should contains the following `key:value`
-      - velocities : list of the velocities number
-      - polynomials : sympy matrix of the polynomial functions that define the moments
-      - equilibrium : sympy matrix of the values that define the equilibrium
-      - relaxation_parameters : list of the value of the relaxation parameters
-      - init : a dictionary to define the initial conditions (see examples)
+
+    - velocities : list of the velocities number
+    - polynomials : sympy matrix of the polynomial functions that define the moments
+    - equilibrium : sympy matrix of the values that define the equilibrium
+    - relaxation_parameters : list of the value of the relaxation parameters
+    - init : a dictionary to define the initial conditions (see examples)
 
     If the stencil has already been computed, it can be pass in argument.
 
@@ -62,7 +64,7 @@ class Scheme:
       scheme velocity, ratio dx/dt
     nscheme : int
       number of elementary schemes
-    stencil : object of class :py:class:`pyLBM.stencil.Stencil`
+    stencil : object of class :py:class:`Stencil <pyLBM.stencil.Stencil>`
       a stencil of velocities
     P : list of sympy matrix
       list of polynomials that define the moments
@@ -79,8 +81,11 @@ class Scheme:
       the symbolic inverse matrix
     invMnum : numpy array
       the numeric inverse matrix (F = invMnum m)
-    generator : object of the class :py:class:`pyLBM.generator.Generator`
-      the used generator (:py:class:`pyLBM.generator.NumpyGenerator`, :py:class:`pyLBM.generator.CythonGenerator`, ...)
+    generator : :py:class:`Generator <pyLBM.generator.Generator>`
+      the used generator (
+      :py:class:`NumpyGenerator<pyLBM.generator.NumpyGenerator>`,
+      :py:class:`CythonGenerator<pyLBM.generator.CythonGenerator>`,
+      ...)
 
     Methods
     -------

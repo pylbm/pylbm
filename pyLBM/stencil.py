@@ -36,7 +36,7 @@ def permute_in_place(a):
     It can be used as permutations() of the itertools package but avoids the
     multiple occurences of a same output list.
 
-    Example:
+    Examples
     --------
 
     .. code::python

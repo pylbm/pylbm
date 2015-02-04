@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>the class Geometry &mdash; pyLBM v0 Manual</title>
+    
+    <link rel="stylesheet" type="text/css" href="_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="_static/css/spc-extend.css">
+    <link rel="stylesheet" href="_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     'v0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  false
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/js/copybutton.js"></script>
+    <link rel="top" title="pyLBM v0 Manual" href="index.html" >
+    <link rel="next" title="the module elements" href="module_elements.html" >
+    <link rel="prev" title="The Boundary Conditions" href="learning_bounds.html" > 
+  </head>
+  <body>
+
+<div class="container">
+  <!--
+  <div class="top-scipy-org-logo-header">
+    <a href="index.html">
+      <img style="border: 0;" alt="SciPy" src="_static/img/pyLBM_logo.gif"></a>
+    </div>
+  </div>
+  -->
+  <H1>pyLBM</H1> Lattice Boltzmann solver
+</div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+        <li class="active"><a href="http://math.u-psud.fr/~pyLBM">pyLBM</a></li>
+        <li class="active"><a href="http://math.u-psud.fr/~pyLBM/doc">Docs</a></li>
+	
+        <li class="active"><a href="index.html">pyLBM v0 Manual</a></li>
+	 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="module_elements.html" title="the module elements"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="learning_bounds.html" title="The Boundary Conditions"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="the-class-geometry">
+<h1>the class Geometry<a class="headerlink" href="#the-class-geometry" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="pyLBM.geometry.Geometry">
+<em class="property">class </em><code class="descclassname">pyLBM.geometry.</code><code class="descname">Geometry</code><span class="sig-paren">(</span><em>dico</em><span class="sig-paren">)</span><a class="headerlink" href="#pyLBM.geometry.Geometry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a geometry that defines the fluid part and the solid part.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>dico</strong> : a dictionary that contains the following <cite>key:value</cite></p>
+<blockquote class="last">
+<div><ul class="simple">
+<li>box : a dictionary for the definition of the computed box</li>
+<li>elements : a list of elements (optional)</li>
+</ul>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<dl class="docutils">
+<dt>The dictionary that defines the box should contains the following <cite>key:value</cite></dt>
+<dd><ul class="first last simple">
+<li>x : a list of the bounds in the first direction</li>
+<li>y : a list of the bounds in the second direction (optional)</li>
+<li>z : a list of the bounds in the third direction (optional)</li>
+<li>label : an integer or a list of integers (length twice the number of dimensions) used to label each edge (optional)</li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>see demo/examples/geometry/</p>
+<p class="rubric">Attributes</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="9%" />
+<col width="91%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>dim</td>
+<td>(int) number of spatial dimensions (1, 2, or 3)</td>
+</tr>
+<tr class="row-even"><td>bounds</td>
+<td>(numpy array) the bounds of the box in each spatial direction</td>
+</tr>
+<tr class="row-odd"><td>box_label</td>
+<td>(list of integers) a list of the four labels for the bottom, left, top, and right edges</td>
+</tr>
+<tr class="row-even"><td>list_elem</td>
+<td>(list of elements) a list that contains each element added or deleted in the box</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="23%" />
+<col width="77%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>add_elem :</td>
+<td>function that adds an element in the box</td>
+</tr>
+<tr class="row-even"><td>visualize :</td>
+<td>function to visualize the box</td>
+</tr>
+<tr class="row-odd"><td>list_of_labels :</td>
+<td>return a list of all the unique labels of the geometry</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="pyLBM.geometry.Geometry.add_elem">
+<code class="descname">add_elem</code><span class="sig-paren">(</span><em>elem</em><span class="sig-paren">)</span><a class="headerlink" href="#pyLBM.geometry.Geometry.add_elem" title="Permalink to this definition">¶</a></dt>
+<dd><p>add a solid or a fluid part in the domain</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>elem</strong> : a geometric element to add (or to del)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyLBM.geometry.Geometry.list_of_labels">
+<code class="descname">list_of_labels</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyLBM.geometry.Geometry.list_of_labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the list of all the labels used in the geometry.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyLBM.geometry.Geometry.visualize">
+<code class="descname">visualize</code><span class="sig-paren">(</span><em>viewlabel=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pyLBM.geometry.Geometry.visualize" title="Permalink to this definition">¶</a></dt>
+<dd><p>plot a view of the geometry</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>viewlabel</strong> : boolean to activate the labels mark (optional)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+          </div>
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="learning_bounds.html"
+                        title="previous chapter">The Boundary Conditions</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="module_elements.html"
+                        title="next chapter">the module elements</a></p>
+
+        </div>
+      </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2015, Benjamin Graille, Loïc Gouarin.
+      </li>
+      <li>
+      Last updated on Feb 04, 2015.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.3b2.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>
