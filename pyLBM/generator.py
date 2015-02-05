@@ -21,18 +21,23 @@ def matMult(A, x, y, indent='', prefix='', suffix=''):
 
     Parameters
     ----------
-    A : the matrix coefficients
-    x : input vector in a string format
-    y : output vector in a string format where the matrix vector product is
-        stored
-    indent : string representing spaces or tabs which are set at the beginning
-             of each line
+    A : numpy array
+      the matrix coefficients
+    x : string
+      input vector in a string format
+    y : string
+      output vector in a string format where the matrix vector product is stored
+    indent : string
+      representing spaces or tabs which are set at the beginning of each line
     prefix : string
+      some string to add before indices
     suffix : string
+      some string to add after indices
 
     Returns
     -------
-    string representing the unroll matrix vector operation y = Ax
+    code : string
+      the string representing the unroll matrix vector operation y = Ax
 
     Examples
     --------
@@ -78,6 +83,60 @@ def matMult(A, x, y, indent='', prefix='', suffix=''):
     return code
 
 class Generator:
+    """
+    the generic class to generate the code
+
+    Parameters
+    ----------
+
+    build_dir : string, optional
+      the directory where the code is written
+    suffix : string, optional
+      the suffix of the file where the code is written
+
+    Attributes
+    ----------
+
+    build_dir : string
+      the directory where the code is written
+    f : file identifier
+      the file where the code is written
+    code : string
+      the generated code
+
+    Methods
+    -------
+
+    setup :
+      default setup function (empty)
+    f2m :
+      default f2m function (empty)
+    m2f :
+      default m2f function (empty)
+    transport :
+      default transport function (empty)
+    relaxation :
+      default relaxation function (empty)
+    onetimestep :
+      defulat one time step function (empty)
+    compile :
+      default compile function (writte the code in the file)
+    get_module :
+      get the name of the file where the code is written
+    exit :
+      exit function that erases the code
+
+    Notes
+    -----
+
+    With pyLBM, the code can be generated in several langages.
+    Each phase of the Lattice Boltzmann Method
+    (as transport, relaxation, f2m, m2f, ...) is treated by an optimzed
+    function written, compiled, and executed by the generator.
+
+    The generated code can be read by typesetting the attribute
+    ``code``.
+    """
     def __init__(self, build_dir=None, suffix='.py'):
         self.build_dir = build_dir
         if build_dir is None:
@@ -103,6 +162,12 @@ class Generator:
     def transport(self,):
         pass
 
+    def relaxation(self,):
+        pass
+
+    def onetimestep(self,):
+        pass
+
     def compile(self):
         log.info("*"*30 + "\n" + self.code + "\n" + "*"*30)
         self.f.write(self.code)
@@ -117,11 +182,71 @@ class Generator:
         os.unlink(self.f.name)
 
 class NumpyGenerator(Generator):
+    """
+    the default generator of code,
+    subclass of :py:class:`Generator<pyLBM.generator.Generator>`
+
+    Parameters
+    ----------
+
+    build_dir : string, optional
+      the directory where the code has to be written
+
+    Notes
+    -----
+
+    This generator can always be used but is not the most efficient.
+
+    Attributes
+    ----------
+
+    build_dir : string
+      the directory where the code is written
+    f : file identifier
+      the file where the code is written
+    code : string
+      the generated code
+
+    Methods
+    -------
+
+    transport :
+      generate the code of the transport phase
+    relaxation :
+      generate the code of the relaxation phase
+    equilibrium :
+      generate the code of the equilibrium
+    m2f :
+      generate the code to compute the distribution functions
+      from the moments
+    f2m :
+      generate the code to compute the moments
+      from the distribution functions
+    """
     def __init__(self, build_dir=None):
         Generator.__init__(self, build_dir)
         sys.path.append(self.build_dir)
 
     def transport(self, ns, stencil, dtype = 'f8'):
+        """
+        generate the code of the transport phase
+
+        Parameters
+        ----------
+
+        ns : int
+          the number of elementary schemes
+        stencil : :py:class:`Stencil<pyLBM.stencil.Stencil>`
+          the stencil of velocities
+        dtype : string, optional
+          the type of the data (default 'f8')
+
+        Returns
+        -------
+
+        code : string
+          add the transport phase in the attribute ``code``.
+        """
         self.code += "def transport(f):\n"
         ind = 0
         for k in xrange(ns):
@@ -148,6 +273,29 @@ class NumpyGenerator(Generator):
         self.code += "\n"
 
     def equilibrium(self, ns, stencil, eq, la, dtype = 'f8'):
+        """
+        generate the code of the projection on the equilibrium
+
+        Parameters
+        ----------
+
+        ns : int
+          the number of elementary schemes
+        stencil : :py:class:`Stencil<pyLBM.stencil.Stencil>`
+          the stencil of velocities
+        eq : sympy matrix
+          the equilibrium (formally given)
+        la : double
+          the value of the scheme velocity (dx/dt)
+        dtype : string, optional
+          the type of the data (default 'f8')
+
+        Returns
+        -------
+
+        code : string
+          add the equilibrium function in the attribute ``code``.
+        """
         self.code += "def equilibrium(m):\n"
 
         def sub(g):
@@ -168,6 +316,31 @@ class NumpyGenerator(Generator):
         self.code += "\n"
 
     def relaxation(self, ns, stencil, s, eq, la, dtype = 'f8'):
+        """
+        generate the code of the relaxation phase
+
+        Parameters
+        ----------
+
+        ns : int
+          the number of elementary schemes
+        stencil : :py:class:`Stencil<pyLBM.stencil.Stencil>`
+          the stencil of velocities
+        s : list of list of double
+          the values of the relaxation parameters
+        eq : sympy matrix
+          the equilibrium (formally given)
+        la : double
+          the value of the scheme velocity (dx/dt)
+        dtype : string, optional
+          the type of the data (default 'f8')
+
+        Returns
+        -------
+
+        code : string
+          add the relaxation phase in the attribute ``code``.
+        """
         self.code += "def relaxation(m):\n"
 
         def sub(g):
@@ -187,18 +360,111 @@ class NumpyGenerator(Generator):
                         self.code += "\tm[{0:d}] *= (1. - {1:.16f})\n".format(stencil.nv_ptr[k] + i, s[k][i])
         self.code += "\n"
 
-    def m2f(self, A, k, dim):
+    def m2f(self, A, k, dim, dtype = 'f8'):
+        """
+        generate the code to compute the distribution functions from the moments
+
+        Parameters
+        ----------
+
+        A : numpy array
+          the matrix M^(-1) in the d'Humieres framework
+        k : int
+          the number of the stencil for which the code has to be generated
+        dim : int
+          the space dimension (unused)
+        dtype : string, optional
+          the type of the data (default 'f8')
+
+        Returns
+        -------
+
+        code : string
+          add the m2f function in the attribute ``code``.
+
+        Notes
+        -----
+
+        For the NumpyGenerator, it seems to be more efficient
+        to generate one function per elementary scheme
+        because the index corresponding to the stencil is the first index.
+        """
         self.code += "def m2f_{0:d}(m, f):\n".format(k)
         self.code += matMult(A, 'm', 'f', '\t')
         self.code += "\n"
 
     def f2m(self, A, k, dim, dtype = 'f8'):
+        """
+        generate the code to compute the moments from the distribution functions
+
+        Parameters
+        ----------
+
+        A : numpy array
+          the matrix M in the d'Humieres framework
+        k : int
+          the number of the stencil for which the code has to be generated
+        dim : int
+          the space dimension (unused)
+        dtype : string, optional
+          the type of the data (default 'f8')
+
+        Returns
+        -------
+
+        code : string
+          add the f2m function in the attribute ``code``.
+
+        Notes
+        -----
+
+        For the NumpyGenerator, it seems to be more efficient
+        to generate one function per elementary scheme
+        because the index corresponding to the stencil is the first index.
+        """
         self.code += "def f2m_{0:d}(f, m):\n".format(k)
         self.code += matMult(A, 'f', 'm', '\t')
         self.code += "\n"
 
 
 class NumbaGenerator(Generator):
+    """
+    generate the code by using `Numba <http://numba.pydata.org>`_,
+    subclass of :py:class:`Generator<pyLBM.generator.Generator>`
+
+    Notes
+    -----
+
+    Not yet completely implemented
+
+    Parameters
+    ----------
+
+    build_dir : string, optional
+      the directory where the code has to be written
+
+    Attributes
+    ----------
+
+    build_dir : string
+      the directory where the code is written
+    f : file identifier
+      the file where the code is written
+    code : string
+      the generated code
+
+    Methods
+    -------
+
+    setup :
+      setup function to import the module numba
+    m2f :
+      generate the code to compute the distribution functions
+      from the moments
+    f2m :
+      generate the code to compute the moments
+      from the distribution functions
+    """
     def __init__(self, build_dir=None):
         Generator.__init__(self, build_dir)
 
@@ -230,10 +496,62 @@ class NumbaGenerator(Generator):
         self.code += "\n"
 
 class CythonGenerator(Generator):
+    """
+    generate the code by using `Cython <http://cython.org>`_,
+    subclass of :py:class:`Generator<pyLBM.generator.Generator>`
+
+    Parameters
+    ----------
+
+    build_dir : string, optional
+      the directory where the code has to be written
+
+    Notes
+    -----
+
+    This generator can be used if cython is installed and is more
+    efficient than :py:class:`NumpyGenerator <pyLBM.generator.NumpyGenerator>`
+
+    Attributes
+    ----------
+
+    build_dir : string
+      the directory where the code is written
+    f : file identifier
+      the file where the code is written
+    code : string
+      the generated code
+
+    Methods
+    -------
+
+    setup :
+      setup function to import the module numba
+    transport :
+      generate the code of the transport phase
+    relaxation :
+      generate the code of the relaxation phase
+    equilibrium :
+      generate the code of the equilibrium
+    m2f :
+      generate the code to compute the distribution functions
+      from the moments
+    f2m :
+      generate the code to compute the moments
+      from the distribution functions
+    onetimestep :
+      generate the code to compute one time step of the
+      Lattice Boltzmann method
+    compile :
+      compile the cython code
+    """
     def __init__(self, build_dir=None):
         Generator.__init__(self, build_dir, suffix='.pyx')
 
     def setup(self):
+        """
+        initialization of the .pyx file to use cython
+        """
         self.code += """
 #!python
 #cython: boundscheck=False
@@ -245,6 +563,34 @@ from libc.stdlib cimport malloc, free
 """
 
     def m2f(self, A, k, dim, dtype = 'double'):
+        """
+        generate the code to compute the distribution functions from the moments
+
+        Parameters
+        ----------
+
+        A : numpy array
+          the matrix M^(-1) in the d'Humieres framework
+        k : int
+          the number of the stencil for which the code has to be generated
+        dim : int
+          the space dimension (unused)
+        dtype : string, optional
+          the type of the data (default 'f8')
+
+        Returns
+        -------
+
+        code : string
+          add the m2f function in the attribute ``code``.
+
+        Notes
+        -----
+
+        For the CythonGenerator, it seems to be more efficient
+        to generate one function for the global scheme
+        because the index corresponding to the stencil is the last index.
+        """
         ext = ''
         for i in xrange(dim):
             ext += ', :'
@@ -271,6 +617,34 @@ from libc.stdlib cimport malloc, free
         self.code += "\n"
 
     def f2m(self, A, k, dim, dtype = 'double'):
+        """
+        generate the code to compute the moments from the distribution functions
+
+        Parameters
+        ----------
+
+        A : numpy array
+          the matrix M in the d'Humieres framework
+        k : int
+          the number of the stencil for which the code has to be generated
+        dim : int
+          the space dimension (unused)
+        dtype : string, optional
+          the type of the data (default 'f8')
+
+        Returns
+        -------
+
+        code : string
+          add the f2m function in the attribute ``code``.
+
+        Notes
+        -----
+
+        For the CythonGenerator, it seems to be more efficient
+        to generate one function for the global scheme
+        because the index corresponding to the stencil is the last index.
+        """
         ext = ''
         for i in xrange(dim):
             ext += ', :'
@@ -297,6 +671,25 @@ from libc.stdlib cimport malloc, free
         self.code += "\n"
 
     def transport(self, ns, stencil, dtype = 'double'):
+        """
+        generate the code of the transport phase
+
+        Parameters
+        ----------
+
+        ns : int
+          the number of elementary schemes
+        stencil : :py:class:`Stencil<pyLBM.stencil.Stencil>`
+          the stencil of velocities
+        dtype : string, optional
+          the type of the data (default 'f8')
+
+        Returns
+        -------
+
+        code : string
+          add the transport phase in the attribute ``code``.
+        """
         stmp = ''
         for i in xrange(stencil.dim):
             stmp += ', int i{0}'.format(i)
@@ -334,6 +727,29 @@ from libc.stdlib cimport malloc, free
         self.code += set_f + "\n"
 
     def equilibrium(self, ns, stencil, eq, la, dtype = 'f8'):
+        """
+        generate the code of the projection on the equilibrium
+
+        Parameters
+        ----------
+
+        ns : int
+          the number of elementary schemes
+        stencil : :py:class:`Stencil<pyLBM.stencil.Stencil>`
+          the stencil of velocities
+        eq : sympy matrix
+          the equilibrium (formally given)
+        la : double
+          the value of the scheme velocity (dx/dt)
+        dtype : string, optional
+          the type of the data (default 'f8')
+
+        Returns
+        -------
+
+        code : string
+          add the equilibrium function in the attribute ``code``.
+        """
         self.code += "def equilibrium(double[:, ::1] m):\n"
         self.code += "\tcdef:\n"
 
@@ -369,6 +785,31 @@ from libc.stdlib cimport malloc, free
         self.code += "\n"
 
     def relaxation(self, ns, stencil, s, eq, la, dtype = 'f8'):
+        """
+        generate the code of the relaxation phase
+
+        Parameters
+        ----------
+
+        ns : int
+          the number of elementary schemes
+        stencil : :py:class:`Stencil<pyLBM.stencil.Stencil>`
+          the stencil of velocities
+        s : list of list of double
+          the values of the relaxation parameters
+        eq : sympy matrix
+          the equilibrium (formally given)
+        la : double
+          the value of the scheme velocity (dx/dt)
+        dtype : string, optional
+          the type of the data (default 'f8')
+
+        Returns
+        -------
+
+        code : string
+          add the relaxation phase in the attribute ``code``.
+        """
         self.code += "cdef void relaxation(double *m) nogil:\n"
 
         def subpow(g):
@@ -397,6 +838,21 @@ from libc.stdlib cimport malloc, free
         self.code += "\n"
 
     def onetimestep(self, stencil):
+        """
+        generate the code for one time step of the Lattice Boltzmann method
+
+        Parameters
+        ----------
+
+        stencil : :py:class:`Stencil<pyLBM.stencil.Stencil>`
+          the stencil of velocities
+
+        Returns
+        -------
+        code : string
+          add the onetimestep function in the attribute ``code``.
+
+        """
         s = ':, '*stencil.dim
         ext = s[:-2]
 
@@ -442,6 +898,16 @@ def onetimestep(double[{0}::1] m, double[{0}::1] f, double[{0}::1] fnew, double[
         self.code += "\n"
 
     def compile(self):
+        """
+        compile the cython code by using the module
+        `pyximport <http://docs.cython.org/src/reference/compilation.html>`_
+
+        Notes
+        -----
+
+        The default options of the compilation are -O3 and -w.
+        If the compilation can use the option -fopenmp, add it here.
+        """
         Generator.compile(self)
         bld = open(self.f.name.replace('.pyx', '.pyxbld'), "w")
         if sys.platform == 'darwin':
@@ -466,189 +932,6 @@ def make_ext(modname, pyxfilename):
             """
         bld.write(code)
         bld.close()
-
-        import pyximport
-        pyximport.install(build_dir= self.build_dir, inplace=True)
-
-class CythonGeneratorOld(Generator):
-    def __init__(self, build_dir=None):
-        Generator.__init__(self, build_dir, suffix='.pyx')
-
-    def setup(self):
-        self.code += """
-#!python
-#cython: boundscheck=False
-#cython: wraparound=False
-#cython: cdivision=True
-#import cython
-#from cython.parallel import prange
-
-"""
-
-    def m2f(self, A, k, dim, dtype = 'double'):
-        ext = ''
-        for i in xrange(dim):
-            ext += ', :'
-
-        self.code += "def m2f_{0:d}({1}[:, ::1] m, {1}[:, ::1] f):\n".format(k, dtype)
-        self.code += "\tcdef:\n"
-
-        self.code += "\t\tint i, n = f.shape[1] \n"
-
-        #self.code += "\tfor i in prange(n, nogil=True, schedule='dynamic'):\n"
-        self.code += "\tfor i in xrange(n):\n"
-
-        tab = "\t\t"
-        ext = ', i'
-
-        self.code += matMult(A, 'm', 'f', tab, suffix=ext)
-        self.code += "\n"
-
-    def f2m(self, A, k, dim, dtype = 'double'):
-        ext = ''
-        for i in xrange(dim):
-            ext += ', :'
-
-        self.code += "def f2m_{0:d}({1}[:, ::1] f, {1}[:, ::1] m):\n".format(k, dtype)
-        self.code += "\tcdef:\n"
-
-        self.code += "\t\tint i, n = m.shape[1] \n"
-        #self.code += "\tfor i in prange(n, nogil=True, schedule='dynamic'):\n"
-        self.code += "\tfor i in xrange(n):\n"
-
-        tab = "\t"*2
-        ext = ', i'
-        self.code += matMult(A, 'f', 'm', tab, suffix=ext)
-        self.code += "\n"
-
-    def transport(self, ns, stencil, dtype = 'double'):
-        self.code += "def transport({0}[:{1}:1] f):\n".format(dtype, ', :'*stencil.dim)
-        self.code += "\tcdef:\n"
-
-        for i in xrange(stencil.dim):
-            self.code += "\t\tint i{0}, n{0} = f.shape[{1:d}] \n".format(i, i+1)
-
-        ind = 0
-        for k in xrange(ns):
-            for i in xrange(stencil.nv[k]):
-                s1 = ''
-                s2 = ''
-                tab = '\t'
-                loop = ''
-                toInput = False
-                v = stencil.v[k][i].v
-                lv = len(v)
-                for iv in xrange(len(v)-1, -1, -1):
-                    s1 += ', i{0:d}'.format(lv - 1 - iv)
-
-                    if v[iv] > 0:
-                        toInput = True
-                        loop += tab + 'for i{0:d} in xrange(n{0:d} - 1, {1:d} - 1, -1):\n'.format(lv - 1 - iv, v[iv])
-                        s2 += ', i{0:d} - {1:d}'.format(lv - 1 - iv, v[iv])
-                        tab += '\t'
-                    elif v[iv] < 0:
-                        toInput = True
-                        loop += tab + 'for i{0:d} in xrange(0, n{0:d} - {1:d}):\n'.format(lv - 1 - iv, -v[iv])
-                        s2 += ', i{0:d} + {1:d}'.format(lv - 1 - iv, -v[iv])
-                        tab += '\t'
-                    else:
-                        loop += tab + 'for i{0:d} in xrange(0, n{0:d}):\n'.format(lv - 1 - iv)
-                        s2 += ', i{0:d}'.format(lv - 1 - iv)
-                        tab += '\t'
-
-                if toInput:
-                    self.code += loop + tab + "\tf[{0:d}{1}] = f[{0:d}{2}]\n".format(ind, s1, s2)
-                ind += 1
-        self.code += "\n"
-
-    def equilibrium(self, ns, stencil, eq, la, dtype = 'f8'):
-        self.code += "def equilibrium(double [:, ::1] m):\n"
-        self.code += "\tcdef:\n"
-
-        self.code += "\t\tint i, n = m.shape[1] \n"
-        self.code += "\tfor i in xrange(n):\n"
-
-        def subpow(g):
-            s = g.group('m')
-            for i in xrange(int(g.group('pow')) - 1):
-                s += '*' + g.group('m')
-            return s
-
-        def sub(g):
-            i = int(g.group('i'))
-            j = int(g.group('j'))
-
-            return '[' + str(stencil.nv_ptr[i] + j) + ', i]'
-
-
-        for k in xrange(ns):
-            for i in xrange(stencil.nv[k]):
-                if str(eq[k][i]) != "m[%d][%d]"%(k,i):
-                    if eq[k][i] != 0:
-                        str2input = str(eq[k][i].subs([(sp.symbols('LA'), la),]))
-                        res = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", subpow, str2input)
-                        res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub, res)
-
-                        #res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub,
-                        #           str(eq[k][i].subs([(sp.symbols('LA'), la),])))
-                        self.code += "\t\tm[%d, i] = %s\n"%(stencil.nv_ptr[k] + i, res)
-                    else:
-                        self.code += "\t\tm[%d, i] = 0.\n"%(stencil.nv_ptr[k] + i)
-        self.code += "\n"
-
-    def relaxation(self, ns, stencil, s, eq, la, dtype = 'f8'):
-        self.code += "def relaxation(double [:, ::1] m):\n"
-        self.code += "\tcdef:\n"
-
-        self.code += "\t\tint i, j, n = m.shape[1] \n"
-        self.code += "\t\tdouble temp[%d] \n"%stencil.nv_ptr[-1]
-        self.code += "\tfor i in xrange(n):\n"
-        self.code += "\t\tfor j in xrange(%d):\n"%stencil.nv_ptr[-1]
-        self.code += "\t\t\ttemp[j] = m[j, i]\n"
-
-        def subpow(g):
-            s = g.group('m')
-            for i in xrange(int(g.group('pow')) - 1):
-                s += '*' + g.group('m')
-            return s
-
-        def sub(g):
-            i = int(g.group('i'))
-            j = int(g.group('j'))
-
-            return '[' + str(stencil.nv_ptr[i] + j) + ']'
-
-        for k in xrange(ns):
-            for i in xrange(stencil.nv[k]):
-                if str(eq[k][i]) != "m[%d][%d]"%(k,i):
-                    if eq[k][i] != 0:
-                        str2input = str(eq[k][i].subs([(sp.symbols('LA'), la),]))
-                        res = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", subpow, str2input)
-                        res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub, res)
-                        res = res.replace('m[', 'temp[')
-
-                        self.code += "\t\ttemp[{0:d}] += {1:.16f}*({2} - temp[{0:d}])\n".format(stencil.nv_ptr[k] + i, s[k][i], res)
-                    else:
-                        self.code += "\t\ttemp[{0:d}] *= (1. - {1:.16f})\n".format(stencil.nv_ptr[k] + i, s[k][i])
-        self.code += "\t\tfor j in xrange(%d):\n"%stencil.nv_ptr[-1]
-        self.code += "\t\t\tm[j, i] = temp[j]\n"
-        self.code += "\n"
-
-    def compile(self):
-        Generator.compile(self)
-        #bld = open(self.f.name.replace('.pyx', '.pyxbld'), "w")
-        code = """
-def make_ext(modname, pyxfilename):
-    from distutils.extension import Extension
-
-    return Extension(name = modname,
-                     sources=[pyxfilename],
-                     #extra_compile_args = ['-O3', '-fopenmp'],
-                     #extra_link_args= ['-fopenmp'])
-
-"""
-        #bld.write(code)
-        #bld.close()
 
         import pyximport
         pyximport.install(build_dir= self.build_dir, inplace=True)

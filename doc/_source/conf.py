@@ -33,10 +33,12 @@ extensions = ['sphinx.ext.autodoc',
               #'sphinx.ext.intersphinx',
               #'sphinx.ext.coverage',
               #'sphinx.ext.doctest',
-              'sphinx.ext.autosummary',
+              #'sphinx.ext.autosummary',
               #'sphinxarg.ext',
+              #'sphinx.ext.viewcode',
               ]
 
+autodoc_member_order = 'bysource'
 numpydoc_show_class_members = True
 numpydoc_class_members_toctree = False
 
@@ -207,7 +209,6 @@ html_static_path = ['../_static']
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'pyLBMdoc'
-
 
 # -- Options for LaTeX output --------------------------------------------------
 

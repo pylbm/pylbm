@@ -33,7 +33,7 @@ The dictionary should contain all the needed informations as
 - another informations like the space step, the scheme velocity, the generator
   of the functions...
 
-Documentation for users:
+Documentation for users
 ---------------------------
 
 .. toctree::
@@ -44,7 +44,7 @@ Documentation for users:
    The boundary conditions <learning_bounds>
 
 
-Documentation of the code:
+Documentation of the code
 ---------------------------
 
 .. toctree::
@@ -55,9 +55,10 @@ Documentation of the code:
   The module stencil <module_stencil>
   The class Domain <class_domain>
   The class Scheme <class_scheme>
+  The module generator <module_generator>
   The class Simulation <class_simulation>
 
-Requires:
+Requires
 ---------------------------
 
    * numpy
@@ -65,7 +66,7 @@ Requires:
    * matplotlib
    * time
 
-Optionals:
+Optionals
 ---------------------------
 
    * cython
