@@ -13,10 +13,6 @@ import matplotlib.colors as colors
 import matplotlib.cm as cm
 
 import pyLBM
-import pyLBM.Geometry as pyLBMGeom
-import pyLBM.Simulation as pyLBMSimu
-import pyLBM.Domain as pyLBMDom
-import pyLBM.Scheme as pyLBMScheme
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
@@ -31,28 +27,26 @@ def Smooth(x):
     largeur = 0.1*(xmax-xmin)
     milieu -= 0.5*c*Tf
     return 1.0/largeur**10 * (x-milieu-largeur)**5 * (milieu-x-largeur)**5 * (abs(x-milieu)<=largeur)
-    
+
 
 def Calcul_D1Q2(k, FINIT, norm=1):
     dx = 2**(-k) # spatial step
-    dicoQ2 = {'dim':dim,
-              'box':([xmin, xmax],),
-              'space_step':dx,
-              'scheme_velocity':la,
-              'number_of_schemes':1,
-              'init':'moments',
-              0:{'velocities':[2,1],
-                 'polynomials':Matrix([1,LA*X]),
-                 'relaxation_parameters':[0.,1.5],
-                 'equilibrium':Matrix([u[0][0], c*u[0][0]]),
-                 'init':{0:FINIT}
-                 }
-                }
-    geom = pyLBMGeom.Geometry(dicoQ2)
-    sol = pyLBMSimu.Simulation(dicoQ2, geom)
+    dicoQ2 ={
+        'box':{'x':[xmin, xmax], 'label':-1},
+        'space_step':dx,
+        'scheme_velocity':la,
+        'schemes':[{
+            'velocities':[2,1],
+            'polynomials':Matrix([1,LA*X]),
+            'relaxation_parameters':[0.,1.5],
+            'equilibrium':Matrix([u[0][0], c*u[0][0]]),
+            'init':{0:(FINIT,)},
+            },],
+        }
+    sol = pyLBM.Simulation(dicoQ2)
     while (sol.t<Tf):
-        sol.one_time_step_fast()
-    exacte = FINIT(sol.Domain.x[0][1:-1] - c*sol.t)
+        sol.one_time_step()
+    exacte = FINIT(sol.domain.x[0][1:-1] - c*sol.t)
     if (norm == 1):
         Err = dx*np.linalg.norm(sol.m[0][0][1:-1] - exacte, 1)
     elif (norm == 2):
@@ -69,45 +63,23 @@ def Calcul_D1Q3(k, FINIT, norm=1):
     sigma1 = 1./s1-0.5
     sigma2 = sqrt(sigma1**2+1./(64*sigma1**2)) - sigma1 + 1./(8*sigma1)
     sQ3 = [0., 1./(0.5+sigma1), 1./(0.5+sigma2)]
-    dicoQ3 = {'dim':dim,
-              'box':([xmin, xmax],),
-              'space_step':dx,
-              'scheme_velocity':la,
-              'number_of_schemes':1,
-              'init':'moments',
-              0:{'velocities':[2,0,1],
-                 'polynomials':Matrix([1,LA*X,LA**2*X**2]),
-                 'relaxation_parameters':sQ3,
-                 'equilibrium':Matrix([u[0][0], c*u[0][0], c**2*u[0][0]]),
-                 'init':{0:FINIT}
-                 }
-            }
-    """
-    s1 = 2.
-    s2 = s1
-    sQ3 = [0., s1, s2]
-    dicoQ3 = {'dim':dim,
-              'box':([xmin, xmax],),
-              'space_step':dx,
-              'scheme_velocity':2,
-              'number_of_schemes':1,
-              'init':'moments',
-              0:{'velocities':[2,0,1],
-                 'polynomials':Matrix([1,LA*X,LA**2*X**2]),
-                 'relaxation_parameters':sQ3,
-                 'equilibrium':Matrix([u[0][0], c*u[0][0], (2*c**2+LA**2)/3*u[0][0]]),
-                 'init':{0:Smooth}
-                 #'init':{0:Riemann_pb},
-                 #'init_args':{0:(ug, ud)}
-                 }
-            }
-    """
-    geom = pyLBMGeom.Geometry(dicoQ3)
-    sol = pyLBMSimu.Simulation(dicoQ3, geom)
-    sol.m[0][2,1:-1] -= 0.5/sol.Scheme.s[0][2] * c/sol.Scheme.la*(sol.Scheme.la**2-c**2) * (sol.m[0][0,2:]-sol.m[0][0,0:-2])
+    dicoQ3 = {
+        'box':{'x':[xmin, xmax], 'label':-1},
+        'space_step':dx,
+        'scheme_velocity':la,
+        'schemes':[{
+            'velocities':[2,0,1],
+            'polynomials':Matrix([1,LA*X,LA**2*X**2]),
+            'relaxation_parameters':sQ3,
+            'equilibrium':Matrix([u[0][0], c*u[0][0], c**2*u[0][0]]),
+            'init':{0:(FINIT,)}
+            },],
+        }
+    sol = pyLBM.Simulation(dicoQ3)
+    sol.m[0][2][1:-1] -= 0.5/sol.scheme.s[0][2] * c/sol.scheme.la*(sol.scheme.la**2-c**2) * (sol.m[0][0][2:]-sol.m[0][0][0:-2])
     while (sol.t<Tf):
         sol.one_time_step()
-    exacte = FINIT(sol.Domain.x[0][1:-1] - c*sol.t)
+    exacte = FINIT(sol.domain.x[0][1:-1] - c*sol.t)
     if (norm == 1):
         Err = dx*np.linalg.norm(sol.m[0][0][1:-1] - exacte, 1)
     elif (norm == 2):
@@ -142,5 +114,3 @@ if __name__ == "__main__":
     #plt.ioff()
     #plt.draw()
     #plt.show()
-    
-

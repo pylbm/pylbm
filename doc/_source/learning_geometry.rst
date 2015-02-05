@@ -1,5 +1,5 @@
 The Geometry of the simulation
-******************************
+##############################
 
 With pyLBM, the numerical simulations can be performed in a domain
 with a complex geometry. This geometry is construct without considering a
@@ -24,10 +24,10 @@ Several examples of geometries can be found in
 demo/examples/geometry/
 
 Examples in 1D
-==============================
+******************************
 
 The segment [0, 1]
-------------------------------
+==============================
 
 :download:`script<codes/geometry_1D_segment.py>`
 
@@ -43,10 +43,10 @@ If no labels are given in the dictionary, the default value is 0.
 
 
 Examples in 2D
-==============================
+******************************
 
 A simple squared domain
-------------------------------
+==============================
 
 :download:`script<codes/geometry_2D_square_label.py>`
 
@@ -78,7 +78,7 @@ give only the integer value of the label instead of the list.
 If no labels are given in the dictionary, the default value is 0.
 
 A square with a hole
-------------------------------
+==============================
 
 :download:`script 1<codes/geometry_2D_square_hole.py>`
 :download:`script 2<codes/geometry_2D_square_triangle.py>`
@@ -113,7 +113,7 @@ or a :py:class:`parallelogram <pyLBM.elements.Parallelogram>`
     :linenos:
 
 A complex cavity
-------------------------------
+==============================
 
 :download:`script <codes/geometry_2D_cavity.py>`
 
@@ -142,6 +142,6 @@ in this way.
 
 
 Examples in 3D
-==============================
+******************************
 
 TODO

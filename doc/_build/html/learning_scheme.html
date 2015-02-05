@@ -90,17 +90,85 @@
 equilibrium in order to simplify the implementation of the vectorial schemes.
 Of course, the user can implement a single elementary scheme and then recover the
 classical framework of the d&#8217;Humières schemes.</p>
-<p>For pyLBM, the scheme (<a class="reference internal" href="class_scheme.html#pyLBM.scheme.Scheme" title="pyLBM.scheme.Scheme"><code class="xref py py-class docutils literal"><span class="pre">pyLBM.scheme.Scheme</span></code></a>) is performed
+<p>For pyLBM, the <a class="reference internal" href="class_scheme.html#pyLBM.scheme.Scheme" title="pyLBM.scheme.Scheme"><code class="xref py py-class docutils literal"><span class="pre">scheme</span></code></a> is performed
 through a dictionary. The generalized d&#8217;Humières framework for vectorial schemes
 is used. In the first section, we describe how build an elementary scheme. Then
 the vectorial schemes are introduced as coupled elementary schemes.</p>
-<div class="section" id="the-elementary-scheme">
-<h2>The elementary scheme<a class="headerlink" href="#the-elementary-scheme" title="Permalink to this headline">¶</a></h2>
-<p>First, we need to define a stencil of velocities, build from a list of velocities
-(<a class="reference internal" href="class_stencil.html#pyLBM.stencil.Stencil" title="pyLBM.stencil.Stencil"><code class="xref py py-class docutils literal"><span class="pre">pyLBM.stencil.Stencil</span></code></a>)</p>
+<div class="section" id="the-elementary-schemes">
+<h2>The elementary schemes<a class="headerlink" href="#the-elementary-schemes" title="Permalink to this headline">¶</a></h2>
+<p>Let us first consider a regular lattice <img class="math" src="_images/math/53a7d99088c1cbd146ec8640b7c6360998cfa86f.png" alt="L" style="vertical-align: 0px"/> in dimension <img class="math" src="_images/math/11ddebb28b41be3911028bba573384e46a780540.png" alt="d" style="vertical-align: 0px"/>
+with a typical mesh size <img class="math" src="_images/math/9c94660193d9ad392ddb843721d1c06aa02afccc.png" alt="dx" style="vertical-align: 0px"/>, and the time step <img class="math" src="_images/math/59da682741234dcbfb38abc6f1c81cac3fd1c1c2.png" alt="dt" style="vertical-align: 0px"/>.
+The scheme velocity <img class="math" src="_images/math/e77607a19744406310c093481c802d45bc53f674.png" alt="\lambda" style="vertical-align: 0px"/> is then defined by
+<img class="math" src="_images/math/b089277c7f2d6ea7a3b6b7fca62fbae1233ad0b6.png" alt="\lambda = dx/dt" style="vertical-align: -4px"/>.
+We introduce a set of <img class="math" src="_images/math/5938daf417e7f73374014dc0cbcda32f65e86917.png" alt="q" style="vertical-align: -3px"/> velocities adapted to this lattice
+<img class="math" src="_images/math/5e6a6a8d542bafea08315ec022dff5262eafcafe.png" alt="\{v_0, \ldots, v_{q-1}\}" style="vertical-align: -4px"/>, that is
+to say that, if <img class="math" src="_images/math/a6345e315fb341b8e67520f432c92fd4fdf86262.png" alt="x" style="vertical-align: 0px"/> is a point of the lattice <img class="math" src="_images/math/53a7d99088c1cbd146ec8640b7c6360998cfa86f.png" alt="L" style="vertical-align: 0px"/>, the point
+<img class="math" src="_images/math/2dae6af1bdd138c53847ad16388f7bf04344b722.png" alt="x+v_jdt" style="vertical-align: -4px"/> is on the lattice for every <img class="math" src="_images/math/73aa75f99a0addf131e6b7533fc308f6226ea51a.png" alt="j\in\{0,\ldots,q{-}1\}" style="vertical-align: -4px"/>.</p>
+<p>The aim of the <img class="math" src="_images/math/91f82226be638a53abbcaed899254a49acb6094d.png" alt="DdQq" style="vertical-align: -3px"/> scheme is to compute a distribution function
+vector <img class="math" src="_images/math/3259c515fb25061c4f93676fa142adc5ac1c3a8d.png" alt="{\boldsymbol f} = (f_0,\ldots,f_{q-1})" style="vertical-align: -4px"/> on the lattice
+<img class="math" src="_images/math/53a7d99088c1cbd146ec8640b7c6360998cfa86f.png" alt="L" style="vertical-align: 0px"/> at discret values of time.
+The scheme splits into two phases:
+the relaxation and the transport. That is, the passage from the time <img class="math" src="_images/math/a294c4699c9ab9e8b4f7ecbd44cb02db043110a4.png" alt="t" style="vertical-align: 0px"/>
+to the time <img class="math" src="_images/math/b0956e51bb5c2665d818882317efe411254769ab.png" alt="t+dt" style="vertical-align: -1px"/> consists in the succession of these two phases.</p>
+<ul>
+<li><p class="first">the relaxation phase</p>
+<p>This phase, also called collision, is local in space:
+on every site <img class="math" src="_images/math/a6345e315fb341b8e67520f432c92fd4fdf86262.png" alt="x" style="vertical-align: 0px"/> of the lattice,
+the values of the vector <img class="math" src="_images/math/cf8b3832f71a4ed3371a800cc6cc127abc3450b5.png" alt="{\boldsymbol f}" style="vertical-align: -3px"/> are modified,
+the result after the collision being denoted by
+<img class="math" src="_images/math/f2bd82279bd5a6bd4bde5b80f1305e5e86aaef48.png" alt="{\boldsymbol f}^\star" style="vertical-align: -3px"/>.
+The operator of collision is a linear operator of relaxation
+toward an equilibrium value denoted
+<img class="math" src="_images/math/f6a718c5142a66d57a50c1cfce47ac2306f0312d.png" alt="{\boldsymbol f}^{\textrm{eq}}" style="vertical-align: -3px"/>.</p>
+<p>pyLBM uses the framework of d&#8217;Humières: the linear operator of the collision
+is diagonal in a special basis called moments denoted by
+<img class="math" src="_images/math/ba13285c78b7e6292d76c7f57c8ddbe47d5de5c8.png" alt="{\boldsymbol m} = (m_0,\ldots,m_{q-1})" style="vertical-align: -4px"/>.
+The change-of-basis matrix <img class="math" src="_images/math/c65125e01c5bde86f99d5bd8480c3f9138e64531.png" alt="M" style="vertical-align: 0px"/> is such that
+<img class="math" src="_images/math/492d48bdbce0977bc1c6e2713222248d4610aa89.png" alt="{\boldsymbol m} = M{\boldsymbol f}" style="vertical-align: -3px"/>
+and
+<img class="math" src="_images/math/0c9e421a99ee08a64072654c5129f8a6ef39ef4b.png" alt="{\boldsymbol f} = M^{-1}{\boldsymbol m}" style="vertical-align: -3px"/>.
+In the basis of the moments, the collision operator then just reads</p>
+<div class="math">
+<p><img src="_images/math/510fb07bd981cb7bf211f1a58a9b509e9a0a6069.png" alt="\begin{equation*}
+m_k^\star = m_k - s_k (m_k - m_k^{\textrm{eq}}),
+\qquad
+0\leqslant k\leqslant q{-}1,
+\end{equation*}"/></p>
+</div><p>where <img class="math" src="_images/math/d5ab8e6081db79a4afcf29b7616b48025de0e80c.png" alt="s_k" style="vertical-align: -2px"/> is the relaxation parameter associated to the kth moment.
+The kth moment is said conserved during the collision
+if the associated relaxation parameter <img class="math" src="_images/math/1fb16a24105801f781c2109c0327f8676343ffd6.png" alt="s_k=0" style="vertical-align: -2px"/>.</p>
+<p>By analogy with the kinetic theory,
+the change-of-basis matrix <img class="math" src="_images/math/c65125e01c5bde86f99d5bd8480c3f9138e64531.png" alt="M" style="vertical-align: 0px"/> is defined by a set of polynomials
+with <img class="math" src="_images/math/11ddebb28b41be3911028bba573384e46a780540.png" alt="d" style="vertical-align: 0px"/> variables <img class="math" src="_images/math/76054f57b7ad69322bd0a5b636324327cb2e4b8b.png" alt="(P_0,\ldots,P_{q-1})" style="vertical-align: -4px"/> by</p>
+<div class="math">
+<p><img src="_images/math/52b9ff5ec363cd325267899b91893499e049e323.png" alt="\begin{equation*}
+M_{ij} = P_i(v_j).
+\end{equation*}"/></p>
+</div></li>
+<li><p class="first">the transport phase</p>
+<p>This phase just consists in a shift of the indices and reads</p>
+<div class="math">
+<p><img src="_images/math/9fb33ce4fb51977dafa22fb0f52929304d9dacb8.png" alt="\begin{equation*}
+f_j(x, t+dt) = f_j^\star(x-v_jdt, t),
+\qquad
+0\leqslant j\leqslant q{-}1,
+\end{equation*}"/></p>
+</div></li>
+</ul>
 <div class="section" id="examples-in-1d">
 <h3>Examples in 1D<a class="headerlink" href="#examples-in-1d" title="Permalink to this headline">¶</a></h3>
-<p><a class="reference download internal" href="_downloads/scheme_D1Q2.py"><code class="xref download docutils literal"><span class="pre">script</span></code></a></p>
+<div class="section" id="the-transport-equation">
+<h4>The transport equation<a class="headerlink" href="#the-transport-equation" title="Permalink to this headline">¶</a></h4>
+<p><a class="reference download internal" href="_downloads/scheme_D1Q2_advection.py"><code class="xref download docutils literal"><span class="pre">script</span></code></a></p>
+<p>A velocity <img class="math" src="_images/math/d2706fb2ba9a42424e8346d7b21bee344b5934c0.png" alt="c&gt;0" style="vertical-align: 0px"/> being given, the system reads</p>
+<div class="math">
+<p><img src="_images/math/3714ce5aa09577c3ffa19187ab70259dcb2006a7.png" alt="\begin{equation*}\left\{
+\begin{aligned}
+&amp;\partial_t u(t,x) + c \partial_x u(t,x) = 0, &amp;&amp;t&gt;0, x\in{\mathbb R}, \\
+&amp;u(0, x) = u_0(x),&amp;&amp; x\in{\mathbb R}.
+\end{aligned}\right.
+\end{equation*}"/></p>
+</div><p>Taken for instance <img class="math" src="_images/math/030fde27cb29db093e7eb35ed660dd41bcaf5db0.png" alt="c=0.5" style="vertical-align: 0px"/>, the following scheme can be used:</p>
 <div class="highlight-python"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
  2
  3
@@ -128,7 +196,78 @@ the vectorial schemes are introduced as coupled elementary schemes.</p>
 <span class="k">print</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
 </pre></div>
 </td></tr></table></div>
+<p>The dictionary <code class="docutils literal"><span class="pre">d</span></code> is used to set the dimension to 1,
+the scheme velocity to 1. The used scheme has two velocities:
+the first one <img class="math" src="_images/math/db095fbeace8b0f05e40ee54e4f294bcf0b7762c.png" alt="v_0=-1" style="vertical-align: -2px"/> and the second one <img class="math" src="_images/math/06d15c7d3c0a1cfc618134e1d837763e0e37cd0e.png" alt="v_1=1" style="vertical-align: -3px"/>.
+The polynomials that define the moments are
+<img class="math" src="_images/math/b4c30e1563ca6b08fa1756d87bc8f93ee9ee5e51.png" alt="P_0 = 1" style="vertical-align: -2px"/> and <img class="math" src="_images/math/b0b076bd87ab778a8c2b5f7a756de9d29db2c59b.png" alt="P_1 = X" style="vertical-align: -3px"/> so that
+the matrix of the moments is</p>
+<div class="math">
+<p><img src="_images/math/bde126d0797352d8ebd3ac370c48aa1744a81361.png" alt="\begin{equation*} M =
+\begin{pmatrix}
+1&amp;1\\ -1&amp;1
+\end{pmatrix}
+\end{equation*}"/></p>
+</div><p>with the convention <img class="math" src="_images/math/cc6b29c5e34ab5c608a5aeb937b140f287d5ca6f.png" alt="M_{ij} = P_i(v_j)" style="vertical-align: -4px"/>.
+Then, there are two distribution functions <img class="math" src="_images/math/020072f6bb25be0ad9b8e878dbf5fe7d42881d9f.png" alt="f_0" style="vertical-align: -3px"/> and
+<img class="math" src="_images/math/818679b9deff2594daee294d51b49f603d2ad3fe.png" alt="f_1" style="vertical-align: -3px"/> that move at the velocities <img class="math" src="_images/math/e24654e0394153bf6cbc9ec4ea75f13b5aa0710f.png" alt="v_0" style="vertical-align: -2px"/> and <img class="math" src="_images/math/bed3a5e493bc33446031e97c722cff3ca247f10a.png" alt="v_1" style="vertical-align: -3px"/>,
+and two moments <img class="math" src="_images/math/decdc5834f9eeb08c87c4acf30be9c9f1740d3cd.png" alt="m_0 = f_0+f_1" style="vertical-align: -3px"/> and <img class="math" src="_images/math/aca962340b995378de5f5ee3528fc08348c5a490.png" alt="m_1 = -f_0+f_1" style="vertical-align: -3px"/>.
+The first moment <img class="math" src="_images/math/2af15c917eecdb3b1427e8378d454ab0b9bbd828.png" alt="m_0" style="vertical-align: -2px"/> is conserved during the relaxation phase
+(as the associated relaxation parameter is set to 0),
+while the second moment <img class="math" src="_images/math/8a77aacfc74a6d6212bfa6404b401b8eb939b5cc.png" alt="m_1" style="vertical-align: -3px"/> relaxes to its equilibrium value
+<img class="math" src="_images/math/b665547b70d9374af68f3cf346065be93f7334ed.png" alt="0.5m_0" style="vertical-align: -2px"/> with a relaxation parameter <img class="math" src="_images/math/58ab001c445bd4b137bd9b26d18bf40dc812875d.png" alt="1.9" style="vertical-align: -1px"/> by the relation</p>
+<div class="math">
+<p><img src="_images/math/0f2def87a2cdbf9e59215122903ff4f9aa43b8d5.png" alt="\begin{equation*}
+m_1^\star = m_1 - 1.9 (m_1 - 0.5m_0).
+\end{equation*}"/></p>
+</div></div>
+<div class="section" id="the-burger-s-equation">
+<h4>The Burger&#8217;s equation<a class="headerlink" href="#the-burger-s-equation" title="Permalink to this headline">¶</a></h4>
+<p><a class="reference download internal" href="_downloads/scheme_D1Q2_Burgers.py"><code class="xref download docutils literal"><span class="pre">script</span></code></a></p>
+<p>The system reads</p>
+<div class="math">
+<p><img src="_images/math/e5b3c40663ed3ac02f067a599890320f355a048f.png" alt="\begin{equation*}\left\{
+\begin{aligned}
+&amp;\partial_t u(t,x) + \tfrac{1}{2}\partial_x u^2(t,x) = 0, &amp;&amp;t&gt;0, x\in{\mathbb R}, \\
+&amp;u(0, x) = u_0(x),&amp;&amp; x\in{\mathbb R}.
+\end{aligned}\right.
+\end{equation*}"/></p>
+</div><p>The following scheme can be used:</p>
+<div class="highlight-python"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13</pre></div></td><td class="code"><div class="highlight"><pre><span class="n">d</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="s">&#39;dim&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+  <span class="s">&#39;scheme_velocity&#39;</span><span class="p">:</span><span class="mf">1.</span><span class="p">,</span>
+  <span class="s">&#39;schemes&#39;</span><span class="p">:[{</span>
+    <span class="s">&#39;velocities&#39;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span>
+    <span class="s">&#39;polynomials&#39;</span><span class="p">:</span> <span class="n">Matrix</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="n">X</span><span class="p">]),</span>
+    <span class="s">&#39;equilibrium&#39;</span><span class="p">:</span> <span class="n">Matrix</span><span class="p">([</span><span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="o">.</span><span class="mi">5</span><span class="o">*</span><span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">]),</span>
+    <span class="s">&#39;relaxation_parameters&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.9</span><span class="p">],</span>
+    <span class="p">},</span>
+  <span class="p">],</span>
+<span class="p">}</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">pyLBM</span><span class="o">.</span><span class="n">Scheme</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+</pre></div>
+</td></tr></table></div>
+<p>The same dictionary has been used for this application with only one
+modification: the equilibrium value of the second moment
+<img class="math" src="_images/math/d216d949142b6d1a39293fa415ed974e70b5fecd.png" alt="m_1^{\textrm{eq}}" style="vertical-align: -5px"/> is taken to <img class="math" src="_images/math/45fee764504b91db89ec588713cf208c998784ac.png" alt="\tfrac{1}{2}m_0^2" style="vertical-align: -5px"/>.</p>
 </div>
+</div>
+</div>
+<div class="section" id="the-vectorial-schemes">
+<h2>The vectorial schemes<a class="headerlink" href="#the-vectorial-schemes" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 
@@ -141,10 +280,15 @@ the vectorial schemes are introduced as coupled elementary schemes.</p>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">The Scheme</a><ul>
-<li><a class="reference internal" href="#the-elementary-scheme">The elementary scheme</a><ul>
-<li><a class="reference internal" href="#examples-in-1d">Examples in 1D</a></li>
+<li><a class="reference internal" href="#the-elementary-schemes">The elementary schemes</a><ul>
+<li><a class="reference internal" href="#examples-in-1d">Examples in 1D</a><ul>
+<li><a class="reference internal" href="#the-transport-equation">The transport equation</a></li>
+<li><a class="reference internal" href="#the-burger-s-equation">The Burger&#8217;s equation</a></li>
 </ul>
 </li>
+</ul>
+</li>
+<li><a class="reference internal" href="#the-vectorial-schemes">The vectorial schemes</a></li>
 </ul>
 </li>
 </ul>

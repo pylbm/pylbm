@@ -13,13 +13,6 @@ import matplotlib.colors as colors
 import matplotlib.cm as cm
 
 import pyLBM
-import pyLBM.geometry as pyLBMGeom
-import pyLBM.stencil as pyLBMSten
-import pyLBM.domain as pyLBMDom
-import pyLBM.scheme as pyLBMScheme
-import pyLBM.simulation as pyLBMSimu
-import pyLBM.generator as pyLBMGen
-
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
@@ -45,20 +38,20 @@ if __name__ == "__main__":
     Tf = 1.
     s = 1.99
     FINIT = Riemann_pb
-    
+
     dico_Q2 = {
         'box':{'x':[xmin, xmax], 'label':-1},
         'space_step':dx,
         'number_of_schemes':1,
         'scheme_velocity':la,
-        0:{
+        'schemes':[{
             'velocities':[2,1],
             'polynomials':Matrix([1,LA*X]),
             'relaxation_parameters':[0.,s],
-            'equilibrium':Matrix([u[0][0], c*u[0][0]])
-            },
-        'init':{'type':'moments', 0:{0:(FINIT,)}},
-        'generator': pyLBMGen.CythonGenerator,
+            'equilibrium':Matrix([u[0][0], c*u[0][0]]),
+            'init':{0:(FINIT,)},
+            },],
+        'generator': pyLBM.generator.NumpyGenerator,
         }
 
     #s1 = 1.9
@@ -67,17 +60,18 @@ if __name__ == "__main__":
     #sQ3 = [0., 1./(0.5+sigma1), 1./(0.5+sigma2)]
     sQ3 = [0., s, s]
     dico_Q3 = {
-        'box':{'x':[xmin, xmax], 'label':0},
+        'box':{'x':[xmin, xmax], 'label':-1},
         'space_step':dx,
         'number_of_schemes':1,
         'scheme_velocity':la,
-        0:{
+        'schemes':[{
             'velocities':[2,0,1],
             'polynomials':Matrix([1,LA*X,(LA*X)**2]),
             'relaxation_parameters':sQ3,
-            'equilibrium':Matrix([u[0][0], c*u[0][0], (2*c**2+LA**2)/3*u[0][0]])
-            },
-        'init':{'type':'moments', 0:{0:(FINIT,)}}
+            'equilibrium':Matrix([u[0][0], c*u[0][0], (2*c**2+LA**2)/3*u[0][0]]),
+            'init':{0:(FINIT,)},
+            },],
+        'generator': pyLBM.generator.NumpyGenerator,
         }
 
     fig = plt.figure(0,figsize=(16, 8))
@@ -85,7 +79,7 @@ if __name__ == "__main__":
     plt.ion()
     plt.hold(True)
 
-    sol = pyLBMSimu.Simulation(dico_Q2)
+    sol = pyLBM.Simulation(dico_Q2)
     plt.subplot(121)
     plt.plot(sol.domain.x[0][1:-1],sol.m[0][0][1:-1],'k-')
     plt.draw()
@@ -99,7 +93,7 @@ if __name__ == "__main__":
     plt.draw()
     plt.pause(1.e-3)
 
-    sol = pyLBMSimu.Simulation(dico_Q3)
+    sol = pyLBM.Simulation(dico_Q3)
     plt.subplot(121)
     while (sol.t<Tf):
         sol.one_time_step()
@@ -121,5 +115,3 @@ if __name__ == "__main__":
     plt.hold(False)
     plt.ioff()
     plt.show()
-
-    
