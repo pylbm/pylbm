@@ -121,6 +121,11 @@ class Scheme:
     set_boundary_conditions :
       Apply the boundary conditions
 
+    Examples
+    --------
+
+    see demo/examples/scheme/
+
     """
     def __init__(self, dico, stencil=None):
         if stencil is not None:

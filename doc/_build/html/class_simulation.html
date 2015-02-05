@@ -98,9 +98,36 @@
 </tbody>
 </table>
 <p class="rubric">Notes</p>
-<p>Explain how we can access to the data m and F with examples</p>
+<p>The methods
+<a class="reference internal" href="#pyLBM.simulation.Simulation.transport" title="pyLBM.simulation.Simulation.transport"><code class="xref py py-meth docutils literal"><span class="pre">transport</span></code></a>,
+<a class="reference internal" href="#pyLBM.simulation.Simulation.relaxation" title="pyLBM.simulation.Simulation.relaxation"><code class="xref py py-meth docutils literal"><span class="pre">relaxation</span></code></a>,
+<a class="reference internal" href="#pyLBM.simulation.Simulation.equilibrium" title="pyLBM.simulation.Simulation.equilibrium"><code class="xref py py-meth docutils literal"><span class="pre">equilibrium</span></code></a>,
+<a class="reference internal" href="#pyLBM.simulation.Simulation.f2m" title="pyLBM.simulation.Simulation.f2m"><code class="xref py py-meth docutils literal"><span class="pre">f2m</span></code></a>,
+<a class="reference internal" href="#pyLBM.simulation.Simulation.m2f" title="pyLBM.simulation.Simulation.m2f"><code class="xref py py-meth docutils literal"><span class="pre">m2f</span></code></a>,
+<a class="reference internal" href="#pyLBM.simulation.Simulation.boundary_condition" title="pyLBM.simulation.Simulation.boundary_condition"><code class="xref py py-meth docutils literal"><span class="pre">boundary_condition</span></code></a>,
+and
+<a class="reference internal" href="#pyLBM.simulation.Simulation.one_time_step" title="pyLBM.simulation.Simulation.one_time_step"><code class="xref py py-meth docutils literal"><span class="pre">one_time_step</span></code></a>
+are just call of the methods of the class
+<a class="reference internal" href="class_scheme.html#pyLBM.scheme.Scheme" title="pyLBM.scheme.Scheme"><code class="xref py py-class docutils literal"><span class="pre">Scheme</span></code></a>.</p>
 <p class="rubric">Examples</p>
-<p>TODO</p>
+<p>see demo/examples/</p>
+<p>Access to the distribution functions and the moments.</p>
+<p>In 1D:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="go">&gt;&gt;&gt;F[n][k][i]</span>
+<span class="go">&gt;&gt;&gt;m[n][k][i]</span>
+</pre></div>
+</div>
+<p>get the kth distribution function of the nth elementary scheme
+and the kth moment of the nth elementary scheme
+at the point x[0][i].</p>
+<p>In 2D:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="go">&gt;&gt;&gt;F[n][k][j, i]</span>
+<span class="go">&gt;&gt;&gt;m[n][k][j, i]</span>
+</pre></div>
+</div>
+<p>get the kth distribution function of the nth elementary scheme
+and the kth moment of the nth elementary scheme
+at the point x[0][i], x[1][j].</p>
 <p class="rubric">Attributes</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -136,7 +163,7 @@
 </colgroup>
 <tbody valign="top">
 <tr class="row-odd"><td>initialization :</td>
-<td>initialize all the array</td>
+<td>initialize all the arrays</td>
 </tr>
 <tr class="row-even"><td>transport :</td>
 <td>compute the transport phase (modifies the array _F)</td>

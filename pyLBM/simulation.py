@@ -63,7 +63,7 @@ class Simulation:
     -------
 
     initialization :
-      initialize all the array
+      initialize all the arrays
     transport :
       compute the transport phase (modifies the array _F)
     relaxation :
@@ -83,13 +83,43 @@ class Simulation:
     Examples
     --------
 
-    TODO
+    see demo/examples/
+
+    Access to the distribution functions and the moments.
+
+    In 1D::
+
+    >>>F[n][k][i]
+    >>>m[n][k][i]
+
+    get the kth distribution function of the nth elementary scheme
+    and the kth moment of the nth elementary scheme
+    at the point x[0][i].
+
+    In 2D::
+
+    >>>F[n][k][j, i]
+    >>>m[n][k][j, i]
+
+    get the kth distribution function of the nth elementary scheme
+    and the kth moment of the nth elementary scheme
+    at the point x[0][i], x[1][j].
+
 
     Notes
     -----
 
-    Explain how we can access to the data m and F with examples
-
+    The methods
+    :py:meth:`transport<pyLBM.simulation.Simulation.transport>`,
+    :py:meth:`relaxation<pyLBM.simulation.Simulation.relaxation>`,
+    :py:meth:`equilibrium<pyLBM.simulation.Simulation.equilibrium>`,
+    :py:meth:`f2m<pyLBM.simulation.Simulation.f2m>`,
+    :py:meth:`m2f<pyLBM.simulation.Simulation.m2f>`,
+    :py:meth:`boundary_condition<pyLBM.simulation.Simulation.boundary_condition>`,
+    and
+    :py:meth:`one_time_step<pyLBM.simulation.Simulation.one_time_step>`
+    are just call of the methods of the class
+    :py:class:`Scheme<pyLBM.scheme.Scheme>`.
     """
     def __init__(self, dico, domain=None, scheme=None, type='float64'):
         self.type = type
