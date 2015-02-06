@@ -220,6 +220,11 @@ class Velocity(object):
         if axis == 2:
             return Velocity(vx=svx, vy=svy, vz=self.vz)
 
+    def set_symmetric(self):
+        self.numsym = [self.get_symmetric().num,]
+        for i in xrange(self.dim):
+            self.numsym.append(self.get_symmetric(i).num)
+
     def _set_num(self):
         if self.dim == 1:
             avx = abs(self.vx)
@@ -454,13 +459,13 @@ class Stencil(list):
                     })
     >>> s
     Stencil informations
-	  * spatial dimension: 1
-	  * maximal velocity in each direction: [4 None None]
-	  * minimal velocity in each direction: [-4 None None]
-	  * Informations for each elementary stencil:
-	    	stencil 0
-		    - number of velocities:  9
-		    - velocities: (0: 0), (1: 1), (2: -1), (3: 2), (4: -2), (5: 3), (6: -3), (7: 4), (8: -4),
+      * spatial dimension: 1
+      * maximal velocity in each direction: [4 None None]
+      * minimal velocity in each direction: [-4 None None]
+      * Informations for each elementary stencil:
+            stencil 0
+            - number of velocities:  9
+            - velocities: (0: 0), (1: 1), (2: -1), (3: 2), (4: -2), (5: 3), (6: -3), (7: 4), (8: -4),
 
     >>> s = Stencil({'dim': 2,
                      'schemes':[{'velocities':range(9)},
@@ -469,16 +474,16 @@ class Stencil(list):
                     })
     >>> s
     Stencil informations
-	  * spatial dimension: 2
-	  * maximal velocity in each direction: [4 3 None]
-	  * minimal velocity in each direction: [-3 -3 None]
-	  * Informations for each elementary stencil:
-	    	stencil 0
-		    - number of velocities:  9
-		    - velocities: (0: 0, 0), (1: 1, 0), (2: 0, 1), (3: -1, 0), (4: 0, -1), (5: 1, 1), (6: -1, 1), (7: -1, -1), (8: 1, -1),
-		    stencil 1
-		    - number of velocities: 50
-		    - velocities: (0: 0, 0), (1: 1, 0), (2: 0, 1), (3: -1, 0), (4: 0, -1), (5: 1, 1), (6: -1, 1), (7: -1, -1), (8: 1, -1), (9: 2, 0), (10: 0, 2), (11: -2, 0), (12: 0, -2), (13: 2, 2), (14: -2, 2), (15: -2, -2), (16: 2, -2), (17: 2, 1), (18: 1, 2), (19: -1, 2), (20: -2, 1), (21: -2, -1), (22: -1, -2), (23: 1, -2), (24: 2, -1), (25: 3, 0), (26: 0, 3), (27: -3, 0), (28: 0, -3), (29: 3, 3), (30: -3, 3), (31: -3, -3), (32: 3, -3), (33: 3, 1), (34: 1, 3), (35: -1, 3), (36: -3, 1), (37: -3, -1), (38: -1, -3), (39: 1, -3), (40: 3, -1), (41: 3, 2), (42: 2, 3), (43: -2, 3), (44: -3, 2), (45: -3, -2), (46: -2, -3), (47: 2, -3), (48: 3, -2), (49: 4, 0),
+      * spatial dimension: 2
+      * maximal velocity in each direction: [4 3 None]
+      * minimal velocity in each direction: [-3 -3 None]
+      * Informations for each elementary stencil:
+            stencil 0
+            - number of velocities:  9
+            - velocities: (0: 0, 0), (1: 1, 0), (2: 0, 1), (3: -1, 0), (4: 0, -1), (5: 1, 1), (6: -1, 1), (7: -1, -1), (8: 1, -1),
+            stencil 1
+            - number of velocities: 50
+            - velocities: (0: 0, 0), (1: 1, 0), (2: 0, 1), (3: -1, 0), (4: 0, -1), (5: 1, 1), (6: -1, 1), (7: -1, -1), (8: 1, -1), (9: 2, 0), (10: 0, 2), (11: -2, 0), (12: 0, -2), (13: 2, 2), (14: -2, 2), (15: -2, -2), (16: 2, -2), (17: 2, 1), (18: 1, 2), (19: -1, 2), (20: -2, 1), (21: -2, -1), (22: -1, -2), (23: 1, -2), (24: 2, -1), (25: 3, 0), (26: 0, 3), (27: -3, 0), (28: 0, -3), (29: 3, 3), (30: -3, 3), (31: -3, -3), (32: 3, -3), (33: 3, 1), (34: 1, 3), (35: -1, 3), (36: -3, 1), (37: -3, -1), (38: -1, -3), (39: 1, -3), (40: 3, -1), (41: 3, 2), (42: 2, 3), (43: -2, 3), (44: -3, 2), (45: -3, -2), (46: -2, -3), (47: 2, -3), (48: 3, -2), (49: 4, 0),
 
     get the x component of the unique velocities
 
@@ -518,6 +523,8 @@ class Stencil(list):
             unique_indices = np.union1d(unique_indices, vi)
 
         self.unique_velocities = np.asarray([Velocity(dim=self.dim, num=i) for i in unique_indices])
+        for v in self.unique_velocities:
+            v.set_symmetric()
         self.unvtot = len(self.unique_velocities)
 
         self.v = []

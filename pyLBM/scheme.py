@@ -313,6 +313,7 @@ class Scheme:
         exec "from %s import *"%self.generator.get_module()
         exec "onetimestep(m, f, fcuurent, in_or_out, valin)"
 
+    #@profile
     def set_boundary_conditions(self, f, m, bc, nv_on_beg):
         """
         Compute the boundary conditions
@@ -377,22 +378,20 @@ class Scheme:
             lbord = [self.stencil.vmax[k] for k in xrange(self.dim)]
             N  = [Na[k] - 2*lbord[k] for k in xrange(self.dim)]
 
-            for n in xrange(self.nscheme): # loop over the stencils
-                s = slice(self.stencil.nv_ptr[n], self.stencil.nv_ptr[n + 1])
-                if self.dim == 1:
-                    f[:lbord[0], s] = f[N[0]:N[0] + lbord[0], s]  # east
-                    f[N[0] + lbord[0]:Na[0], s] = f[lbord[0]:2*lbord[0], s] # west
-                elif self.dim == 2:
-                    f[:lbord[0], :, s] = f[N[0]:N[0] + lbord[0] , :, s]  # east
-                    f[:, :lbord[1], s] = f[:, N[1]:N[1] + lbord[1], s]  # south
-                    f[N[0] + lbord[0]:Na[0], :, s] = f[lbord[0]:2*lbord[0], :, s] # west
-                    f[:, N[1] + lbord[1]:Na[1], s] = f[:, lbord[1]:2*lbord[1], s] # north
-                    f[:lbord[0], :lbord[1], s] = f[N[0]:N[0] + lbord[0], N[1]:N[1] + lbord[1], s]  # east-south
-                    f[:lbord[0], N[1] + lbord[1]:Na[1], s] = f[N[0]:N[0] + lbord[0], lbord[1]:2*lbord[1], s]  # east-north
-                    f[N[0] + lbord[0]:Na[0], :lbord[1], s] = f[lbord[0]:2*lbord[0], N[1]:N[1] + lbord[1], s]  # west-south
-                    f[N[0] + lbord[0]:Na[0],N[1] + lbord[1]:Na[1], s] = f[lbord[0]:2*lbord[0], lbord[1]:2*lbord[1], s]  # west-north
-                else:
-                    log.error('Periodic conditions are not implemented in 3D')
+            if self.dim == 1:
+                f[:lbord[0], :] = f[N[0]:N[0] + lbord[0], :]  # east
+                f[N[0] + lbord[0]:Na[0], :] = f[lbord[0]:2*lbord[0], :] # west
+            elif self.dim == 2:
+                f[:lbord[0], :, :] = f[N[0]:N[0] + lbord[0] , :, :]  # east
+                f[:, :lbord[1], :] = f[:, N[1]:N[1] + lbord[1], :]  # south
+                f[N[0] + lbord[0]:Na[0], :, :] = f[lbord[0]:2*lbord[0], :, :] # west
+                f[:, N[1] + lbord[1]:Na[1], :] = f[:, lbord[1]:2*lbord[1], :] # north
+                f[:lbord[0], :lbord[1], :] = f[N[0]:N[0] + lbord[0], N[1]:N[1] + lbord[1], :]  # east-south
+                f[:lbord[0], N[1] + lbord[1]:Na[1], :] = f[N[0]:N[0] + lbord[0], lbord[1]:2*lbord[1], :]  # east-north
+                f[N[0] + lbord[0]:Na[0], :lbord[1], :] = f[lbord[0]:2*lbord[0], N[1]:N[1] + lbord[1], :]  # west-south
+                f[N[0] + lbord[0]:Na[0],N[1] + lbord[1]:Na[1], :] = f[lbord[0]:2*lbord[0], lbord[1]:2*lbord[1], :]  # west-north
+            else:
+                log.error('Periodic conditions are not implemented in 3D')
 
         # non periodic conditions
         if self.bc_compute:

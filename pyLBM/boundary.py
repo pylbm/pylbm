@@ -7,6 +7,7 @@
 import numpy as np
 
 from .logs import __setLogger
+from .bc_utils import *
 log = __setLogger(__name__)
 
 
@@ -23,12 +24,13 @@ class Boundary_Velocity:
         # puis on ecrit dans une liste reprenant l'ordre des vitesses du schema
         # - les indices des points exterieurs correspondants
         # - les distances associees
+        self.init = False
         self.v = domain.stencil.unique_velocities[ksym]
         v = self.v.get_symmetric()
         num = domain.stencil.unum2index[v.num]
 
         ind = np.where(domain.flag[num] == self.label)
-        self.indices = np.array(ind)
+        self.indices = np.array(ind, dtype=np.int32)
         if self.indices.size != 0:
             self.indices += np.asarray(v.v[::-1])[:, np.newaxis]
         self.distance = np.array(domain.distance[(num,) + ind])
@@ -44,6 +46,7 @@ class Boundary:
             dummy_bv = []
             for k in xrange(self.domain.stencil.unvtot):
                 dummy_bv.append(Boundary_Velocity(self.domain, label, k))
+
             self.bv.append(dummy_bv)
 
         # build the list of boundary informations for each stencil and each label
@@ -65,15 +68,27 @@ class Boundary:
                     self.be[-1].append([self.bv[label][self.domain.stencil.unum2index[numk]] for numk in self.domain.stencil.num[n]])
 
 
+#@profile
 def bouzidi_bounce_back(f, bv, num2index, feq, nv_on_beg):
     v = bv.v
     k = num2index[v.num]
-    ksym = num2index[v.get_symmetric().num]
+    ksym = num2index[v.numsym[0]]
+
+    # if feq is not None:
+    #     test1(np.ascontiguousarray(f), np.ascontiguousarray(feq), bv.distance, bv.indices, k, ksym, v.vx, v.vy)
+    # else:
+    #     test2(np.ascontiguousarray(f), bv.distance, bv.indices, k, ksym, v.vx, v.vy)
 
     mask = bv.distance < .5
     iy = bv.indices[0, mask]
     ix = bv.indices[1, mask]
     s = 2.*bv.distance[mask]
+
+    # if feq is not None:
+    #     test3feq(np.ascontiguousarray(f), np.ascontiguousarray(feq[mask, :]), s, ix, iy, k, ksym, v.vx, v.vy)
+    # else:
+    #     test3(np.ascontiguousarray(f), s, ix, iy, k, ksym, v.vx, v.vy)
+
     if nv_on_beg:
         f[k, iy, ix] = s*f[ksym, iy + v.vy, ix + v.vx] + (1.-s)*f[ksym, iy + 2*v.vy, ix + 2*v.vx]
         if feq is not None and np.any(mask):
@@ -87,6 +102,12 @@ def bouzidi_bounce_back(f, bv, num2index, feq, nv_on_beg):
     iy = bv.indices[0, mask]
     ix = bv.indices[1, mask]
     s = 0.5/bv.distance[mask]
+
+    # if feq is not None:
+    #     test4feq(np.ascontiguousarray(f), np.ascontiguousarray(feq[mask, :]), s, ix, iy, k, ksym, v.vx, v.vy)
+    # else:
+    #     test4(np.ascontiguousarray(f), s, ix, iy, k, ksym, v.vx, v.vy)
+
     if nv_on_beg:
         f[k, iy, ix] = s*f[ksym, iy + v.vy, ix + v.vx] + (1.-s)*f[k, iy + v.vy, ix + v.vx]
         if feq is not None and np.any(mask):
@@ -96,10 +117,11 @@ def bouzidi_bounce_back(f, bv, num2index, feq, nv_on_beg):
         if feq is not None and np.any(mask):
             f[iy, ix, k] += feq[mask, k] - feq[mask, ksym]
 
+#@profile
 def bouzidi_anti_bounce_back(f, bv, num2index, feq, nv_on_beg):
     v = bv.v
     k = num2index[v.num]
-    ksym = num2index[v.get_symmetric().num]
+    ksym = num2index[v.numsym[0]]
 
     mask = bv.distance < .5
     iy = bv.indices[0, mask]
@@ -149,6 +171,7 @@ def neumann_horizontal(f, bv, num2index, feq, nv_on_beg):
     else:
         f[iy, ix, k] = f[iy + v.vy, ix, k]
 
+#@profile
 def neumann(f, bv, num2index, feq, nv_on_beg):
     v = bv.v
     k = num2index[v.num]
