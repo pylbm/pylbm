@@ -117,7 +117,7 @@ class Geometry:
         coords = np.asarray(coords)
         self.bounds[:, 1] = self.bounds[:, 0] + t*(coords + 1)
         self.bounds[:, 0] = self.bounds[:, 0] + t*coords
-
+        print rank, self.bounds
 
         self.isInterface = [False]*2*self.dim
         for i in xrange(self.dim):

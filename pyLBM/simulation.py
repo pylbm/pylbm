@@ -182,6 +182,8 @@ class Simulation:
         log.info('Initialization')
         self.initialization(dico)
 
+        self.interface_setup()
+
         #computational time measurement
         self.cpu_time = {'relaxation':0.,
                          'transport':0.,
@@ -483,6 +485,22 @@ class Simulation:
             dummy *= n
         dummy /= self.cpu_time['total'] * 1.e6
         self.cpu_time['MLUPS'] = dummy
+
+    def interface_setup(self):
+        rank = self.domain.geom.comm.Get_rank()
+        coords = self.domain.geom.comm.Get_coords(rank)
+
+        direction = np.array([[0, 1], #droite
+                     [0, -1], #gauche
+                     [1, 0], #bas
+                     [-1, 0], #haut
+                     ])
+        #import ipdb; ipdb.set_trace()
+
+        for d in direction:
+            print rank, "domain in ", d, self.domain.geom.comm.Get_cart_rank(coords +d)
+
+        import ipdb; ipdb.set_trace()
 
     def affiche_2D(self):
         fig = plt.figure(0,figsize=(8, 8))
