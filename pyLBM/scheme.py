@@ -358,32 +358,44 @@ class Scheme:
 
             for n in xrange(self.nscheme): # loop over the stencils
                 s = slice(self.stencil.nv_ptr[n], self.stencil.nv_ptr[n + 1])
-                f[s,:lbord[0],:]           = f[s,N[0]:N[0]+lbord[0],:]  # east
-                f[s,:,:lbord[1]]           = f[s,:,N[1]:N[1]+lbord[1]]  # south
-                f[s,N[0]+lbord[0]:Na[0],:] = f[s,lbord[0]:2*lbord[0],:] # west
-                f[s,:,N[1]+lbord[1]:Na[1]] = f[s,:,lbord[1]:2*lbord[1]] # north
-                f[s,:lbord[0],:lbord[1]]   = f[s,N[0]:N[0]+lbord[0],N[1]:N[1]+lbord[1]]  # east-south
-                f[s,:lbord[0],N[1]+lbord[1]:Na[1]]   = f[s,N[0]:N[0]+lbord[0],lbord[1]:2*lbord[1]]  # east-north
-                f[s,N[0]+lbord[0]:Na[0],:lbord[1]]   = f[s,lbord[0]:2*lbord[0],N[1]:N[1]+lbord[1]]  # west-south
-                f[s,N[0]+lbord[0]:Na[0],N[1]+lbord[1]:Na[1]]   = f[s,lbord[0]:2*lbord[0],lbord[1]:2*lbord[1]]  # west-north
+                if self.dim == 1:
+                    f[s,:lbord[0]] = f[s,N[0]:N[0]+lbord[0]] # east
+                    f[s,N[0]+lbord[0]:Na[0]] = f[s,lbord[0]:2*lbord[0]] # west
+                elif self.dim == 2:
+                    f[s,:lbord[0],:]           = f[s,N[0]:N[0]+lbord[0],:]  # east
+                    f[s,:,:lbord[1]]           = f[s,:,N[1]:N[1]+lbord[1]]  # south
+                    f[s,N[0]+lbord[0]:Na[0],:] = f[s,lbord[0]:2*lbord[0],:] # west
+                    f[s,:,N[1]+lbord[1]:Na[1]] = f[s,:,lbord[1]:2*lbord[1]] # north
+                    f[s,:lbord[0],:lbord[1]]   = f[s,N[0]:N[0]+lbord[0],N[1]:N[1]+lbord[1]]  # east-south
+                    f[s,:lbord[0],N[1]+lbord[1]:Na[1]]   = f[s,N[0]:N[0]+lbord[0],lbord[1]:2*lbord[1]]  # east-north
+                    f[s,N[0]+lbord[0]:Na[0],:lbord[1]]   = f[s,lbord[0]:2*lbord[0],N[1]:N[1]+lbord[1]]  # west-south
+                    f[s,N[0]+lbord[0]:Na[0],N[1]+lbord[1]:Na[1]]   = f[s,lbord[0]:2*lbord[0],lbord[1]:2*lbord[1]]  # west-north
+                else:
+                    log.error('Periodic conditions are not implemented in 3D')
         else:
             Na = f.shape[:-1]
             lbord = [self.stencil.vmax[k] for k in xrange(self.dim)]
             N  = [Na[k] - 2*lbord[k] for k in xrange(self.dim)]
+
             for n in xrange(self.nscheme): # loop over the stencils
                 s = slice(self.stencil.nv_ptr[n], self.stencil.nv_ptr[n + 1])
-                f[:lbord[0], :, s] = f[N[0]:N[0] + lbord[0] , :, s]  # east
-                f[:, :lbord[1], s] = f[:, N[1]:N[1] + lbord[1], s]  # south
-                f[N[0] + lbord[0]:Na[0], :, s] = f[lbord[0]:2*lbord[0], :, s] # west
-                f[:, N[1] + lbord[1]:Na[1], s] = f[:, lbord[1]:2*lbord[1], s] # north
-                f[:lbord[0], :lbord[1], s] = f[N[0]:N[0] + lbord[0], N[1]:N[1] + lbord[1], s]  # east-south
-                f[:lbord[0], N[1] + lbord[1]:Na[1], s] = f[N[0]:N[0] + lbord[0], lbord[1]:2*lbord[1], s]  # east-north
-                f[N[0] + lbord[0]:Na[0], :lbord[1], s] = f[lbord[0]:2*lbord[0], N[1]:N[1] + lbord[1], s]  # west-south
-                f[N[0] + lbord[0]:Na[0],N[1] + lbord[1]:Na[1], s] = f[lbord[0]:2*lbord[0], lbord[1]:2*lbord[1], s]  # west-north
+                if self.dim == 1:
+                    f[:lbord[0], s] = f[N[0]:N[0] + lbord[0], s]  # east
+                    f[N[0] + lbord[0]:Na[0], s] = f[lbord[0]:2*lbord[0], s] # west
+                elif self.dim == 2:
+                    f[:lbord[0], :, s] = f[N[0]:N[0] + lbord[0] , :, s]  # east
+                    f[:, :lbord[1], s] = f[:, N[1]:N[1] + lbord[1], s]  # south
+                    f[N[0] + lbord[0]:Na[0], :, s] = f[lbord[0]:2*lbord[0], :, s] # west
+                    f[:, N[1] + lbord[1]:Na[1], s] = f[:, lbord[1]:2*lbord[1], s] # north
+                    f[:lbord[0], :lbord[1], s] = f[N[0]:N[0] + lbord[0], N[1]:N[1] + lbord[1], s]  # east-south
+                    f[:lbord[0], N[1] + lbord[1]:Na[1], s] = f[N[0]:N[0] + lbord[0], lbord[1]:2*lbord[1], s]  # east-north
+                    f[N[0] + lbord[0]:Na[0], :lbord[1], s] = f[lbord[0]:2*lbord[0], N[1]:N[1] + lbord[1], s]  # west-south
+                    f[N[0] + lbord[0]:Na[0],N[1] + lbord[1]:Na[1], s] = f[lbord[0]:2*lbord[0], lbord[1]:2*lbord[1], s]  # west-north
+                else:
+                    log.error('Periodic conditions are not implemented in 3D')
 
         # non periodic conditions
         if self.bc_compute:
-            #bc.floc = np.array([None]*len(bc.be))
             bc.floc = [[[None for  k in xrange(self.stencil[ind_scheme].nv)] for ind_scheme in xrange(self.nscheme)] for l in xrange(len(bc.be))]
 
         import copy
@@ -391,44 +403,52 @@ class Scheme:
             for n in xrange(self.nscheme): # loop over the stencils
                 for k in xrange(self.stencil[n].nv): # loop over the velocities
                     bv = bc.be[l][n][k]
-                    #assert k == self.stencil.unum2index[bv.v.num]
-
                     if bv.distance.size != 0:
-                        iy = bv.indices[0]
-                        ix = bv.indices[1]
-                        s  = bv.distance
                         if self.bc_compute:
                             if (bc.value_bc[l] is not None):
-                                if nv_on_beg:
-                                    mloc = np.ascontiguousarray(m[:, iy, ix])
+                                if self.dim == 1:
+                                    ix = bv.indices[0]
+                                    s  = bv.distance
+                                    if nv_on_beg:
+                                        mloc = np.ascontiguousarray(m[:, ix])
+                                    else:
+                                        mloc = np.ascontiguousarray(m[ix, :])
+                                    floc = np.zeros(mloc.shape)
+                                    bc.value_bc[l](floc, mloc,
+                                                   bc.domain.x[0][ix] + s*bv.v.vx*bc.domain.dx, self)
+                                    if nv_on_beg:
+                                        bc.floc[l][n][k] = floc[self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]]
+                                    else:
+                                        bc.floc[l][n][k] = floc[:, self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]]
+                                elif self.dim == 2:
+                                    iy = bv.indices[0]
+                                    ix = bv.indices[1]
+                                    s  = bv.distance
+                                    if nv_on_beg:
+                                        mloc = np.ascontiguousarray(m[:, iy, ix])
+                                    else:
+                                        mloc = np.ascontiguousarray(m[iy, ix, :])
+                                    floc = np.zeros(mloc.shape)
+                                    bc.value_bc[l](floc, mloc,
+                                                   bc.domain.x[0][ix] + s*bv.v.vx*bc.domain.dx,
+                                                   bc.domain.x[1][iy] + s*bv.v.vy*bc.domain.dx, self)
+                                    if nv_on_beg:
+                                        bc.floc[l][n][k] = floc[self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]]
+                                    else:
+                                        bc.floc[l][n][k] = floc[:, self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]]
                                 else:
-                                    mloc = np.ascontiguousarray(m[iy, ix, :])
-                                floc = np.zeros(mloc.shape)
-                                bc.value_bc[l](floc, mloc,
-                                               bc.domain.x[0][ix] + s*bv.v.vx*bc.domain.dx,
-                                               bc.domain.x[1][iy] + s*bv.v.vy*bc.domain.dx, self)
-                                if nv_on_beg:
-                                    bc.floc[l][n][k] = floc[self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]]
-                                else:
-                                    bc.floc[l][n][k] = floc[:, self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]]
+                                    log.error('Periodic conditions are not implemented in 3D')
                             else:
                                 bc.floc[l][n][k] = None
-
-                            # ####### TEST for Poiseuille flow
-                            # if floc is not None:
-                            #     print "#"*50
-                            #     print "label: {0}, scheme: {1}, velocity: {2}".format(l, n, k)
-                            #     if (n == 0):
-                            #         print floc[4*n, :] - floc[4*n+2, :]
-                            #     else:
-                            #         print floc[4*n, :] + floc[4*n+2, :]
-                            # ####### FIN TEST
-                            #bc.floc[l][n][k] = None
                         if nv_on_beg:
                             bc.method_bc[l][n](f[self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]], bv, self.stencil[n].num2index, bc.floc[l][n][k], nv_on_beg)
                         else:
-                            bc.method_bc[l][n](f[:, :, self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]], bv, self.stencil[n].num2index, bc.floc[l][n][k], nv_on_beg)
-                            #bc.method_bc[l][n](f, bv, self.stencil[n].num2index, bc.floc[l][n][k], nv_on_beg)
+                            if self.dim == 1:
+                                bc.method_bc[l][n](f[:, self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]], bv, self.stencil[n].num2index, bc.floc[l][n][k], nv_on_beg)
+                            elif self.dim == 2:
+                                bc.method_bc[l][n](f[: ,: , self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]], bv, self.stencil[n].num2index, bc.floc[l][n][k], nv_on_beg)
+                            else:
+                                log.error('Periodic conditions are not implemented in 3D')
         self.bc_compute = False
 
 

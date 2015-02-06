@@ -145,7 +145,7 @@ class Canvas(app.Canvas):
             self.go_on()
             self.maj()
         if event.text == 't':
-            print "MLUPS: {0:5.1f}".format(self.sol.cpu_time['MLUPS'])
+            self.sol.time_info()
 
     def on_timer(self, event):
         self.go_on()
@@ -185,6 +185,9 @@ def bc_top(f, m, x, y, scheme):
     m[:, 0] = 0.
     m[:, 4] = uo
     m[:, 8] = 0.
+    #m[0] = 0.
+    #m[4] = uo
+    #m[8] = 0.
     #########  END OF WARNING  #########
     scheme.equilibrium(m)
     scheme.m2f(m, f)

@@ -36,11 +36,11 @@ if __name__ == "__main__":
     la = 1. # velocity of the scheme
     c = 0.25 # velocity of the advection
     Tf = 1.
-    s = 1.99
+    s = 1.9
     FINIT = Riemann_pb
 
     dico_Q2 = {
-        'box':{'x':[xmin, xmax], 'label':-1},
+        'box':{'x':[xmin, xmax], 'label':0},
         'space_step':dx,
         'number_of_schemes':1,
         'scheme_velocity':la,
@@ -51,8 +51,11 @@ if __name__ == "__main__":
             'equilibrium':Matrix([u[0][0], c*u[0][0]]),
             'init':{0:(FINIT,)},
             },],
-        'generator': pyLBM.generator.NumpyGenerator,
+        'generator': pyLBM.generator.CythonGenerator,
+        'boundary_conditions':{
+            0:{'method':{0:pyLBM.bc.neumann,},},
         }
+    }
 
     #s1 = 1.9
     #sigma1 = 1./s1-0.5
@@ -60,7 +63,7 @@ if __name__ == "__main__":
     #sQ3 = [0., 1./(0.5+sigma1), 1./(0.5+sigma2)]
     sQ3 = [0., s, s]
     dico_Q3 = {
-        'box':{'x':[xmin, xmax], 'label':-1},
+        'box':{'x':[xmin, xmax], 'label':0},
         'space_step':dx,
         'number_of_schemes':1,
         'scheme_velocity':la,
@@ -71,8 +74,11 @@ if __name__ == "__main__":
             'equilibrium':Matrix([u[0][0], c*u[0][0], (2*c**2+LA**2)/3*u[0][0]]),
             'init':{0:(FINIT,)},
             },],
-        'generator': pyLBM.generator.NumpyGenerator,
+        'generator': pyLBM.generator.CythonGenerator,
+        'boundary_conditions':{
+            0:{'method':{0:pyLBM.bc.neumann,},},
         }
+    }
 
     fig = plt.figure(0,figsize=(16, 8))
     fig.clf()
@@ -86,6 +92,8 @@ if __name__ == "__main__":
     plt.pause(1.e-3)
     while (sol.t<Tf):
         sol.one_time_step()
+    sol.f2m()
+    sol.time_info()
     plt.plot(sol.domain.x[0][1:-1],sol.m[0][0][1:-1],'r-')
     plt.draw()
     plt.subplot(122)
@@ -97,6 +105,8 @@ if __name__ == "__main__":
     plt.subplot(121)
     while (sol.t<Tf):
         sol.one_time_step()
+    sol.f2m()
+    sol.time_info()
     plt.plot(sol.domain.x[0][1:-1],sol.m[0][0][1:-1],'b-')
     plt.draw()
     plt.subplot(122)

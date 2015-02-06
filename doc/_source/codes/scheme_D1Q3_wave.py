@@ -8,8 +8,8 @@ d = {
   'dim':1,
   'scheme_velocity':1.,
   'schemes':[{
-    'velocities': range(1,3),
-    'polynomials': Matrix([1, X]),
+    'velocities': range(3),
+    'polynomials': Matrix([1, X, 0.5*X**2]),
     'equilibrium': Matrix([u[0][0], .5*u[0][0]]),
     'relaxation_parameters': [0., 1.9],
     },

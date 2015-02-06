@@ -79,6 +79,8 @@ class Simulation:
     one_time_step :
       compute a complet time step combining
       boundary_condition, transport, f2m, relaxation, m2f
+    time_info :
+      print informations about time
 
     Examples
     --------
@@ -203,11 +205,25 @@ class Simulation:
             if self.nv_on_beg:
                 return self._m[jj]
             else:
-                return self._m[:, :, jj]
+                if self.dim == 1:
+                    return self._m[:, jj]
+                elif self.dim == 2:
+                    return self._m[:, :, jj]
+                elif self.dim == 3:
+                    return self._m[:, :, :, jj]
+                else:
+                    log.error('Bad value of spatial dimension dim = {0}'.format(self.dim))
         if self.nv_on_beg:
             return self._m[self.scheme.stencil.nv_ptr[i] + j]
         else:
-            return self._m[:, :, self.scheme.stencil.nv_ptr[i] + j]
+            if self.dim == 1:
+                return self._m[:, self.scheme.stencil.nv_ptr[i] + j]
+            elif self.dim == 2:
+                return self._m[:, :, self.scheme.stencil.nv_ptr[i] + j]
+            elif self.dim == 3:
+                return self._m[:, :, :, self.scheme.stencil.nv_ptr[i] + j]
+            else:
+                log.error('Bad value of spatial dimension dim = {0}'.format(self.dim))
 
     @m.setter
     def m(self, i, j, value):
@@ -235,6 +251,53 @@ class Simulation:
         s += self.domain.__str__()
         s += self.scheme.__str__()
         return s
+
+    def time_info(self):
+        t = self.cpu_time
+        # tranform the seconds into days, hours, minutes, seconds
+        ttot = int(t['total'])
+        tms = int(1000*(t['total'] - ttot))
+        us = 1 # 1 second
+        um = 60*us # 1 minute
+        uh = 60*um # 1 hour
+        ud = 24*uh # 1 day
+        unity = [ud, uh, um, us]
+        unity_name = ['d', 'h', 'm', 's']
+        tcut = []
+        for u in unity:
+            tcut.append(ttot / u)
+            ttot -= tcut[-1]*u
+        #computational time measurement
+        s = '*'*50
+        s += '\n* Time informations' + ' '*30 + '*'
+        s += '\n* ' + '-'*46 + ' *'
+        s += '\n* MLUPS {0:5.1f}'.format(t['MLUPS']) + ' '*36 + '*'
+        s += '\n* Number of iterations {0:10.3e}'.format(t['number_of_iterations'])
+        s += ' '*16 + '*'
+        s += '\n* Total time   '
+        test_dummy = True
+        for k in range(len(unity)-1):
+            if (test_dummy and tcut[k] == 0):
+                s += ' '*4
+            else:
+                test_dummy = False
+                s += '{0:2d}{1} '.format(tcut[k], unity_name[k])
+        s += '{0:2d}{1} '.format(tcut[-1], unity_name[-1])
+        if test_dummy:
+            s += '{0:3d}ms'.format(tms) + ' '*13 + '*'
+        else:
+            s += ' '*18 + '*'
+        s += '\n* ' + '-'*46 + ' *'
+        s += '\n* relaxation         : {0:2d}%'.format(int(100*t['relaxation']/t['total']))
+        s += ' '*23 + '*'
+        s += '\n* transport          : {0:2d}%'.format(int(100*t['transport']/t['total']))
+        s += ' '*23 + '*'
+        s += '\n* f2m_m2f            : {0:2d}%'.format(int(100*t['f2m_m2f']/t['total']))
+        s += ' '*23 + '*'
+        s += '\n* boundary conditions: {0:2d}%'.format(int(100*t['boundary_conditions']/t['total']))
+        s += ' '*23 + '*'
+        s += '\n' + '*'*50
+        print s
 
     def initialization(self, dico):
         """
@@ -373,19 +436,7 @@ class Simulation:
         according to the specified boundary conditions.
         """
         t = time.time()
-        if self.dim == 1:
-            # periodic for the moment
-            log.debug("Boundary condition in 1D: only Neumann are implemented")
-            if self.nv_on_beg:
-                self._F[:,  0] = self._F[:,  1]
-                self._F[:, -1] = self._F[:, -2]
-            else:
-                self._F[ 0, :] = self._F[ 1, :]
-                self._F[-1, :] = self._F[-2, :]
-        elif self.dim == 2:
-            self.scheme.set_boundary_conditions(self._F, self._m, self.bc, self.nv_on_beg)
-        else:
-            log.error("Boundary conditions not yet implemented in 3D (maybe in another release)")
+        self.scheme.set_boundary_conditions(self._F, self._m, self.bc, self.nv_on_beg)
         self.cpu_time['boundary_conditions'] += time.time() - t
 
     def one_time_step(self):
@@ -413,11 +464,15 @@ class Simulation:
             self.relaxation()
             self.m2f()
         else:
+            tloc = -time.time()
             self._Fold[:] = self._F[:]
             self.scheme.onetimestep(self._m, self._F, self._Fold, self.domain.in_or_out, self.domain.valin)
             ftmp = self._Fold
             self._Fold = self._F
             self._F = ftmp
+            tloc += time.time()
+            self.cpu_time['relaxation'] += 0.5*tloc
+            self.cpu_time['transport'] += 0.5*tloc
 
         self.t += self.dt
         self.nt += 1
