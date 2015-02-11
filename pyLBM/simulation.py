@@ -141,6 +141,8 @@ class Simulation:
             self._F = np.empty(msize, dtype=self.type, order=self.order)
             self._Fold = np.empty(msize, dtype=self.type, order=self.order)
 
+        self.interface = self.domain.geom.interface
+        self.interface.set_subarray(self._F.shape, self.scheme.stencil.vmax, self.nv_on_beg)
         # self.m = [np.empty([self.scheme.stencil.nv[k]] + self.domain.Na, dtype=self.type, order=self.order) for k in range(self.scheme.nscheme)]
         # self.F = [np.empty([self.scheme.stencil.nv[k]] + self.domain.Na, dtype=self.type, order=self.order) for k in range(self.scheme.nscheme)]
 
@@ -149,8 +151,6 @@ class Simulation:
 
         log.info('Initialization')
         self.initialization(dico)
-
-        self.interface_setup()
 
         #computational time measurement
         self.cpu_time = {'relaxation':0.,
@@ -355,7 +355,7 @@ class Simulation:
                 self._F[ 0, :] = self._F[ 1, :]
                 self._F[-1, :] = self._F[-2, :]
         elif self.dim == 2:
-            self.scheme.set_boundary_conditions(self._F, self._m, self.bc, self.nv_on_beg)
+            self.scheme.set_boundary_conditions(self._F, self._m, self.bc, self.interface, self.nv_on_beg)
         else:
             log.error("Boundary conditions not yet implemented in 3D (maybe in another release)")
         self.cpu_time['boundary_conditions'] += time.time() - t
@@ -400,22 +400,6 @@ class Simulation:
             dummy *= n
         dummy /= self.cpu_time['total'] * 1.e6
         self.cpu_time['MLUPS'] = dummy
-
-    def interface_setup(self):
-        rank = self.domain.geom.comm.Get_rank()
-        coords = self.domain.geom.comm.Get_coords(rank)
-
-        direction = np.array([[0, 1], #droite
-                     [0, -1], #gauche
-                     [1, 0], #bas
-                     [-1, 0], #haut
-                     ])
-        #import ipdb; ipdb.set_trace()
-
-        for d in direction:
-            print rank, "domain in ", d, self.domain.geom.comm.Get_cart_rank(coords +d)
-
-        import ipdb; ipdb.set_trace()
 
     def affiche_2D(self):
         fig = plt.figure(0,figsize=(8, 8))
