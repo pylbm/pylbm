@@ -39,12 +39,12 @@ class Boundary:
         self.dico = dico
 
         # build the list of indices for each unique velocity and for each label
-        self.bv = []
+        self.bv = {}
         for label in self.domain.geom.list_of_labels():
             dummy_bv = []
             for k in xrange(self.domain.stencil.unvtot):
                 dummy_bv.append(Boundary_Velocity(self.domain, label, k))
-            self.bv.append(dummy_bv)
+            self.bv[label] = dummy_bv
 
         # build the list of boundary informations for each stencil and each label
         self.be = []
@@ -54,7 +54,9 @@ class Boundary:
         dico_bound = dico.get('boundary_conditions',{})
 
         for label in self.domain.geom.list_of_labels():
-            if (label == -1): # periodic conditions
+            if label == -1: # periodic conditions
+                pass
+            elif label == -2: # interface conditions
                 pass
             else: # non periodic conditions
                 self.be.append([])
