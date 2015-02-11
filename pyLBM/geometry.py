@@ -15,7 +15,7 @@ from matplotlib.patches import Ellipse, Polygon
 import mpi4py.MPI as mpi
 
 from .elements import *
-
+from .interface import Interface
 from .logs import __setLogger
 log = __setLogger(__name__)
 
@@ -104,43 +104,60 @@ class Geometry:
     def __init__(self, dico):
         self.dim, self.bounds = get_box(dico)
 
+        self.list_elem = []
+
+        dummylab = dico['box'].get('label', 0)
+        if isinstance(dummylab, int):
+            self.box_label = [dummylab]*2*self.dim
+        elif isinstance(dummylab, list):
+            if len(dummylab) != 2*self.dim:
+                log.error("The list label of the box has the wrong size (must be 2*dim)")
+            self.box_label = dummylab
+        else:
+            log.error("The labels of the box must be an integer or a list")
+
         # mpi support
         comm = mpi.COMM_WORLD
         size = comm.Get_size()
         split = mpi.Compute_dims(size, self.dim)
+        #split = (1, 2)
 
         self.bounds = np.asarray(self.bounds, dtype='f8')
         t = (self.bounds[:, 1] - self.bounds[:, 0])/split
-        self.comm = comm.Create_cart(split, (True,)*self.dim)
+        # Check periodic conditions
+        period = [False]*self.dim
+        for i in xrange(self.dim):
+            if self.box_label[i] == self.box_label[i+2] == -1: # work only for dim = 2
+                period[i] = True
+        self.comm = comm.Create_cart(split, period)
         rank = self.comm.Get_rank()
         coords = self.comm.Get_coords(rank)
         coords = np.asarray(coords)
         self.bounds[:, 1] = self.bounds[:, 0] + t*(coords + 1)
         self.bounds[:, 0] = self.bounds[:, 0] + t*coords
-        print rank, self.bounds
 
+        self.interface = Interface(self.dim, self.comm)
         self.isInterface = [False]*2*self.dim
         for i in xrange(self.dim):
             voisins = self.comm.Shift(i, 1)
-            if voisins[0] != rank:
+            if voisins[0] != mpi.PROC_NULL:
                 self.isInterface[i*2] = True
-            if voisins[1] != rank:
+            if voisins[1] != mpi.PROC_NULL:
                 self.isInterface[i*2 + 1] = True
 
+        if self.isInterface[2]:
+            self.box_label[0] = -2
+        if self.isInterface[0]:
+            self.box_label[1] = -2
+        if self.isInterface[3]:
+            self.box_label[2] = -2
+        if self.isInterface[1]:
+            self.box_label[3] = -2
+
+
         log.debug("Message from geometry.py (isInterface):\n {0}".format(self.isInterface))
-
-        self.list_elem = []
-
-        try:
-            dummylab = dico['box']['label']
-        except:
-            dummylab = 0
-        if isinstance(dummylab, int):
-            #self.list_label.append([dummylab]*2*self.dim)
-            self.box_label = [dummylab]*2*self.dim
-        else:
-            #self.list_label.append([loclab for loclab in dummylab])
-            self.box_label = [loclab for loclab in dummylab]
+        log.debug("Message from geometry.py (box_label):\n {0}".format(self.box_label))
+        log.debug("Message from geometry.py (bounds):\n {0}".format(self.bounds))
 
         elem = dico.get('elements', None)
         if elem is not None:
