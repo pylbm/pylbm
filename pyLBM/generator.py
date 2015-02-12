@@ -403,8 +403,8 @@ from libc.stdlib cimport malloc, free
         self.code += """
 def onetimestep(double[{0}::1] m, double[{0}::1] f, double[{0}::1] fnew, double[{2}]in_or_out, double valin):
 \tcdef:
-\t\tdouble *floc
-\t\tdouble *mloc
+\t\tdouble floc[{1}]
+\t\tdouble mloc[{1}]
 """.format(s, stencil.nv_ptr[-1], ext)
 
         s1 = ''
@@ -413,17 +413,12 @@ def onetimestep(double[{0}::1] m, double[{0}::1] f, double[{0}::1] fnew, double[
         self.code += s1
         self.code += "\t\tint i, nv = f.shape[{0}]\n".format(stencil.dim)
         self.code += "\t\tint nvsize = {0}\n".format(stencil.nv_ptr[-1])
-        self.code += "\twith nogil, parallel():\n"
-        tab = '\t'*2
+        tab = '\t'
         s1 = ''
         ext = ''
 
-        self.code += tab + "floc = <double *> malloc(nvsize*sizeof(double))\n"
-        self.code += tab + "mloc = <double *> malloc(nvsize*sizeof(double))\n"
-
         for i in xrange(stencil.dim):
-            #s1 += tab + 'for i{0} in xrange(n{0}):\n'.format(i)
-            s1 += tab + 'for i{0} in prange(n{0}, schedule="dynamic"):\n'.format(i)
+            s1 += tab + 'for i{0} in xrange(n{0}):\n'.format(i)
             ext += 'i{0},'.format(i)
             tab += '\t'
         self.code += s1
@@ -435,9 +430,6 @@ def onetimestep(double[{0}::1] m, double[{0}::1] f, double[{0}::1] fnew, double[
         self.code += tab + "\trelaxation(mloc)\n"
         self.code += tab + "\tm2f_loc(mloc, floc)\n"
         self.code += tab + "\tset_f(floc, fnew, {0})\n".format(ext)
-
-        self.code += '\t\t' + "free(floc)\n"
-        self.code += '\t\t' + "free(mloc)\n"
 
         self.code += "\n"
 
