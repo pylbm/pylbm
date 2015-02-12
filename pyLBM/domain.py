@@ -149,10 +149,12 @@ class Domain:
             sys.exit()
         else:
             self.dim = self.geom.dim # spatial dimension
-        self.bounds = self.geom.bounds # the box where the domain lies
+        self.globalbounds = self.geom.globalbounds # the box where the domain lies
+        self.bounds = self.geom.bounds # the local box of the process
         self.dx = dico['space_step'] # spatial step
         # spatial mesh
         debord = [self.dx*(self.stencil.vmax[k] - 0.5) for k in xrange(self.dim)]
+        self.Ng = [int((self.globalbounds[k][1] - self.globalbounds[k][0] + 0.5*self.dx)/self.dx) for k in xrange(self.dim)]
         self.N = [int((self.bounds[k][1] - self.bounds[k][0] + 0.5*self.dx)/self.dx) for k in xrange(self.dim)]
         self.Na = [self.N[k] + 2*self.stencil.vmax[k] for k in xrange(self.dim)]
         self.x = np.asarray([np.linspace(self.bounds[k][0] - debord[k],

@@ -372,7 +372,7 @@ class Simulation:
         if inittype == 'moments':
             self.scheme.equilibrium(self._m)
             self.scheme.m2f(self._m, self._F)
-        else:
+        elif inittype == 'distributions':
             self.scheme.f2m(self._F, self._m)
 
         if not self.nv_on_beg:
@@ -481,7 +481,7 @@ class Simulation:
         self.cpu_time['total'] += time.time() - t
         self.cpu_time['number_of_iterations'] += 1
         dummy = self.cpu_time['number_of_iterations']
-        for n in self.domain.N:
+        for n in self.domain.Ng:
             dummy *= n
         dummy /= self.cpu_time['total'] * 1.e6
         self.cpu_time['MLUPS'] = dummy
