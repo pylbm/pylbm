@@ -444,26 +444,17 @@ def onetimestep(double[{0}::1] m, double[{0}::1] f, double[{0}::1] fnew, double[
     def compile(self):
         Generator.compile(self)
         bld = open(self.f.name.replace('.pyx', '.pyxbld'), "w")
-        if sys.platform == 'darwin':
-            code = """
+        code = """
 def make_ext(modname, pyxfilename):
     from distutils.extension import Extension
 
     return Extension(name = modname,
                      sources=[pyxfilename],
                      extra_compile_args = ['-O3', '-w']
+                     #extra_compile_args = ['-O3', '-fopenmp', '-w'],
+                     #extra_link_args= ['-fopenmp'])
                     )
-            """
-        else:
-            code = """
-def make_ext(modname, pyxfilename):
-    from distutils.extension import Extension
-
-    return Extension(name = modname,
-                     sources=[pyxfilename],
-                     extra_compile_args = ['-O3', '-fopenmp', '-w'],
-                     extra_link_args= ['-fopenmp'])
-            """
+        """
         bld.write(code)
         bld.close()
 
