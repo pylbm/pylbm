@@ -10,7 +10,6 @@ import numpy as np
 import sympy as sp
 from sympy.matrices import Matrix, zeros
 import mpi4py.MPI as mpi
-import time
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -174,7 +173,11 @@ class Simulation:
             self._Fold = np.empty(msize, dtype=self.type, order=self.order)
 
         self.interface = self.domain.geom.interface
+<<<<<<< HEAD
         self.interface.set_subarray(self._F.shape, self.domain.stencil.vmax, self.nv_on_beg)
+=======
+        self.interface.set_subarray(self._F.shape, self.scheme.stencil.vmax, self.nv_on_beg)
+>>>>>>> 47370b1879a27c8085cf1e0ab94d9501a3df5eef
         # self.m = [np.empty([self.scheme.stencil.nv[k]] + self.domain.Na, dtype=self.type, order=self.order) for k in range(self.scheme.nscheme)]
         # self.F = [np.empty([self.scheme.stencil.nv[k]] + self.domain.Na, dtype=self.type, order=self.order) for k in range(self.scheme.nscheme)]
 
@@ -383,36 +386,36 @@ class Simulation:
         compute the transport phase on distribution functions
         (the array _F is modified)
         """
-        t = time.time()
+        t = mpi.Wtime()
         self.scheme.transport(self._F)
-        self.cpu_time['transport'] += time.time() - t
+        self.cpu_time['transport'] += mpi.Wtime() - t
 
     def relaxation(self):
         """
         compute the relaxation phase on moments
         (the array _m is modified)
         """
-        t = time.time()
+        t = mpi.Wtime()
         self.scheme.relaxation(self._m)
-        self.cpu_time['relaxation'] += time.time() - t
+        self.cpu_time['relaxation'] += mpi.Wtime() - t
 
     def f2m(self):
         """
         compute the moments from the distribution functions
         (the array _m is modified)
         """
-        t = time.time()
+        t = mpi.Wtime()
         self.scheme.f2m(self._F, self._m)
-        self.cpu_time['f2m_m2f'] += time.time() - t
+        self.cpu_time['f2m_m2f'] += mpi.Wtime() - t
 
     def m2f(self):
         """
         compute the distribution functions from the moments
         (the array _F is modified)
         """
-        t = time.time()
+        t = mpi.Wtime()
         self.scheme.m2f(self._m, self._F)
-        self.cpu_time['f2m_m2f'] += time.time() - t
+        self.cpu_time['f2m_m2f'] += mpi.Wtime() - t
 
     def equilibrium(self):
         """
@@ -437,9 +440,9 @@ class Simulation:
         The array _F is modified in the phantom array (outer points)
         according to the specified boundary conditions.
         """
-        t = time.time()
+        t = mpi.Wtime()
         self.scheme.set_boundary_conditions(self._F, self._m, self.bc, self.interface, self.nv_on_beg)
-        self.cpu_time['boundary_conditions'] += time.time() - t
+        self.cpu_time['boundary_conditions'] += mpi.Wtime() - t
 
     def one_time_step(self):
         """
@@ -457,8 +460,8 @@ class Simulation:
         - relaxation
         - m2f
         """
-        #t = time.time()
-        self.boundary_condition()
+        t1 = mpi.Wtime()
+        #self.boundary_condition()
 
         if self.nv_on_beg:
             self.transport()
@@ -466,23 +469,19 @@ class Simulation:
             self.relaxation()
             self.m2f()
         else:
-            #tloc = -time.time()
-            #self._Fold[:] = self._F[:]
             self.scheme.onetimestep(self._m, self._F, self._Fold, self.domain.in_or_out, self.domain.valin)
             self._F, self._Fold = self._Fold, self._F
-            #tloc += time.time()
-            #self.cpu_time['relaxation'] += 0.5*tloc
-            #self.cpu_time['transport'] += 0.5*tloc
+        t2 = mpi.Wtime()
+        self.cpu_time['total'] += t2 - t1
+        self.cpu_time['number_of_iterations'] += 1
 
         self.t += self.dt
         self.nt += 1
-        #self.cpu_time['total'] += time.time() - t
-        #self.cpu_time['number_of_iterations'] += 1
-        # dummy = self.cpu_time['number_of_iterations']
-        # for n in self.domain.Ng:
-        #     dummy *= n
-        # dummy /= self.cpu_time['total'] * 1.e6
-        # self.cpu_time['MLUPS'] = dummy
+        dummy = self.cpu_time['number_of_iterations']
+        for n in self.domain.Ng:
+            dummy *= n
+        dummy /= self.cpu_time['total'] * 1.e6
+        self.cpu_time['MLUPS'] = dummy
 
     def affiche_2D(self):
         fig = plt.figure(0,figsize=(8, 8))

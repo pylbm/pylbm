@@ -313,7 +313,6 @@ class Scheme:
         exec "from %s import *"%self.generator.get_module()
         exec "onetimestep(m, f, fcuurent, in_or_out, valin)"
 
-    #@profile
     def set_boundary_conditions(self, f, m, bc, interface, nv_on_beg):
         """
         Compute the boundary conditions
