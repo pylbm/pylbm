@@ -200,11 +200,11 @@ class Domain:
                 if (vk > 0):
                     for i in xrange(vk):
                         self.distance[k, xe - 1 - i] = (i + .5)/vk
-                        self.flag[k, xe - 1 - i] = label[0] # east border
+                        self.flag[k, xe - 1 - i] = label[1] # east border
                 elif (vk < 0):
                     for i in xrange(-vk):
                         self.distance[k, xb + i] = -(i + .5)/vk
-                        self.flag[k, xb + i] = label[1] # west border
+                        self.flag[k, xb + i] = label[0] # west border
 
         elif (self.dim == 2):
             vxmax, vymax = self.stencil.vmax[:2]
@@ -228,19 +228,19 @@ class Domain:
                         dvik = -(i + .5)/vxk
                         indbordvik = np.where(dvik < self.distance[k, yb:ye, xb + i])
                         self.distance[k, yb + indbordvik[0], xb + i] = dvik
-                        self.flag[k, yb + indbordvik[0], xb + i] = label[3]
+                        self.flag[k, yb + indbordvik[0], xb + i] = label[0]
                 if (vyk > 0):
                     for i in xrange(vyk):
                         dvik = (i + .5)/vyk
                         indbordvik = np.where(dvik < self.distance[k, ye - 1 - i, xb:xe])
                         self.distance[k, ye - 1 - i, xb + indbordvik[0]] = dvik
-                        self.flag[k, ye - 1 - i, xb + indbordvik[0]] = label[2]
+                        self.flag[k, ye - 1 - i, xb + indbordvik[0]] = label[3]
                 elif (vyk < 0):
                     for i in xrange(-vyk):
                         dvik = -(i + .5)/vyk
                         indbordvik = np.where(dvik < self.distance[k, yb + i, xb:xe])
                         self.distance[k, yb + i, xb + indbordvik[0]] = dvik
-                        self.flag[k, yb + i, xb + indbordvik[0]] = label[0]
+                        self.flag[k, yb + i, xb + indbordvik[0]] = label[2]
         return
 
     def __add_elem(self, elem):

@@ -118,7 +118,7 @@ class Geometry:
 
         period = [False]*self.dim
         for i in xrange(self.dim):
-            if self.box_label[i] == self.box_label[i+2] == -1: # work only for dim = 2
+            if self.box_label[2*i] == self.box_label[2*i+1] == -1: # work only for dim = 2
                 period[i] = True
 
         self.interface = Interface(self.dim, period)
@@ -130,24 +130,14 @@ class Geometry:
         self.bounds[:, 1] = self.bounds[:, 0] + t*(coords + 1)
         self.bounds[:, 0] = self.bounds[:, 0] + t*coords
 
-        self.isInterface = [False]*2*self.dim
+        # Modify box_label if the border becomes an interface
         for i in xrange(self.dim):
             voisins = self.interface.comm.Shift(i, 1)
             if voisins[0] != mpi.PROC_NULL:
-                self.isInterface[i*2] = True
+                self.box_label[2*i] = -2
             if voisins[1] != mpi.PROC_NULL:
-                self.isInterface[i*2 + 1] = True
+                self.box_label[2*i + 1] = -2
 
-        if self.isInterface[2]:
-            self.box_label[0] = -2
-        if self.isInterface[0]:
-            self.box_label[3] = -2
-        if self.isInterface[3]:
-            self.box_label[2] = -2
-        if self.isInterface[1]:
-            self.box_label[1] = -2
-
-        log.debug("Message from geometry.py (isInterface):\n {0}".format(self.isInterface))
         log.debug("Message from geometry.py (box_label):\n {0}".format(self.box_label))
         log.debug("Message from geometry.py (bounds):\n {0}".format(self.bounds))
 
