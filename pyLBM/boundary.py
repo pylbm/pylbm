@@ -154,9 +154,19 @@ def neumann_horizontal(f, bv, num2index, feq, nv_on_beg):
 def neumann(f, bv, num2index, feq, nv_on_beg):
     v = bv.v
     k = num2index[v.num]
-    iy = bv.indices[0]
-    ix = bv.indices[1]
-    f[k, iy, ix] = f[k, iy + v.vy, ix + v.vx]
+    if bv.indices.shape[0] == 1:
+        ix = bv.indices[0]
+        if nv_on_beg:
+            f[k, ix] = f[k, ix + v.vx]
+        else:
+            f[ix, k] = f[ix + v.vx, k]
+    elif bv.indices.shape[0] == 2:
+        iy = bv.indices[0]
+        ix = bv.indices[1]
+        if nv_on_beg:
+            f[k, iy, ix] = f[k, iy + v.vy, ix + v.vx]
+        else:
+            f[iy, ix, k] = f[iy + v.vy, ix + v.vx, k]
 
 if __name__ == "__main__":
     from pyLBM.elements import *
