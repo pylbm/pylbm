@@ -1,10 +1,37 @@
 import numpy as np
 import mpi4py.MPI as mpi
+from argparse import ArgumentParser
 
 class Interface:
-    def __init__(self, dim, comm):
+    def __init__(self, dim, period):
         self.dim = dim
-        self.comm = comm
+        self.set_options()
+
+        comm = mpi.COMM_WORLD
+        if self.npx == self.npy == self.npz == 1:
+            size = comm.Get_size()
+            split = mpi.Compute_dims(size, self.dim)
+        else:
+            split = (self.npx, self.npy, self.npz)
+        self.split = split[:self.dim]
+        self.comm = comm.Create_cart(self.split, period)
+
+    def get_coords(self):
+        rank = self.comm.Get_rank()
+        return np.asarray(self.comm.Get_coords(rank))
+
+    def set_options(self):
+        parser = ArgumentParser()
+        parser.add_argument("-npx", dest="npx", default=1,
+                             help="Set the number of processes in x direction")
+        parser.add_argument("-npy", dest="npy", default=1,
+                             help="Set the number of processes in y direction")
+        parser.add_argument("-npz", dest="npz", default=1,
+                             help="Set the number of processes in z direction")
+        args = parser.parse_args()
+        self.npx = int(args.npx)
+        self.npy = int(args.npy)
+        self.npz = int(args.npz)
 
     def set_subarray(self, n, vmax, nv_on_beg=False):
         rank = self.comm.Get_rank()
@@ -56,7 +83,8 @@ class Interface:
                     self.recvType.append(mpi.DOUBLE.Create_subarray(n, ms, sr))
                     self.sendTag.append(stag[d[0]+1, d[1]+1])
                     self.recvTag.append(rtag[d[0]+1, d[1]+1])
-                    print rank, neighbor, ms, ss, sr
+                    print "[{0}] send to {1} with tag {2} subarray:{3}".format(rank, neighbor, self.sendTag[-1], (n, ms, ss))
+                    print "[{0}] recv from {1} with tag {2} subarray:{3}".format(rank, neighbor, self.recvTag[-1], (n, ms, sr))
                 except mpi.Exception:
                     pass
 
