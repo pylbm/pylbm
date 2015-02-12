@@ -102,7 +102,7 @@ class Geometry:
     """
 
     def __init__(self, dico):
-        self.dim, self.bounds = get_box(dico)
+        self.dim, self.globalbounds = get_box(dico)
 
         self.list_elem = []
 
