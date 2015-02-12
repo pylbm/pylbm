@@ -131,8 +131,7 @@ class Interface:
         start_send = []
         start_recv = []
         msize = []
-        stag = np.arange((3)**self.dim).reshape((3,)*self.dim)
-        rtag = stag[::-1, ::-1]
+        stag, rtag = get_tags(self.dim)
         for i in xrange(self.dim):
             start_send.append([vmax[i], vmax[i], n[i]-2*vmax[i]])
             start_recv.append([0, vmax[i], n[i]-vmax[i]])
@@ -167,8 +166,8 @@ class Interface:
 
                     self.sendType.append(mpi.DOUBLE.Create_subarray(n, ms, ss))
                     self.recvType.append(mpi.DOUBLE.Create_subarray(n, ms, sr))
-                    self.sendTag.append(stag[d[0]+1, d[1]+1])
-                    self.recvTag.append(rtag[d[0]+1, d[1]+1])
+                    self.sendTag.append(stag[tuple(d+1)])
+                    self.recvTag.append(rtag[tuple(d+1)])
                     log.info("[{0}] send to {1} with tag {2} subarray:{3}".format(rank, neighbor, self.sendTag[-1], (n, ms, ss)))
                     log.info("[{0}] recv from {1} with tag {2} subarray:{3}".format(rank, neighbor, self.recvTag[-1], (n, ms, sr)))
                 except mpi.Exception:
@@ -240,3 +239,12 @@ def get_directions(dim):
         directions[:, 2] = np.repeat(a, 9, axis=0).flatten()
 
     return directions
+
+def get_tags(dim):
+    tag = np.arange((3)**dim).reshape((3,)*dim)
+    if dim == 1:
+        return tag, tag[::-1]
+    if dim == 2:
+        return tag, tag[::-1, ::-1]
+    if dim == 3:
+        return tag, tag[::-1, ::-1, ::-1]
