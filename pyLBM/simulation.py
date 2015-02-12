@@ -10,7 +10,6 @@ import numpy as np
 import sympy as sp
 from sympy.matrices import Matrix, zeros
 import mpi4py.MPI as mpi
-import time
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -290,36 +289,36 @@ class Simulation:
         compute the transport phase on distribution functions
         (the array _F is modified)
         """
-        t = time.time()
+        t = mpi.Wtime()
         self.scheme.transport(self._F)
-        self.cpu_time['transport'] += time.time() - t
+        self.cpu_time['transport'] += mpi.Wtime() - t
 
     def relaxation(self):
         """
         compute the relaxation phase on moments
         (the array _m is modified)
         """
-        t = time.time()
+        t = mpi.Wtime()
         self.scheme.relaxation(self._m)
-        self.cpu_time['relaxation'] += time.time() - t
+        self.cpu_time['relaxation'] += mpi.Wtime() - t
 
     def f2m(self):
         """
         compute the moments from the distribution functions
         (the array _m is modified)
         """
-        t = time.time()
+        t = mpi.Wtime()
         self.scheme.f2m(self._F, self._m)
-        self.cpu_time['f2m_m2f'] += time.time() - t
+        self.cpu_time['f2m_m2f'] += mpi.Wtime() - t
 
     def m2f(self):
         """
         compute the distribution functions from the moments
         (the array _F is modified)
         """
-        t = time.time()
+        t = mpi.Wtime()
         self.scheme.m2f(self._m, self._F)
-        self.cpu_time['f2m_m2f'] += time.time() - t
+        self.cpu_time['f2m_m2f'] += mpi.Wtime() - t
 
     def equilibrium(self):
         """
@@ -344,7 +343,7 @@ class Simulation:
         The array _F is modified in the phantom array (outer points)
         according to the specified boundary conditions.
         """
-        t = time.time()
+        t = mpi.Wtime()
         if self.dim == 1:
             # periodic for the moment
             log.debug("Boundary condition in 1D: only Neumann are implemented")
@@ -358,7 +357,7 @@ class Simulation:
             self.scheme.set_boundary_conditions(self._F, self._m, self.bc, self.interface, self.nv_on_beg)
         else:
             log.error("Boundary conditions not yet implemented in 3D (maybe in another release)")
-        self.cpu_time['boundary_conditions'] += time.time() - t
+        self.cpu_time['boundary_conditions'] += mpi.Wtime() - t
 
     def one_time_step(self):
         """
@@ -376,8 +375,8 @@ class Simulation:
         - relaxation
         - m2f
         """
-        t = time.time()
-        self.boundary_condition()
+        t1 = mpi.Wtime()
+        #self.boundary_condition()
 
         if self.nv_on_beg:
             self.transport()
@@ -385,21 +384,22 @@ class Simulation:
             self.relaxation()
             self.m2f()
         else:
-            self._Fold[:] = self._F[:]
+            #self._Fold[:] = self._F[:] # why we have this line ?
             self.scheme.onetimestep(self._m, self._F, self._Fold, self.domain.in_or_out, self.domain.valin)
-            ftmp = self._Fold
-            self._Fold = self._F
-            self._F = ftmp
+            self._F, self._Fold = self._Fold, self._F
+        t2 = mpi.Wtime()
+        self.cpu_time['total'] += t2 - t1
+        self.cpu_time['number_of_iterations'] += 1
 
         self.t += self.dt
         self.nt += 1
-        self.cpu_time['total'] += time.time() - t
-        self.cpu_time['number_of_iterations'] += 1
-        dummy = self.cpu_time['number_of_iterations']
+        #dummy = self.cpu_time['number_of_iterations']
+        dummy = 1
         for n in self.domain.Ng:
             dummy *= n
-        dummy /= self.cpu_time['total'] * 1.e6
-        self.cpu_time['MLUPS'] = dummy
+        #dummy /= self.cpu_time['total'] * 1.e6
+        #self.cpu_time['MLUPS'] = dummy
+        self.cpu_time['MLUPS'] = dummy/(t2-t1)/1e6
 
     def affiche_2D(self):
         fig = plt.figure(0,figsize=(8, 8))
