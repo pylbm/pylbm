@@ -173,6 +173,8 @@ class Simulation:
             self._F = np.empty(msize, dtype=self.type, order=self.order)
             self._Fold = np.empty(msize, dtype=self.type, order=self.order)
 
+        self.interface = self.domain.geom.interface
+        self.interface.set_subarray(self._F.shape, self.domain.stencil.vmax, self.nv_on_beg)
         # self.m = [np.empty([self.scheme.stencil.nv[k]] + self.domain.Na, dtype=self.type, order=self.order) for k in range(self.scheme.nscheme)]
         # self.F = [np.empty([self.scheme.stencil.nv[k]] + self.domain.Na, dtype=self.type, order=self.order) for k in range(self.scheme.nscheme)]
 
@@ -181,8 +183,6 @@ class Simulation:
 
         log.info('Initialization')
         self.initialization(dico)
-
-        self.interface_setup()
 
         #computational time measurement
         self.cpu_time = {'relaxation':0.,
@@ -438,7 +438,7 @@ class Simulation:
         according to the specified boundary conditions.
         """
         t = time.time()
-        self.scheme.set_boundary_conditions(self._F, self._m, self.bc, self.nv_on_beg)
+        self.scheme.set_boundary_conditions(self._F, self._m, self.bc, self.interface, self.nv_on_beg)
         self.cpu_time['boundary_conditions'] += time.time() - t
 
     def one_time_step(self):
@@ -457,7 +457,7 @@ class Simulation:
         - relaxation
         - m2f
         """
-        t = time.time()
+        #t = time.time()
         self.boundary_condition()
 
         if self.nv_on_beg:
@@ -466,41 +466,23 @@ class Simulation:
             self.relaxation()
             self.m2f()
         else:
-            tloc = -time.time()
-            self._Fold[:] = self._F[:]
+            #tloc = -time.time()
+            #self._Fold[:] = self._F[:]
             self.scheme.onetimestep(self._m, self._F, self._Fold, self.domain.in_or_out, self.domain.valin)
-            ftmp = self._Fold
-            self._Fold = self._F
-            self._F = ftmp
-            tloc += time.time()
-            self.cpu_time['relaxation'] += 0.5*tloc
-            self.cpu_time['transport'] += 0.5*tloc
+            self._F, self._Fold = self._Fold, self._F
+            #tloc += time.time()
+            #self.cpu_time['relaxation'] += 0.5*tloc
+            #self.cpu_time['transport'] += 0.5*tloc
 
         self.t += self.dt
         self.nt += 1
-        self.cpu_time['total'] += time.time() - t
-        self.cpu_time['number_of_iterations'] += 1
-        dummy = self.cpu_time['number_of_iterations']
-        for n in self.domain.Ng:
-            dummy *= n
-        dummy /= self.cpu_time['total'] * 1.e6
-        self.cpu_time['MLUPS'] = dummy
-
-    def interface_setup(self):
-        rank = self.domain.geom.comm.Get_rank()
-        coords = self.domain.geom.comm.Get_coords(rank)
-
-        direction = np.array([[0, 1], #droite
-                     [0, -1], #gauche
-                     [1, 0], #bas
-                     [-1, 0], #haut
-                     ])
-        #import ipdb; ipdb.set_trace()
-
-        for d in direction:
-            print rank, "domain in ", d, self.domain.geom.comm.Get_cart_rank(coords +d)
-
-        import ipdb; ipdb.set_trace()
+        #self.cpu_time['total'] += time.time() - t
+        #self.cpu_time['number_of_iterations'] += 1
+        # dummy = self.cpu_time['number_of_iterations']
+        # for n in self.domain.Ng:
+        #     dummy *= n
+        # dummy /= self.cpu_time['total'] * 1.e6
+        # self.cpu_time['MLUPS'] = dummy
 
     def affiche_2D(self):
         fig = plt.figure(0,figsize=(8, 8))
