@@ -919,6 +919,8 @@ def make_ext(modname, pyxfilename):
                      #extra_compile_args = ['-O3', '-fopenmp, '-w'],
                      #extra_link_args= ['-fopenmp'])
                      extra_compile_args = ['-O3', '-w']
+                     #extra_compile_args = ['-O3', '-fopenmp', '-w'],
+                     #extra_link_args= ['-fopenmp'])
                     )
         """
         bld.write(code)
