@@ -116,30 +116,23 @@ class Geometry:
         else:
             log.error("The labels of the box must be an integer or a list")
 
-        # mpi support
-        comm = mpi.COMM_WORLD
-        size = comm.Get_size()
-        split = mpi.Compute_dims(size, self.dim)
-        #split = (1, 2)
-
-        self.bounds = np.asarray(self.bounds, dtype='f8')
-        t = (self.bounds[:, 1] - self.bounds[:, 0])/split
-        # Check periodic conditions
         period = [False]*self.dim
         for i in xrange(self.dim):
             if self.box_label[i] == self.box_label[i+2] == -1: # work only for dim = 2
                 period[i] = True
-        self.comm = comm.Create_cart(split, period)
-        rank = self.comm.Get_rank()
-        coords = self.comm.Get_coords(rank)
-        coords = np.asarray(coords)
+
+        self.interface = Interface(self.dim, period)
+
+        self.globalbounds = np.asarray(self.globalbounds, dtype='f8')
+        self.bounds = self.globalbounds.copy()
+        t = (self.bounds[:, 1] - self.bounds[:, 0])/self.interface.split
+        coords = self.interface.get_coords()
         self.bounds[:, 1] = self.bounds[:, 0] + t*(coords + 1)
         self.bounds[:, 0] = self.bounds[:, 0] + t*coords
 
-        self.interface = Interface(self.dim, self.comm)
         self.isInterface = [False]*2*self.dim
         for i in xrange(self.dim):
-            voisins = self.comm.Shift(i, 1)
+            voisins = self.interface.comm.Shift(i, 1)
             if voisins[0] != mpi.PROC_NULL:
                 self.isInterface[i*2] = True
             if voisins[1] != mpi.PROC_NULL:
@@ -148,12 +141,11 @@ class Geometry:
         if self.isInterface[2]:
             self.box_label[0] = -2
         if self.isInterface[0]:
-            self.box_label[1] = -2
+            self.box_label[3] = -2
         if self.isInterface[3]:
             self.box_label[2] = -2
         if self.isInterface[1]:
-            self.box_label[3] = -2
-
+            self.box_label[1] = -2
 
         log.debug("Message from geometry.py (isInterface):\n {0}".format(self.isInterface))
         log.debug("Message from geometry.py (box_label):\n {0}".format(self.box_label))
