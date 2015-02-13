@@ -122,9 +122,11 @@ class Interface:
         if nv_on_beg:
             nloc = [i - 2*v for i, v in zip(n[1:], vmax)]
             nv = n[0]
+            nn = n[1:]
         else:
             nloc = [i - 2*v for i, v in zip(n[:-1], vmax)]
             nv = n[-1]
+            nn = n[:-1]
 
         # set the size and the start indices
         # for the send and receive messages
@@ -133,8 +135,8 @@ class Interface:
         msize = []
         stag, rtag = get_tags(self.dim)
         for i in xrange(self.dim):
-            start_send.append([vmax[i], vmax[i], n[i]-2*vmax[i]])
-            start_recv.append([0, vmax[i], n[i]-vmax[i]])
+            start_send.append([vmax[i], vmax[i], nn[i]-2*vmax[i]])
+            start_recv.append([0, vmax[i], nn[i]-vmax[i]])
             msize.append([vmax[i], nloc[i], vmax[i]])
         start_send = np.asarray(start_send)
         start_recv = np.asarray(start_recv)
