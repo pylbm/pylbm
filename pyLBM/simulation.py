@@ -173,11 +173,7 @@ class Simulation:
             self._Fold = np.empty(msize, dtype=self.type, order=self.order)
 
         self.interface = self.domain.geom.interface
-<<<<<<< HEAD
         self.interface.set_subarray(self._F.shape, self.domain.stencil.vmax, self.nv_on_beg)
-=======
-        self.interface.set_subarray(self._F.shape, self.scheme.stencil.vmax, self.nv_on_beg)
->>>>>>> 47370b1879a27c8085cf1e0ab94d9501a3df5eef
         # self.m = [np.empty([self.scheme.stencil.nv[k]] + self.domain.Na, dtype=self.type, order=self.order) for k in range(self.scheme.nscheme)]
         # self.F = [np.empty([self.scheme.stencil.nv[k]] + self.domain.Na, dtype=self.type, order=self.order) for k in range(self.scheme.nscheme)]
 
