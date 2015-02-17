@@ -10,6 +10,7 @@ import sys
 import os
 import re
 import sympy as sp
+import mpi4py.MPI as mpi
 
 from .logs import __setLogger
 log = __setLogger(__name__)
@@ -139,15 +140,25 @@ class Generator:
     """
     def __init__(self, build_dir=None, suffix='.py'):
         self.build_dir = build_dir
-        if build_dir is None:
-            self.build_dir = tempfile.mkdtemp(suffix='LBM') + '/'
-        self.f = tempfile.NamedTemporaryFile(suffix=suffix, prefix=self.build_dir + 'LBM', delete=False)
-        sys.path.append(self.build_dir)
+        self.modulename = None
         self.code = ''
+        self.rank = mpi.COMM_WORLD.Get_rank()
+
+        if self.rank == 0:
+            self.build_dir = build_dir
+            if build_dir is None:
+                self.build_dir = tempfile.mkdtemp(suffix='LBM') + '/'
+            self.f = tempfile.NamedTemporaryFile(suffix=suffix, prefix=self.build_dir + 'LBM', delete=False)
+            self.modulename = self.f.name.replace(self.build_dir, "").split('.')[0]
+
+        self.build_dir = mpi.COMM_WORLD.bcast(self.build_dir, 0)
+        self.modulename = mpi.COMM_WORLD.bcast(self.modulename, 0)
+
+        sys.path.append(self.build_dir)
 
         atexit.register(self.exit)
 
-        log.info("Temporary file use for code generator :\n{0}".format(self.f.name))
+        log.info("Temporary file use for code generator :\n{0}".format(self.modulename))
         #print self.f.name
 
     def setup(self):
@@ -170,16 +181,17 @@ class Generator:
 
     def compile(self):
         log.info("*"*30 + "\n" + self.code + "\n" + "*"*30)
-        self.f.write(self.code)
-        self.f.close()
+        if self.rank == 0:
+            self.f.write(self.code)
+            self.f.close()
 
     def get_module(self):
-        return self.f.name.replace(self.build_dir, "").split('.')[0]
+        return self.modulename
 
     def exit(self):
         log.info("delete generator")
-        #print "delete generator"
-        os.unlink(self.f.name)
+        if self.rank == 0:
+            os.unlink(self.f.name)
 
 class NumpyGenerator(Generator):
     """
@@ -225,7 +237,6 @@ class NumpyGenerator(Generator):
     """
     def __init__(self, build_dir=None):
         Generator.__init__(self, build_dir)
-        sys.path.append(self.build_dir)
 
     def transport(self, ns, stencil, dtype = 'f8'):
         """
@@ -901,8 +912,9 @@ def onetimestep(double[{0}::1] m, double[{0}::1] f, double[{0}::1] fnew, double[
         If the compilation can use the option -fopenmp, add it here.
         """
         Generator.compile(self)
-        bld = open(self.f.name.replace('.pyx', '.pyxbld'), "w")
-        code = """
+        if self.rank == 0:
+            bld = open(self.f.name.replace('.pyx', '.pyxbld'), "w")
+            code = """
 def make_ext(modname, pyxfilename):
     from distutils.extension import Extension
 
@@ -914,13 +926,14 @@ def make_ext(modname, pyxfilename):
                      #extra_compile_args = ['-O3', '-fopenmp', '-w'],
                      #extra_link_args= ['-fopenmp'])
                     )
-        """
-        bld.write(code)
-        bld.close()
+                    """
+            bld.write(code)
+            bld.close()
 
-        import pyximport
-        pyximport.install(build_dir= self.build_dir, inplace=True)
-
+            import pyximport
+            pyximport.install(build_dir= self.build_dir, inplace=True)
+            exec "import %s"%self.modulename
+        mpi.COMM_WORLD.Barrier()
 
 if __name__ == "__main__":
     import numpy as np
