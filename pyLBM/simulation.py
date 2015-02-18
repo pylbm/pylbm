@@ -457,7 +457,7 @@ class Simulation:
         - m2f
         """
         t1 = mpi.Wtime()
-        #self.boundary_condition()
+        self.boundary_condition()
 
         if self.nv_on_beg:
             self.transport()
@@ -465,8 +465,12 @@ class Simulation:
             self.relaxation()
             self.m2f()
         else:
+            tloci = mpi.Wtime()
             self.scheme.onetimestep(self._m, self._F, self._Fold, self.domain.in_or_out, self.domain.valin)
             self._F, self._Fold = self._Fold, self._F
+            tlocf = mpi.Wtime()
+            self.cpu_time['transport'] += 0.5*(tlocf-tloci)
+            self.cpu_time['relaxation'] += 0.5*(tlocf-tloci)
         t2 = mpi.Wtime()
         self.cpu_time['total'] += t2 - t1
         self.cpu_time['number_of_iterations'] += 1
