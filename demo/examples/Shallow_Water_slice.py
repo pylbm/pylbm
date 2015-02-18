@@ -3,7 +3,6 @@ import sys
 import numpy as np
 import sympy as sp
 from sympy.matrices import Matrix
-import mpi4py.MPI as mpi
 
 import pyLBM
 
@@ -33,10 +32,10 @@ def plot_radial(sol, num=0):
 
 def simu():
     # parameters
-    dx = 1./125 # spatial step
+    dx = 1./256 # spatial step
     la = 4 # velocity of the scheme
     g = 1.
-    Tf = 1.
+    Tf = 0.1
     sigma = 1.e-4
     s_0qx = 2.#1./(0.5+sigma)
     s_0xy = 1.5
@@ -77,20 +76,20 @@ def simu():
 
     sol = pyLBM.Simulation(dico)
 
-    #fig = plt.figure(0,figsize=(16, 8))
-    #fig.clf()
-    #plt.ion()
-
-    #im = 0
-    #plot_radial(sol,im)
+    # fig = plt.figure(0,figsize=(16, 8))
+    # fig.clf()
+    # plt.ion()
+    #
+    # im = 0
+    # plot_radial(sol,im)
 
     while (sol.t<Tf):
         sol.one_time_step()
-        #im += 1
+        # im += 1
         #sol.f2m()
-        #plot_radial(sol,im)
-    #plt.ioff()
-    #plt.show()
+    #     plot_radial(sol,im)
+    # plt.ioff()
+    # plt.show()
     sol.time_info()
 
 if __name__ == "__main__":
