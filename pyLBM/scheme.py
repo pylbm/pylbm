@@ -41,6 +41,7 @@ class Scheme:
       - schemes : a list of dictionaries, one for each scheme
       - generator : a generator for the code, optional
         (see :py:class:`Generator <pyLBM.generator.Generator>`)
+      - test_stability : boolean (optional)
 
     Notes
     -----
@@ -105,7 +106,6 @@ class Scheme:
 
     generate :
       Generate the code
-
     equilibrium :
       Compute the equilibrium
     transport :
@@ -153,6 +153,24 @@ class Scheme:
         self.generate()
 
         self.bc_compute = True
+
+        # stability
+        dicostab = dico.get('stability', None)
+        if dicostab is not None:
+            self.compute_amplification_matrix_relaxation()
+            Li_stab = dicostab.get('test_maximum_principle', False)
+            if Li_stab:
+                if self.is_stable_Linfinity():
+                    print "The scheme satisfies a maximum principle"
+                else:
+                    print "The scheme does not satisfy a maximum principle"
+            L2_stab = dicostab.get('test_L2_stability', False)
+            if L2_stab:
+                if self.is_stable_L2():
+                    print "The scheme is stable for the norm L2"
+                else:
+                    print "The scheme is not stable for the norm L2"
+
 
     def __str__(self):
         s = "Scheme informations\n"
@@ -282,7 +300,6 @@ class Scheme:
             space_size = np.prod(m.shape[:-1])
             exec "f2m(f.reshape(({0}, {1})), m.reshape(({0}, {1})))".format(space_size, self.stencil.nv_ptr[-1])
 
-
     def transport(self, f):
         """ The transport phase on the distribution functions f """
         exec "from %s import *"%self.generator.get_module()
@@ -409,6 +426,99 @@ class Scheme:
                             else:
                                 log.error('Periodic conditions are not implemented in 3D')
         self.bc_compute = False
+
+    def compute_amplification_matrix_relaxation(self):
+        ns = self.stencil.nstencils # number of stencil
+        nv = self.stencil.nv # number of velocities for each stencil
+        nvtot = sum(nv)
+        # matrix of the f2m and m2f transformations
+        M = np.zeros((nvtot, nvtot))
+        iM = np.zeros((nvtot, nvtot))
+        # matrix of the relaxation parameters
+        R = np.zeros((nvtot, nvtot))
+        # matrix of the equilibrium
+        E = np.zeros((nvtot, nvtot))
+        k = 0
+        for n in range(ns):
+            l = nv[n]
+            M[k:k+l, k:k+l] = self.Mnum[n]
+            iM[k:k+l, k:k+l] = self.invMnum[n]
+            R[k:k+l, k:k+l] = np.diag(self.s[n])
+            k += l
+        k = 0
+        for n in range(ns):
+            for i in range(nv[n]):
+                eqi = self.EQ[n][i]
+                if str(eqi) != "m[%d][%d]"%(n, i):
+                    l = 0
+                    for m in range(ns):
+                        for j in range(nv[m]):
+                            E[k+i, l+j] = sp.diff(eqi, u[m][j])
+                        l += nv[m]
+            k += nv[n]
+        C = np.dot(R, E - np.eye(nvtot))
+        # global amplification matrix for the relaxation
+        self.amplification_matrix_relaxation = np.eye(nvtot) + np.dot(iM, np.dot(C, M))
+
+    def amplification_matrix(self, wave_vector):
+        Jr = self.amplification_matrix_relaxation
+        # matrix of the transport phase
+        q = Jr.shape[0]
+        J = np.zeros((q, q), dtype='complex128')
+        k = 0
+        for n in range(self.stencil.nstencils):
+            for i in range(self.stencil.nv[n]):
+                vi = [self.stencil.vx[n][i],
+                      self.stencil.vy[n][i],
+                      self.stencil.vz[n][i]]
+                J[k+i, :] = np.exp(1j*sum([a*b for a, b in zip(wave_vector, vi)])) * Jr[k+i, :]
+            k += self.stencil.nv[n]
+        return J
+
+    def vp_amplification_matrix(self, wave_vector):
+        vp = np.linalg.eig(self.amplification_matrix(wave_vector))
+        return vp[0]
+
+    def is_stable_L2(self, Nk = 101):
+        R = 1.
+        vk = np.linspace(0., 2*np.pi, Nk)
+        if self.dim == 1:
+            for i in range(vk.size):
+                kx = vk[i]
+                vp = self.vp_amplification_matrix((kx, ))
+                rloc = max(abs(vp))
+                if rloc > R+1.e-14:
+                    return False
+        elif self.dim == 2:
+            for i in range(vk.size):
+                kx = vk[i]
+                for j in range(vk.size):
+                    ky = vk[j]
+                    vp = self.vp_amplification_matrix((kx, ky))
+                    rloc = max(abs(vp))
+                    if rloc > R+1.e-14:
+                        return False
+        elif self.dim == 3:
+            for i in range(vk.size):
+                kx = vk[i]
+                for j in range(vk.size):
+                    ky = vk[j]
+                    for k in range(vk.size):
+                        kz = vk[k]
+                        vp = self.vp_amplification_matrix((kx, ky, kz))
+                        rloc = max(abs(vp))
+                        if rloc > R+1.e-14:
+                            return False
+        else:
+            log.warning("dim should be in [1, 3] for the scheme")
+        return True
+
+    def is_stable_Linfinity(self):
+        if np.min(self.amplification_matrix_relaxation) < 0:
+            return False
+        else:
+            return True
+
 
 def test_1D(opt):
     dim = 1 # spatial dimension
