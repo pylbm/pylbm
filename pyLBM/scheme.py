@@ -157,7 +157,7 @@ class Scheme:
         # stability
         dicostab = dico.get('stability', None)
         if dicostab is not None:
-            self.compute_amplification_matrix_relaxation()
+            self.compute_amplification_matrix_relaxation(dicostab)
             Li_stab = dicostab.get('test_maximum_principle', False)
             if Li_stab:
                 if self.is_stable_Linfinity():
@@ -427,7 +427,7 @@ class Scheme:
                                 log.error('Periodic conditions are not implemented in 3D')
         self.bc_compute = False
 
-    def compute_amplification_matrix_relaxation(self):
+    def compute_amplification_matrix_relaxation(self, dico):
         ns = self.stencil.nstencils # number of stencil
         nv = self.stencil.nv # number of velocities for each stencil
         nvtot = sum(nv)
@@ -446,14 +446,18 @@ class Scheme:
             R[k:k+l, k:k+l] = np.diag(self.s[n])
             k += l
         k = 0
+        list_linarization = dico.get('linearization', None)
         for n in range(ns):
             for i in range(nv[n]):
-                eqi = self.EQ[n][i]
+                eqi = self.EQ[n][i].subs([(LA, self.la),])
                 if str(eqi) != "m[%d][%d]"%(n, i):
                     l = 0
                     for m in range(ns):
                         for j in range(nv[m]):
-                            E[k+i, l+j] = sp.diff(eqi, u[m][j])
+                            dummy = sp.diff(eqi, u[m][j])
+                            if list_linarization is not None:
+                                dummy = dummy.subs(list_linarization)
+                            E[k+i, l+j] = dummy
                         l += nv[m]
             k += nv[n]
         C = np.dot(R, E - np.eye(nvtot))
