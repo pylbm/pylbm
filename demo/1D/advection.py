@@ -32,11 +32,11 @@ if __name__ == "__main__":
     # parameters
     dim = 1 # spatial dimension
     xmin, xmax = -1., 1.
-    dx = 0.001 # spatial step
+    dx = 0.005 # spatial step
     la = 1. # velocity of the scheme
     c = 0.25 # velocity of the advection
     Tf = 1.
-    s = 1.9
+    s = 1.75
     FINIT = Riemann_pb
 
     dico_Q2 = {

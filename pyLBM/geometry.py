@@ -81,7 +81,7 @@ class Geometry:
     bounds : numpy array
       the bounds of the box in each spatial direction
     box_label : list of integers
-      a list of the four labels for the bottom, left, top, and right edges
+      a list of the four labels for the left, right, bottom, top, front, and back edges
     list_elem : list of elements
       a list that contains each element added or deleted in the box
 
@@ -194,8 +194,10 @@ class Geometry:
             plt.plot([xmax-l,xmax,xmax,xmax-l],[-h,-h,h,h],plein,lw=5)
             plt.plot([xmin,xmax],[0.,0.],plein,lw=5)
             if viewlabel:
-                plt.text(xmax-l, -2*h, self.box_label[0], fontsize=18, horizontalalignment='center',verticalalignment='center')
-                plt.text(xmin+l, -2*h, self.box_label[1], fontsize=18, horizontalalignment='center',verticalalignment='center')
+                # label 0 for left
+                plt.text(xmin+l, -2*h, self.box_label[0], fontsize=18, horizontalalignment='center',verticalalignment='center')
+                # label 1 for right
+                plt.text(xmax-l, -2*h, self.box_label[1], fontsize=18, horizontalalignment='center',verticalalignment='center')
             plt.axis('equal')
         elif (self.dim == 2):
             xmin = (float)(self.bounds[0][0])
@@ -204,10 +206,14 @@ class Geometry:
             ymax = (float)(self.bounds[1][1])
             plt.fill([xmin,xmax,xmax,xmin], [ymin,ymin,ymax,ymax], fill=True, color=plein)
             if viewlabel:
-                plt.text(0.5*(xmin+xmax), ymin, self.box_label[0], fontsize=18, horizontalalignment='center',verticalalignment='bottom')
+                # label 0 for left
+                plt.text(xmin, 0.5*(ymin+ymax), self.box_label[0], fontsize=18, horizontalalignment='left',verticalalignment='center')
+                # label 1 for right
                 plt.text(xmax, 0.5*(ymin+ymax), self.box_label[1], fontsize=18, horizontalalignment='right',verticalalignment='center')
-                plt.text(0.5*(xmin+xmax), ymax, self.box_label[2], fontsize=18, horizontalalignment='center',verticalalignment='top')
-                plt.text(xmin, 0.5*(ymin+ymax), self.box_label[3], fontsize=18, horizontalalignment='left',verticalalignment='center')
+                # label 2 for bottom
+                plt.text(0.5*(xmin+xmax), ymin, self.box_label[2], fontsize=18, horizontalalignment='center',verticalalignment='bottom')
+                # label 3 for top
+                plt.text(0.5*(xmin+xmax), ymax, self.box_label[3], fontsize=18, horizontalalignment='center',verticalalignment='top')
             plt.axis([xmin, xmax, ymin, ymax])
             comptelem = 0
             for elem in self.list_elem:

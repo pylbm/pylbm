@@ -134,11 +134,9 @@ X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
 
 def initialization_rho(x,y):
-    #return rhoo * np.ones((x.shape[0], y.shape[0]), dtype='float64') + deltarho * ((x-0.5*(xmin+xmax))**2+(y-0.5*(ymin+ymax))**2 < 0.25**2)
     return rhoo * np.ones((y.shape[0], x.shape[0]), dtype='float64') + deltarho * ((x-0.5*(xmin+xmax))**2+(y-0.5*(ymin+ymax))**2 < 0.25**2)
 
 def initialization_q(x,y):
-    #return np.zeros((x.shape[0], y.shape[0]), dtype='float64')
     return np.zeros((y.shape[0], x.shape[0]), dtype='float64')
 
 if __name__ == "__main__":
@@ -159,7 +157,6 @@ if __name__ == "__main__":
         'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[-1,-1,-1,-1]},
         'space_step':dx,
         'scheme_velocity':la,
-        'inittype':'moments',
         'schemes':[{'velocities':vitesse,
                     'polynomials':polynomes,
                     'relaxation_parameters':[0., 2., 2., 1.5],
