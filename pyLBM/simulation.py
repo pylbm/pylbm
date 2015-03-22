@@ -173,9 +173,10 @@ class Simulation:
             self._Fold = np.empty(msize, dtype=self.type, order=self.order)
 
         self.interface = self.domain.geom.interface
-        self.interface.set_subarray(self._F.shape, self.domain.stencil.vmax, self.nv_on_beg)
-        # self.m = [np.empty([self.scheme.stencil.nv[k]] + self.domain.Na, dtype=self.type, order=self.order) for k in range(self.scheme.nscheme)]
-        # self.F = [np.empty([self.scheme.stencil.nv[k]] + self.domain.Na, dtype=self.type, order=self.order) for k in range(self.scheme.nscheme)]
+        if self.interface is not None:
+            self.interface.set_subarray(self._F.shape, self.domain.stencil.vmax, self.nv_on_beg)
+            # self.m = [np.empty([self.scheme.stencil.nv[k]] + self.domain.Na, dtype=self.type, order=self.order) for k in range(self.scheme.nscheme)]
+            # self.F = [np.empty([self.scheme.stencil.nv[k]] + self.domain.Na, dtype=self.type, order=self.order) for k in range(self.scheme.nscheme)]
 
         log.info('Build boundary conditions')
         self.bc = Boundary(self.domain, dico)

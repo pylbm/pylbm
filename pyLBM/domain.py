@@ -162,6 +162,13 @@ class Domain:
                                          self.Na[k]) for k in xrange(self.dim)])
         self.indbe = np.asarray([(self.stencil.vmax[k],
                                   self.stencil.vmax[k] + self.N[k]) for k in xrange(self.dim)])
+        for k in xrange(self.dim):
+            tmp_bord_phy = [self.bounds[k][0], self.bounds[k][1]]
+            tmp_bord_num = [self.x[k][ self.indbe[k][0] ] - .5*self.dx, self.x[k][ self.indbe[k][1]-1 ] + .5*self.dx]
+            if ((abs(tmp_bord_phy[0] - tmp_bord_num[0]) > 0.01*self.dx) |
+                (abs(tmp_bord_phy[1] - tmp_bord_num[1]) > 0.01*self.dx)):
+                log.error('The length of the box in the direction {0} must be a multiple of the space step'.format(k))
+                sys.exit()
 
         # distance to the borders
         self.valin = 999  # value in the fluid domain

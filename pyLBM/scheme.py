@@ -150,8 +150,8 @@ class Scheme:
         else:
             self.nv_on_beg = True
         log.debug("Message from scheme.py: nv_on_beg = {0}".format(self.nv_on_beg))
-        self.generate()
-
+        self.use_mpi = dico.get('use_mpi', True)
+        self.generate(use_mpi = self.use_mpi)
         self.bc_compute = True
 
         # stability
@@ -246,7 +246,7 @@ class Scheme:
                     self.MnumGlob[self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j] = self.Mnum[k][i, j]
                     self.invMnumGlob[self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j] = self.invMnum[k][i, j]
 
-    def generate(self):
+    def generate(self, use_mpi = True):
         """
         Generate the code by using the appropriated generator
 
@@ -258,7 +258,6 @@ class Scheme:
         >>> print S.generator.code
         """
         self.generator.setup()
-
         if self.nv_on_beg:
             for k in xrange(self.nscheme):
                 self.generator.m2f(self.invMnum[k], k, self.dim)
@@ -272,7 +271,7 @@ class Scheme:
         self.generator.transport(self.nscheme, self.stencil)
         self.generator.equilibrium(self.nscheme, self.stencil, self.EQ, self.la)
         self.generator.relaxation(self.nscheme, self.stencil, self.s, self.EQ, self.la)
-        self.generator.compile()
+        self.generator.compile(use_mpi)
 
     def m2f(self, m, f):
         """ Compute the distribution functions f from the moments m """
@@ -368,7 +367,8 @@ class Scheme:
          +---------------+----------------+-----------------+
 
         """
-        interface.update(f)
+        if interface is not None:
+            interface.update(f)
 
         # non periodic conditions
         if self.bc_compute:
