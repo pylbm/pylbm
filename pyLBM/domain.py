@@ -224,25 +224,25 @@ class Domain:
             for k in xrange(self.stencil.unvtot):
                 vxk = self.stencil.unique_velocities[k].vx
                 vyk = self.stencil.unique_velocities[k].vy
-                if (vxk > 0):
+                if ((vxk > 0) & (label[1] != -2)):
                     for i in xrange(vxk):
                         dvik = (i + .5)/vxk
                         indbordvik = np.where(dvik < self.distance[k, yb:ye, xe - 1 - i])
                         self.distance[k, yb + indbordvik[0], xe - 1 - i] = dvik
                         self.flag[k, yb + indbordvik[0], xe - 1 - i] = label[1]
-                elif (vxk < 0):
+                elif ((vxk < 0) & (label[0] <> -2)):
                     for i in xrange(-vxk):
                         dvik = -(i + .5)/vxk
                         indbordvik = np.where(dvik < self.distance[k, yb:ye, xb + i])
                         self.distance[k, yb + indbordvik[0], xb + i] = dvik
                         self.flag[k, yb + indbordvik[0], xb + i] = label[0]
-                if (vyk > 0):
+                if ((vyk > 0) & (label[3] != -2)):
                     for i in xrange(vyk):
                         dvik = (i + .5)/vyk
                         indbordvik = np.where(dvik < self.distance[k, ye - 1 - i, xb:xe])
                         self.distance[k, ye - 1 - i, xb + indbordvik[0]] = dvik
                         self.flag[k, ye - 1 - i, xb + indbordvik[0]] = label[3]
-                elif (vyk < 0):
+                elif ((vyk < 0) & (label[2] != -2)):
                     for i in xrange(-vyk):
                         dvik = -(i + .5)/vyk
                         indbordvik = np.where(dvik < self.distance[k, yb + i, xb:xe])
