@@ -230,7 +230,7 @@ class Domain:
                         indbordvik = np.where(dvik < self.distance[k, yb:ye, xe - 1 - i])
                         self.distance[k, yb + indbordvik[0], xe - 1 - i] = dvik
                         self.flag[k, yb + indbordvik[0], xe - 1 - i] = label[1]
-                elif ((vxk < 0) & (label[0] <> -2)):
+                elif ((vxk < 0) & (label[0] != -2)):
                     for i in xrange(-vxk):
                         dvik = -(i + .5)/vxk
                         indbordvik = np.where(dvik < self.distance[k, yb:ye, xb + i])
