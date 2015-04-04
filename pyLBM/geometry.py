@@ -4,13 +4,7 @@
 #
 # License: BSD 3 clause
 
-import sys
-from math import sin, cos
-import matplotlib
 import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-import matplotlib.cm as cm
-from matplotlib.patches import Ellipse, Polygon
 
 import mpi4py.MPI as mpi
 
@@ -121,27 +115,23 @@ class Geometry:
             if self.box_label[2*i] == self.box_label[2*i+1] == -1: # work only for dim = 2
                 period[i] = True
 
-        self.use_mpi = dico.get('use_mpi', True)
-        if self.use_mpi:
-            self.interface = Interface(self.dim, period)
-        else:
-            self.interface = None
+        self.interface = Interface(self.dim, period)
 
         self.globalbounds = np.asarray(self.globalbounds, dtype='f8')
         self.bounds = self.globalbounds.copy()
-        if self.use_mpi:
-            t = (self.bounds[:, 1] - self.bounds[:, 0])/self.interface.split
-            coords = self.interface.get_coords()
-            self.bounds[:, 1] = self.bounds[:, 0] + t*(coords + 1)
-            self.bounds[:, 0] = self.bounds[:, 0] + t*coords
 
-            # Modify box_label if the border becomes an interface
-            for i in xrange(self.dim):
-                voisins = self.interface.comm.Shift(i, 1)
-                if voisins[0] != mpi.PROC_NULL:
-                    self.box_label[2*i] = -2
-                if voisins[1] != mpi.PROC_NULL:
-                    self.box_label[2*i + 1] = -2
+        t = (self.bounds[:, 1] - self.bounds[:, 0])/self.interface.split
+        coords = self.interface.get_coords()
+        self.bounds[:, 1] = self.bounds[:, 0] + t*(coords + 1)
+        self.bounds[:, 0] = self.bounds[:, 0] + t*coords
+
+        # Modify box_label if the border becomes an interface
+        for i in xrange(self.dim):
+            voisins = self.interface.comm.Shift(i, 1)
+            if voisins[0] != mpi.PROC_NULL:
+                self.box_label[2*i] = -2
+            if voisins[1] != mpi.PROC_NULL:
+                self.box_label[2*i + 1] = -2
 
         log.debug("Message from geometry.py (box_label):\n {0}".format(self.box_label))
         log.debug("Message from geometry.py (bounds):\n {0}".format(self.bounds))

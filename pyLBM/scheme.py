@@ -150,8 +150,7 @@ class Scheme:
         else:
             self.nv_on_beg = True
         log.debug("Message from scheme.py: nv_on_beg = {0}".format(self.nv_on_beg))
-        self.use_mpi = dico.get('use_mpi', True)
-        self.generate(use_mpi = self.use_mpi)
+        self.generate()
         self.bc_compute = True
 
         # stability
@@ -246,7 +245,7 @@ class Scheme:
                     self.MnumGlob[self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j] = self.Mnum[k][i, j]
                     self.invMnumGlob[self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j] = self.invMnum[k][i, j]
 
-    def generate(self, use_mpi = True):
+    def generate(self):
         """
         Generate the code by using the appropriated generator
 
@@ -271,7 +270,7 @@ class Scheme:
         self.generator.transport(self.nscheme, self.stencil)
         self.generator.equilibrium(self.nscheme, self.stencil, self.EQ, self.la)
         self.generator.relaxation(self.nscheme, self.stencil, self.s, self.EQ, self.la)
-        self.generator.compile(use_mpi)
+        self.generator.compile()
 
     def m2f(self, m, f):
         """ Compute the distribution functions f from the moments m """

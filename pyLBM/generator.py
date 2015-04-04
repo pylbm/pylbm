@@ -179,7 +179,7 @@ class Generator:
     def onetimestep(self,):
         pass
 
-    def compile(self, use_mpi = True):
+    def compile(self):
         log.info("*"*30 + "\n" + self.code + "\n" + "*"*30)
         if self.rank == 0:
             self.f.write(self.code)
@@ -900,7 +900,7 @@ def onetimestep(double[{0}::1] m, double[{0}::1] f, double[{0}::1] fnew, double[
 
         self.code += "\n"
 
-    def compile(self, use_mpi = True):
+    def compile(self):
         """
         compile the cython code by using the module
         `pyximport <http://docs.cython.org/src/reference/compilation.html>`_
@@ -933,8 +933,7 @@ def make_ext(modname, pyxfilename):
             import pyximport
             pyximport.install(build_dir= self.build_dir, inplace=True)
             exec "import %s"%self.modulename
-        if use_mpi:
-            mpi.COMM_WORLD.Barrier()
+        mpi.COMM_WORLD.Barrier()
 
 if __name__ == "__main__":
     import numpy as np
@@ -947,6 +946,6 @@ if __name__ == "__main__":
     c.f2m(A, 0, 3)
     print c.code
 
-    c.compile(use_mpi = True)
+    c.compile()
     exec "from %s import *"%c.get_module()
     print help(m2f_0)
