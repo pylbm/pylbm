@@ -26,7 +26,7 @@ def init_un(x,y):
 
 def init_zero(x,y):
     uu = np.zeros((y.size, x.size), dtype='float64')
-    uu[y.size/2, x.size/2] = 1.
+    uu[y.size/2, x.size/2] = 0.
     return uu
 
 def bounce_back(sol):
@@ -99,7 +99,8 @@ def plot_F(sol):
         vy = (int)(Sten.vy[num_scheme][k])
         numim = nx*(vym-vy) + vx+vxm + 1
         plt.subplot(nx*100+ny*10+numim)
-        plt.imshow(np.float32((sol.F[num_scheme][k][1:-1,1:-1])), origin='lower', cmap=cm.jet, interpolation='nearest')
+        dummy = np.float32((sol.F[num_scheme][k][1:-1,1:-1]))
+        plt.imshow(dummy, origin='lower', cmap=cm.jet, interpolation='nearest')
         plt.title('({1:d},{2:d}) at t = {0:f}'.format(sol.t, vx, vy))
     plt.draw()
     plt.pause(2.)
@@ -143,7 +144,7 @@ def test_transport():
                         qx2-qy2, qxy])
 
     dico   = {
-        'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[0, 1, 0, 1]},
+        'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[0, 0, 1, 1]},
         'space_step':dx,
         'scheme_velocity':la,
         'inittype':'distributions',
@@ -151,15 +152,15 @@ def test_transport():
                       'polynomials':polynomes,
                       'relaxation_parameters':s,
                       'equilibrium':equilibre,
-                      'init':{0:(init_zero,),
+                      'init':{0:(init_un,),
                               1:(init_un,),
-                              2:(init_zero,),
-                              3:(init_zero,),
-                              4:(init_zero,),
-                              5:(init_zero,),
-                              6:(init_zero,),
-                              7:(init_zero,),
-                              8:(init_zero,),
+                              2:(init_un,),
+                              3:(init_un,),
+                              4:(init_un,),
+                              5:(init_un,),
+                              6:(init_un,),
+                              7:(init_un,),
+                              8:(init_un,),
                               },
                     },
                     ],

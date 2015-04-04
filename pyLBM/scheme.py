@@ -41,6 +41,7 @@ class Scheme:
       - schemes : a list of dictionaries, one for each scheme
       - generator : a generator for the code, optional
         (see :py:class:`Generator <pyLBM.generator.Generator>`)
+      - test_stability : boolean (optional)
 
     Notes
     -----
@@ -105,7 +106,6 @@ class Scheme:
 
     generate :
       Generate the code
-
     equilibrium :
       Compute the equilibrium
     transport :
@@ -151,8 +151,25 @@ class Scheme:
             self.nv_on_beg = True
         log.debug("Message from scheme.py: nv_on_beg = {0}".format(self.nv_on_beg))
         self.generate()
-
         self.bc_compute = True
+
+        # stability
+        dicostab = dico.get('stability', None)
+        if dicostab is not None:
+            self.compute_amplification_matrix_relaxation(dicostab)
+            Li_stab = dicostab.get('test_maximum_principle', False)
+            if Li_stab:
+                if self.is_stable_Linfinity():
+                    print "The scheme satisfies a maximum principle"
+                else:
+                    print "The scheme does not satisfy a maximum principle"
+            L2_stab = dicostab.get('test_L2_stability', False)
+            if L2_stab:
+                if self.is_stable_L2():
+                    print "The scheme is stable for the norm L2"
+                else:
+                    print "The scheme is not stable for the norm L2"
+
 
     def __str__(self):
         s = "Scheme informations\n"
@@ -240,7 +257,6 @@ class Scheme:
         >>> print S.generator.code
         """
         self.generator.setup()
-
         if self.nv_on_beg:
             for k in xrange(self.nscheme):
                 self.generator.m2f(self.invMnum[k], k, self.dim)
@@ -282,7 +298,6 @@ class Scheme:
             space_size = np.prod(m.shape[:-1])
             exec "f2m(f.reshape(({0}, {1})), m.reshape(({0}, {1})))".format(space_size, self.stencil.nv_ptr[-1])
 
-
     def transport(self, f):
         """ The transport phase on the distribution functions f """
         exec "from %s import *"%self.generator.get_module()
@@ -313,8 +328,7 @@ class Scheme:
         exec "from %s import *"%self.generator.get_module()
         exec "onetimestep(m, f, fcuurent, in_or_out, valin)"
 
-    #@profile
-    def set_boundary_conditions(self, f, m, bc, nv_on_beg):
+    def set_boundary_conditions(self, f, m, bc, interface, nv_on_beg):
         """
         Compute the boundary conditions
 
@@ -352,46 +366,8 @@ class Scheme:
          +---------------+----------------+-----------------+
 
         """
-        if nv_on_beg:
-            Na = f.shape[1:]
-            lbord = [self.stencil.vmax[k] for k in xrange(self.dim)]
-            N  = [Na[k] - 2*lbord[k] for k in xrange(self.dim)]
-
-            for n in xrange(self.nscheme): # loop over the stencils
-                s = slice(self.stencil.nv_ptr[n], self.stencil.nv_ptr[n + 1])
-                if self.dim == 1:
-                    f[s,:lbord[0]] = f[s,N[0]:N[0]+lbord[0]] # east
-                    f[s,N[0]+lbord[0]:Na[0]] = f[s,lbord[0]:2*lbord[0]] # west
-                elif self.dim == 2:
-                    f[s,:lbord[0],:]           = f[s,N[0]:N[0]+lbord[0],:]  # east
-                    f[s,:,:lbord[1]]           = f[s,:,N[1]:N[1]+lbord[1]]  # south
-                    f[s,N[0]+lbord[0]:Na[0],:] = f[s,lbord[0]:2*lbord[0],:] # west
-                    f[s,:,N[1]+lbord[1]:Na[1]] = f[s,:,lbord[1]:2*lbord[1]] # north
-                    f[s,:lbord[0],:lbord[1]]   = f[s,N[0]:N[0]+lbord[0],N[1]:N[1]+lbord[1]]  # east-south
-                    f[s,:lbord[0],N[1]+lbord[1]:Na[1]]   = f[s,N[0]:N[0]+lbord[0],lbord[1]:2*lbord[1]]  # east-north
-                    f[s,N[0]+lbord[0]:Na[0],:lbord[1]]   = f[s,lbord[0]:2*lbord[0],N[1]:N[1]+lbord[1]]  # west-south
-                    f[s,N[0]+lbord[0]:Na[0],N[1]+lbord[1]:Na[1]]   = f[s,lbord[0]:2*lbord[0],lbord[1]:2*lbord[1]]  # west-north
-                else:
-                    log.error('Periodic conditions are not implemented in 3D')
-        else:
-            Na = f.shape[:-1]
-            lbord = [self.stencil.vmax[k] for k in xrange(self.dim)]
-            N  = [Na[k] - 2*lbord[k] for k in xrange(self.dim)]
-
-            if self.dim == 1:
-                f[:lbord[0], :] = f[N[0]:N[0] + lbord[0], :]  # east
-                f[N[0] + lbord[0]:Na[0], :] = f[lbord[0]:2*lbord[0], :] # west
-            elif self.dim == 2:
-                f[:lbord[0], :, :] = f[N[0]:N[0] + lbord[0] , :, :]  # east
-                f[:, :lbord[1], :] = f[:, N[1]:N[1] + lbord[1], :]  # south
-                f[N[0] + lbord[0]:Na[0], :, :] = f[lbord[0]:2*lbord[0], :, :] # west
-                f[:, N[1] + lbord[1]:Na[1], :] = f[:, lbord[1]:2*lbord[1], :] # north
-                f[:lbord[0], :lbord[1], :] = f[N[0]:N[0] + lbord[0], N[1]:N[1] + lbord[1], :]  # east-south
-                f[:lbord[0], N[1] + lbord[1]:Na[1], :] = f[N[0]:N[0] + lbord[0], lbord[1]:2*lbord[1], :]  # east-north
-                f[N[0] + lbord[0]:Na[0], :lbord[1], :] = f[lbord[0]:2*lbord[0], N[1]:N[1] + lbord[1], :]  # west-south
-                f[N[0] + lbord[0]:Na[0],N[1] + lbord[1]:Na[1], :] = f[lbord[0]:2*lbord[0], lbord[1]:2*lbord[1], :]  # west-north
-            else:
-                log.error('Periodic conditions are not implemented in 3D')
+        if interface is not None:
+            interface.update(f)
 
         # non periodic conditions
         if self.bc_compute:
@@ -449,6 +425,102 @@ class Scheme:
                             else:
                                 log.error('Periodic conditions are not implemented in 3D')
         self.bc_compute = False
+
+    def compute_amplification_matrix_relaxation(self, dico):
+        ns = self.stencil.nstencils # number of stencil
+        nv = self.stencil.nv # number of velocities for each stencil
+        nvtot = sum(nv)
+        # matrix of the f2m and m2f transformations
+        M = np.zeros((nvtot, nvtot))
+        iM = np.zeros((nvtot, nvtot))
+        # matrix of the relaxation parameters
+        R = np.zeros((nvtot, nvtot))
+        # matrix of the equilibrium
+        E = np.zeros((nvtot, nvtot))
+        k = 0
+        for n in range(ns):
+            l = nv[n]
+            M[k:k+l, k:k+l] = self.Mnum[n]
+            iM[k:k+l, k:k+l] = self.invMnum[n]
+            R[k:k+l, k:k+l] = np.diag(self.s[n])
+            k += l
+        k = 0
+        list_linarization = dico.get('linearization', None)
+        for n in range(ns):
+            for i in range(nv[n]):
+                eqi = self.EQ[n][i].subs([(LA, self.la),])
+                if str(eqi) != "m[%d][%d]"%(n, i):
+                    l = 0
+                    for m in range(ns):
+                        for j in range(nv[m]):
+                            dummy = sp.diff(eqi, u[m][j])
+                            if list_linarization is not None:
+                                dummy = dummy.subs(list_linarization)
+                            E[k+i, l+j] = dummy
+                        l += nv[m]
+            k += nv[n]
+        C = np.dot(R, E - np.eye(nvtot))
+        # global amplification matrix for the relaxation
+        self.amplification_matrix_relaxation = np.eye(nvtot) + np.dot(iM, np.dot(C, M))
+
+    def amplification_matrix(self, wave_vector):
+        Jr = self.amplification_matrix_relaxation
+        # matrix of the transport phase
+        q = Jr.shape[0]
+        J = np.zeros((q, q), dtype='complex128')
+        k = 0
+        for n in range(self.stencil.nstencils):
+            for i in range(self.stencil.nv[n]):
+                vi = [self.stencil.vx[n][i],
+                      self.stencil.vy[n][i],
+                      self.stencil.vz[n][i]]
+                J[k+i, :] = np.exp(1j*sum([a*b for a, b in zip(wave_vector, vi)])) * Jr[k+i, :]
+            k += self.stencil.nv[n]
+        return J
+
+    def vp_amplification_matrix(self, wave_vector):
+        vp = np.linalg.eig(self.amplification_matrix(wave_vector))
+        return vp[0]
+
+    def is_stable_L2(self, Nk = 101):
+        R = 1.
+        vk = np.linspace(0., 2*np.pi, Nk)
+        if self.dim == 1:
+            for i in range(vk.size):
+                kx = vk[i]
+                vp = self.vp_amplification_matrix((kx, ))
+                rloc = max(abs(vp))
+                if rloc > R+1.e-14:
+                    return False
+        elif self.dim == 2:
+            for i in range(vk.size):
+                kx = vk[i]
+                for j in range(vk.size):
+                    ky = vk[j]
+                    vp = self.vp_amplification_matrix((kx, ky))
+                    rloc = max(abs(vp))
+                    if rloc > R+1.e-14:
+                        return False
+        elif self.dim == 3:
+            for i in range(vk.size):
+                kx = vk[i]
+                for j in range(vk.size):
+                    ky = vk[j]
+                    for k in range(vk.size):
+                        kz = vk[k]
+                        vp = self.vp_amplification_matrix((kx, ky, kz))
+                        rloc = max(abs(vp))
+                        if rloc > R+1.e-14:
+                            return False
+        else:
+            log.warning("dim should be in [1, 3] for the scheme")
+        return True
+
+    def is_stable_Linfinity(self):
+        if np.min(self.amplification_matrix_relaxation) < 0:
+            return False
+        else:
+            return True
 
 
 def test_1D(opt):

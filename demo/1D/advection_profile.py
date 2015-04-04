@@ -7,11 +7,6 @@ from sympy.matrices import Matrix, zeros
 import mpi4py.MPI as mpi
 import time
 
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-import matplotlib.cm as cm
-
 import pyLBM
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
@@ -32,11 +27,11 @@ if __name__ == "__main__":
     # parameters
     dim = 1 # spatial dimension
     xmin, xmax = -1., 1.
-    dx = 0.005 # spatial step
+    dx = 0.0000001 # spatial step
     la = 1. # velocity of the scheme
     c = 0.25 # velocity of the advection
     Tf = 1.
-    s = 1.75
+    s = 1.9
     FINIT = Riemann_pb
 
     dico_Q2 = {
@@ -80,48 +75,15 @@ if __name__ == "__main__":
         }
     }
 
-    fig = plt.figure(0,figsize=(16, 8))
-    fig.clf()
-    plt.ion()
-    plt.hold(True)
-
-    sol = pyLBM.Simulation(dico_Q2)
-    plt.subplot(121)
-    plt.plot(sol.domain.x[0][1:-1],sol.m[0][0][1:-1],'k-')
-    plt.draw()
-    plt.pause(1.e-3)
-    while (sol.t<Tf):
-        sol.one_time_step()
-    sol.f2m()
-    sol.time_info()
-    plt.plot(sol.domain.x[0][1:-1],sol.m[0][0][1:-1],'r-')
-    plt.draw()
-    plt.subplot(122)
-    plt.plot(sol.domain.x[0][1:-1],sol.m[0][0][1:-1]-FINIT(sol.domain.x[0][1:-1]-c*sol.t),'r-')
-    plt.draw()
-    plt.pause(1.e-3)
 
     sol = pyLBM.Simulation(dico_Q3)
-    plt.subplot(121)
-    while (sol.t<Tf):
+    t1 = mpi.Wtime()
+    for i in xrange(100):
         sol.one_time_step()
-    sol.f2m()
-    sol.time_info()
-    plt.plot(sol.domain.x[0][1:-1],sol.m[0][0][1:-1],'b-')
-    plt.draw()
-    plt.subplot(122)
-    plt.plot(sol.domain.x[0][1:-1],sol.m[0][0][1:-1]-FINIT(sol.domain.x[0][1:-1]-c*sol.t),'b-')
-    plt.draw()
-    plt.pause(1.e-3)
+    t2 = mpi.Wtime()
+    print mpi.COMM_WORLD.Get_rank(), "execution time: ", t2 - t1, sol._F.shape
 
-    plt.subplot(121)
-    xx = np.linspace(xmin,xmax,10000)
-    plt.plot(xx, FINIT(xx-c*sol.t),'k--')
-
-    plt.legend(['initial','D1Q2','D1Q3','exact'])
-    plt.title("Solution at t={0:.3f}".format(sol.t), fontsize=14)
-    plt.draw()
-    plt.pause(1.e-3)
-    plt.hold(False)
-    plt.ioff()
-    plt.show()
+    #print sol.cpu_time['MLUPS']
+    # sol = pyLBM.Simulation(dico_Q3)
+    # while (sol.t<Tf):
+    #     sol.one_time_step()

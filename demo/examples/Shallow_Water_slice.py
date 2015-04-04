@@ -30,10 +30,9 @@ def plot_radial(sol, num=0):
     plt.draw()
     plt.pause(1.e-3)
 
-@profile
 def simu():
     # parameters
-    dx = 1./125 # spatial step
+    dx = 1./256 # spatial step
     la = 4 # velocity of the scheme
     g = 1.
     Tf = 0.1
@@ -87,7 +86,7 @@ def simu():
     while (sol.t<Tf):
         sol.one_time_step()
         # im += 1
-        sol.f2m()
+        #sol.f2m()
     #     plot_radial(sol,im)
     # plt.ioff()
     # plt.show()

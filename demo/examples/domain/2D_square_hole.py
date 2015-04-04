@@ -5,7 +5,7 @@ if __name__ == "__main__":
         'box':{'x': [0, 1], 'y': [0, 1], 'label':0},
         'elements':[pyLBM.Circle((0.5,0.5), 0.2, label = 1)],
         'space_step':0.05,
-        'schemes':[{'velocities':range(9)}]
+        'schemes':[{'velocities':range(13)}]
     }
     dom = pyLBM.Domain(dico)
     dom.visualize(opt=0)

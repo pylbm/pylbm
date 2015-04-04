@@ -4,18 +4,12 @@
 #
 # License: BSD 3 clause
 
-import sys
-from math import sin, cos
-import matplotlib
 import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-import matplotlib.cm as cm
-from matplotlib.patches import Ellipse, Polygon
 
 import mpi4py.MPI as mpi
 
 from .elements import *
-
+from .interface import Interface
 from .logs import __setLogger
 log = __setLogger(__name__)
 
@@ -81,7 +75,7 @@ class Geometry:
     bounds : numpy array
       the bounds of the box in each spatial direction
     box_label : list of integers
-      a list of the four labels for the bottom, left, top, and right edges
+      a list of the four labels for the left, right, bottom, top, front, and back edges
     list_elem : list of elements
       a list that contains each element added or deleted in the box
 
@@ -102,45 +96,45 @@ class Geometry:
     """
 
     def __init__(self, dico):
-        self.dim, self.bounds = get_box(dico)
-
-        # mpi support
-        comm = mpi.COMM_WORLD
-        size = comm.Get_size()
-        split = mpi.Compute_dims(size, self.dim)
-
-        self.bounds = np.asarray(self.bounds, dtype='f8')
-        t = (self.bounds[:, 1] - self.bounds[:, 0])/split
-        self.comm = comm.Create_cart(split, (True,)*self.dim)
-        rank = self.comm.Get_rank()
-        coords = self.comm.Get_coords(rank)
-        coords = np.asarray(coords)
-        self.bounds[:, 1] = self.bounds[:, 0] + t*(coords + 1)
-        self.bounds[:, 0] = self.bounds[:, 0] + t*coords
-
-
-        self.isInterface = [False]*2*self.dim
-        for i in xrange(self.dim):
-            voisins = self.comm.Shift(i, 1)
-            if voisins[0] != rank:
-                self.isInterface[i*2] = True
-            if voisins[1] != rank:
-                self.isInterface[i*2 + 1] = True
-
-        log.debug("Message from geometry.py (isInterface):\n {0}".format(self.isInterface))
+        self.dim, self.globalbounds = get_box(dico)
 
         self.list_elem = []
 
-        try:
-            dummylab = dico['box']['label']
-        except:
-            dummylab = 0
+        dummylab = dico['box'].get('label', 0)
         if isinstance(dummylab, int):
-            #self.list_label.append([dummylab]*2*self.dim)
             self.box_label = [dummylab]*2*self.dim
+        elif isinstance(dummylab, list):
+            if len(dummylab) != 2*self.dim:
+                log.error("The list label of the box has the wrong size (must be 2*dim)")
+            self.box_label = dummylab
         else:
-            #self.list_label.append([loclab for loclab in dummylab])
-            self.box_label = [loclab for loclab in dummylab]
+            log.error("The labels of the box must be an integer or a list")
+
+        period = [False]*self.dim
+        for i in xrange(self.dim):
+            if self.box_label[2*i] == self.box_label[2*i+1] == -1: # work only for dim = 2
+                period[i] = True
+
+        self.interface = Interface(self.dim, period)
+
+        self.globalbounds = np.asarray(self.globalbounds, dtype='f8')
+        self.bounds = self.globalbounds.copy()
+
+        t = (self.bounds[:, 1] - self.bounds[:, 0])/self.interface.split
+        coords = self.interface.get_coords()
+        self.bounds[:, 1] = self.bounds[:, 0] + t*(coords + 1)
+        self.bounds[:, 0] = self.bounds[:, 0] + t*coords
+
+        # Modify box_label if the border becomes an interface
+        for i in xrange(self.dim):
+            voisins = self.interface.comm.Shift(i, 1)
+            if voisins[0] != mpi.PROC_NULL:
+                self.box_label[2*i] = -2
+            if voisins[1] != mpi.PROC_NULL:
+                self.box_label[2*i + 1] = -2
+
+        log.debug("Message from geometry.py (box_label):\n {0}".format(self.box_label))
+        log.debug("Message from geometry.py (bounds):\n {0}".format(self.bounds))
 
         elem = dico.get('elements', None)
         if elem is not None:
@@ -195,8 +189,10 @@ class Geometry:
             plt.plot([xmax-l,xmax,xmax,xmax-l],[-h,-h,h,h],plein,lw=5)
             plt.plot([xmin,xmax],[0.,0.],plein,lw=5)
             if viewlabel:
-                plt.text(xmax-l, -2*h, self.box_label[0], fontsize=18, horizontalalignment='center',verticalalignment='center')
-                plt.text(xmin+l, -2*h, self.box_label[1], fontsize=18, horizontalalignment='center',verticalalignment='center')
+                # label 0 for left
+                plt.text(xmin+l, -2*h, self.box_label[0], fontsize=18, horizontalalignment='center',verticalalignment='center')
+                # label 1 for right
+                plt.text(xmax-l, -2*h, self.box_label[1], fontsize=18, horizontalalignment='center',verticalalignment='center')
             plt.axis('equal')
         elif (self.dim == 2):
             xmin = (float)(self.bounds[0][0])
@@ -205,10 +201,14 @@ class Geometry:
             ymax = (float)(self.bounds[1][1])
             plt.fill([xmin,xmax,xmax,xmin], [ymin,ymin,ymax,ymax], fill=True, color=plein)
             if viewlabel:
-                plt.text(0.5*(xmin+xmax), ymin, self.box_label[0], fontsize=18, horizontalalignment='center',verticalalignment='bottom')
+                # label 0 for left
+                plt.text(xmin, 0.5*(ymin+ymax), self.box_label[0], fontsize=18, horizontalalignment='left',verticalalignment='center')
+                # label 1 for right
                 plt.text(xmax, 0.5*(ymin+ymax), self.box_label[1], fontsize=18, horizontalalignment='right',verticalalignment='center')
-                plt.text(0.5*(xmin+xmax), ymax, self.box_label[2], fontsize=18, horizontalalignment='center',verticalalignment='top')
-                plt.text(xmin, 0.5*(ymin+ymax), self.box_label[3], fontsize=18, horizontalalignment='left',verticalalignment='center')
+                # label 2 for bottom
+                plt.text(0.5*(xmin+xmax), ymin, self.box_label[2], fontsize=18, horizontalalignment='center',verticalalignment='bottom')
+                # label 3 for top
+                plt.text(0.5*(xmin+xmax), ymax, self.box_label[3], fontsize=18, horizontalalignment='center',verticalalignment='top')
             plt.axis([xmin, xmax, ymin, ymax])
             comptelem = 0
             for elem in self.list_elem:

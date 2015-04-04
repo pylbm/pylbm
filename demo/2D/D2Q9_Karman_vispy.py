@@ -68,7 +68,7 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self)#, close_keys='escape')
         self.title = "Solution t={0:f}".format(0.)
         deltarho = rhoo
-        self.min, self.max = 0., 2*self.sol.domain.dx #-2*self.sol.domain.dx, 2*self.sol.domain.dx
+        self.min, self.max = 0., 7*self.sol.domain.dx #-2*self.sol.domain.dx, 2*self.sol.domain.dx
         self.ccc = 1./(self.max-self.min)
         self.size = W * coeff, H * coeff
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
@@ -127,13 +127,13 @@ class Canvas(app.Canvas):
         self.maj()
 
     def go_on(self):
-        nrep = 1
+        nrep = 100
         for i in xrange(nrep):
             self.sol.one_time_step()
 
     def maj(self):
         self.title = "Solution t={0:f}".format(self.sol.t)
-        self.sol.scheme.f2m(self.sol._F, self.sol._m)
+        self.sol.f2m()
 
         #self.sol._m[self.indout[0], self.indout[1], :] = 1.
         #print "f"*20
@@ -194,13 +194,13 @@ def plot_vorticity(sol,num):
 if __name__ == "__main__":
     # parameters
     dim = 2 # spatial dimension
-    xmin, xmax, ymin, ymax = 0., 5., 0., 3
+    xmin, xmax, ymin, ymax = 0., 2., 0., 1.
     rayon = 0.125
-    dx = 1./64 # spatial step
+    dx = 0.005 # spatial step
     la = 1. # velocity of the scheme
     rhoo = 1.
     uo = 0.05
-    mu   = 2.e-5 #0.00185
+    mu   = 2.5e-5 #0.00185
     zeta = 10*mu
     dummy = 3.0/(la*rhoo*dx)
     s3 = 1.0/(0.5+zeta*dummy)
@@ -218,7 +218,7 @@ if __name__ == "__main__":
 
     dico = {
         'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[0, 1, 0, 0]},
-        'elements':[pyLBM.Circle([0.75, 0.5*(ymin+ymax)+2*dx], rayon, label=2)],
+        'elements':[pyLBM.Circle([1., 0.5*(ymin+ymax)+2*dx], rayon, label=2)],
         'space_step':dx,
         'scheme_velocity':la,
         'inittype': 'moments',

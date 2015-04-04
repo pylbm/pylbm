@@ -149,10 +149,12 @@ class Domain:
             sys.exit()
         else:
             self.dim = self.geom.dim # spatial dimension
-        self.bounds = self.geom.bounds # the box where the domain lies
+        self.globalbounds = self.geom.globalbounds # the box where the domain lies
+        self.bounds = self.geom.bounds # the local box of the process
         self.dx = dico['space_step'] # spatial step
         # spatial mesh
         debord = [self.dx*(self.stencil.vmax[k] - 0.5) for k in xrange(self.dim)]
+        self.Ng = [int((self.globalbounds[k][1] - self.globalbounds[k][0] + 0.5*self.dx)/self.dx) for k in xrange(self.dim)]
         self.N = [int((self.bounds[k][1] - self.bounds[k][0] + 0.5*self.dx)/self.dx) for k in xrange(self.dim)]
         self.Na = [self.N[k] + 2*self.stencil.vmax[k] for k in xrange(self.dim)]
         self.x = np.asarray([np.linspace(self.bounds[k][0] - debord[k],
@@ -160,6 +162,13 @@ class Domain:
                                          self.Na[k]) for k in xrange(self.dim)])
         self.indbe = np.asarray([(self.stencil.vmax[k],
                                   self.stencil.vmax[k] + self.N[k]) for k in xrange(self.dim)])
+        for k in xrange(self.dim):
+            tmp_bord_phy = [self.bounds[k][0], self.bounds[k][1]]
+            tmp_bord_num = [self.x[k][ self.indbe[k][0] ] - .5*self.dx, self.x[k][ self.indbe[k][1]-1 ] + .5*self.dx]
+            if ((abs(tmp_bord_phy[0] - tmp_bord_num[0]) > 0.01*self.dx) |
+                (abs(tmp_bord_phy[1] - tmp_bord_num[1]) > 0.01*self.dx)):
+                log.error('The length of the box in the direction {0} must be a multiple of the space step'.format(k))
+                sys.exit()
 
         # distance to the borders
         self.valin = 999  # value in the fluid domain
@@ -198,11 +207,11 @@ class Domain:
                 if (vk > 0):
                     for i in xrange(vk):
                         self.distance[k, xe - 1 - i] = (i + .5)/vk
-                        self.flag[k, xe - 1 - i] = label[0] # east border
+                        self.flag[k, xe - 1 - i] = label[1] # east border
                 elif (vk < 0):
                     for i in xrange(-vk):
                         self.distance[k, xb + i] = -(i + .5)/vk
-                        self.flag[k, xb + i] = label[1] # west border
+                        self.flag[k, xb + i] = label[0] # west border
 
         elif (self.dim == 2):
             vxmax, vymax = self.stencil.vmax[:2]
@@ -215,30 +224,30 @@ class Domain:
             for k in xrange(self.stencil.unvtot):
                 vxk = self.stencil.unique_velocities[k].vx
                 vyk = self.stencil.unique_velocities[k].vy
-                if (vxk > 0):
+                if ((vxk > 0) & (label[1] != -2)):
                     for i in xrange(vxk):
                         dvik = (i + .5)/vxk
                         indbordvik = np.where(dvik < self.distance[k, yb:ye, xe - 1 - i])
                         self.distance[k, yb + indbordvik[0], xe - 1 - i] = dvik
                         self.flag[k, yb + indbordvik[0], xe - 1 - i] = label[1]
-                elif (vxk < 0):
+                elif ((vxk < 0) & (label[0] != -2)):
                     for i in xrange(-vxk):
                         dvik = -(i + .5)/vxk
                         indbordvik = np.where(dvik < self.distance[k, yb:ye, xb + i])
                         self.distance[k, yb + indbordvik[0], xb + i] = dvik
-                        self.flag[k, yb + indbordvik[0], xb + i] = label[3]
-                if (vyk > 0):
+                        self.flag[k, yb + indbordvik[0], xb + i] = label[0]
+                if ((vyk > 0) & (label[3] != -2)):
                     for i in xrange(vyk):
                         dvik = (i + .5)/vyk
                         indbordvik = np.where(dvik < self.distance[k, ye - 1 - i, xb:xe])
                         self.distance[k, ye - 1 - i, xb + indbordvik[0]] = dvik
-                        self.flag[k, ye - 1 - i, xb + indbordvik[0]] = label[2]
-                elif (vyk < 0):
+                        self.flag[k, ye - 1 - i, xb + indbordvik[0]] = label[3]
+                elif ((vyk < 0) & (label[2] != -2)):
                     for i in xrange(-vyk):
                         dvik = -(i + .5)/vyk
                         indbordvik = np.where(dvik < self.distance[k, yb + i, xb:xe])
                         self.distance[k, yb + i, xb + indbordvik[0]] = dvik
-                        self.flag[k, yb + i, xb + indbordvik[0]] = label[0]
+                        self.flag[k, yb + i, xb + indbordvik[0]] = label[2]
         return
 
     def __add_elem(self, elem):

@@ -67,6 +67,35 @@ class Boundary:
                     self.be[-1].append([self.bv[label][self.domain.stencil.unum2index[numk]] for numk in self.domain.stencil.num[n]])
 
 
+def bouzidi_bounce_back_1D(f, bv, num2index, feq, nv_on_beg):
+    v = bv.v
+    k = num2index[v.num]
+    ksym = num2index[v.get_symmetric().num]
+
+    mask = bv.distance < .5
+    ix = bv.indices[0, mask]
+    s = 2.*bv.distance[mask]
+    if nv_on_beg:
+        f[k, ix] = s*f[ksym, ix + v.vx] + (1.-s)*f[ksym, ix + 2*v.vx]
+        if feq is not None and np.any(mask):
+            f[k, ix] += feq[k, mask] - feq[ksym, mask]
+    else:
+        f[ix, k] = s*f[ix + v.vx, ksym] + (1.-s)*f[ix + 2*v.vx, ksym]
+        if feq is not None and np.any(mask):
+            f[ix, k] += feq[mask, k] - feq[mask, ksym]
+
+    mask = np.logical_not(mask)
+    ix = bv.indices[0, mask]
+    s = 0.5/bv.distance[mask]
+    if nv_on_beg:
+        f[k, ix] = s*f[ksym, ix + v.vx] + (1.-s)*f[k, ix + v.vx]
+        if feq is not None and np.any(mask):
+            f[k, ix] += feq[k, mask] - feq[ksym, mask]
+    else:
+        f[ix, k] = s*f[ix + v.vx, ksym] + (1.-s)*f[ix + v.vx, k]
+        if feq is not None and np.any(mask):
+            f[ix, k] += feq[mask, k] - feq[mask, ksym]
+
 def bouzidi_bounce_back(f, bv, num2index, feq, nv_on_beg):
     v = bv.v
     k = num2index[v.num]
@@ -97,6 +126,35 @@ def bouzidi_bounce_back(f, bv, num2index, feq, nv_on_beg):
         f[iy, ix, k] = s*f[iy + v.vy, ix + v.vx, ksym] + (1.-s)*f[iy + v.vy, ix + v.vx, k]
         if feq is not None and np.any(mask):
             f[iy, ix, k] += feq[mask, k] - feq[mask, ksym]
+
+def bouzidi_anti_bounce_back_1D(f, bv, num2index, feq, nv_on_beg):
+    v = bv.v
+    k = num2index[v.num]
+    ksym = num2index[v.get_symmetric().num]
+
+    mask = bv.distance < .5
+    ix = bv.indices[0, mask]
+    s = 2.*bv.distance[mask]
+    if nv_on_beg:
+        f[k, ix] = - s*f[ksym, ix + v.vx] - (1.-s)*f[ksym, ix + 2*v.vx]
+        if feq is not None and np.any(mask):
+            f[k, ix] += feq[k, mask] + feq[ksym, mask]
+    else:
+        f[ix, k] = - s*f[ix + v.vx, ksym] - (1.-s)*f[ix + 2*v.vx, ksym]
+        if feq is not None and np.any(mask):
+            f[ix, k] += feq[mask, k] + feq[mask, ksym]
+
+    mask = np.logical_not(mask)
+    ix = bv.indices[0, mask]
+    s = 0.5/bv.distance[mask]
+    if nv_on_beg:
+        f[k, ix] = - s*f[ksym, ix + v.vx] - (1.-s)*f[k, ix + v.vx]
+        if feq is not None and np.any(mask):
+            f[k, ix] += feq[k, mask] + feq[ksym, mask]
+    else:
+        f[ix, k] = - s*f[ix + v.vx, ksym] - (1.-s)*f[ix + v.vx, k]
+        if feq is not None and np.any(mask):
+            f[ix, k] += feq[mask, k] + feq[mask, ksym]
 
 def bouzidi_anti_bounce_back(f, bv, num2index, feq, nv_on_beg):
     v = bv.v
@@ -154,9 +212,19 @@ def neumann_horizontal(f, bv, num2index, feq, nv_on_beg):
 def neumann(f, bv, num2index, feq, nv_on_beg):
     v = bv.v
     k = num2index[v.num]
-    iy = bv.indices[0]
-    ix = bv.indices[1]
-    f[k, iy, ix] = f[k, iy + v.vy, ix + v.vx]
+    if bv.indices.shape[0] == 1:
+        ix = bv.indices[0]
+        if nv_on_beg:
+            f[k, ix] = f[k, ix + v.vx]
+        else:
+            f[ix, k] = f[ix + v.vx, k]
+    elif bv.indices.shape[0] == 2:
+        iy = bv.indices[0]
+        ix = bv.indices[1]
+        if nv_on_beg:
+            f[k, iy, ix] = f[k, iy + v.vy, ix + v.vx]
+        else:
+            f[iy, ix, k] = f[iy + v.vy, ix + v.vx, k]
 
 if __name__ == "__main__":
     from pyLBM.elements import *
