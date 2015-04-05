@@ -13,8 +13,7 @@ import sys
 
 from .utils import itemproperty
 from .geometry import get_box
-from .logs import __setLogger
-log = __setLogger(__name__)
+from .logs import setLogger
 
 def permute_in_place(a):
     """
@@ -152,6 +151,7 @@ class Velocity(object):
                     [[6, 7, 7], [_d, _d, 0], [1, 4, 0]]], dtype=np.int)
 
     def __init__(self, dim=None, num=None, vx=None, vy=None, vz=None):
+        self.log = setLogger(__name__)
         self.dim = dim
         self.num = num
 
@@ -205,7 +205,7 @@ class Velocity(object):
 
         """
         if axis >= self.dim:
-            log.error("axis must be less than the dimension of the velocity (axis:%d, dim:%d)".format(axis, self.dim))
+            self.log.error("axis must be less than the dimension of the velocity (axis:%d, dim:%d)".format(axis, self.dim))
 
         svx = -self.vx
         svy = None if self.vy is None else -self.vy
@@ -257,7 +257,7 @@ class Velocity(object):
                                             return
                                         else:
                                             count +=1
-        log.error("The number of the velocity {0} is not found".format(self.__str__()))
+        self.log.error("The number of the velocity {0} is not found".format(self.__str__()))
 
     def _set_coord(self):
         if self.dim == 1:
@@ -297,7 +297,7 @@ class Velocity(object):
                                             return
                                         else:
                                             count +=1
-        log.error("The velocity number {0} cannot be computed".format(self.num))
+        self.log.error("The velocity number {0} cannot be computed".format(self.num))
 
 class OneStencil:
     """
@@ -501,6 +501,7 @@ class Stencil(list):
     """
     def __init__(self, dico):
         super(Stencil, self).__init__()
+        self.log = setLogger(__name__)
         # get the dimension of the stencil (given in the dictionnary or computed
         # through the geometrical box)
         self.dim = dico.get('dim', None)
@@ -514,7 +515,7 @@ class Stencil(list):
                 # get the list of the velocities of each stencil
                 v_index.append(np.asarray(s['velocities']))
         except:
-            log.error("unable to read the scheme.")
+            self.log.error("unable to read the scheme.")
         self.nstencils = len(v_index)
 
         # get the unique velocities involved in the stencil
@@ -560,7 +561,7 @@ class Stencil(list):
         for k in xrange(self.nstencils):
             self.append(OneStencil(self.v[k], self.nv[k], self.num2index[k]))
 
-        log.debug(self.__str__())
+        self.log.debug(self.__str__())
 
     @property
     def uvx(self):
@@ -662,7 +663,7 @@ class Stencil(list):
         """
         if self.dim == 3 and not viewer.is3d:
             #raise ValueError("viewer doesn't support 3D visualization")
-            log.error("viewer doesn't support 3D visualization")
+            self.log.error("viewer doesn't support 3D visualization")
 
         xmin = xmax = 0
         ymin = ymax = 0

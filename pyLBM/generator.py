@@ -12,9 +12,7 @@ import re
 import sympy as sp
 import mpi4py.MPI as mpi
 
-from .logs import __setLogger
-log = __setLogger(__name__)
-
+from .logs import setLogger
 
 def matMult(A, x, y, indent='', prefix='', suffix=''):
     """
@@ -139,6 +137,7 @@ class Generator:
     ``code``.
     """
     def __init__(self, build_dir=None, suffix='.py'):
+        self.log = setLogger(__name__)
         self.build_dir = build_dir
         self.modulename = None
         self.code = ''
@@ -158,7 +157,7 @@ class Generator:
 
         atexit.register(self.exit)
 
-        log.info("Temporary file use for code generator :\n{0}".format(self.modulename))
+        self.log.info("Temporary file use for code generator :\n{0}".format(self.modulename))
         #print self.f.name
 
     def setup(self):
@@ -180,7 +179,7 @@ class Generator:
         pass
 
     def compile(self):
-        log.info("*"*30 + "\n" + self.code + "\n" + "*"*30)
+        self.log.info("*"*30 + "\n" + self.code + "\n" + "*"*30)
         if self.rank == 0:
             self.f.write(self.code)
             self.f.close()
@@ -189,7 +188,7 @@ class Generator:
         return self.modulename
 
     def exit(self):
-        log.info("delete generator")
+        self.log.info("delete generator")
         if self.rank == 0:
             os.unlink(self.f.name)
 
