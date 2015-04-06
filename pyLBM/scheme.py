@@ -9,20 +9,11 @@ import sys
 import numpy as np
 import sympy as sp
 from sympy.matrices import Matrix, zeros
-import mpi4py.MPI as mpi
-import time
-
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-import matplotlib.cm as cm
 
 from .stencil import Stencil
 from .generator import *
 
-from .logs import __setLogger
-log = __setLogger(__name__)
-
+from .logs import setLogger
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
@@ -128,6 +119,8 @@ class Scheme:
 
     """
     def __init__(self, dico, stencil=None):
+        self.log = setLogger(__name__)
+
         if stencil is not None:
             self.stencil = stencil
         else:
@@ -139,17 +132,21 @@ class Scheme:
         self.P = [s['polynomials'] for s in scheme]
         self.EQ = [s['equilibrium'] for s in scheme]
         self.s = [s['relaxation_parameters'] for s in scheme]
+
+        self.M, self.invM = [], []
+        self.Mnum, self.invMnum = [], []
+
         self.create_moments_matrices()
 
         #self.nv_on_beg = nv_on_beg
         self.generator = dico.get('generator', NumpyGenerator)()
-        log.info("Generator used for the scheme functions:\n{0}\n".format(self.generator))
+        self.log.info("Generator used for the scheme functions:\n{0}\n".format(self.generator))
         #print self.generator
         if isinstance(self.generator, CythonGenerator):
             self.nv_on_beg = False
         else:
             self.nv_on_beg = True
-        log.debug("Message from scheme.py: nv_on_beg = {0}".format(self.nv_on_beg))
+        self.log.debug("Message from scheme.py: nv_on_beg = {0}".format(self.nv_on_beg))
         self.generate()
         self.bc_compute = True
 
@@ -169,7 +166,6 @@ class Scheme:
                     print "The scheme is stable for the norm L2"
                 else:
                     print "The scheme is not stable for the norm L2"
-
 
     def __str__(self):
         s = "Scheme informations\n"
@@ -202,8 +198,6 @@ class Scheme:
         """
         Create the moments matrices M and M^{-1} used to transform the repartition functions into the moments
         """
-        self.M, self.invM = [], []
-        self.Mnum, self.invMnum = [], []
         compt=0
         for v, p in zip(self.stencil.v, self.P):
             compt+=1
@@ -222,13 +216,13 @@ class Scheme:
                     for j in xrange(lv):
                         self.M[-1][i, j] = p[i].subs([(X, v[j].vx), (Y, v[j].vy), (Z, v[j].vz)])
             else:
-                log.error('Function create_moments_matrices: the dimension is not correct')
+                self.log.error('Function create_moments_matrices: the dimension is not correct')
             try:
                 self.invM.append(self.M[-1].inv())
             except:
                 s = 'Function create_moments_matrices: M is not invertible\n'
                 s += 'The choice of polynomials is odd in the elementary scheme number {0:d}'.format(compt)
-                log.error(s)
+                self.log.error(s)
                 sys.exit()
 
         self.MnumGlob = np.zeros((self.stencil.nv_ptr[-1], self.stencil.nv_ptr[-1]))
@@ -373,7 +367,6 @@ class Scheme:
         if self.bc_compute:
             bc.floc = [[[None for  k in xrange(self.stencil[ind_scheme].nv)] for ind_scheme in xrange(self.nscheme)] for l in xrange(len(bc.be))]
 
-        import copy
         for l in xrange(len(bc.be)): # loop over the labels
             for n in xrange(self.nscheme): # loop over the stencils
                 for k in xrange(self.stencil[n].nv): # loop over the velocities
@@ -412,7 +405,7 @@ class Scheme:
                                     else:
                                         bc.floc[l][n][k] = floc[:, self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]]
                                 else:
-                                    log.error('Periodic conditions are not implemented in 3D')
+                                    self.log.error('Periodic conditions are not implemented in 3D')
                             else:
                                 bc.floc[l][n][k] = None
                         if nv_on_beg:
@@ -423,7 +416,7 @@ class Scheme:
                             elif self.dim == 2:
                                 bc.method_bc[l][n](f[: ,: , self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]], bv, self.stencil[n].num2index, bc.floc[l][n][k], nv_on_beg)
                             else:
-                                log.error('Periodic conditions are not implemented in 3D')
+                                self.log.error('Periodic conditions are not implemented in 3D')
         self.bc_compute = False
 
     def compute_amplification_matrix_relaxation(self, dico):
@@ -513,7 +506,7 @@ class Scheme:
                         if rloc > R+1.e-14:
                             return False
         else:
-            log.warning("dim should be in [1, 3] for the scheme")
+            self.log.warning("dim should be in [1, 3] for the scheme")
         return True
 
     def is_stable_Linfinity(self):

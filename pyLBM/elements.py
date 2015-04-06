@@ -14,8 +14,7 @@ import matplotlib.colors as colors
 import matplotlib.cm as cm
 from matplotlib.patches import Ellipse, Polygon
 
-from .logs import __setLogger
-log = __setLogger(__name__)
+from .logs import setLogger
 
 class Circle:
     """
@@ -66,6 +65,7 @@ class Circle:
     number_of_bounds = 1 # number of edges
 
     def __init__(self, center, radius, label = 0, isfluid = False):
+        self.log = setLogger(__name__)
         self.center = np.asarray(center)
         self.radius = radius
         self.isfluid = isfluid
@@ -77,7 +77,7 @@ class Circle:
         str += '({0:f},{1:f})'.format(self.center[0], self.center[1])
         str += ' with radius {0:f}'.format(self.radius)
         #self.description = [str]
-        log.info(self.__str__())
+        self.log.info(self.__str__())
 
     def get_bounds(self):
         """
@@ -233,6 +233,7 @@ class Parallelogram:
     number_of_bounds = 4 # number of edges
 
     def __init__(self, point, vecta, vectb, label = 0, isfluid = False):
+        self.log = __setLogger(__name__)
         self.point = np.asarray(point)
         self.v0 = np.asarray(vecta)
         self.v1 = np.asarray(vectb)
@@ -251,7 +252,7 @@ class Parallelogram:
         #     'edge 2: ({0:f},{1:f})->({2:f},{3:f})'.format(d[0], d[1], c[0], c[1]),
         #     'edge 3: ({0:f},{1:f})->({2:f},{3:f})'.format(c[0], c[1], a[0], a[1])
         #     ]
-        log.info(self.__str__())
+        self.log.info(self.__str__())
 
     def get_bounds(self):
         """
@@ -408,6 +409,7 @@ class Triangle:
     number_of_bounds = 3 # number of edges
 
     def __init__(self, point, vecta, vectb, label = 0, isfluid = False):
+        self.log = __setLogger(__name__)
         self.point = np.asarray(point)
         self.v0 = np.asarray(vecta)
         self.v1 = np.asarray(vectb)
@@ -424,7 +426,7 @@ class Triangle:
         #     'edge 1: ({0:f},{1:f})->({2:f},{3:f})'.format(b[0], b[1], c[0], c[1]),
         #     'edge 2: ({0:f},{1:f})->({2:f},{3:f})'.format(c[0], c[1], a[0], a[1])
         #     ]
-        log.info(self.__str__())
+        self.log.info(self.__str__())
 
     def get_bounds(self):
         """
@@ -479,7 +481,7 @@ class Triangle:
 
         Returns
         -------
-        
+
         array of distances
 
         """

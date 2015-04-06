@@ -5,13 +5,12 @@
 # License: BSD 3 clause
 
 import matplotlib.pyplot as plt
-
+import numpy as np
 import mpi4py.MPI as mpi
 
 from .elements import *
 from .interface import Interface
-from .logs import __setLogger
-log = __setLogger(__name__)
+from .logs import setLogger
 
 def get_box(dico):
     """
@@ -28,6 +27,7 @@ def get_box(dico):
     dim : the dimension of the box
     bounds: the bounds of the box
     """
+    log = setLogger(__name__)
     try:
         box = dico['box']
         try:
@@ -99,16 +99,17 @@ class Geometry:
         self.dim, self.globalbounds = get_box(dico)
 
         self.list_elem = []
+        self.log = setLogger(__name__)
 
         dummylab = dico['box'].get('label', 0)
         if isinstance(dummylab, int):
             self.box_label = [dummylab]*2*self.dim
         elif isinstance(dummylab, list):
             if len(dummylab) != 2*self.dim:
-                log.error("The list label of the box has the wrong size (must be 2*dim)")
+                self.log.error("The list label of the box has the wrong size (must be 2*dim)")
             self.box_label = dummylab
         else:
-            log.error("The labels of the box must be an integer or a list")
+            self.log.error("The labels of the box must be an integer or a list")
 
         period = [False]*self.dim
         for i in xrange(self.dim):
@@ -133,14 +134,14 @@ class Geometry:
             if voisins[1] != mpi.PROC_NULL:
                 self.box_label[2*i + 1] = -2
 
-        log.debug("Message from geometry.py (box_label):\n {0}".format(self.box_label))
-        log.debug("Message from geometry.py (bounds):\n {0}".format(self.bounds))
+        self.log.debug("Message from geometry.py (box_label):\n {0}".format(self.box_label))
+        self.log.debug("Message from geometry.py (bounds):\n {0}".format(self.bounds))
 
         elem = dico.get('elements', None)
         if elem is not None:
             for elemk in elem:
                 self.list_elem.append(elemk)
-        log.debug(self.__str__())
+        self.log.debug(self.__str__())
 
 
     def __str__(self):
@@ -210,7 +211,6 @@ class Geometry:
                 # label 3 for top
                 plt.text(0.5*(xmin+xmax), ymax, self.box_label[3], fontsize=18, horizontalalignment='center',verticalalignment='top')
             plt.axis([xmin, xmax, ymin, ymax])
-            comptelem = 0
             for elem in self.list_elem:
                 if elem.isfluid:
                     coul = plein

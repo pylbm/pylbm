@@ -12,8 +12,7 @@ from .elements import *
 import geometry as pyLBMGeom
 import stencil as pyLBMSten
 
-from .logs import __setLogger
-log = __setLogger(__name__)
+from .logs import setLogger
 
 import pylab as plt
 import matplotlib.cm as cm
@@ -133,6 +132,7 @@ class Domain:
 
     """
     def __init__(self, dico, geometry=None, stencil=None):
+        self.log = setLogger(__name__)
         self.type = 'float64'
         if geometry is not None:
             self.geom = geometry
@@ -145,7 +145,7 @@ class Domain:
         if self.geom.dim != self.stencil.dim:
             s = 'Error in the dimension: stencil and geometry dimensions are different'
             s += 'geometry: {0:d}, stencil: {1:d}'.format(self.geom.dim, self.sten.dim)
-            log.error(s)
+            self.log.error(s)
             sys.exit()
         else:
             self.dim = self.geom.dim # spatial dimension
@@ -167,7 +167,7 @@ class Domain:
             tmp_bord_num = [self.x[k][ self.indbe[k][0] ] - .5*self.dx, self.x[k][ self.indbe[k][1]-1 ] + .5*self.dx]
             if ((abs(tmp_bord_phy[0] - tmp_bord_num[0]) > 0.01*self.dx) |
                 (abs(tmp_bord_phy[1] - tmp_bord_num[1]) > 0.01*self.dx)):
-                log.error('The length of the box in the direction {0} must be a multiple of the space step'.format(k))
+                self.log.error('The length of the box in the direction {0} must be a multiple of the space step'.format(k))
                 sys.exit()
 
         # distance to the borders
@@ -184,7 +184,7 @@ class Domain:
         for elem in self.geom.list_elem: # treat each element of the geometry
             self.__add_elem(elem)
 
-        log.info(self.__str__())
+        self.log.info(self.__str__())
 
     def __str__(self):
         s = "Domain informations\n"

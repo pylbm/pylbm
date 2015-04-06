@@ -24,8 +24,7 @@ from .boundary import Boundary
 
 from pyLBM import utils
 
-from .logs import __setLogger
-log = __setLogger(__name__)
+from .logs import setLogger
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
@@ -123,27 +122,28 @@ class Simulation:
     :py:class:`Scheme<pyLBM.scheme.Scheme>`.
     """
     def __init__(self, dico, domain=None, scheme=None, type='float64'):
+        self.log = setLogger(__name__)
         self.type = type
         self.order = 'C'
 
-        log.info('Build the domain')
+        self.log.info('Build the domain')
         try:
             if domain is not None:
                 self.domain = domain
             else:
                 self.domain = Domain(dico)
         except KeyError:
-            log.error('Error in the creation of the domain: wrong dictionnary')
+            self.log.error('Error in the creation of the domain: wrong dictionnary')
             sys.exit()
 
-        log.info('Build the scheme')
+        self.log.info('Build the scheme')
         try:
             if scheme is not None:
                 self.scheme = scheme
             else:
                 self.scheme = Scheme(dico)
         except KeyError:
-            log.error('Error in the creation of the scheme: wrong dictionnary')
+            self.log.error('Error in the creation of the scheme: wrong dictionnary')
             sys.exit()
 
         self.t = 0.
@@ -152,13 +152,13 @@ class Simulation:
         try:
             assert self.domain.dim == self.scheme.dim
         except:
-            log.error('Solution: the dimension of the domain and of the scheme are not the same\n')
+            self.log.error('Solution: the dimension of the domain and of the scheme are not the same\n')
             sys.exit()
 
         self.dim = self.domain.dim
 
 
-        log.info('Build arrays')
+        self.log.info('Build arrays')
         #self.nv_on_beg = nv_on_beg
         self.nv_on_beg = self.scheme.nv_on_beg
 
@@ -178,10 +178,10 @@ class Simulation:
             # self.m = [np.empty([self.scheme.stencil.nv[k]] + self.domain.Na, dtype=self.type, order=self.order) for k in range(self.scheme.nscheme)]
             # self.F = [np.empty([self.scheme.stencil.nv[k]] + self.domain.Na, dtype=self.type, order=self.order) for k in range(self.scheme.nscheme)]
 
-        log.info('Build boundary conditions')
+        self.log.info('Build boundary conditions')
         self.bc = Boundary(self.domain, dico)
 
-        log.info('Initialization')
+        self.log.info('Initialization')
         self.initialization(dico)
 
         #computational time measurement
@@ -214,7 +214,7 @@ class Simulation:
                 elif self.dim == 3:
                     return self._m[:, :, :, jj]
                 else:
-                    log.error('Bad value of spatial dimension dim = {0}'.format(self.dim))
+                    self.log.error('Bad value of spatial dimension dim = {0}'.format(self.dim))
         if self.nv_on_beg:
             return self._m[self.scheme.stencil.nv_ptr[i] + j]
         else:
@@ -225,7 +225,7 @@ class Simulation:
             elif self.dim == 3:
                 return self._m[:, :, :, self.scheme.stencil.nv_ptr[i] + j]
             else:
-                log.error('Bad value of spatial dimension dim = {0}'.format(self.dim))
+                self.log.error('Bad value of spatial dimension dim = {0}'.format(self.dim))
 
     @m.setter
     def m(self, i, j, value):
@@ -348,7 +348,7 @@ class Simulation:
                     if self.nv_on_beg:
                         self._m[self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
                     else:
-                        log.debug('tricky for the treatment of the dimension')
+                        self.log.debug('tricky for the treatment of the dimension')
                         if self.dim == 1:
                             self._m[:, self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
                         elif self.dim == 2:
@@ -356,7 +356,7 @@ class Simulation:
                         elif self.dim == 3:
                             self._m[:, :, :, self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
                         else:
-                            log.error('Problem of dimension in initialization')
+                            self.log.error('Problem of dimension in initialization')
                 elif inittype == 'distributions':
                     if self.nv_on_beg:
                         self._F[self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
@@ -365,7 +365,7 @@ class Simulation:
                 else:
                     sss = 'Error in the creation of the scheme: wrong dictionnary\n'
                     sss += 'the key `inittype` should be moments or distributions'
-                    log.error(sss)
+                    self.log.error(sss)
                     sys.exit()
 
 

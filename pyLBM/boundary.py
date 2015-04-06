@@ -6,9 +6,7 @@
 
 import numpy as np
 
-from .logs import __setLogger
-log = __setLogger(__name__)
-
+from .logs import setLogger
 
 class Boundary_Velocity:
     """
@@ -35,6 +33,7 @@ class Boundary_Velocity:
 
 class Boundary:
     def __init__(self, domain, dico):
+        self.log = setLogger(__name__)
         self.domain = domain
         self.dico = dico
 

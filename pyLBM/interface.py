@@ -8,8 +8,8 @@ import numpy as np
 import mpi4py.MPI as mpi
 from argparse import ArgumentParser
 
-from .logs import __setLogger
-log = __setLogger(__name__)
+from .options import options
+from .logs import setLogger
 
 class Interface:
     """
@@ -73,6 +73,8 @@ class Interface:
         self.split = split[:self.dim]
         self.comm = comm.Create_cart(self.split, period)
 
+        self.log = setLogger(__name__)
+
     def get_coords(self):
         """
         return the coords of the process in the MPI topology
@@ -85,17 +87,9 @@ class Interface:
         """
         defines command line options.
         """
-        parser = ArgumentParser()
-        parser.add_argument("-npx", dest="npx", default=1,
-                             help="Set the number of processes in x direction")
-        parser.add_argument("-npy", dest="npy", default=1,
-                             help="Set the number of processes in y direction")
-        parser.add_argument("-npz", dest="npz", default=1,
-                             help="Set the number of processes in z direction")
-        args = parser.parse_args()
-        self.npx = int(args.npx)
-        self.npy = int(args.npy)
-        self.npz = int(args.npz)
+        self.npx = int(options().npx)
+        self.npy = int(options().npy)
+        self.npz = int(options().npz)
 
     def set_subarray(self, n, vmax, nv_on_beg=False):
         """
@@ -170,8 +164,8 @@ class Interface:
                     self.recvType.append(mpi.DOUBLE.Create_subarray(n, ms, sr))
                     self.sendTag.append(stag[tuple(d+1)])
                     self.recvTag.append(rtag[tuple(d+1)])
-                    log.info("[{0}] send to {1} with tag {2} subarray:{3}".format(rank, neighbor, self.sendTag[-1], (n, ms, ss)))
-                    log.info("[{0}] recv from {1} with tag {2} subarray:{3}".format(rank, neighbor, self.recvTag[-1], (n, ms, sr)))
+                    self.log.info("[{0}] send to {1} with tag {2} subarray:{3}".format(rank, neighbor, self.sendTag[-1], (n, ms, ss)))
+                    self.log.info("[{0}] recv from {1} with tag {2} subarray:{3}".format(rank, neighbor, self.recvTag[-1], (n, ms, sr)))
                 except mpi.Exception:
                     pass
 
