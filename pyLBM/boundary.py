@@ -65,6 +65,45 @@ class Boundary:
                     self.method_bc[-1].append(dico_bound[label]['method'][n])
                     self.be[-1].append([self.bv[label][self.domain.stencil.unum2index[numk]] for numk in self.domain.stencil.num[n]])
 
+def bouzidi_bounce_back(f, bv, num2index, feq, nv_on_beg):
+    v = bv.v
+    k = num2index[v.num]
+    ksym = num2index[v.get_symmetric().num]
+
+    mask = bv.distance < .5
+    if mask.any():
+        i1 = tuple(bv.indices[:, mask])
+        i2 = tuple()
+        i3 = tuple()
+        for i, j in zip(i1, v.v[::-1]):
+            i2 += (i + j),
+            i3 += (i + 2*j),
+        s = 2.*bv.distance[mask]
+
+        if nv_on_beg:
+            f[(k,) + i1] = s*f[(ksym,) + i2] + (1.-s)*f[(ksym,) + i3]
+            if feq is not None and np.any(mask):
+                f[(k,) + i1] += feq[k, mask] - feq[ksym, mask]
+        else:
+            f[i1 + (k,)] = s*f[i2 + (ksym,)] + (1.-s)*f[i3 + (ksym,)]
+            if feq is not None and np.any(mask):
+                f[i1 + (k,)] += feq[mask, k] - feq[mask, ksym]
+
+    mask = np.logical_not(mask)
+    if mask.any():
+        i1 = tuple(bv.indices[:, mask])
+        i2 = tuple()
+        for i, j in zip(i1, v.v[::-1]):
+            i2 += (i + j),
+        s = 0.5/bv.distance[mask]
+        if nv_on_beg:
+            f[(k,) + i1] = s*f[(ksym,) + i2] + (1.-s)*f[(k,) + i2]
+            if feq is not None and np.any(mask):
+                f[(k,) + i1] += feq[k, mask] - feq[ksym, mask]
+        else:
+            f[i1 + (k,)] = s*f[i2 + (ksym,)] + (1.-s)*f[i2 + (k,)]
+            if feq is not None and np.any(mask):
+                f[i1 + (k,)] += feq[mask, k] - feq[mask, ksym]
 
 def bouzidi_bounce_back_1D(f, bv, num2index, feq, nv_on_beg):
     v = bv.v
@@ -95,7 +134,7 @@ def bouzidi_bounce_back_1D(f, bv, num2index, feq, nv_on_beg):
         if feq is not None and np.any(mask):
             f[ix, k] += feq[mask, k] - feq[mask, ksym]
 
-def bouzidi_bounce_back(f, bv, num2index, feq, nv_on_beg):
+def bouzidi_bounce_back_2D(f, bv, num2index, feq, nv_on_beg):
     v = bv.v
     k = num2index[v.num]
     ksym = num2index[v.get_symmetric().num]
@@ -104,6 +143,7 @@ def bouzidi_bounce_back(f, bv, num2index, feq, nv_on_beg):
     iy = bv.indices[0, mask]
     ix = bv.indices[1, mask]
     s = 2.*bv.distance[mask]
+
     if nv_on_beg:
         f[k, iy, ix] = s*f[ksym, iy + v.vy, ix + v.vx] + (1.-s)*f[ksym, iy + 2*v.vy, ix + 2*v.vx]
         if feq is not None and np.any(mask):

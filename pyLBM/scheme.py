@@ -360,8 +360,7 @@ class Scheme:
          +---------------+----------------+-----------------+
 
         """
-        if interface is not None:
-            interface.update(f)
+        interface.update(f)
 
         # non periodic conditions
         if self.bc_compute:
