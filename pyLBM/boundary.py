@@ -65,95 +65,39 @@ class Boundary:
                     self.method_bc[-1].append(dico_bound[label]['method'][n])
                     self.be[-1].append([self.bv[label][self.domain.stencil.unum2index[numk]] for numk in self.domain.stencil.num[n]])
 
-
-def bouzidi_bounce_back_1D(f, bv, num2index, feq, nv_on_beg):
-    v = bv.v
-    k = num2index[v.num]
-    ksym = num2index[v.get_symmetric().num]
-
-    mask = bv.distance < .5
-    ix = bv.indices[0, mask]
-    s = 2.*bv.distance[mask]
-    if nv_on_beg:
-        f[k, ix] = s*f[ksym, ix + v.vx] + (1.-s)*f[ksym, ix + 2*v.vx]
-        if feq is not None and np.any(mask):
-            f[k, ix] += feq[k, mask] - feq[ksym, mask]
-    else:
-        f[ix, k] = s*f[ix + v.vx, ksym] + (1.-s)*f[ix + 2*v.vx, ksym]
-        if feq is not None and np.any(mask):
-            f[ix, k] += feq[mask, k] - feq[mask, ksym]
-
-    mask = np.logical_not(mask)
-    ix = bv.indices[0, mask]
-    s = 0.5/bv.distance[mask]
-    if nv_on_beg:
-        f[k, ix] = s*f[ksym, ix + v.vx] + (1.-s)*f[k, ix + v.vx]
-        if feq is not None and np.any(mask):
-            f[k, ix] += feq[k, mask] - feq[ksym, mask]
-    else:
-        f[ix, k] = s*f[ix + v.vx, ksym] + (1.-s)*f[ix + v.vx, k]
-        if feq is not None and np.any(mask):
-            f[ix, k] += feq[mask, k] - feq[mask, ksym]
-
 def bouzidi_bounce_back(f, bv, num2index, feq, nv_on_beg):
     v = bv.v
     k = num2index[v.num]
     ksym = num2index[v.get_symmetric().num]
 
     mask = bv.distance < .5
-    iy = bv.indices[0, mask]
-    ix = bv.indices[1, mask]
+    i1 = list(bv.indices[:, mask])
+    i2 = [i + j for i, j in zip(i1, v.v[::-1])]
+    i3 = [i + 2*j for i, j in zip(i1, v.v[::-1])]
     s = 2.*bv.distance[mask]
+
     if nv_on_beg:
-        f[k, iy, ix] = s*f[ksym, iy + v.vy, ix + v.vx] + (1.-s)*f[ksym, iy + 2*v.vy, ix + 2*v.vx]
+        f[[k] + i1] = s*f[[ksym] + i2] + (1.-s)*f[[ksym] + i3]
         if feq is not None and np.any(mask):
-            f[k, iy, ix] += feq[k, mask] - feq[ksym, mask]
+            f[[k] + i1] += feq[k, mask] - feq[ksym, mask]
     else:
-        f[iy, ix, k] = s*f[iy + v.vy, ix + v.vx, ksym] + (1.-s)*f[iy + 2*v.vy, ix + 2*v.vx, ksym]
+        f[i1 + [k]] = s*f[i2 + [ksym]] + (1.-s)*f[i3 + [ksym]]
         if feq is not None and np.any(mask):
-            f[iy, ix, k] += feq[mask, k] - feq[mask, ksym]
+            f[i1 + [k]] += feq[mask, k] - feq[mask, ksym]
 
     mask = np.logical_not(mask)
-    iy = bv.indices[0, mask]
-    ix = bv.indices[1, mask]
+    i1 = list(bv.indices[:, mask])
+    i2 = [i + j for i, j in zip(i1, v.v[::-1])]
     s = 0.5/bv.distance[mask]
-    if nv_on_beg:
-        f[k, iy, ix] = s*f[ksym, iy + v.vy, ix + v.vx] + (1.-s)*f[k, iy + v.vy, ix + v.vx]
-        if feq is not None and np.any(mask):
-            f[k, iy, ix] += feq[k, mask] - feq[ksym, mask]
-    else:
-        f[iy, ix, k] = s*f[iy + v.vy, ix + v.vx, ksym] + (1.-s)*f[iy + v.vy, ix + v.vx, k]
-        if feq is not None and np.any(mask):
-            f[iy, ix, k] += feq[mask, k] - feq[mask, ksym]
 
-def bouzidi_anti_bounce_back_1D(f, bv, num2index, feq, nv_on_beg):
-    v = bv.v
-    k = num2index[v.num]
-    ksym = num2index[v.get_symmetric().num]
-
-    mask = bv.distance < .5
-    ix = bv.indices[0, mask]
-    s = 2.*bv.distance[mask]
     if nv_on_beg:
-        f[k, ix] = - s*f[ksym, ix + v.vx] - (1.-s)*f[ksym, ix + 2*v.vx]
+        f[[k] + i1] = s*f[[ksym] + i2] + (1.-s)*f[[k] + i2]
         if feq is not None and np.any(mask):
-            f[k, ix] += feq[k, mask] + feq[ksym, mask]
+            f[[k] + i1] += feq[k, mask] - feq[ksym, mask]
     else:
-        f[ix, k] = - s*f[ix + v.vx, ksym] - (1.-s)*f[ix + 2*v.vx, ksym]
+        f[i1 + [k]] = s*f[i2 + [ksym]] + (1.-s)*f[i2 + [k]]
         if feq is not None and np.any(mask):
-            f[ix, k] += feq[mask, k] + feq[mask, ksym]
-
-    mask = np.logical_not(mask)
-    ix = bv.indices[0, mask]
-    s = 0.5/bv.distance[mask]
-    if nv_on_beg:
-        f[k, ix] = - s*f[ksym, ix + v.vx] - (1.-s)*f[k, ix + v.vx]
-        if feq is not None and np.any(mask):
-            f[k, ix] += feq[k, mask] + feq[ksym, mask]
-    else:
-        f[ix, k] = - s*f[ix + v.vx, ksym] - (1.-s)*f[ix + v.vx, k]
-        if feq is not None and np.any(mask):
-            f[ix, k] += feq[mask, k] + feq[mask, ksym]
+            f[i1 + [k]] += feq[mask, k] - feq[mask, ksym]
 
 def bouzidi_anti_bounce_back(f, bv, num2index, feq, nv_on_beg):
     v = bv.v
@@ -161,69 +105,72 @@ def bouzidi_anti_bounce_back(f, bv, num2index, feq, nv_on_beg):
     ksym = num2index[v.get_symmetric().num]
 
     mask = bv.distance < .5
-    iy = bv.indices[0, mask]
-    ix = bv.indices[1, mask]
+    i1 = list(bv.indices[:, mask])
+    i2 = [i + j for i, j in zip(i1, v.v[::-1])]
+    i3 = [i + 2*j for i, j in zip(i1, v.v[::-1])]
     s = 2.*bv.distance[mask]
+
     if nv_on_beg:
-        f[k, iy, ix] = - s*f[ksym, iy + v.vy, ix + v.vx] - (1.-s)*f[ksym, iy + 2*v.vy, ix + 2*v.vx]
-        if feq is not None:
-            f[k, iy, ix] += feq[k, mask] + feq[ksym, mask]
+        f[[k] + i1] = -s*f[[ksym] + i2] - (1.-s)*f[[ksym] + i3]
+        if feq is not None and np.any(mask):
+            f[[k] + i1] += feq[k, mask] + feq[ksym, mask]
     else:
-        f[iy, ix, k] = - s*f[iy + v.vy, ix + v.vx, ksym] - (1.-s)*f[iy + 2*v.vy, ix + 2*v.vx, ksym]
-        if feq is not None:
-            f[iy, ix, k] += feq[mask, k] + feq[mask, ksym]
+        f[i1 + [k]] = -s*f[i2 + [ksym]] - (1.-s)*f[i3 + [ksym]]
+        if feq is not None and np.any(mask):
+            f[i1 + [k]] += feq[mask, k] + feq[mask, ksym]
 
     mask = np.logical_not(mask)
-    iy = bv.indices[0, mask]
-    ix = bv.indices[1, mask]
+    i1 = list(bv.indices[:, mask])
+    i2 = [i + j for i, j in zip(i1, v.v[::-1])]
     s = 0.5/bv.distance[mask]
+
     if nv_on_beg:
-        f[k, iy, ix] = - s*f[ksym, iy + v.vy, ix + v.vx] - (1.-s)*f[k, iy + v.vy, ix + v.vx]
-        if feq is not None:
-            f[k, iy, ix] += feq[k, mask] + feq[ksym, mask]
+        f[[k] + i1] = -s*f[[ksym] + i2] - (1.-s)*f[[k] + i2]
+        if feq is not None and np.any(mask):
+            f[[k] + i1] += feq[k, mask] + feq[ksym, mask]
     else:
-        f[iy, ix, k] = - s*f[iy + v.vy, ix + v.vx, ksym] - (1.-s)*f[iy + v.vy, ix + v.vx, k]
-        if feq is not None:
-            f[iy, ix, k] += feq[mask, k] + feq[mask, ksym]
+        f[i1 + [k]] = -s*f[i2 + [ksym]] - (1.-s)*f[i2 + [k]]
+        if feq is not None and np.any(mask):
+            f[i1 + [k]] += feq[mask, k] + feq[mask, ksym]
 
 def neumann_vertical(f, bv, num2index, feq, nv_on_beg):
     v = bv.v
     k = num2index[v.num]
-    iy = bv.indices[0]
-    ix = bv.indices[1]
+    # TODO: find a way to avoid these copies
+    i1 = list(bv.indices.copy())
+    i2 = list(bv.indices.copy())
+    i2[-1] += v.vx
+
     if nv_on_beg:
-        f[k, iy, ix] = f[k, iy, ix + v.vx]
+        f[[k] + i1] = f[[k] + i2]
     else:
-        f[iy, ix, k] = f[iy, ix + v.vx, k]
-    #print 'neumann1'*10
-    #print f[iy, ix, k].T
+        f[i1 + [k]] = f[i2 + [k]]
 
 def neumann_horizontal(f, bv, num2index, feq, nv_on_beg):
     v = bv.v
     k = num2index[v.num]
-    iy = bv.indices[0]
-    ix = bv.indices[1]
+    # TODO: find a way to avoid these copies
+    i1 = list(bv.indices.copy())
+    i2 = list(bv.indices.copy())
+    dim = bv.indices.shape[0]
+    i2[0 if dim == 2 else 1] += v.vy
+
     if nv_on_beg:
-        f[k, iy, ix] = f[k, iy + v.vy, ix]
+        f[[k] + i1] = f[[k] + i2]
     else:
-        f[iy, ix, k] = f[iy + v.vy, ix, k]
+        f[i1 + [k]] = f[i2 + [k]]
 
 def neumann(f, bv, num2index, feq, nv_on_beg):
     v = bv.v
     k = num2index[v.num]
-    if bv.indices.shape[0] == 1:
-        ix = bv.indices[0]
-        if nv_on_beg:
-            f[k, ix] = f[k, ix + v.vx]
-        else:
-            f[ix, k] = f[ix + v.vx, k]
-    elif bv.indices.shape[0] == 2:
-        iy = bv.indices[0]
-        ix = bv.indices[1]
-        if nv_on_beg:
-            f[k, iy, ix] = f[k, iy + v.vy, ix + v.vx]
-        else:
-            f[iy, ix, k] = f[iy + v.vy, ix + v.vx, k]
+    # TODO: find a way to avoid this copy
+    i1 = list(bv.indices.copy())
+    i2 = [i + j for i, j in zip(i1, v.v[::-1])]
+
+    if nv_on_beg:
+        f[[k] + i1] = f[[k] + i2]
+    else:
+        f[i1 + [k]] = f[i2 + [k]]
 
 if __name__ == "__main__":
     from pyLBM.elements import *
