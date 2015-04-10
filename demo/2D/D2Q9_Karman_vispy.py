@@ -56,31 +56,34 @@ class Canvas(app.Canvas):
         coeff = 2
         self.sol = pyLBM.Simulation(dico)
         self.indout = np.where(self.sol.domain.in_or_out == self.sol.domain.valout)
-        W, H = self.sol._m.shape[:-1]
-        W -= 2
-        H -= 2
-        self.W, self.H = W, H
-        # A simple texture quad
-        self.data = np.zeros(4, dtype=[ ('a_position', np.float32, 2),
-                                        ('a_texcoord', np.float32, 2) ])
-        self.data['a_position'] = np.array([[0, 0], [coeff * W, 0], [0, coeff * H], [coeff * W, coeff * H]])
-        self.data['a_texcoord'] = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
         app.Canvas.__init__(self)#, close_keys='escape')
-        self.title = "Solution t={0:f}".format(0.)
-        deltarho = rhoo
-        self.min, self.max = 0., 7*self.sol.domain.dx #-2*self.sol.domain.dx, 2*self.sol.domain.dx
-        self.ccc = 1./(self.max-self.min)
-        self.size = W * coeff, H * coeff
-        self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
-        self.texture = gloo.Texture2D(self.ccc*(self.sol._m[1:-1, 1:-1, 0].astype(np.float32) - self.min))
-        self.texture.interpolation = gl.GL_LINEAR
 
-        self.program['u_texture'] = self.texture
-        self.program.bind(gloo.VertexBuffer(self.data))
+        m = self.sol.mglobal
+        if mpi.COMM_WORLD.Get_rank() == 0:
+            #W, H = m.shape[-2::-1]
+            W, H = m.shape[:-1]
 
-        self.projection = np.eye(4, dtype=np.float32)
-        self.projection = ortho(0, W, 0, H, -1, 1)
-        self.program['u_projection'] = self.projection
+            self.W, self.H = W, H
+            # A simple texture quad
+            self.data = np.zeros(4, dtype=[ ('a_position', np.float32, 2),
+                                            ('a_texcoord', np.float32, 2) ])
+            self.data['a_position'] = np.array([[0, 0], [coeff * W, 0], [0, coeff * H], [coeff * W, coeff * H]])
+            self.data['a_texcoord'] = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+            self.title = "Solution t={0:f}".format(0.)
+            deltarho = rhoo
+            self.min, self.max = 0., 7*self.sol.domain.dx #-2*self.sol.domain.dx, 2*self.sol.domain.dx
+            self.ccc = 1./(self.max-self.min)
+            self.size = W * coeff, H * coeff
+            self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
+            self.texture = gloo.Texture2D(self.ccc*(m[:, :, 0].astype(np.float32) - self.min))
+            self.texture.interpolation = gl.GL_LINEAR
+
+            self.program['u_texture'] = self.texture
+            self.program.bind(gloo.VertexBuffer(self.data))
+
+            self.projection = np.eye(4, dtype=np.float32)
+            self.projection = ortho(0, W, 0, H, -1, 1)
+            self.program['u_projection'] = self.projection
 
         self.timer = app.Timer(self.sol.dt)
         self.timer.connect(self.on_timer)
@@ -89,28 +92,30 @@ class Canvas(app.Canvas):
         gl.glClearColor(1,1,1,1)
 
     def on_resize(self, event):
-        width, height = event.size
-        gl.glViewport(0, 0, width, height)
-        self.projection = ortho(0, width, 0, height, -100, 100)
-        self.program['u_projection'] = self.projection
+        if mpi.COMM_WORLD.Get_rank() == 0:
+            width, height = event.size
+            gl.glViewport(0, 0, width, height)
+            self.projection = ortho(0, width, 0, height, -100, 100)
+            self.program['u_projection'] = self.projection
 
-        W, H = self.W, self.H
-        # Compute the new size of the quad
-        r = width / float(height)
-        R = W / float(H)
-        if r < R:
-            w, h = width, width / R
-            x, y = 0, int((height - h) / 2)
-        else:
-            w, h = height * R, height
-            x, y = int((width - w) / 2), 0
-        self.data['a_position'] = np.array(
-            [[x, y], [x + w, y], [x, y + h], [x + w, y + h]])
-        self.program.bind(gloo.VertexBuffer(self.data))
+            W, H = self.W, self.H
+            # Compute the new size of the quad
+            r = width / float(height)
+            R = W / float(H)
+            if r < R:
+                w, h = width, width / R
+                x, y = 0, int((height - h) / 2)
+            else:
+                w, h = height * R, height
+                x, y = int((width - w) / 2), 0
+            self.data['a_position'] = np.array(
+                [[x, y], [x + w, y], [x, y + h], [x + w, y + h]])
+            self.program.bind(gloo.VertexBuffer(self.data))
 
     def on_draw(self, event):
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        self.program.draw(gl.GL_TRIANGLE_STRIP)
+        if mpi.COMM_WORLD.Get_rank() == 0:
+            gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+            self.program.draw(gl.GL_TRIANGLE_STRIP)
 
     def on_key_press(self, event):
         if event.text == ' ':
@@ -151,9 +156,11 @@ class Canvas(app.Canvas):
         #    - self.sol._m[1:-1, 2:, 1].astype(np.float32) + self.sol._m[1:-1, :-2, 1].astype(np.float32)
         #    - self.min))
 
-        self.texture.set_data(self.ccc*np.abs(
-            self.sol._m[1:-1, 2:, 2].astype(np.float32) - self.sol._m[1:-1, :-2, 2].astype(np.float32)
-            - self.sol._m[2:, 1:-1, 1].astype(np.float32) + self.sol._m[:-2, 1:-1, 1].astype(np.float32)
+        m = self.sol.mglobal
+        if mpi.COMM_WORLD.Get_rank() == 0:
+            self.texture.set_data(self.ccc*np.abs(
+            m[1:-1, 2:, 2].astype(np.float32) - m[1:-1, :-2, 2].astype(np.float32)
+            - m[2:, 1:-1, 1].astype(np.float32) + m[:-2, 1:-1, 1].astype(np.float32)
             - self.min))
 
 
@@ -216,6 +223,12 @@ if __name__ == "__main__":
     q2  = qx2+qy2
     qxy = dummy*u[0][1]*u[0][2]
 
+    # group = mpi.COMM_WORLD.Get_group()
+    # incl = [1, 3]
+    # g = group.Incl(incl)
+    # newcomm = mpi.COMM_WORLD.Create(g)
+
+    # if mpi.COMM_WORLD.Get_rank() in incl:
     dico = {
         'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[0, 1, 0, 0]},
         'elements':[pyLBM.Circle([1., 0.5*(ymin+ymax)+2*dx], rayon, label=2)],

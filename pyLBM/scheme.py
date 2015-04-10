@@ -139,7 +139,7 @@ class Scheme:
         self.create_moments_matrices()
 
         #self.nv_on_beg = nv_on_beg
-        self.generator = dico.get('generator', NumpyGenerator)()
+        self.generator = dico.get('generator', NumpyGenerator)(comm=dico.get('comm', mpi.COMM_WORLD))
         self.log.info("Generator used for the scheme functions:\n{0}\n".format(self.generator))
         #print self.generator
         if isinstance(self.generator, CythonGenerator):

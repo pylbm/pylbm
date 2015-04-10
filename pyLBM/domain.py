@@ -5,7 +5,6 @@
 # License: BSD 3 clause
 
 import numpy as np
-import logging
 import sys
 
 from .elements import *
@@ -133,22 +132,25 @@ class Domain:
     """
     def __init__(self, dico, geometry=None, stencil=None):
         self.log = setLogger(__name__)
-        self.type = 'float64'
+
         if geometry is not None:
             self.geom = geometry
         else:
             self.geom = pyLBMGeom.Geometry(dico)
+
         if stencil is not None:
             self.stencil = stencil
         else:
             self.stencil = pyLBMSten.Stencil(dico)
+
         if self.geom.dim != self.stencil.dim:
             s = 'Error in the dimension: stencil and geometry dimensions are different'
-            s += 'geometry: {0:d}, stencil: {1:d}'.format(self.geom.dim, self.sten.dim)
+            s += 'geometry: {0:d}, stencil: {1:d}'.format(self.geom.dim, self.stencil.dim)
             self.log.error(s)
             sys.exit()
         else:
             self.dim = self.geom.dim # spatial dimension
+
         self.globalbounds = self.geom.globalbounds # the box where the domain lies
         self.bounds = self.geom.bounds # the local box of the process
         self.dx = dico['space_step'] # spatial step
@@ -176,8 +178,8 @@ class Domain:
 
         s1 = self.Na[self.dim - 1::-1]
         s2 = np.concatenate(([self.stencil.unvtot], s1))
-        self.in_or_out = self.valin*np.ones(s1, dtype = self.type)
-        self.distance = self.valin*np.ones(s2, dtype = self.type)
+        self.in_or_out = self.valin*np.ones(s1)
+        self.distance = self.valin*np.ones(s2)
         self.flag = self.valin*np.ones(s2, dtype = 'int')
 
         self.__add_init(self.geom.box_label) # compute the distance and the flag for the primary box
@@ -196,7 +198,6 @@ class Domain:
 
     def __add_init(self, label):
         if (self.dim == 1):
-            vmax = self.stencil.vmax[0]
             xb, xe = self.indbe[0][:]
 
             self.in_or_out[:] = self.valout
@@ -214,7 +215,6 @@ class Domain:
                         self.flag[k, xb + i] = label[0] # west border
 
         elif (self.dim == 2):
-            vxmax, vymax = self.stencil.vmax[:2]
             xb, xe = self.indbe[0][:]
             yb, ye = self.indbe[1][:]
 
@@ -416,7 +416,6 @@ def verification(dom, with_color=False):
         green = ''
         white = ''
 
-    Ind = np.where(dom.in_or_out==0)
     print 'Nombre de points : ' + str(dom.Na) + '\n'
     if (dom.dim==1):
         for k in xrange(dom.Na[0]):
@@ -487,6 +486,7 @@ def verification(dom, with_color=False):
 
 
 if __name__ == "__main__":
+    import pyLBM
     dico = {
         'box':{'x': [0, 1], 'y': [0, 1], 'label':0},
         'elements':[pyLBM.Circle((0.5,0.5), 0.2, label = 1)],

@@ -136,12 +136,13 @@ class Generator:
     The generated code can be read by typesetting the attribute
     ``code``.
     """
-    def __init__(self, build_dir=None, suffix='.py'):
+    def __init__(self, build_dir=None, suffix='.py', comm=mpi.COMM_WORLD):
         self.log = setLogger(__name__)
         self.build_dir = build_dir
         self.modulename = None
         self.code = ''
-        self.rank = mpi.COMM_WORLD.Get_rank()
+        self.comm = comm
+        self.rank = self.comm.Get_rank()
 
         if self.rank == 0:
             self.build_dir = build_dir
@@ -150,8 +151,8 @@ class Generator:
             self.f = tempfile.NamedTemporaryFile(suffix=suffix, prefix=self.build_dir + 'LBM', delete=False)
             self.modulename = self.f.name.replace(self.build_dir, "").split('.')[0]
 
-        self.build_dir = mpi.COMM_WORLD.bcast(self.build_dir, 0)
-        self.modulename = mpi.COMM_WORLD.bcast(self.modulename, 0)
+        self.build_dir = self.comm.bcast(self.build_dir, 0)
+        self.modulename = self.comm.bcast(self.modulename, 0)
 
         sys.path.append(self.build_dir)
 
@@ -234,8 +235,8 @@ class NumpyGenerator(Generator):
       generate the code to compute the moments
       from the distribution functions
     """
-    def __init__(self, build_dir=None):
-        Generator.__init__(self, build_dir)
+    def __init__(self, build_dir=None, comm=mpi.COMM_WORLD):
+        Generator.__init__(self, build_dir, comm)
 
     def transport(self, ns, stencil, dtype = 'f8'):
         """
@@ -475,8 +476,8 @@ class NumbaGenerator(Generator):
       generate the code to compute the moments
       from the distribution functions
     """
-    def __init__(self, build_dir=None):
-        Generator.__init__(self, build_dir)
+    def __init__(self, build_dir=None, comm=mpi.COMM_WORLD):
+        Generator.__init__(self, build_dir, comm)
 
     def setup(self):
         self.code += "import numba\n"
@@ -555,8 +556,8 @@ class CythonGenerator(Generator):
     compile :
       compile the cython code
     """
-    def __init__(self, build_dir=None):
-        Generator.__init__(self, build_dir, suffix='.pyx')
+    def __init__(self, build_dir=None, comm=mpi.COMM_WORLD):
+        Generator.__init__(self, build_dir, suffix='.pyx', comm=comm)
 
     def setup(self):
         """
@@ -932,7 +933,7 @@ def make_ext(modname, pyxfilename):
             import pyximport
             pyximport.install(build_dir= self.build_dir, inplace=True)
             exec "import %s"%self.modulename
-        mpi.COMM_WORLD.Barrier()
+        self.comm.Barrier()
 
 if __name__ == "__main__":
     import numpy as np

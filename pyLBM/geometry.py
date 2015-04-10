@@ -116,7 +116,7 @@ class Geometry:
             if self.box_label[2*i] == self.box_label[2*i+1] == -1: # work only for dim = 2
                 period[i] = True
 
-        self.interface = Interface(self.dim, period)
+        self.interface = Interface(self.dim, period, dico.get('comm', mpi.COMM_WORLD))
 
         self.globalbounds = np.asarray(self.globalbounds, dtype='f8')
         self.bounds = self.globalbounds.copy()
@@ -128,7 +128,7 @@ class Geometry:
 
         # Modify box_label if the border becomes an interface
         for i in xrange(self.dim):
-            voisins = self.interface.comm.Shift(i, 1)
+            voisins = self.interface.cartcomm.Shift(i, 1)
             if voisins[0] != mpi.PROC_NULL:
                 self.box_label[2*i] = -2
             if voisins[1] != mpi.PROC_NULL:
