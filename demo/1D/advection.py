@@ -42,7 +42,6 @@ if __name__ == "__main__":
     dico_Q2 = {
         'box':{'x':[xmin, xmax], 'label':0},
         'space_step':dx,
-        'number_of_schemes':1,
         'scheme_velocity':la,
         'schemes':[{
             'velocities':[2,1],
