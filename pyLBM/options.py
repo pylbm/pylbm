@@ -19,5 +19,6 @@ def options():
                              help="Set the number of processes in y direction")
     mpi.add_argument("-npz", dest="npz", default=1, type=int,
                      help="Set the number of processes in z direction")
-
-    return parser.parse_args()
+    args, unknown = parser.parse_known_args()
+    return args
+    #return parser.parse_args()
