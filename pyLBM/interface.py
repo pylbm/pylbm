@@ -152,13 +152,13 @@ class Interface:
                     self.neighbors.append(neighbor)
 
                     if nv_on_beg:
-                        ms = [nv] + list(msize[rows, d[::-1]+1])
-                        ss = [0] + list(start_send[rows, d[::-1]+1])
-                        sr = [0] + list(start_recv[rows, d[::-1]+1])
+                        ms = [nv] + list(msize[rows, d+1])
+                        ss = [0] + list(start_send[rows, d+1])
+                        sr = [0] + list(start_recv[rows, d+1])
                     else:
-                        ms = list(msize[rows, d[::-1]+1]) + [nv]
-                        ss = list(start_send[rows, d[::-1]+1]) + [0]
-                        sr = list(start_recv[rows, d[::-1]+1]) + [0]
+                        ms = list(msize[rows, d+1]) + [nv]
+                        ss = list(start_send[rows, d+1]) + [0]
+                        sr = list(start_recv[rows, d+1]) + [0]
 
                     self.sendType.append(mpi.DOUBLE.Create_subarray(n, ms, ss))
                     self.recvType.append(mpi.DOUBLE.Create_subarray(n, ms, sr))
@@ -200,9 +200,6 @@ class Interface:
             if coords[i] + 1 == self.split[i]:
                 subsizes[i] += globalsizes[i]%self.split[i]
 
-        globalsizes = globalsizes[::-1]
-        subsizes = np.ascontiguousarray(subsizes[::-1])
-
         Subsizes = np.empty(self.dim, dtype='i')
 
         self.comm.Allreduce([subsizes, mpi.INT], [Subsizes, mpi.INT], mpi.MAX)
@@ -211,7 +208,7 @@ class Interface:
         newtype = None
         if rank == 0:
             subarray = mpi.DOUBLE.Create_subarray(globalsizes + [ns], list(Subsizes) + [ns], starts)
-            newtype = subarray.Create_resized(0, 8)
+            newtype = subarray.Create_resized(0, 8*ns)
             newtype.Commit()
 
         globalArray = None
@@ -222,11 +219,11 @@ class Interface:
             counts = np.array([1]*size)
             disp = 0
             displs = []
-            for i in xrange(self.split[1]):
-                for j in xrange(self.split[0]):
+            for i in xrange(self.split[0]):
+                for j in xrange(self.split[1]):
                     displs.append(disp)
-                    disp += subsizes[1]*ns
-                disp += ((subsizes[0]-1)*globalsizes[1]+1)*ns
+                    disp += subsizes[1]
+                disp += (subsizes[0]-1)*globalsizes[1]
             globalArray = np.zeros(globalsizes + [ns])
 
 

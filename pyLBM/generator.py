@@ -236,7 +236,7 @@ class NumpyGenerator(Generator):
       from the distribution functions
     """
     def __init__(self, build_dir=None, comm=mpi.COMM_WORLD):
-        Generator.__init__(self, build_dir, comm)
+        Generator.__init__(self, build_dir, comm=comm)
 
     def transport(self, ns, stencil, dtype = 'f8'):
         """
@@ -265,16 +265,16 @@ class NumpyGenerator(Generator):
                 s1 = ''
                 s2 = ''
                 toInput = False
-                v = stencil.v[k][i].v
-                for iv in xrange(len(v)-1, -1, -1):
-                    if v[iv] > 0:
+                vv = stencil.v[k][i].v
+                for v in vv:
+                    if v > 0:
                         toInput = True
-                        s1 += ', {0:d}:'.format(v[iv])
-                        s2 += ', :{0:d}'.format(-v[iv])
-                    elif v[iv] < 0:
+                        s1 += ', {0:d}:'.format(v)
+                        s2 += ', :{0:d}'.format(-v)
+                    elif v < 0:
                         toInput = True
-                        s1 += ', :{0:d}'.format(v[iv])
-                        s2 += ', {0:d}:'.format(-v[iv])
+                        s1 += ', :{0:d}'.format(v)
+                        s2 += ', {0:d}:'.format(-v)
                     else:
                         s1 += ', :'
                         s2 += ', :'
@@ -712,23 +712,23 @@ from libc.stdlib cimport malloc, free
             for i in xrange(stencil.nv[k]):
                 s = ''
                 toInput = False
-                v = stencil.v[k][i].v
-                lv = len(v)
-                for iv in xrange(len(v)-1, -1, -1):
-                    if v[iv] > 0:
+                vv = stencil.v[k][i].v
+
+                for iv, v in enumerate(vv):
+                    if v > 0:
                         toInput = True
-                        s += 'i{0:d} - {1:d}, '.format(lv - 1 - iv, v[iv])
-                    elif v[iv] < 0:
+                        s += 'i{0:d} - {1:d}, '.format(iv, v)
+                    elif v < 0:
                         toInput = True
-                        s += 'i{0:d} + {1:d}, '.format(lv - 1 - iv, -v[iv])
+                        s += 'i{0:d} + {1:d}, '.format(iv, -v)
                     else:
-                        s += 'i{0:d}, '.format(lv - 1 - iv)
+                        s += 'i{0:d}, '.format(iv)
 
                 get_f += '\tfloc[{0}] = f[{1}{0}] \n'.format(ind, s)
 
                 s = ''
-                for iv in xrange(len(v)-1, -1, -1):
-                    s += 'i{0:d}, '.format(lv - 1 - iv)
+                for iv, v in enumerate(vv):
+                    s += 'i{0:d}, '.format(iv)
                 set_f += '\tf[{1}{0}] = floc[{0}] \n'.format(ind, s)
 
                 ind += 1

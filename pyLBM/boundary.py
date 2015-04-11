@@ -28,7 +28,7 @@ class Boundary_Velocity:
         ind = np.where(domain.flag[num] == self.label)
         self.indices = np.array(ind)
         if self.indices.size != 0:
-            self.indices += np.asarray(v.v[::-1])[:, np.newaxis]
+            self.indices += np.asarray(v.v)[:, np.newaxis]
         self.distance = np.array(domain.distance[(num,) + ind])
 
 class Boundary:
@@ -72,8 +72,8 @@ def bouzidi_bounce_back(f, bv, num2index, feq, nv_on_beg):
 
     mask = bv.distance < .5
     i1 = list(bv.indices[:, mask])
-    i2 = [i + j for i, j in zip(i1, v.v[::-1])]
-    i3 = [i + 2*j for i, j in zip(i1, v.v[::-1])]
+    i2 = [i + j for i, j in zip(i1, v.v)]
+    i3 = [i + 2*j for i, j in zip(i1, v.v)]
     s = 2.*bv.distance[mask]
 
     if nv_on_beg:
@@ -87,7 +87,7 @@ def bouzidi_bounce_back(f, bv, num2index, feq, nv_on_beg):
 
     mask = np.logical_not(mask)
     i1 = list(bv.indices[:, mask])
-    i2 = [i + j for i, j in zip(i1, v.v[::-1])]
+    i2 = [i + j for i, j in zip(i1, v.v)]
     s = 0.5/bv.distance[mask]
 
     if nv_on_beg:
@@ -106,8 +106,8 @@ def bouzidi_anti_bounce_back(f, bv, num2index, feq, nv_on_beg):
 
     mask = bv.distance < .5
     i1 = list(bv.indices[:, mask])
-    i2 = [i + j for i, j in zip(i1, v.v[::-1])]
-    i3 = [i + 2*j for i, j in zip(i1, v.v[::-1])]
+    i2 = [i + j for i, j in zip(i1, v.v)]
+    i3 = [i + 2*j for i, j in zip(i1, v.v)]
     s = 2.*bv.distance[mask]
 
     if nv_on_beg:
@@ -121,7 +121,7 @@ def bouzidi_anti_bounce_back(f, bv, num2index, feq, nv_on_beg):
 
     mask = np.logical_not(mask)
     i1 = list(bv.indices[:, mask])
-    i2 = [i + j for i, j in zip(i1, v.v[::-1])]
+    i2 = [i + j for i, j in zip(i1, v.v)]
     s = 0.5/bv.distance[mask]
 
     if nv_on_beg:
@@ -139,7 +139,7 @@ def neumann_vertical(f, bv, num2index, feq, nv_on_beg):
     # TODO: find a way to avoid these copies
     i1 = list(bv.indices.copy())
     i2 = list(bv.indices.copy())
-    i2[-1] += v.vx
+    i2[0] += v.vx
 
     if nv_on_beg:
         f[[k] + i1] = f[[k] + i2]
@@ -153,7 +153,7 @@ def neumann_horizontal(f, bv, num2index, feq, nv_on_beg):
     i1 = list(bv.indices.copy())
     i2 = list(bv.indices.copy())
     dim = bv.indices.shape[0]
-    i2[0 if dim == 2 else 1] += v.vy
+    i2[1 if dim == 2 else -1] += v.vy
 
     if nv_on_beg:
         f[[k] + i1] = f[[k] + i2]
@@ -165,7 +165,7 @@ def neumann(f, bv, num2index, feq, nv_on_beg):
     k = num2index[v.num]
     # TODO: find a way to avoid this copy
     i1 = list(bv.indices.copy())
-    i2 = [i + j for i, j in zip(i1, v.v[::-1])]
+    i2 = [i + j for i, j in zip(i1, v.v)]
 
     if nv_on_beg:
         f[[k] + i1] = f[[k] + i2]

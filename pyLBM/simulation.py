@@ -163,11 +163,11 @@ class Simulation:
         self.nv_on_beg = self.scheme.nv_on_beg
 
         if self.nv_on_beg:
-            msize = [self.scheme.stencil.nv_ptr[-1]] + self.domain.Na[::-1]
+            msize = [self.scheme.stencil.nv_ptr[-1]] + self.domain.Na
             self._m = np.empty(msize, dtype=self.type, order=self.order)
             self._F = np.empty(msize, dtype=self.type, order=self.order)
         else:
-            msize = self.domain.Na[::-1] + [self.scheme.stencil.nv_ptr[-1]]
+            msize = self.domain.Na + [self.scheme.stencil.nv_ptr[-1]]
             self._m = np.empty(msize, dtype=self.type, order=self.order)
             self._F = np.empty(msize, dtype=self.type, order=self.order)
             self._Fold = np.empty(msize, dtype=self.type, order=self.order)
@@ -333,10 +333,10 @@ class Simulation:
             x = self.domain.x[0]
             coords = (x,)
         elif self.dim == 2:
-            #x = self.domain.x[0][:,np.newaxis]
-            #y = self.domain.x[1][np.newaxis, :]
-            x = self.domain.x[0][np.newaxis, :]
-            y = self.domain.x[1][: ,np.newaxis]
+            x = self.domain.x[0][:,np.newaxis]
+            y = self.domain.x[1][np.newaxis, :]
+            #x = self.domain.x[0][np.newaxis, :]
+            #y = self.domain.x[1][: ,np.newaxis]
             coords = (x, y)
 
         schemes = dico['schemes']
