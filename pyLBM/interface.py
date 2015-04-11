@@ -57,11 +57,11 @@ class Interface:
       update a numpy array according to the subarrays and the topology.
 
     """
-    def __init__(self, dim, period):
+    def __init__(self, dim, period, comm=mpi.COMM_WORLD):
         self.dim = dim
         self.set_options()
 
-        comm = mpi.COMM_WORLD
+        self.comm = comm
         # if npx, npy and npz are all the default value (1)
         # then Compute_dims performs the splitting of the domain
         if self.npx == self.npy == self.npz == 1:
@@ -70,8 +70,8 @@ class Interface:
         else:
             split = (self.npx, self.npy, self.npz)
 
-        self.split = split[:self.dim]
-        self.comm = comm.Create_cart(self.split, period)
+        self.split = np.asarray(split[:self.dim])
+        self.cartcomm = comm.Create_cart(self.split, period)
 
         self.log = setLogger(__name__)
 
@@ -80,8 +80,8 @@ class Interface:
         return the coords of the process in the MPI topology
         as a numpy array.
         """
-        rank = self.comm.Get_rank()
-        return np.asarray(self.comm.Get_coords(rank))
+        rank = self.cartcomm.Get_rank()
+        return np.asarray(self.cartcomm.Get_coords(rank))
 
     def set_options(self):
         """
@@ -109,8 +109,8 @@ class Interface:
 
         """
 
-        rank = self.comm.Get_rank()
-        coords = self.comm.Get_coords(rank)
+        rank = self.cartcomm.Get_rank()
+        coords = self.cartcomm.Get_coords(rank)
 
         # set nloc without the ghost points
         if nv_on_beg:
@@ -148,17 +148,17 @@ class Interface:
         for d in directions:
             if not np.all(d == 0):
                 try:
-                    neighbor = self.comm.Get_cart_rank(coords + d)
+                    neighbor = self.cartcomm.Get_cart_rank(coords + d)
                     self.neighbors.append(neighbor)
 
                     if nv_on_beg:
-                        ms = [nv] + list(msize[rows, d[::-1]+1])
-                        ss = [0] + list(start_send[rows, d[::-1]+1])
-                        sr = [0] + list(start_recv[rows, d[::-1]+1])
+                        ms = [nv] + list(msize[rows, d+1])
+                        ss = [0] + list(start_send[rows, d+1])
+                        sr = [0] + list(start_recv[rows, d+1])
                     else:
-                        ms = list(msize[rows, d[::-1]+1]) + [nv]
-                        ss = list(start_send[rows, d[::-1]+1]) + [0]
-                        sr = list(start_recv[rows, d[::-1]+1]) + [0]
+                        ms = list(msize[rows, d+1]) + [nv]
+                        ss = list(start_send[rows, d+1]) + [0]
+                        sr = list(start_recv[rows, d+1]) + [0]
 
                     self.sendType.append(mpi.DOUBLE.Create_subarray(n, ms, ss))
                     self.recvType.append(mpi.DOUBLE.Create_subarray(n, ms, sr))
@@ -180,12 +180,58 @@ class Interface:
         req = []
 
         for i in xrange(len(self.recvType)):
-            req.append(mpi.COMM_WORLD.Irecv([f, self.recvType[i]], source = self.neighbors[i], tag=self.recvTag[i]))
+            req.append(self.comm.Irecv([f, self.recvType[i]], source = self.neighbors[i], tag=self.recvTag[i]))
 
         for i in xrange(len(self.sendType)):
-            req.append(mpi.COMM_WORLD.Isend([f, self.sendType[i]], dest = self.neighbors[i], tag=self.sendTag[i]))
+            req.append(self.comm.Isend([f, self.sendType[i]], dest = self.neighbors[i], tag=self.sendTag[i]))
 
         mpi.Request.Waitall(req)
+
+    def get_full(self, f, domain):
+        globalsizes = domain.Ng
+        subsizes = np.array(globalsizes/self.split, dtype='i')
+        starts = np.zeros(self.dim + 1)
+
+        rank = self.cartcomm.Get_rank()
+        size = self.cartcomm.Get_size()
+        coords = self.cartcomm.Get_coords(rank)
+
+        for i in xrange(self.dim):
+            if coords[i] + 1 == self.split[i]:
+                subsizes[i] += globalsizes[i]%self.split[i]
+
+        Subsizes = np.empty(self.dim, dtype='i')
+
+        self.comm.Allreduce([subsizes, mpi.INT], [Subsizes, mpi.INT], mpi.MAX)
+
+        ns = f.shape[-1]
+        newtype = None
+        if rank == 0:
+            subarray = mpi.DOUBLE.Create_subarray(globalsizes + [ns], list(Subsizes) + [ns], starts)
+            newtype = subarray.Create_resized(0, 8*ns)
+            newtype.Commit()
+
+        globalArray = None
+
+        counts = 0
+        displs = 0
+        if rank == 0:
+            counts = np.array([1]*size)
+            disp = 0
+            displs = []
+            for i in xrange(self.split[0]):
+                for j in xrange(self.split[1]):
+                    displs.append(disp)
+                    disp += subsizes[1]
+                disp += (subsizes[0]-1)*globalsizes[1]
+            globalArray = np.zeros(globalsizes + [ns])
+
+
+        copyArray = np.empty(list(Subsizes) + [ns])
+        copyArray[:subsizes[0], :subsizes[1], :] = f[1:-1, 1:-1, :]
+        self.comm.Gatherv([copyArray, mpi.DOUBLE], [globalArray, (counts, displs), newtype], 0)
+
+        return globalArray
 
 def get_directions(dim):
     """

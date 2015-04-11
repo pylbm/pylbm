@@ -145,8 +145,8 @@ class Circle:
         d2[d2<0] = 1e16
         d[ind] = np.minimum(d1[ind], d2[ind])
         d[d==1e16] = -1
-        alpha = -np.ones((y.size, x.size))
-        border = -np.ones((y.size, x.size))
+        alpha = -np.ones((x.size, y.size))
+        border = -np.ones((x.size, y.size))
 
         if dmax is None:
             ind = d>0
@@ -233,7 +233,7 @@ class Parallelogram:
     number_of_bounds = 4 # number of edges
 
     def __init__(self, point, vecta, vectb, label = 0, isfluid = False):
-        self.log = __setLogger(__name__)
+        self.log = setLogger(__name__)
         self.point = np.asarray(point)
         self.v0 = np.asarray(vecta)
         self.v1 = np.asarray(vectb)
@@ -409,7 +409,7 @@ class Triangle:
     number_of_bounds = 3 # number of edges
 
     def __init__(self, point, vecta, vectb, label = 0, isfluid = False):
-        self.log = __setLogger(__name__)
+        self.log = setLogger(__name__)
         self.point = np.asarray(point)
         self.v0 = np.asarray(vecta)
         self.v1 = np.asarray(vectb)
@@ -554,8 +554,8 @@ def distance_lines(x, y, v, p, vt, dmax, label):
     return distance for several lines
     """
     v2 = np.asarray([x, y])
-    alpha = 1e16*np.ones((y.size, x.size))
-    border = -np.ones((y.size, x.size))
+    alpha = 1e16*np.ones((x.size, y.size))
+    border = -np.ones((x.size, y.size))
     for i in xrange(len(vt)):
         tmp1, tmp2 = intersection_two_lines(v2, v, p[i], vt[i])
         if tmp1 is not None:

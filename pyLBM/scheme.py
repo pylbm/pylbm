@@ -139,7 +139,7 @@ class Scheme:
         self.create_moments_matrices()
 
         #self.nv_on_beg = nv_on_beg
-        self.generator = dico.get('generator', NumpyGenerator)()
+        self.generator = dico.get('generator', NumpyGenerator)(comm=dico.get('comm', mpi.COMM_WORLD))
         self.log.info("Generator used for the scheme functions:\n{0}\n".format(self.generator))
         #print self.generator
         if isinstance(self.generator, CythonGenerator):
@@ -388,13 +388,13 @@ class Scheme:
                                     else:
                                         bc.floc[l][n][k] = floc[:, self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]]
                                 elif self.dim == 2:
-                                    iy = bv.indices[0]
-                                    ix = bv.indices[1]
+                                    ix = bv.indices[0]
+                                    iy = bv.indices[1]
                                     s  = bv.distance
                                     if nv_on_beg:
-                                        mloc = np.ascontiguousarray(m[:, iy, ix])
+                                        mloc = np.ascontiguousarray(m[:, ix, iy])
                                     else:
-                                        mloc = np.ascontiguousarray(m[iy, ix, :])
+                                        mloc = np.ascontiguousarray(m[ix, iy, :])
                                     floc = np.zeros(mloc.shape)
                                     bc.value_bc[l](floc, mloc,
                                                    bc.domain.x[0][ix] + s*bv.v.vx*bc.domain.dx,

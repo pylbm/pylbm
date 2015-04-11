@@ -5,7 +5,6 @@
 # License: BSD 3 clause
 
 import numpy as np
-import logging
 import sys
 
 from .elements import *
@@ -133,22 +132,25 @@ class Domain:
     """
     def __init__(self, dico, geometry=None, stencil=None):
         self.log = setLogger(__name__)
-        self.type = 'float64'
+
         if geometry is not None:
             self.geom = geometry
         else:
             self.geom = pyLBMGeom.Geometry(dico)
+
         if stencil is not None:
             self.stencil = stencil
         else:
             self.stencil = pyLBMSten.Stencil(dico)
+
         if self.geom.dim != self.stencil.dim:
             s = 'Error in the dimension: stencil and geometry dimensions are different'
-            s += 'geometry: {0:d}, stencil: {1:d}'.format(self.geom.dim, self.sten.dim)
+            s += 'geometry: {0:d}, stencil: {1:d}'.format(self.geom.dim, self.stencil.dim)
             self.log.error(s)
             sys.exit()
         else:
             self.dim = self.geom.dim # spatial dimension
+
         self.globalbounds = self.geom.globalbounds # the box where the domain lies
         self.bounds = self.geom.bounds # the local box of the process
         self.dx = dico['space_step'] # spatial step
@@ -174,10 +176,10 @@ class Domain:
         self.valin = 999  # value in the fluid domain
         self.valout = -1   # value in the solid domain
 
-        s1 = self.Na[self.dim - 1::-1]
+        s1 = self.Na[:]
         s2 = np.concatenate(([self.stencil.unvtot], s1))
-        self.in_or_out = self.valin*np.ones(s1, dtype = self.type)
-        self.distance = self.valin*np.ones(s2, dtype = self.type)
+        self.in_or_out = self.valin*np.ones(s1)
+        self.distance = self.valin*np.ones(s2)
         self.flag = self.valin*np.ones(s2, dtype = 'int')
 
         self.__add_init(self.geom.box_label) # compute the distance and the flag for the primary box
@@ -196,7 +198,6 @@ class Domain:
 
     def __add_init(self, label):
         if (self.dim == 1):
-            vmax = self.stencil.vmax[0]
             xb, xe = self.indbe[0][:]
 
             self.in_or_out[:] = self.valout
@@ -214,12 +215,11 @@ class Domain:
                         self.flag[k, xb + i] = label[0] # west border
 
         elif (self.dim == 2):
-            vxmax, vymax = self.stencil.vmax[:2]
             xb, xe = self.indbe[0][:]
             yb, ye = self.indbe[1][:]
 
             self.in_or_out[:, :] = self.valout
-            self.in_or_out[yb:ye,xb:xe] = self.valin
+            self.in_or_out[xb:xe, yb:ye] = self.valin
 
             for k in xrange(self.stencil.unvtot):
                 vxk = self.stencil.unique_velocities[k].vx
@@ -227,27 +227,27 @@ class Domain:
                 if ((vxk > 0) & (label[1] != -2)):
                     for i in xrange(vxk):
                         dvik = (i + .5)/vxk
-                        indbordvik = np.where(dvik < self.distance[k, yb:ye, xe - 1 - i])
-                        self.distance[k, yb + indbordvik[0], xe - 1 - i] = dvik
-                        self.flag[k, yb + indbordvik[0], xe - 1 - i] = label[1]
+                        indbordvik = np.where(dvik < self.distance[k, xe - 1 - i, yb:ye])
+                        self.distance[k, xe - 1 - i, yb + indbordvik[0]] = dvik
+                        self.flag[k, xe - 1 - i, yb + indbordvik[0]] = label[1]
                 elif ((vxk < 0) & (label[0] != -2)):
                     for i in xrange(-vxk):
                         dvik = -(i + .5)/vxk
-                        indbordvik = np.where(dvik < self.distance[k, yb:ye, xb + i])
-                        self.distance[k, yb + indbordvik[0], xb + i] = dvik
-                        self.flag[k, yb + indbordvik[0], xb + i] = label[0]
+                        indbordvik = np.where(dvik < self.distance[k, xb + i, yb:ye])
+                        self.distance[k, xb + i, yb + indbordvik[0]] = dvik
+                        self.flag[k, xb + i, yb + indbordvik[0]] = label[0]
                 if ((vyk > 0) & (label[3] != -2)):
                     for i in xrange(vyk):
                         dvik = (i + .5)/vyk
-                        indbordvik = np.where(dvik < self.distance[k, ye - 1 - i, xb:xe])
-                        self.distance[k, ye - 1 - i, xb + indbordvik[0]] = dvik
-                        self.flag[k, ye - 1 - i, xb + indbordvik[0]] = label[3]
+                        indbordvik = np.where(dvik < self.distance[k, xb:xe, ye - 1 - i])
+                        self.distance[k, xb + indbordvik[0], ye - 1 - i] = dvik
+                        self.flag[k, xb + indbordvik[0], ye - 1 - i] = label[3]
                 elif ((vyk < 0) & (label[2] != -2)):
                     for i in xrange(-vyk):
                         dvik = -(i + .5)/vyk
-                        indbordvik = np.where(dvik < self.distance[k, yb + i, xb:xe])
-                        self.distance[k, yb + i, xb + indbordvik[0]] = dvik
-                        self.flag[k, yb + i, xb + indbordvik[0]] = label[2]
+                        indbordvik = np.where(dvik < self.distance[k, xb:xe, yb + i])
+                        self.distance[k, xb + indbordvik[0], yb + i] = dvik
+                        self.flag[k, xb + indbordvik[0], yb + i] = label[2]
         return
 
     def __add_elem(self, elem):
@@ -270,13 +270,13 @@ class Domain:
         # set the grid
         x = self.x[0][nmin[0]:nmax[0]]
         y = self.x[1][nmin[1]:nmax[1]]
-        gridx = x[np.newaxis, :]
-        gridy = y[:, np.newaxis]
+        gridx = x[:, np.newaxis]
+        gridy = y[np.newaxis, :]
 
         # local view of the arrays
-        ioo_view = self.in_or_out[nmin[1]:nmax[1], nmin[0]:nmax[0]]
-        dist_view = self.distance[:, nmin[1]:nmax[1], nmin[0]:nmax[0]]
-        flag_view = self.flag[:, nmin[1]:nmax[1], nmin[0]:nmax[0]]
+        ioo_view = self.in_or_out[nmin[0]:nmax[0], nmin[1]:nmax[1]]
+        dist_view = self.distance[:, nmin[0]:nmax[0], nmin[1]:nmax[1]]
+        flag_view = self.flag[:, nmin[0]:nmax[0], nmin[1]:nmax[1]]
 
         if not elem.isfluid: # add a solid part
             ind_solid = elem.point_inside(gridx, gridy)
@@ -291,7 +291,7 @@ class Domain:
             vxk = self.stencil.unique_velocities[k].vx
             vyk = self.stencil.unique_velocities[k].vy
             if (vxk != 0 or vyk != 0):
-                condx = self.in_or_out[nmin[1] + vyk:nmax[1] + vyk, nmin[0] + vxk:nmax[0] + vxk] == self.valout
+                condx = self.in_or_out[nmin[0] + vxk:nmax[0] + vxk, nmin[1] + vyk:nmax[1] + vyk] == self.valout
                 alpha, border = elem.distance(gridx, gridy, (self.dx*vxk, self.dx*vyk), 1.)
                 indx = np.logical_and(np.logical_and(alpha > 0, ind_fluid), condx)
 
@@ -416,7 +416,6 @@ def verification(dom, with_color=False):
         green = ''
         white = ''
 
-    Ind = np.where(dom.in_or_out==0)
     print 'Nombre de points : ' + str(dom.Na) + '\n'
     if (dom.dim==1):
         for k in xrange(dom.Na[0]):
@@ -487,6 +486,7 @@ def verification(dom, with_color=False):
 
 
 if __name__ == "__main__":
+    import pyLBM
     dico = {
         'box':{'x': [0, 1], 'y': [0, 1], 'label':0},
         'elements':[pyLBM.Circle((0.5,0.5), 0.2, label = 1)],

@@ -121,9 +121,9 @@ class Simulation:
     are just call of the methods of the class
     :py:class:`Scheme<pyLBM.scheme.Scheme>`.
     """
-    def __init__(self, dico, domain=None, scheme=None, type='float64'):
+    def __init__(self, dico, domain=None, scheme=None, dtype='float64'):
         self.log = setLogger(__name__)
-        self.type = type
+        self.type = dtype
         self.order = 'C'
 
         self.log.info('Build the domain')
@@ -163,20 +163,17 @@ class Simulation:
         self.nv_on_beg = self.scheme.nv_on_beg
 
         if self.nv_on_beg:
-            msize = [self.scheme.stencil.nv_ptr[-1]] + self.domain.Na[::-1]
+            msize = [self.scheme.stencil.nv_ptr[-1]] + self.domain.Na
             self._m = np.empty(msize, dtype=self.type, order=self.order)
             self._F = np.empty(msize, dtype=self.type, order=self.order)
         else:
-            msize = self.domain.Na[::-1] + [self.scheme.stencil.nv_ptr[-1]]
+            msize = self.domain.Na + [self.scheme.stencil.nv_ptr[-1]]
             self._m = np.empty(msize, dtype=self.type, order=self.order)
             self._F = np.empty(msize, dtype=self.type, order=self.order)
             self._Fold = np.empty(msize, dtype=self.type, order=self.order)
 
         self.interface = self.domain.geom.interface
-        if self.interface is not None:
-            self.interface.set_subarray(self._F.shape, self.domain.stencil.vmax, self.nv_on_beg)
-            # self.m = [np.empty([self.scheme.stencil.nv[k]] + self.domain.Na, dtype=self.type, order=self.order) for k in range(self.scheme.nscheme)]
-            # self.F = [np.empty([self.scheme.stencil.nv[k]] + self.domain.Na, dtype=self.type, order=self.order) for k in range(self.scheme.nscheme)]
+        self.interface.set_subarray(self._F.shape, self.domain.stencil.vmax, self.nv_on_beg)
 
         self.log.info('Build boundary conditions')
         self.bc = Boundary(self.domain, dico)
@@ -240,6 +237,10 @@ class Simulation:
             return self._F[self.scheme.stencil.nv_ptr[i] + j]
         else:
             return self._F[:, :, self.scheme.stencil.nv_ptr[i] + j]
+
+    @property
+    def mglobal(self):
+        return self.interface.get_full(self._m, self.domain)
 
     @F.setter
     def F(self, i, j, value):
@@ -332,10 +333,10 @@ class Simulation:
             x = self.domain.x[0]
             coords = (x,)
         elif self.dim == 2:
-            #x = self.domain.x[0][:,np.newaxis]
-            #y = self.domain.x[1][np.newaxis, :]
-            x = self.domain.x[0][np.newaxis, :]
-            y = self.domain.x[1][: ,np.newaxis]
+            x = self.domain.x[0][:,np.newaxis]
+            y = self.domain.x[1][np.newaxis, :]
+            #x = self.domain.x[0][np.newaxis, :]
+            #y = self.domain.x[1][: ,np.newaxis]
             coords = (x, y)
 
         schemes = dico['schemes']

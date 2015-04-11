@@ -136,12 +136,13 @@ class Generator:
     The generated code can be read by typesetting the attribute
     ``code``.
     """
-    def __init__(self, build_dir=None, suffix='.py'):
+    def __init__(self, build_dir=None, suffix='.py', comm=mpi.COMM_WORLD):
         self.log = setLogger(__name__)
         self.build_dir = build_dir
         self.modulename = None
         self.code = ''
-        self.rank = mpi.COMM_WORLD.Get_rank()
+        self.comm = comm
+        self.rank = self.comm.Get_rank()
 
         if self.rank == 0:
             self.build_dir = build_dir
@@ -150,8 +151,8 @@ class Generator:
             self.f = tempfile.NamedTemporaryFile(suffix=suffix, prefix=self.build_dir + 'LBM', delete=False)
             self.modulename = self.f.name.replace(self.build_dir, "").split('.')[0]
 
-        self.build_dir = mpi.COMM_WORLD.bcast(self.build_dir, 0)
-        self.modulename = mpi.COMM_WORLD.bcast(self.modulename, 0)
+        self.build_dir = self.comm.bcast(self.build_dir, 0)
+        self.modulename = self.comm.bcast(self.modulename, 0)
 
         sys.path.append(self.build_dir)
 
@@ -234,8 +235,8 @@ class NumpyGenerator(Generator):
       generate the code to compute the moments
       from the distribution functions
     """
-    def __init__(self, build_dir=None):
-        Generator.__init__(self, build_dir)
+    def __init__(self, build_dir=None, comm=mpi.COMM_WORLD):
+        Generator.__init__(self, build_dir, comm=comm)
 
     def transport(self, ns, stencil, dtype = 'f8'):
         """
@@ -264,16 +265,16 @@ class NumpyGenerator(Generator):
                 s1 = ''
                 s2 = ''
                 toInput = False
-                v = stencil.v[k][i].v
-                for iv in xrange(len(v)-1, -1, -1):
-                    if v[iv] > 0:
+                vv = stencil.v[k][i].v
+                for v in vv:
+                    if v > 0:
                         toInput = True
-                        s1 += ', {0:d}:'.format(v[iv])
-                        s2 += ', :{0:d}'.format(-v[iv])
-                    elif v[iv] < 0:
+                        s1 += ', {0:d}:'.format(v)
+                        s2 += ', :{0:d}'.format(-v)
+                    elif v < 0:
                         toInput = True
-                        s1 += ', :{0:d}'.format(v[iv])
-                        s2 += ', {0:d}:'.format(-v[iv])
+                        s1 += ', :{0:d}'.format(v)
+                        s2 += ', {0:d}:'.format(-v)
                     else:
                         s1 += ', :'
                         s2 += ', :'
@@ -475,8 +476,8 @@ class NumbaGenerator(Generator):
       generate the code to compute the moments
       from the distribution functions
     """
-    def __init__(self, build_dir=None):
-        Generator.__init__(self, build_dir)
+    def __init__(self, build_dir=None, comm=mpi.COMM_WORLD):
+        Generator.__init__(self, build_dir, comm)
 
     def setup(self):
         self.code += "import numba\n"
@@ -555,8 +556,8 @@ class CythonGenerator(Generator):
     compile :
       compile the cython code
     """
-    def __init__(self, build_dir=None):
-        Generator.__init__(self, build_dir, suffix='.pyx')
+    def __init__(self, build_dir=None, comm=mpi.COMM_WORLD):
+        Generator.__init__(self, build_dir, suffix='.pyx', comm=comm)
 
     def setup(self):
         """
@@ -711,23 +712,23 @@ from libc.stdlib cimport malloc, free
             for i in xrange(stencil.nv[k]):
                 s = ''
                 toInput = False
-                v = stencil.v[k][i].v
-                lv = len(v)
-                for iv in xrange(len(v)-1, -1, -1):
-                    if v[iv] > 0:
+                vv = stencil.v[k][i].v
+
+                for iv, v in enumerate(vv):
+                    if v > 0:
                         toInput = True
-                        s += 'i{0:d} - {1:d}, '.format(lv - 1 - iv, v[iv])
-                    elif v[iv] < 0:
+                        s += 'i{0:d} - {1:d}, '.format(iv, v)
+                    elif v < 0:
                         toInput = True
-                        s += 'i{0:d} + {1:d}, '.format(lv - 1 - iv, -v[iv])
+                        s += 'i{0:d} + {1:d}, '.format(iv, -v)
                     else:
-                        s += 'i{0:d}, '.format(lv - 1 - iv)
+                        s += 'i{0:d}, '.format(iv)
 
                 get_f += '\tfloc[{0}] = f[{1}{0}] \n'.format(ind, s)
 
                 s = ''
-                for iv in xrange(len(v)-1, -1, -1):
-                    s += 'i{0:d}, '.format(lv - 1 - iv)
+                for iv, v in enumerate(vv):
+                    s += 'i{0:d}, '.format(iv)
                 set_f += '\tf[{1}{0}] = floc[{0}] \n'.format(ind, s)
 
                 ind += 1
@@ -932,7 +933,7 @@ def make_ext(modname, pyxfilename):
             import pyximport
             pyximport.install(build_dir= self.build_dir, inplace=True)
             exec "import %s"%self.modulename
-        mpi.COMM_WORLD.Barrier()
+        self.comm.Barrier()
 
 if __name__ == "__main__":
     import numpy as np

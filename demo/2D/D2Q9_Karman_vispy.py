@@ -56,34 +56,42 @@ class Canvas(app.Canvas):
         coeff = 2
         self.sol = pyLBM.Simulation(dico)
         self.indout = np.where(self.sol.domain.in_or_out == self.sol.domain.valout)
-        W, H = self.sol._m.shape[:-1]
-        W -= 2
-        H -= 2
-        self.W, self.H = W, H
-        # A simple texture quad
-        self.data = np.zeros(4, dtype=[ ('a_position', np.float32, 2),
-                                        ('a_texcoord', np.float32, 2) ])
-        self.data['a_position'] = np.array([[0, 0], [coeff * W, 0], [0, coeff * H], [coeff * W, coeff * H]])
-        self.data['a_texcoord'] = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
-        app.Canvas.__init__(self)#, close_keys='escape')
-        self.title = "Solution t={0:f}".format(0.)
-        deltarho = rhoo
-        self.min, self.max = 0., 7*self.sol.domain.dx #-2*self.sol.domain.dx, 2*self.sol.domain.dx
-        self.ccc = 1./(self.max-self.min)
-        self.size = W * coeff, H * coeff
-        self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
-        self.texture = gloo.Texture2D(self.ccc*(self.sol._m[1:-1, 1:-1, 0].astype(np.float32) - self.min))
-        self.texture.interpolation = gl.GL_LINEAR
 
-        self.program['u_texture'] = self.texture
-        self.program.bind(gloo.VertexBuffer(self.data))
+        m = self.sol.mglobal
+        if mpi.COMM_WORLD.Get_rank() == 0:
+            app.Canvas.__init__(self)#, close_keys='escape')
+            #W, H = m.shape[-2::-1]
+            W, H = m.shape[:-1]
 
-        self.projection = np.eye(4, dtype=np.float32)
-        self.projection = ortho(0, W, 0, H, -1, 1)
-        self.program['u_projection'] = self.projection
+            self.W, self.H = W, H
+            # A simple texture quad
+            self.data = np.zeros(4, dtype=[ ('a_position', np.float32, 2),
+                                            ('a_texcoord', np.float32, 2) ])
+            self.data['a_position'] = np.array([[0, 0], [coeff * W, 0], [0, coeff * H], [coeff * W, coeff * H]])
+            self.data['a_texcoord'] = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+            self.title = "Solution t={0:f}".format(0.)
+            deltarho = rhoo
+            self.min, self.max = 0., 7*self.sol.domain.dx #-2*self.sol.domain.dx, 2*self.sol.domain.dx
+            self.ccc = 1./(self.max-self.min)
+            self.size = W * coeff, H * coeff
+            self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
+            self.texture = gloo.Texture2D(self.ccc*(m[:, :, 0].astype(np.float32) - self.min))
+            self.texture.interpolation = gl.GL_LINEAR
+
+            self.program['u_texture'] = self.texture
+            self.program.bind(gloo.VertexBuffer(self.data))
+
+            self.projection = np.eye(4, dtype=np.float32)
+            self.projection = ortho(0, W, 0, H, -1, 1)
+            self.program['u_projection'] = self.projection
 
         self.timer = app.Timer(self.sol.dt)
         self.timer.connect(self.on_timer)
+        self.timer.start()
+
+    def show(self):
+        if mpi.COMM_WORLD.Get_rank() == 0:
+            app.Canvas.show(self)
 
     def on_initialize(self, event):
         gl.glClearColor(1,1,1,1)
@@ -105,7 +113,7 @@ class Canvas(app.Canvas):
             w, h = height * R, height
             x, y = int((width - w) / 2), 0
         self.data['a_position'] = np.array(
-            [[x, y], [x + w, y], [x, y + h], [x + w, y + h]])
+        [[x, y], [x + w, y], [x, y + h], [x + w, y + h]])
         self.program.bind(gloo.VertexBuffer(self.data))
 
     def on_draw(self, event):
@@ -132,45 +140,30 @@ class Canvas(app.Canvas):
             self.sol.one_time_step()
 
     def maj(self):
-        self.title = "Solution t={0:f}".format(self.sol.t)
         self.sol.f2m()
 
-        #self.sol._m[self.indout[0], self.indout[1], :] = 1.
-        #print "f"*20
-        #print self.sol._F.T
-        #print "m"*20
-        #print self.sol._m.T
-
-        # self.texture.set_data(self.ccc*np.abs(
-        #     self.sol.m[0][2][2:, 1:-1].astype(np.float32) - self.sol.m[0][2][:-2,1:-1].astype(np.float32)
-        #     - self.sol.m[0][1][1:-1,2:].astype(np.float32) + self.sol.m[0][1][1:-1,:-2].astype(np.float32)
-        #     - self.min))
-
-        #self.texture.set_data(self.ccc*np.abs(
-        #    self.sol._m[2:, 1:-1, 2].astype(np.float32) - self.sol._m[:-2,1:-1, 2].astype(np.float32)
-        #    - self.sol._m[1:-1, 2:, 1].astype(np.float32) + self.sol._m[1:-1, :-2, 1].astype(np.float32)
-        #    - self.min))
-
-        self.texture.set_data(self.ccc*np.abs(
-            self.sol._m[1:-1, 2:, 2].astype(np.float32) - self.sol._m[1:-1, :-2, 2].astype(np.float32)
-            - self.sol._m[2:, 1:-1, 1].astype(np.float32) + self.sol._m[:-2, 1:-1, 1].astype(np.float32)
+        m = self.sol.mglobal
+        if mpi.COMM_WORLD.Get_rank() == 0:
+            self.title = "Solution t={0:f}".format(self.sol.t)
+            self.texture.set_data(self.ccc*np.abs(
+            m[1:-1, 2:, 2].astype(np.float32) - m[1:-1, :-2, 2].astype(np.float32)
+            - m[2:, 1:-1, 1].astype(np.float32) + m[:-2, 1:-1, 1].astype(np.float32)
             - self.min))
 
-
-        self.update()
+            self.update()
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 
 u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
 
 def initialization_rho(x,y):
-    return rhoo * np.ones((y.shape[0], x.shape[0]), dtype='float64')
+    return rhoo * np.ones((x.shape[0], y.shape[0]), dtype='float64')
 
 def initialization_qx(x,y):
-    return uo * np.ones((y.shape[0], x.shape[0]), dtype='float64')
+    return uo * np.ones((x.shape[0], y.shape[0]), dtype='float64')
 
 def initialization_qy(x,y):
-    return np.zeros((y.shape[0], x.shape[0]), dtype='float64')
+    return np.zeros((x.shape[0], y.shape[0]), dtype='float64')
 
 def bc_rect(f, m, x, y, scheme):
     # m[0][0] = 0.
@@ -216,6 +209,12 @@ if __name__ == "__main__":
     q2  = qx2+qy2
     qxy = dummy*u[0][1]*u[0][2]
 
+    # group = mpi.COMM_WORLD.Get_group()
+    # incl = [1, 3]
+    # g = group.Incl(incl)
+    # newcomm = mpi.COMM_WORLD.Create(g)
+
+    # if mpi.COMM_WORLD.Get_rank() in incl:
     dico = {
         'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[0, 1, 0, 0]},
         'elements':[pyLBM.Circle([1., 0.5*(ymin+ymax)+2*dx], rayon, label=2)],
@@ -253,9 +252,5 @@ if __name__ == "__main__":
     Re = rhoo*uo*2*rayon/mu
     print "Reynolds number {0:10.3e}".format(Re)
     c = Canvas(dico)
-    #for i in xrange(100):
-    #    c.go_on()
-    #np.set_printoptions(threshold=1e6)
-    #print c.sol._F.T
     c.show()
     app.run()
