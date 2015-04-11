@@ -240,7 +240,7 @@ class Simulation:
 
     @property
     def mglobal(self):
-        return self.interface.get_full(self._m, self.domain)
+        return self.interface.get_full(self._m, self.domain, self.nv_on_beg)
 
     @F.setter
     def F(self, i, j, value):

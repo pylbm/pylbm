@@ -187,7 +187,7 @@ class Interface:
 
         mpi.Request.Waitall(req)
 
-    def get_full(self, f, domain):
+    def get_full(self, f, domain, nv_on_beg):
         globalsizes = domain.Ng
         subsizes = np.array(globalsizes/self.split, dtype='i')
         starts = np.zeros(self.dim + 1)
@@ -204,11 +204,19 @@ class Interface:
 
         self.comm.Allreduce([subsizes, mpi.INT], [Subsizes, mpi.INT], mpi.MAX)
 
-        ns = f.shape[-1]
+        if nv_on_beg:
+            ns = f.shape[0]
+        else:
+            ns = f.shape[-1]
+
         newtype = None
         if rank == 0:
-            subarray = mpi.DOUBLE.Create_subarray(globalsizes + [ns], list(Subsizes) + [ns], starts)
-            newtype = subarray.Create_resized(0, 8*ns)
+            if nv_on_beg:
+                subarray = mpi.DOUBLE.Create_subarray([ns] + globalsizes, [ns] + list(Subsizes), starts)
+                newtype = subarray.Create_resized(0, 8)
+            else:
+                subarray = mpi.DOUBLE.Create_subarray(globalsizes + [ns], list(Subsizes) + [ns], starts)
+                newtype = subarray.Create_resized(0, 8*ns)
             newtype.Commit()
 
         globalArray = None
@@ -224,11 +232,18 @@ class Interface:
                     displs.append(disp)
                     disp += subsizes[1]
                 disp += (subsizes[0]-1)*globalsizes[1]
-            globalArray = np.zeros(globalsizes + [ns])
+            if nv_on_beg:
+                globalArray = np.zeros([ns] + globalsizes)
+            else:
+                globalArray = np.zeros(globalsizes + [ns])
 
 
-        copyArray = np.empty(list(Subsizes) + [ns])
-        copyArray[:subsizes[0], :subsizes[1], :] = f[1:-1, 1:-1, :]
+        if nv_on_beg:
+            copyArray = np.empty([ns] + list(Subsizes))
+            copyArray[:, :subsizes[0], :subsizes[1]] = f[:, 1:-1, 1:-1]
+        else:
+            copyArray = np.empty(list(Subsizes) + [ns])
+            copyArray[:subsizes[0], :subsizes[1], :] = f[1:-1, 1:-1, :]
         self.comm.Gatherv([copyArray, mpi.DOUBLE], [globalArray, (counts, displs), newtype], 0)
 
         return globalArray

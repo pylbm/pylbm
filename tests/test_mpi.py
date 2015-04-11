@@ -11,7 +11,7 @@ from pyLBM.interface import get_directions
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
 
-def test1D(use_mpi):
+def test1D(comm):
     xmin, xmax = 0., 1.
     dx = (xmax-xmin)/128
     Tf = 0.5
@@ -24,6 +24,7 @@ def test1D(use_mpi):
 
     dico = {
         'box':{'x':[xmin, xmax], 'label':0},
+        'comm': comm,
         'space_step':dx,
         'scheme_velocity':1.,
         'schemes':[{
@@ -37,56 +38,16 @@ def test1D(use_mpi):
         'boundary_conditions':{
             0:{'method':{0:pyLBM.bc.bouzidi_bounce_back_1D,}, 'value':None},
         },
-        'use_mpi':use_mpi,
     }
 
-    comm = mpi.COMM_WORLD
-    rank = comm.Get_rank()
-    if not use_mpi:
-        if rank == 0:
-            sol = pyLBM.Simulation(dico)
-            m = sol.m[0][0][1:-1]
-            f = open('test_mpi_res_npx={0:1d}.txt'.format(1), mode='w')
-            f.write("# Number of processors: {0:d}\n\n".format(1))
-            np.savetxt(f, m, fmt = '%.10e', delimiter='', newline='\n')
-            while sol.t < Tf:
-                sol.one_time_step()
-            sol.f2m()
-            f.write("\n")
-            np.savetxt(f, m, fmt = '%.10e', delimiter='', newline='\n')
-            f.close()
-        else:
-            m = None
-    else:
-        sol = pyLBM.Simulation(dico)
-        if rank == 0:
-            m = np.empty(sol.domain.Ng)
-            comm.Gather([sol.m[0][0][1:-1].flatten(), mpi.DOUBLE],
-                [m, mpi.DOUBLE], 0)
-        else:
-            m = None
-            comm.Gather([sol.m[0][0][1:-1].flatten(), mpi.DOUBLE], None, 0)
-        if rank == 0:
-            f = open('test_mpi_res_npx={0:1d}.txt'.format(comm.size), mode='w')
-            f.write("# Number of processors: {0:d}\n\n".format(comm.size))
-            np.savetxt(f, m, fmt = '%.10e', delimiter='', newline='\n')
-        while sol.t < Tf:
-            sol.one_time_step()
-        sol.f2m()
-        if rank == 0:
-            comm.Gather([sol.m[0][0][1:-1].flatten(), mpi.DOUBLE],
-                [m, mpi.DOUBLE], 0)
-        else:
-            comm.Gather([sol.m[0][0][1:-1].flatten(), mpi.DOUBLE], None, 0)
-        if rank == 0:
-            f.write("\n")
-            np.savetxt(f, m, fmt = '%.10e', delimiter='', newline='\n')
-            f.close()
-
-    return m
+    sol = pyLBM.Simulation(dico)
+    while sol.t < Tf:
+        sol.one_time_step()
+    sol.f2m()
+    return sol.mglobal
 
 
-def test2D_1(use_mpi):
+def test2D_1(comm):
     dx = 1./16 # spatial step
     la = 4 # velocity of the scheme
     rhoo = 1.
@@ -108,6 +69,7 @@ def test2D_1(use_mpi):
 
     dico   = {
         'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':-1},
+        'comm': comm,
         'space_step':dx,
         'scheme_velocity':la,
         'schemes':[{'velocities':vitesse,
@@ -130,83 +92,16 @@ def test2D_1(use_mpi):
                     },
         ],
         'generator': pyLBM.generator.NumpyGenerator,
-        'use_mpi':use_mpi,
     }
 
-    comm = mpi.COMM_WORLD
-    rank = comm.Get_rank()
-    nbproc = comm.Get_size()
-    if not use_mpi:
-        if rank == 0:
-            sol = pyLBM.Simulation(dico)
-            dim = sol.domain.Ng
-            size = dim[0]*dim[1]
-            m = np.empty((size,))
-            dummy = sol.m[0][0][1:-1,1:-1]
-            m[:] = dummy.flatten()
-            f = open('test_mpi_res_npx={0:1d}.txt'.format(1), mode='w')
-            f.write("# Number of processors: {0:d}\n\n".format(1))
-            np.savetxt(f, m, fmt = '%.10e', delimiter='', newline='\n')
-            vmaxx, vmaxy = sol.scheme.stencil.vmax[:-1]
-            while sol.t < Tf:
-                sol.one_time_step()
-                # periodic conditions while interface is switched off
-                for n in range(sol.scheme.nscheme):
-                    for k in range(sol.scheme.stencil.nv[n]):
-                        sol.F[n][k][:vmaxx,:] = sol.F[n][k][-2*vmaxx:-vmaxx,:]
-                        sol.F[n][k][-vmaxx:,:] = sol.F[n][k][vmaxx:2*vmaxx,:]
-                        sol.F[n][k][:,:vmaxy] = sol.F[n][k][:,-2*vmaxy:-vmaxy]
-                        sol.F[n][k][:,-vmaxy:] = sol.F[n][k][:,vmaxy:2*vmaxy]
-            sol.f2m()
-            f.write("\n")
-            np.savetxt(f, m, fmt = '%.10e', delimiter='', newline='\n')
-            f.close()
-            m[:] = dummy.flatten()
-        else:
-            m = None
-    else:
-        sol = pyLBM.Simulation(dico)
-        coords = comm.gather(sol.interface.get_coords(), 0)
-        if rank == 0:
-            dim = sol.domain.Ng
-            size = dim[0]*dim[1]
-            dimloc = sol.domain.N[::-1]
-            sizeloc = dimloc[0]*dimloc[1]
-            m = np.empty((size,))
-            comm.Gather([sol.m[0][0][1:-1,1:-1].flatten(), mpi.DOUBLE],
-                [m, mpi.DOUBLE], 0)
-        else:
-            m = None
-            comm.Gather([sol.m[0][0][1:-1,1:-1].flatten(), mpi.DOUBLE], None, 0)
-        if rank == 0:
-            f = open('test_mpi_res_npx={0:1d}.txt'.format(comm.size), mode='w')
-            f.write("# Number of processors: {0:d}\n\n".format(comm.size))
-            np.savetxt(f, m, fmt = '%.10e', delimiter='', newline='\n')
-        while sol.t < Tf:
-            sol.one_time_step()
-        sol.f2m()
-        if rank == 0:
-            comm.Gather([sol.m[0][0][1:-1,1:-1].flatten(), mpi.DOUBLE],
-                [m, mpi.DOUBLE], 0)
-        else:
-            comm.Gather([sol.m[0][0][1:-1,1:-1].flatten(), mpi.DOUBLE], None, 0)
-        if rank == 0:
-            mm = np.empty(dim)
-            for k in range(nbproc):
-                b, a = coords[k]
-                mm[a*dimloc[0]:(a+1)*dimloc[0], b*dimloc[1]:(b+1)*dimloc[1]] = m[k*sizeloc:(k+1)*sizeloc].reshape(dimloc)
-            m = mm.copy()
-            f.write("\n")
-            np.savetxt(f, m, fmt = '%.10e', delimiter='', newline='\n')
-            f.close()
+    sol = pyLBM.Simulation(dico)
+    while sol.t < Tf:
+        sol.one_time_step()
+    sol.f2m()
+    return sol.mglobal
 
-    if m is None:
-        return None
-    else:
-        return m.reshape(dim)
-
-def test2D_2(use_mpi):
-    dx = 1./256 # spatial step
+def test2D_2(comm):
+    dx = 1./128 # spatial step
     la = 1. # velocity of the scheme
     rhoo = 1.
     driven_velocity = .1
@@ -222,23 +117,24 @@ def test2D_2(use_mpi):
     qxy = dummy*u[0][1]*u[0][2]
 
     def initialization_rho(x,y):
-        return np.zeros((y.size, x.size), dtype='float64')
+        return np.zeros((x.size, y.size), dtype='float64')
 
     def initialization_qx(x,y):
-        return np.zeros((y.size, x.size), dtype='float64')
+        return np.zeros((x.size, y.size), dtype='float64')
 
     def initialization_qy(x,y):
-        return np.zeros((y.size, x.size), dtype='float64')
+        return np.zeros((x.size, y.size), dtype='float64')
 
     def bc_up(f, m, x, y, scheme):
-        m[0] = 0.
-        m[1] = rhoo * driven_velocity
-        m[2] = 0.
+        m[:,0] = 0.
+        m[:,1] = rhoo * driven_velocity
+        m[:,2] = 0.
         scheme.equilibrium(m)
         scheme.m2f(m, f)
 
     dico   = {
         'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[0,0,1,0]},
+        'comm': comm,
         'element':[pyLBM.Circle([.5*(xmin+xmax), .5*(ymin+ymax)], 0.1, label=0)],
         'space_step':dx,
         'scheme_velocity':la,
@@ -267,77 +163,14 @@ def test2D_2(use_mpi):
             0:{'method':{0: pyLBM.bc.bouzidi_bounce_back}, 'value':None},
             1:{'method':{0: pyLBM.bc.bouzidi_bounce_back}, 'value':bc_up}
         },
-        'generator': pyLBM.generator.NumpyGenerator,
-        'use_mpi':use_mpi,
+        'generator': pyLBM.generator.CythonGenerator,
     }
 
-    comm = mpi.COMM_WORLD
-    rank = comm.Get_rank()
-    nbproc = comm.Get_size()
-    num = 1
-    if not use_mpi:
-        if rank == 0:
-            sol = pyLBM.Simulation(dico)
-            #sol.domain.visualize(opt=1)
-            dim = sol.domain.Ng
-            size = dim[0]*dim[1]
-            m = np.empty((size,))
-            dummy = sol.m[0][num][1:-1,1:-1]
-            m[:] = dummy.flatten()
-            f = open('test_mpi_res_npx={0:1d}.txt'.format(1), mode='w')
-            f.write("# Number of processors: {0:d}\n\n".format(1))
-            np.savetxt(f, m, fmt = '%.10e', delimiter='', newline='\n')
-            vmaxx, vmaxy = sol.scheme.stencil.vmax[:-1]
-            while sol.t < Tf:
-                sol.one_time_step()
-            sol.f2m()
-            f.write("\n")
-            np.savetxt(f, m, fmt = '%.10e', delimiter='', newline='\n')
-            f.close()
-            m[:] = dummy.flatten()
-        else:
-            m = None
-    else:
-        sol = pyLBM.Simulation(dico)
-        #sol.domain.visualize(opt=1)
-        coords = comm.gather(sol.interface.get_coords(), 0)
-        if rank == 0:
-            dim = sol.domain.Ng
-            size = dim[0]*dim[1]
-            dimloc = sol.domain.N[::-1]
-            sizeloc = dimloc[0]*dimloc[1]
-            m = np.empty((size,))
-            comm.Gather([sol.m[0][num][1:-1,1:-1].flatten(), mpi.DOUBLE],
-                [m, mpi.DOUBLE], 0)
-        else:
-            m = None
-            comm.Gather([sol.m[0][num][1:-1,1:-1].flatten(), mpi.DOUBLE], None, 0)
-        if rank == 0:
-            f = open('test_mpi_res_npx={0:1d}.txt'.format(comm.size), mode='w')
-            f.write("# Number of processors: {0:d}\n\n".format(comm.size))
-            np.savetxt(f, m, fmt = '%.10e', delimiter='', newline='\n')
-        while sol.t < Tf:
-            sol.one_time_step()
-        sol.f2m()
-        if rank == 0:
-            comm.Gather([sol.m[0][num][1:-1,1:-1].flatten(), mpi.DOUBLE],
-                [m, mpi.DOUBLE], 0)
-        else:
-            comm.Gather([sol.m[0][num][1:-1,1:-1].flatten(), mpi.DOUBLE], None, 0)
-        if rank == 0:
-            mm = np.empty(dim)
-            for k in range(nbproc):
-                b, a = coords[k]
-                mm[a*dimloc[0]:(a+1)*dimloc[0], b*dimloc[1]:(b+1)*dimloc[1]] = m[k*sizeloc:(k+1)*sizeloc].reshape(dimloc)
-            m = mm.copy()
-            f.write("\n")
-            np.savetxt(f, m, fmt = '%.10e', delimiter='', newline='\n')
-            f.close()
-
-    if m is None:
-        return None
-    else:
-        return m.reshape(dim)
+    sol = pyLBM.Simulation(dico)
+    while sol.t < Tf:
+        sol.one_time_step()
+    sol.f2m()
+    return sol.mglobal
 
 if __name__ == "__main__":
     # if mpi.COMM_WORLD.Get_rank() == 0:
@@ -378,22 +211,20 @@ if __name__ == "__main__":
     #     plt.show()
 
     if mpi.COMM_WORLD.Get_rank() == 0:
-        plt.figure(1)
-        plt.clf()
-        #plt.figure(2)
-        #plt.clf()
-    m0 = test2D_2(use_mpi = False)
+        fig, axarr = plt.subplots(2, 2)
+
+    for i in range(4):
+        group = mpi.COMM_WORLD.Get_group()
+        incl = np.arange(2**i)
+        g = group.Incl(incl)
+        newcomm = mpi.COMM_WORLD.Create(g)
+
+        if mpi.COMM_WORLD.Get_rank() in incl:
+            m = test2D_2(newcomm)
+            if mpi.COMM_WORLD.Get_rank() == 0:
+                print i
+                axarr[i/2,i%2].imshow(m[:, :, 1])
+                axarr[i/2,i%2].set_title('{0} proc'.format(len(incl)))
+
     if mpi.COMM_WORLD.Get_rank() == 0:
-        plt.figure(1)
-        plt.imshow(m0, label='serial')
-        plt.title('1 proc')
-        plt.pause(1.)
-    m1 = test2D_2(use_mpi = True)
-    if mpi.COMM_WORLD.Get_rank() == 0:
-        plt.figure(2)
-        plt.imshow(m1, label='mpi')
-        plt.title('{0:d} proc'.format(mpi.COMM_WORLD.Get_size()))
-        plt.pause(1.)
-    if mpi.COMM_WORLD.Get_rank() == 0:
-        print np.linalg.norm(m0-m1)
         plt.show()
