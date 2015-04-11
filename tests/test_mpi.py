@@ -36,7 +36,7 @@ def test1D(comm):
         }],
         'generator': pyLBM.generator.CythonGenerator,
         'boundary_conditions':{
-            0:{'method':{0:pyLBM.bc.bouzidi_bounce_back_1D,}, 'value':None},
+            0:{'method':{0:pyLBM.bc.bouzidi_bounce_back,}, 'value':None},
         },
     }
 
@@ -173,42 +173,26 @@ def test2D_2(comm):
     return sol.mglobal
 
 if __name__ == "__main__":
-    # if mpi.COMM_WORLD.Get_rank() == 0:
-    #     plt.figure(1)
-    #     plt.clf()
-    #     plt.hold(True)
-    # m0 = test1D(use_mpi = False)
-    # if mpi.COMM_WORLD.Get_rank() == 0:
-    #     plt.plot(m0, 'r*', label='serial')
-    # m1 = test1D(use_mpi = True)
-    # if mpi.COMM_WORLD.Get_rank() == 0:
-    #     plt.plot(m1, 'k', label='mpi')
-    # if mpi.COMM_WORLD.Get_rank() == 0:
-    #     plt.legend()
-    #     plt.hold(False)
-    #     print np.linalg.norm(m0-m1)
-    #     plt.show()
-    #
-    # if mpi.COMM_WORLD.Get_rank() == 0:
-    #     plt.figure(1)
-    #     plt.clf()
-    #     plt.figure(2)
-    #     plt.clf()
-    # m0 = test2D_1(use_mpi = False)
-    # if mpi.COMM_WORLD.Get_rank() == 0:
-    #     plt.figure(1)
-    #     plt.imshow(m0, label='serial')
-    #     plt.title('1 proc')
-    #     plt.pause(1.)
-    # m1 = test2D_1(use_mpi = True)
-    # if mpi.COMM_WORLD.Get_rank() == 0:
-    #     plt.figure(2)
-    #     plt.imshow(m1, label='mpi')
-    #     plt.title('{0:d} proc'.format(mpi.COMM_WORLD.Get_size()))
-    #     plt.pause(1.)
-    # if mpi.COMM_WORLD.Get_rank() == 0:
-    #     print np.linalg.norm(m0-m1)
-    #     plt.show()
+
+    if mpi.COMM_WORLD.Get_rank() == 0:
+        fig, axarr = plt.subplots(2, 2)
+
+    for i in range(4):
+        group = mpi.COMM_WORLD.Get_group()
+        incl = np.arange(2**i)
+        g = group.Incl(incl)
+        newcomm = mpi.COMM_WORLD.Create(g)
+
+        if mpi.COMM_WORLD.Get_rank() in incl:
+            m = test1D(newcomm)
+            if mpi.COMM_WORLD.Get_rank() == 0:
+                print i
+                axarr[i/2,i%2].plot(m[:, 1])
+                axarr[i/2,i%2].set_title('{0} proc'.format(len(incl)))
+
+    if mpi.COMM_WORLD.Get_rank() == 0:
+        plt.show()
+
 
     if mpi.COMM_WORLD.Get_rank() == 0:
         fig, axarr = plt.subplots(2, 2)

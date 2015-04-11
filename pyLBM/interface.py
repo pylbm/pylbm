@@ -227,11 +227,17 @@ class Interface:
             counts = np.array([1]*size)
             disp = 0
             displs = []
-            for i in xrange(self.split[0]):
-                for j in xrange(self.split[1]):
+            if self.dim == 1:
+                for i in xrange(self.split[0]):
                     displs.append(disp)
-                    disp += subsizes[1]
-                disp += (subsizes[0]-1)*globalsizes[1]
+                    disp += subsizes[0]
+            elif self.dim == 2:
+                for i in xrange(self.split[0]):
+                    for j in xrange(self.split[1]):
+                        displs.append(disp)
+                        disp += subsizes[1]
+                    disp += (subsizes[0]-1)*globalsizes[1]
+
             if nv_on_beg:
                 globalArray = np.zeros([ns] + globalsizes)
             else:
@@ -240,10 +246,16 @@ class Interface:
 
         if nv_on_beg:
             copyArray = np.empty([ns] + list(Subsizes))
-            copyArray[:, :subsizes[0], :subsizes[1]] = f[:, 1:-1, 1:-1]
+            if self.dim == 1:
+                copyArray[:, :subsizes[0]] = f[:, 1:-1]
+            elif self.dim == 2:
+                copyArray[:, :subsizes[0], :subsizes[1]] = f[:, 1:-1, 1:-1]
         else:
             copyArray = np.empty(list(Subsizes) + [ns])
-            copyArray[:subsizes[0], :subsizes[1], :] = f[1:-1, 1:-1, :]
+            if self.dim == 1:
+                copyArray[:subsizes[0], :] = f[1:-1, :]
+            elif self.dim == 2:
+                copyArray[:subsizes[0], :subsizes[1], :] = f[1:-1, 1:-1, :]
         self.comm.Gatherv([copyArray, mpi.DOUBLE], [globalArray, (counts, displs), newtype], 0)
 
         return globalArray
