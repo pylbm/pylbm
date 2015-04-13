@@ -355,10 +355,10 @@ class Domain:
             indout = np.where(self.in_or_out==self.valout)
             plt.scatter(x[indout],y[indout], 1000*self.dx, c='k', marker='s')
         if (self.dim == 2):
-            x = self.x[0][np.newaxis, :]
-            y = self.x[1][:, np.newaxis]
+            x = self.x[0][:, np.newaxis]
+            y = self.x[1][np.newaxis, :]
             if (opt==0):
-                plt.imshow(self.in_or_out>=0, origin='lower', cmap=cm.gray, interpolation='nearest')
+                plt.imshow(self.in_or_out.transpose()>=0, origin='lower', cmap=cm.gray, interpolation='nearest')
             else:
                 vxkmax = self.stencil.vmax[0]
                 vykmax = self.stencil.vmax[1]
@@ -367,20 +367,19 @@ class Domain:
                     vxk = self.stencil.unique_velocities[k].vx
                     vyk = self.stencil.unique_velocities[k].vy
                     coul = (1.-(vxkmax+vxk)*0.5/vxkmax, (vykmax+vyk)*0.5/vykmax, (vxkmax+vxk)*0.5/vxkmax)
-                    indbordy, indbordx = np.where(self.distance[k,:]<=1)
-                    #plt.scatter(x[0, indbordx]+self.dx*self.distance[k, indbordy, indbordx]*vxk, y[indbordy, 0]+self.dx*self.distance[k, indbordy, indbordx]*vyk, 1000*self.dx, c=coul, marker='^')
+                    indbordx, indbordy = np.where(self.distance[k,:]<=1)
                     for i in xrange(indbordx.shape[0]):
-                        plt.text(x[0,indbordx[i]]+self.dx*self.distance[k,indbordy[i],indbordx[i]]*vxk,
-                                 y[indbordy[i],0]+self.dx*self.distance[k,indbordy[i],indbordx[i]]*vyk,
-                                 str(self.flag[k,indbordy[i],indbordx[i]]),
+                        plt.text(x[indbordx[i],0]+self.dx*self.distance[k,indbordx[i],indbordy[i]]*vxk,
+                                 y[0,indbordy[i]]+self.dx*self.distance[k,indbordx[i],indbordy[i]]*vyk,
+                                 str(self.flag[k,indbordx[i],indbordy[i]]),
                                  fontsize=18, horizontalalignment='center',verticalalignment='center')
-                        plt.plot([x[0,indbordx[i]],x[0,indbordx[i]]+self.dx*self.distance[k,indbordy[i],indbordx[i]]*vxk],
-                                 [y[indbordy[i],0],y[indbordy[i],0]+self.dx*self.distance[k,indbordy[i],indbordx[i]]*vyk],c=coul)
+                        plt.plot([x[indbordx[i],0],x[indbordx[i],0]+self.dx*self.distance[k,indbordx[i],indbordy[i]]*vxk],
+                                 [y[0,indbordy[i]],y[0,indbordy[i]]+self.dx*self.distance[k,indbordx[i],indbordy[i]]*vyk],c=coul)
 
-                indiny, indinx = np.where(self.in_or_out==self.valin)
-                plt.scatter(x[0, indinx], y[indiny, 0], 500*self.dx, c='k', marker='*')
-                indouty, indoutx = np.where(self.in_or_out==self.valout)
-                plt.scatter(x[0, indoutx], y[indouty, 0], 500*self.dx, c='k', marker='s')
+                indinx, indiny = np.where(self.in_or_out==self.valin)
+                plt.scatter(x[indinx,0], y[0, indiny], 500*self.dx, c='k', marker='*')
+                indoutx, indouty = np.where(self.in_or_out==self.valout)
+                plt.scatter(x[indoutx, 0], y[0, indouty], 500*self.dx, c='k', marker='s')
         plt.title("Domain",fontsize=14)
         plt.draw()
         plt.hold(False)

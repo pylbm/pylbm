@@ -129,6 +129,8 @@ class Canvas(app.Canvas):
         if event.text == 'n':
             self.go_on()
             self.maj()
+        if event.text == 't':
+            print "MLUPS: {0:5.1f}".format(self.sol.cpu_time['MLUPS'])
 
     def on_timer(self, event):
         self.go_on()
@@ -146,8 +148,8 @@ class Canvas(app.Canvas):
         if mpi.COMM_WORLD.Get_rank() == 0:
             self.title = "Solution t={0:f}".format(self.sol.t)
             self.texture.set_data(self.ccc*np.abs(
-            m[1:-1, 2:, 2].astype(np.float32) - m[1:-1, :-2, 2].astype(np.float32)
-            - m[2:, 1:-1, 1].astype(np.float32) + m[:-2, 1:-1, 1].astype(np.float32)
+            m[1:-1, 2:, 1].astype(np.float32) - m[1:-1, :-2, 1].astype(np.float32)
+            - m[2:, 1:-1, 2].astype(np.float32) + m[:-2, 1:-1, 2].astype(np.float32)
             - self.min))
 
             self.update()
@@ -176,7 +178,7 @@ def bc_rect(f, m, x, y, scheme):
     scheme.m2f(m, f)
 
 def plot_vorticity(sol,num):
-    V = sol.m[0][2][2:,1:-1] - sol.m[0][2][0:-2,1:-1] - sol.m[0][1][1:-1,2:] + sol.m[0][1][1:-1,0:-2]
+    V = sol.m[0][2][2:,1:-1] - sol.m[0][2][:-2,1:-1] - sol.m[0][1][1:-1,2:] + sol.m[0][1][1:-1,:-2]
     V /= np.sqrt(V**2+1.e-5)
     plt.imshow(np.float32(V.transpose()), origin='lower', cmap=cm.gray)
     plt.title('Vorticity at t = {0:f}'.format(sol.t))
@@ -217,7 +219,7 @@ if __name__ == "__main__":
     # if mpi.COMM_WORLD.Get_rank() in incl:
     dico = {
         'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[0, 1, 0, 0]},
-        'elements':[pyLBM.Circle([1., 0.5*(ymin+ymax)+2*dx], rayon, label=2)],
+        'elements':[pyLBM.Circle([.3, 0.5*(ymin+ymax)+2*dx], rayon, label=2)],
         'space_step':dx,
         'scheme_velocity':la,
         'inittype': 'moments',
@@ -249,8 +251,9 @@ if __name__ == "__main__":
         'generator': pyLBM.generator.CythonGenerator,
     }
 
-    Re = rhoo*uo*2*rayon/mu
-    print "Reynolds number {0:10.3e}".format(Re)
+    if mpi.COMM_WORLD.Get_rank() == 0:
+        Re = rhoo*uo*2*rayon/mu
+        print "Reynolds number {0:10.3e}".format(Re)
     c = Canvas(dico)
     c.show()
     app.run()
