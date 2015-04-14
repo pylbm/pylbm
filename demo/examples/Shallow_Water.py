@@ -7,6 +7,7 @@ from sympy.matrices import Matrix
 import pyLBM
 
 import pylab as plt
+import matplotlib.cm as cm
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 
@@ -21,18 +22,14 @@ def initialization_q(x,y):
 def plot_init(num = 0):
     plt.ion()
     fig = plt.figure(num,figsize=(16, 8))
-    fig.clf()
-    l1 = plt.plot([], [], 'b', label=r'angle $0$')[0]
-    l2 = plt.plot([], [], 'r', label=r'angle $\pi/4$')[0]
-    plt.legend()
-    plt.xlim(xmin, xmax)
-    plt.ylim(rhoo-0.75*deltarho, rhoo+1.1*deltarho)
-    return [l1, l2]
+    plt.clf()
+    ax = plt.subplot(111)
+    l = ax.imshow([], origin='lower', cmap=cm.gray, interpolation='nearest')[0]
+    return l
 
-def plot_radial(sol, l):
+def plot(sol, l):
     sol.f2m()
-    l[0].set_data(sol.domain.x[0], sol.m[0][0][:, sol.domain.N[0]/2+1])
-    l[1].set_data(sol.domain.x[0]*np.sqrt(2), sol.m[0][0][:,:].diagonal())
+    l.set_data(sol.m[0][0][1:-1,1:-1])
     plt.title('depth h at t = {0:f}'.format(sol.t))
     plt.pause(1.e-3)
 
@@ -83,12 +80,19 @@ def simu():
     sol = pyLBM.Simulation(dico)
 
 
-    l = plot_init(0)
-    plot_radial(sol, l)
+    #l = plot_init(0)
+    #plot(sol, l)
+
+    plt.figure(1)
+    plt.clf()
+    plt.imshow(sol.m[0][0][1:-1,1:-1])
 
     while (sol.t<Tf):
         sol.one_time_step()
-        plot_radial(sol, l)
+        #plot(sol, l)
+        sol.f2m()
+        plt.imshow(sol.m[0][0][1:-1,1:-1])
+        plt.pause(1.e-3)
     sol.time_info()
 
 if __name__ == "__main__":

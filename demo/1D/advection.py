@@ -1,15 +1,9 @@
 import sys
-import cmath
-from math import pi, sqrt
 import numpy as np
 import sympy as sp
-from sympy.matrices import Matrix, zeros
-import mpi4py.MPI as mpi
-import time
+from sympy.matrices import Matrix
 
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.colors as colors
+import pylab as plt
 import matplotlib.cm as cm
 
 import pyLBM
@@ -18,9 +12,10 @@ X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
 
 def Riemann_pb(x):
-    ug, ud = 1.0, 0.0 # left and right state
+    uu, ud = 1.0, 0.0 # left and right state
     xm = 0.5*(xmin+xmax)
-    return ug*(x<xm) + ud*(x>=xm)
+    L = .125*(xmax-xmin)
+    return ud + (uu-ud)*(x<xm+L)*(x>xm-L)
 
 def Smooth(x):
     milieu = 0.5*(xmin+xmax)
@@ -28,15 +23,40 @@ def Smooth(x):
     milieu -= 0.5*c*Tf
     return 1.0/largeur**10 * (x-milieu-largeur)**5 * (milieu-x-largeur)**5 * (abs(x-milieu)<=largeur)
 
+def plot_init(num = 0):
+    fig = plt.figure(num,figsize=(16, 8))
+    plt.clf()
+    l1 = plt.plot([], [], 'r', label=r'$D_1Q_2$')[0]
+    l2 = plt.plot([], [], 'b', label=r'$D_1Q_3$')[0]
+    plt.xlim(xmin, xmax)
+    ymin, ymax = -.2, 1.2
+    plt.ylim(ymin, ymax)
+    plt.legend()
+    return [l1, l2]
+
+def plot(sol1, sol2, l):
+    sol1.f2m()
+    sol2.f2m()
+    l[0].set_data(sol1.domain.x[0][1:-1], sol1.m[0][0][1:-1])
+    l[1].set_data(sol2.domain.x[0][1:-1], sol2.m[0][0][1:-1])
+    plt.title('solution at t = {0:f}'.format(sol1.t))
+    plt.pause(1.e-3)
+
 if __name__ == "__main__":
     # parameters
-    dim = 1 # spatial dimension
     xmin, xmax = -1., 1.
-    dx = 0.005 # spatial step
+    dx = 1./256 # spatial step
     la = 1. # velocity of the scheme
     c = 0.25 # velocity of the advection
     Tf = 1.
-    s = 1.75
+    mu = 1.e-4 # numerical viscosity
+    sigma2 = mu/(la**2-c**2)*la/dx
+    sigma3 = 3*sigma2
+    sigmap3 = .5*sigma3
+    s2 = 1./(.5+sigma2)
+    s3 = 1./(.5+sigma3)
+    sp3 = 1./(.5+sigmap3)
+    print s2, s3, sp3
     FINIT = Riemann_pb
 
     dico_Q2 = {
@@ -46,7 +66,7 @@ if __name__ == "__main__":
         'schemes':[{
             'velocities':[2,1],
             'polynomials':Matrix([1,LA*X]),
-            'relaxation_parameters':[0.,s],
+            'relaxation_parameters':[0., s2],
             'equilibrium':Matrix([u[0][0], c*u[0][0]]),
             'init':{0:(FINIT,)},
             },],
@@ -56,11 +76,23 @@ if __name__ == "__main__":
         }
     }
 
-    #s1 = 1.9
-    #sigma1 = 1./s1-0.5
-    #sigma2 = sqrt(sigma1**2+1./(64*sigma1**2)) - sigma1 + 1./(8*sigma1)
-    #sQ3 = [0., 1./(0.5+sigma1), 1./(0.5+sigma2)]
-    sQ3 = [0., s, s]
+    # dico_Q3 = {
+    #     'box':{'x':[xmin, xmax], 'label':0},
+    #     'space_step':dx,
+    #     'number_of_schemes':1,
+    #     'scheme_velocity':la,
+    #     'schemes':[{
+    #         'velocities':[2,0,1],
+    #         'polynomials':Matrix([1,LA*X,(LA*X)**2]),
+    #         'relaxation_parameters':[0., s3, s3],
+    #         'equilibrium':Matrix([u[0][0], c*u[0][0], (2*c**2+LA**2)/3*u[0][0]]),
+    #         'init':{0:(FINIT,)},
+    #         },],
+    #     'generator': pyLBM.generator.CythonGenerator,
+    #     'boundary_conditions':{
+    #         0:{'method':{0:pyLBM.bc.neumann,},},
+    #     }
+    # }
     dico_Q3 = {
         'box':{'x':[xmin, xmax], 'label':0},
         'space_step':dx,
@@ -68,9 +100,9 @@ if __name__ == "__main__":
         'scheme_velocity':la,
         'schemes':[{
             'velocities':[2,0,1],
-            'polynomials':Matrix([1,LA*X,(LA*X)**2]),
-            'relaxation_parameters':sQ3,
-            'equilibrium':Matrix([u[0][0], c*u[0][0], (2*c**2+LA**2)/3*u[0][0]]),
+            'polynomials':Matrix([1,LA*X,(LA*X-c)**2]),
+            'relaxation_parameters':[0., s3, sp3],
+            'equilibrium':Matrix([u[0][0], c*u[0][0], (LA**2-c**2)/3*u[0][0]]),
             'init':{0:(FINIT,)},
             },],
         'generator': pyLBM.generator.CythonGenerator,
@@ -79,48 +111,16 @@ if __name__ == "__main__":
         }
     }
 
-    fig = plt.figure(0,figsize=(16, 8))
-    fig.clf()
-    plt.ion()
-    plt.hold(True)
+    sol1 = pyLBM.Simulation(dico_Q2)
+    sol2 = pyLBM.Simulation(dico_Q3)
+    l = plot_init(0)
+    plot(sol1, sol2, l)
 
-    sol = pyLBM.Simulation(dico_Q2)
-    plt.subplot(121)
-    plt.plot(sol.domain.x[0][1:-1],sol.m[0][0][1:-1],'k-')
-    plt.draw()
-    plt.pause(1.e-3)
-    while (sol.t<Tf):
-        sol.one_time_step()
-    sol.f2m()
-    sol.time_info()
-    plt.plot(sol.domain.x[0][1:-1],sol.m[0][0][1:-1],'r-')
-    plt.draw()
-    plt.subplot(122)
-    plt.plot(sol.domain.x[0][1:-1],sol.m[0][0][1:-1]-FINIT(sol.domain.x[0][1:-1]-c*sol.t),'r-')
-    plt.draw()
-    plt.pause(1.e-3)
+    while (sol1.t<Tf):
+        sol1.one_time_step()
+        sol2.one_time_step()
+        plot(sol1, sol2, l)
 
-    sol = pyLBM.Simulation(dico_Q3)
-    plt.subplot(121)
-    while (sol.t<Tf):
-        sol.one_time_step()
-    sol.f2m()
-    sol.time_info()
-    plt.plot(sol.domain.x[0][1:-1],sol.m[0][0][1:-1],'b-')
-    plt.draw()
-    plt.subplot(122)
-    plt.plot(sol.domain.x[0][1:-1],sol.m[0][0][1:-1]-FINIT(sol.domain.x[0][1:-1]-c*sol.t),'b-')
-    plt.draw()
-    plt.pause(1.e-3)
-
-    plt.subplot(121)
-    xx = np.linspace(xmin,xmax,10000)
-    plt.plot(xx, FINIT(xx-c*sol.t),'k--')
-
-    plt.legend(['initial','D1Q2','D1Q3','exact'])
-    plt.title("Solution at t={0:.3f}".format(sol.t), fontsize=14)
-    plt.draw()
-    plt.pause(1.e-3)
-    plt.hold(False)
-    plt.ioff()
+    sol1.time_info()
+    sol2.time_info()
     plt.show()

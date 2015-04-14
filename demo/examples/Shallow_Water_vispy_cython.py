@@ -111,7 +111,7 @@ class Canvas(app.Canvas):
             self.go_on()
             self.maj()
         if event.text == 't':
-            print "MLUPS: {0:5.1f}".format(self.sol.cpu_time['MLUPS'])
+            self.sol.time_info()
 
     def on_timer(self, event):
         self.go_on()
@@ -132,10 +132,10 @@ X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
 
 def initialization_rho(x,y):
-    return rhoo * np.ones((y.shape[0], x.shape[0]), dtype='float64') + deltarho * ((x-0.5*(xmin+xmax))**2+(y-0.5*(ymin+ymax))**2 < 0.25**2)
+    return rhoo * np.ones((x.size, y.size), dtype='float64') + deltarho * ((x-0.5*(xmin+xmax))**2+(y-0.5*(ymin+ymax))**2 < 0.25**2)
 
 def initialization_q(x,y):
-    return np.zeros((y.shape[0], x.shape[0]), dtype='float64')
+    return np.zeros((x.size, y.size), dtype='float64')
 
 if __name__ == "__main__":
     # parameters
