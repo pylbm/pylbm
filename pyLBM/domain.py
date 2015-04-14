@@ -248,6 +248,54 @@ class Domain:
                         indbordvik = np.where(dvik < self.distance[k, xb:xe, yb + i])
                         self.distance[k, xb + indbordvik[0], yb + i] = dvik
                         self.flag[k, xb + indbordvik[0], yb + i] = label[2]
+        elif (self.dim == 3):
+            xb, xe = self.indbe[0][:]
+            yb, ye = self.indbe[1][:]
+            zb, ze = self.indbe[2][:]
+
+            self.in_or_out[:, :, :] = self.valout
+            self.in_or_out[xb:xe, yb:ye, zb:ze] = self.valin
+
+            for k in xrange(self.stencil.unvtot):
+                vxk = self.stencil.unique_velocities[k].vx
+                vyk = self.stencil.unique_velocities[k].vy
+                vzk = self.stencil.unique_velocities[k].vz
+                if ((vxk > 0) & (label[1] != -2)):
+                    for i in xrange(vxk):
+                        dvik = (i + .5)/vxk
+                        indbordvik = np.where(dvik < self.distance[k, xe - 1 - i, yb:ye, zb:ze])
+                        self.distance[k, xe - 1 - i, yb + indbordvik[0], zb + indbordvik[1]] = dvik
+                        self.flag[k, xe - 1 - i, yb + indbordvik[0], zb + indbordvik[1]] = label[1]
+                elif ((vxk < 0) & (label[0] != -2)):
+                    for i in xrange(-vxk):
+                        dvik = -(i + .5)/vxk
+                        indbordvik = np.where(dvik < self.distance[k, xb + i, yb:ye, zb:ze])
+                        self.distance[k, xb + i, yb + indbordvik[0], zb + indbordvik[1]] = dvik
+                        self.flag[k, xb + i, yb + indbordvik[0], zb + indbordvik[1]] = label[0]
+                if ((vyk > 0) & (label[3] != -2)):
+                    for i in xrange(vyk):
+                        dvik = (i + .5)/vyk
+                        indbordvik = np.where(dvik < self.distance[k, xb:xe, ye - 1 - i, zb:ze])
+                        self.distance[k, xb + indbordvik[0], ye - 1 - i, zb + indbordvik[1]] = dvik
+                        self.flag[k, xb + indbordvik[0], ye - 1 - i, zb + indbordvik[1]] = label[3]
+                elif ((vyk < 0) & (label[2] != -2)):
+                    for i in xrange(-vyk):
+                        dvik = -(i + .5)/vyk
+                        indbordvik = np.where(dvik < self.distance[k, xb:xe, yb + i, zb:ze])
+                        self.distance[k, xb + indbordvik[0], yb + i, zb + indbordvik[1]] = dvik
+                        self.flag[k, xb + indbordvik[0], yb + i, zb + indbordvik[1]] = label[2]
+                if ((vzk > 0) & (label[5] != -2)):
+                    for i in xrange(vzk):
+                        dvik = (i + .5)/vzk
+                        indbordvik = np.where(dvik < self.distance[k, xb:xe, yb:ye, ze - 1 - i])
+                        self.distance[k, xb + indbordvik[0], yb + indbordvik[1], ze - 1 - i] = dvik
+                        self.flag[k, xb + indbordvik[0], yb + indbordvik[1], ze - 1 - i] = label[5]
+                elif ((vzk < 0) & (label[4] != -2)):
+                    for i in xrange(-vzk):
+                        dvik = -(i + .5)/vzk
+                        indbordvik = np.where(dvik < self.distance[k, xb:xe, yb:ye, zb + i])
+                        self.distance[k, xb + indbordvik[0], yb + indbordvik[1], zb + i] = dvik
+                        self.flag[k, xb + indbordvik[0], yb + indbordvik[1], zb + i] = label[4]
         return
 
     def __add_elem(self, elem):
