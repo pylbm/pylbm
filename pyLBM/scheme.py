@@ -403,8 +403,24 @@ class Scheme:
                                         bc.floc[l][n][k] = floc[self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]]
                                     else:
                                         bc.floc[l][n][k] = floc[:, self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]]
-                                else:
-                                    self.log.error('Periodic conditions are not implemented in 3D')
+                                elif self.dim == 3:
+                                    ix = bv.indices[0]
+                                    iy = bv.indices[1]
+                                    iz = bv.indices[2]
+                                    s  = bv.distance
+                                    if nv_on_beg:
+                                        mloc = np.ascontiguousarray(m[:, ix, iy, iz])
+                                    else:
+                                        mloc = np.ascontiguousarray(m[ix, iy, iz, :])
+                                    floc = np.zeros(mloc.shape)
+                                    bc.value_bc[l](floc, mloc,
+                                                   bc.domain.x[0][ix] + s*bv.v.vx*bc.domain.dx,
+                                                   bc.domain.x[1][iy] + s*bv.v.vy*bc.domain.dx,
+                                                   bc.domain.x[2][iz] + s*bv.v.vz*bc.domain.dx, self)
+                                    if nv_on_beg:
+                                        bc.floc[l][n][k] = floc[self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]]
+                                    else:
+                                        bc.floc[l][n][k] = floc[:, self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]]
                             else:
                                 bc.floc[l][n][k] = None
                         if nv_on_beg:
@@ -414,8 +430,8 @@ class Scheme:
                                 bc.method_bc[l][n](f[:, self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]], bv, self.stencil[n].num2index, bc.floc[l][n][k], nv_on_beg)
                             elif self.dim == 2:
                                 bc.method_bc[l][n](f[: ,: , self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]], bv, self.stencil[n].num2index, bc.floc[l][n][k], nv_on_beg)
-                            else:
-                                self.log.error('Periodic conditions are not implemented in 3D')
+                            elif self.dim == 3:
+                                bc.method_bc[l][n](f[: ,:, :, self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]], bv, self.stencil[n].num2index, bc.floc[l][n][k], nv_on_beg)
         self.bc_compute = False
 
     def compute_amplification_matrix_relaxation(self, dico):
