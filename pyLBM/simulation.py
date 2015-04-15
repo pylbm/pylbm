@@ -333,15 +333,15 @@ class Simulation:
             x = self.domain.x[0]
             coords = (x,)
         elif self.dim == 2:
-            x = self.domain.x[0][:,np.newaxis]
+            x = self.domain.x[0][:, np.newaxis]
             y = self.domain.x[1][np.newaxis, :]
             #x = self.domain.x[0][np.newaxis, :]
             #y = self.domain.x[1][: ,np.newaxis]
             coords = (x, y)
         elif self.dim == 3:
-            x = self.domain.x[0][:,np.newaxis, np.newaxis]
+            x = self.domain.x[0][:, np.newaxis, np.newaxis]
             y = self.domain.x[1][np.newaxis, :, np.newaxis]
-            z = self.domain.x[2][:, np.newaxis, np.newaxis]
+            z = self.domain.x[2][np.newaxis, np.newaxis, :]
             coords = (x, y, z)
 
         schemes = dico['schemes']

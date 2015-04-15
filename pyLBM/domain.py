@@ -5,6 +5,11 @@
 # License: BSD 3 clause
 
 import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
+from matplotlib.ticker import LinearLocator, FormatStrFormatter
+import matplotlib.cm as cm
+import matplotlib as plt
 import sys
 
 from .elements import *
@@ -12,10 +17,6 @@ import geometry as pyLBMGeom
 import stencil as pyLBMSten
 
 from .logs import setLogger
-
-import pylab as plt
-import matplotlib.cm as cm
-
 
 class Domain:
     """
@@ -375,10 +376,10 @@ class Domain:
 
         Returns
         -------
-        If dim=1 or (dim=2 and opt=1)
+        If dim = 1 or (dim = 2 or 3 and opt = 1)
              - plot a star on inner points and a square on outer points
              - plot the flag on the boundary (each boundary point + s[k]*unique_velocities[k] for each velocity k)
-        If dim=2 and opt=0
+        If dim = 2 or 3 and opt = 0
              - plot a imshow figure, white for inner domain and black for outer domain
         """
         fig = plt.figure(0,figsize=(8, 8))
@@ -402,12 +403,12 @@ class Domain:
             plt.scatter(x[indin],y[indin], 1000*self.dx, c='k', marker='*')
             indout = np.where(self.in_or_out==self.valout)
             plt.scatter(x[indout],y[indout], 1000*self.dx, c='k', marker='s')
-        if (self.dim == 2):
-            x = self.x[0][:, np.newaxis]
-            y = self.x[1][np.newaxis, :]
+        elif (self.dim == 2):
             if (opt==0):
                 plt.imshow(self.in_or_out.transpose()>=0, origin='lower', cmap=cm.gray, interpolation='nearest')
             else:
+                x = self.x[0][:, np.newaxis]
+                y = self.x[1][np.newaxis, :]
                 vxkmax = self.stencil.vmax[0]
                 vykmax = self.stencil.vmax[1]
                 plt.hold(True)
@@ -425,9 +426,47 @@ class Domain:
                                  [y[0,indbordy[i]],y[0,indbordy[i]]+self.dx*self.distance[k,indbordx[i],indbordy[i]]*vyk],c=coul)
 
                 indinx, indiny = np.where(self.in_or_out==self.valin)
-                plt.scatter(x[indinx,0], y[0, indiny], 500*self.dx, c='k', marker='*')
+                plt.scatter(x[indinx,0], y[0, indiny], 500*self.dx, c='k', marker='o')
                 indoutx, indouty = np.where(self.in_or_out==self.valout)
                 plt.scatter(x[indoutx, 0], y[0, indouty], 500*self.dx, c='k', marker='s')
+        elif (self.dim == 3):
+            ax = fig.add_subplot(111, projection='3d')
+            x = self.x[0][:, np.newaxis, np.newaxis]
+            y = self.x[1][np.newaxis, :, np.newaxis]
+            z = self.x[1][np.newaxis, np.newaxis, :]
+            indinx, indiny, indinz = np.where(self.in_or_out==self.valin)
+            ax.scatter(x[indinx, 0, 0], y[0, indiny, 0], z[0, 0, indinz],
+                       s = 100*self.dx**2, color='1.', marker='o'
+                       )
+            indoutx, indouty, indoutz = np.where(self.in_or_out==self.valout)
+            ax.scatter(x[indoutx, 0, 0], y[0, indouty, 0], z[0, 0, indoutz],
+                       s = 100*self.dx**2, c='0.', marker='o'
+                       )
+            ax.set_xlabel("X")
+            ax.set_ylabel("Y")
+            ax.set_zlabel("Z")
+            if (opt!=0):
+                vxkmax = self.stencil.vmax[0]
+                vykmax = self.stencil.vmax[1]
+                vzkmax = self.stencil.vmax[2]
+                for k in xrange(self.stencil.unvtot):
+                    vxk = self.stencil.unique_velocities[k].vx
+                    vyk = self.stencil.unique_velocities[k].vy
+                    vzk = self.stencil.unique_velocities[k].vz
+                    coul = (1.-(vxkmax+vxk)*0.5/vxkmax, (vykmax+vyk)*0.5/vykmax, (vzkmax+vzk)*0.5/vzkmax)
+                    indbordx, indbordy, indbordz = np.where(self.distance[k,:]<=1)
+                    for i in xrange(indbordx.shape[0]):
+                        ax.text(x[indbordx[i],0,0]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vxk,
+                                 y[0,indbordy[i],0]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vyk,
+                                 z[0,0,indbordz[i]]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vzk,
+                                 str(self.flag[k,indbordx[i],indbordy[i],indbordz[i]]),
+                                 fontsize=18)#, horizontalalignment='center',verticalalignment='center')
+                        ax.plot([x[indbordx[i],0,0],x[indbordx[i],0,0]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vxk],
+                                 [y[0,indbordy[i],0],y[0,indbordy[i],0]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vyk],
+                                 [z[0,0,indbordz[i]],z[0,0,indbordz[i]]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vzk],
+                                 c=coul)
+        else:
+            self.log.error('Error in domain.visualize(): the dimension {0} is not allowed'.format(self.dim))
         plt.title("Domain",fontsize=14)
         plt.draw()
         plt.hold(False)

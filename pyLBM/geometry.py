@@ -4,6 +4,9 @@
 #
 # License: BSD 3 clause
 
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
+from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import matplotlib.pyplot as plt
 import numpy as np
 import mpi4py.MPI as mpi
@@ -179,8 +182,8 @@ class Geometry:
         fig.clf()
         plt.ion()
         plt.hold(True)
-        ax = fig.add_subplot(111)
         if (self.dim == 1):
+            ax = fig.add_subplot(111)
             xmin = (float)(self.bounds[0][0])
             xmax = (float)(self.bounds[0][1])
             L = xmax-xmin
@@ -196,6 +199,7 @@ class Geometry:
                 plt.text(xmax-l, -2*h, self.box_label[1], fontsize=18, horizontalalignment='center',verticalalignment='center')
             plt.axis('equal')
         elif (self.dim == 2):
+            ax = fig.add_subplot(111)
             xmin = (float)(self.bounds[0][0])
             xmax = (float)(self.bounds[0][1])
             ymin = (float)(self.bounds[1][0])
@@ -217,6 +221,52 @@ class Geometry:
                 else:
                     coul = 'white'
                 elem._visualize(ax, coul, viewlabel)
+        elif (self.dim == 3):
+            ax = fig.add_subplot(111, projection='3d')
+            Pmin = [(float)(self.bounds[k][0]) for k in range(3)]
+            Pmax = [(float)(self.bounds[k][1]) for k in range(3)]
+            xmin, xm, xmax = Pmin[0], .5*(Pmin[0]+Pmax[0]), Pmax[0]
+            ymin, ym, ymax = Pmin[1], .5*(Pmin[1]+Pmax[1]), Pmax[1]
+            zmin, zm, zmax = Pmin[2], .5*(Pmin[2]+Pmax[2]), Pmax[2]
+            for k in xrange(3):
+                for x0 in [Pmin[k], Pmax[k]]:
+                    XS, YS = np.meshgrid([Pmin[(k+1)%3], Pmax[(k+1)%3]],
+                                         [Pmin[(k+2)%3], Pmax[(k+2)%3]])
+                    ZS = x0 + np.zeros(XS.shape)
+                    C = [XS, YS, ZS]
+                    ax.plot_surface(C[k%3], C[(k+1)%3], C[(k+2)%3],
+                        rstride=1, cstride=1,
+                        shade=False, alpha=0.5,
+                        antialiased=False, linewidth=1)
+            if viewlabel:
+                # label 0 for left
+                ax.text(xmin, ym, zm, self.box_label[0], fontsize=18)
+                # label 1 for right
+                ax.text(xmax, ym, zm, self.box_label[1], fontsize=18)
+                # label 2 for bottom
+                ax.text(xm, ymin, zm, self.box_label[2], fontsize=18)
+                # label 3 for top
+                ax.text(xm, ymax, zm, self.box_label[3], fontsize=18)
+                # label 4 for front
+                ax.text(xm, ym, zmin, self.box_label[4], fontsize=18)
+                # label 5 for back
+                ax.text(xm, ym, zmax, self.box_label[5], fontsize=18)
+
+            ax.set_xlim3d(xmin, xmax)
+            ax.set_ylim3d(ymin, ymax)
+            ax.set_zlim3d(zmin, zmax)
+            ax.set_xlabel("X")
+            ax.set_ylabel("Y")
+            ax.set_zlabel("Z")
+
+            for elem in self.list_elem:
+                if elem.isfluid:
+                    coul = plein
+                else:
+                    coul = 'white'
+                    elem._visualize(ax, coul, viewlabel)
+        else:
+            self.log.error('Error in geometry.visualize(): the dimension {0} is not allowed'.format(self.dim))
         plt.title("Geometry",fontsize=14)
         plt.draw()
         plt.hold(False)

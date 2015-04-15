@@ -1,4 +1,5 @@
 import pyLBM
+from pyLBM.viewer import VtkViewer
 import math
 import numpy as np
 import sympy as sp
@@ -21,7 +22,7 @@ def bc_up(f, m, x, y, z, scheme):
     scheme.equilibrium(m)
     scheme.m2f(m, f)
 
-dx = .05
+dx = .1
 la = 1.
 rho0 = 1.
 Re = 2000
@@ -40,7 +41,6 @@ dico = {
     'box':{'x':[0., 1.], 'y':[0., 1.], 'z':[0., 1.], 'label':[0, 0, 1, 0, 0, 0]},
     'space_step':dx,
     'scheme_velocity':la,
-    'inittype': 'moments',
     'schemes':[{'velocities':[0, 5, 6, 3, 4, 1, 2, 19, 23, 21, 25, 20, 24, 22, 26],
                'polynomials':Matrix([1,
                              r - 2, .5*(15*r**2-55*r+32),
@@ -82,15 +82,21 @@ dico = {
 
 s = pyLBM.Scheme(dico)
 print s
-# sol = pyLBM.Simulation(dico)
-# nite = 1000
-# for i in xrange(nite):
-#     sol.one_time_step()
-#
-# sol.f2m()
-# import matplotlib.pyplot as plt
-# n = sol.m[0][3].shape
-# magnitude_vel = sol.m[0][3][:, n[1]/2, :]**2 + sol.m[0][5][:, n[1]/2, :]**2 + sol.m[0][7][:, n[1]/2, :]**2
-# plt.imshow(magnitude_vel)
-# plt.colorbar()
-# plt.show()
+v = VtkViewer()
+s.stencil.visualize(v)
+
+#d = pyLBM.Domain(dico)
+#print d
+#d.visualize()
+sol = pyLBM.Simulation(dico)
+nite = 1000
+for i in xrange(nite):
+    sol.one_time_step()
+
+sol.f2m()
+import matplotlib.pyplot as plt
+n = sol.m[0][3].shape
+magnitude_vel = sol.m[0][3][:, n[1]/2, :]**2 + sol.m[0][5][:, n[1]/2, :]**2 + sol.m[0][7][:, n[1]/2, :]**2
+plt.imshow(magnitude_vel)
+plt.colorbar()
+plt.show()
