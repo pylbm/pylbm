@@ -14,14 +14,10 @@ def setLogger(name):
     if not isinstance(numeric_level, int):
         raise ValueError('Invalid log level: %s'.format(options().loglevel))
 
-    ### for both packages
-    logging.basicConfig(level=numeric_level)
-    r = logging.getLogger()
-    r.handlers = []
+    logging.basicConfig(level=numeric_level,
+                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                        datefmt='%m-%d %H:%M')
+    logger = logging.getLogger(name)
+    logger.setLevel(level=numeric_level)
 
-    log = logging.getLogger(name)
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(name)s on proc {0} \n%(message)s\n'.format(mpi.COMM_WORLD.Get_rank()))
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(formatter)
-    log.addHandler(stream_handler)
-    return log
+    return logger
