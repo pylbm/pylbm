@@ -237,7 +237,8 @@ class Interface:
                         displs.append(disp)
                         disp += subsizes[1]
                     disp += (subsizes[0]-1)*globalsizes[1]
-
+            else:
+                self.log.error('Error in Interface.get_full: dimension {0} not allowed'.format(self.dim))
             if nv_on_beg:
                 globalArray = np.zeros([ns] + globalsizes)
             else:
@@ -250,12 +251,16 @@ class Interface:
                 copyArray[:, :subsizes[0]] = f[:, 1:-1]
             elif self.dim == 2:
                 copyArray[:, :subsizes[0], :subsizes[1]] = f[:, 1:-1, 1:-1]
+            else:
+                self.log.error('Error in Interface.get_full: dimension {0} not allowed'.format(self.dim))
         else:
             copyArray = np.empty(list(Subsizes) + [ns])
             if self.dim == 1:
                 copyArray[:subsizes[0], :] = f[1:-1, :]
             elif self.dim == 2:
                 copyArray[:subsizes[0], :subsizes[1], :] = f[1:-1, 1:-1, :]
+            else:
+                self.log.error('Error in Interface.get_full: dimension {0} not allowed'.format(self.dim))
         self.comm.Gatherv([copyArray, mpi.DOUBLE], [globalArray, (counts, displs), newtype], 0)
 
         return globalArray

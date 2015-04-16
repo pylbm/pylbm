@@ -222,36 +222,30 @@ class Geometry:
                     coul = 'white'
                 elem._visualize(ax, coul, viewlabel)
         elif (self.dim == 3):
+            couleurs = [(1./k, 0., 1.-1./k) for k in range(1,11)]
             ax = fig.add_subplot(111, projection='3d')
             Pmin = [(float)(self.bounds[k][0]) for k in range(3)]
             Pmax = [(float)(self.bounds[k][1]) for k in range(3)]
             xmin, xm, xmax = Pmin[0], .5*(Pmin[0]+Pmax[0]), Pmax[0]
             ymin, ym, ymax = Pmin[1], .5*(Pmin[1]+Pmax[1]), Pmax[1]
             zmin, zm, zmax = Pmin[2], .5*(Pmin[2]+Pmax[2]), Pmax[2]
+            ct_lab = 0
             for k in xrange(3):
                 for x0 in [Pmin[k], Pmax[k]]:
                     XS, YS = np.meshgrid([Pmin[(k+1)%3], Pmax[(k+1)%3]],
                                          [Pmin[(k+2)%3], Pmax[(k+2)%3]])
                     ZS = x0 + np.zeros(XS.shape)
                     C = [XS, YS, ZS]
-                    ax.plot_surface(C[k%3], C[(k+1)%3], C[(k+2)%3],
-                        rstride=1, cstride=1,
+                    ax.plot_surface(C[(2-k)%3], C[(3-k)%3], C[(1-k)%3],
+                        rstride=1, cstride=1, color=couleurs[self.box_label[ct_lab]%10],
                         shade=False, alpha=0.5,
                         antialiased=False, linewidth=1)
-            if viewlabel:
-                # label 0 for left
-                ax.text(xmin, ym, zm, self.box_label[0], fontsize=18)
-                # label 1 for right
-                ax.text(xmax, ym, zm, self.box_label[1], fontsize=18)
-                # label 2 for bottom
-                ax.text(xm, ymin, zm, self.box_label[2], fontsize=18)
-                # label 3 for top
-                ax.text(xm, ymax, zm, self.box_label[3], fontsize=18)
-                # label 4 for front
-                ax.text(xm, ym, zmin, self.box_label[4], fontsize=18)
-                # label 5 for back
-                ax.text(xm, ym, zmax, self.box_label[5], fontsize=18)
-
+                    if viewlabel:
+                        x = .25*np.sum(C[(2-k)%3])
+                        y = .25*np.sum(C[(3-k)%3])
+                        z = .25*np.sum(C[(1-k)%3])
+                        ax.text(x, y, z, self.box_label[ct_lab], fontsize=18)
+                        ct_lab += 1
             ax.set_xlim3d(xmin, xmax)
             ax.set_ylim3d(ymin, ymax)
             ax.set_zlim3d(zmin, zmax)

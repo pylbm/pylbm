@@ -4,6 +4,8 @@ import math
 import numpy as np
 import sympy as sp
 from sympy.matrices import Matrix, zeros
+from pyevtk.hl import imageToVTK
+
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 
@@ -17,15 +19,25 @@ def initialization_q(x, y, z):
 
 def bc_up(f, m, x, y, z, scheme):
     m[:, 3] = -math.sqrt(2)/20.
-    m[:, 5] = 0
-    m[:, 7] = -math.sqrt(2)/20.
+    m[:, 5] = -math.sqrt(2)/20.
+    m[:, 7] = 0.
     scheme.equilibrium(m)
     scheme.m2f(m, f)
 
-dx = .1
+def plot(sol, num):
+    sol.time_info()
+    print "Build image {0:3d}".format(num)
+    sol.f2m()
+    print "t = {0}, |qx| <= {1:10.3e}".format(sol.t, np.linalg.norm(sol.m[0][3][1:-1,1:-1,1:-1].reshape((nx*ny*nz,)), np.inf))
+    sol.save[:] = np.sqrt(sol.m[0][3][1:-1,1:-1,1:-1]**2 +
+                  sol.m[0][5][1:-1,1:-1,1:-1]**2 +
+                  sol.m[0][7][1:-1,1:-1,1:-1]**2)
+    imageToVTK("./data/image_{0}".format(num), pointData = {"q**2" : sol.save} )
+
+dx = 1./128
 la = 1.
 rho0 = 1.
-Re = 2000
+Re = 200
 nu = 5./Re
 
 s1 = 1.6
@@ -38,10 +50,11 @@ s14 = 1.2
 r = X**2+Y**2+Z**2
 
 dico = {
-    'box':{'x':[0., 1.], 'y':[0., 1.], 'z':[0., 1.], 'label':[0, 0, 1, 0, 0, 0]},
+    'box':{'x':[0., 1.], 'y':[0., 1.], 'z':[0., 1.], 'label':[0, 0, 0, 0, 0, 1]},
     'space_step':dx,
     'scheme_velocity':la,
-    'schemes':[{'velocities':[0, 5, 6, 3, 4, 1, 2, 19, 23, 21, 25, 20, 24, 22, 26],
+    'schemes':[{'velocities':range(7) + range(19,27),
+               #'velocities':[0, 5, 6, 3, 4, 1, 2, 19, 23, 21, 25, 20, 24, 22, 26],
                'polynomials':Matrix([1,
                              r - 2, .5*(15*r**2-55*r+32),
                              X, .5*(5*r-13)*X,
@@ -80,23 +93,32 @@ dico = {
 
     }
 
-s = pyLBM.Scheme(dico)
-print s
-v = VtkViewer()
-s.stencil.visualize(v)
+## verification
+# geom = pyLBM.Geometry(dico)
+# geom.visualize(viewlabel=True)
+# sten = pyLBM.Stencil(dico)
+# print sten
+# v = VtkViewer()
+# sten.visualize(v)
+# dom = pyLBM.Domain(dico)
+# dom.visualize(opt=1)
+# print dom
 
-#d = pyLBM.Domain(dico)
-#print d
-#d.visualize()
+
 sol = pyLBM.Simulation(dico)
-nite = 1000
-for i in xrange(nite):
-    sol.one_time_step()
+nx, ny, nz = sol.domain.Ng
+sol.save = np.empty((nx, ny, nz))
 
-sol.f2m()
-import matplotlib.pyplot as plt
-n = sol.m[0][3].shape
-magnitude_vel = sol.m[0][3][:, n[1]/2, :]**2 + sol.m[0][5][:, n[1]/2, :]**2 + sol.m[0][7][:, n[1]/2, :]**2
-plt.imshow(magnitude_vel)
-plt.colorbar()
-plt.show()
+im = 0
+compt = 0
+plot(sol,im)
+
+while sol.t<5.:
+    sol.one_time_step()
+    compt += 1
+    if compt == 16:
+        im += 1
+        compt = 0
+        plot(sol,im)
+
+sol.time_info()
