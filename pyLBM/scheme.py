@@ -139,7 +139,7 @@ class Scheme:
         self.create_moments_matrices()
 
         #self.nv_on_beg = nv_on_beg
-        self.generator = dico.get('generator', NumpyGenerator)(comm=dico.get('comm', mpi.COMM_WORLD))
+        self.generator = dico.get('generator', NumpyGenerator)()
         self.log.info("Generator used for the scheme functions:\n{0}\n".format(self.generator))
         #print self.generator
         if isinstance(self.generator, CythonGenerator):
@@ -268,59 +268,68 @@ class Scheme:
 
     def m2f(self, m, f):
         """ Compute the distribution functions f from the moments m """
-        exec "from %s import *"%self.generator.get_module()
+        mod = self.generator.get_module()
         if self.nv_on_beg:
             space_size = np.prod(m.shape[1:])
             for k in xrange(self.nscheme):
                 s = slice(self.stencil.nv_ptr[k], self.stencil.nv_ptr[k + 1])
                 nv = self.stencil.nv[k]
-                exec "m2f_{0}(m[{1}].reshape(({2}, {3})), f[{1}].reshape(({2}, {3})))".format(k, s, nv, space_size)
+                m2f_i = getattr(mod, 'm2f_%d'%k)
+                m2f_i(m[s].reshape((nv, space_size)), f[s].reshape((nv, space_size)))
         else:
             space_size = np.prod(m.shape[:-1])
-            exec "m2f(m.reshape(({0}, {1})), f.reshape(({0}, {1})))".format(space_size, self.stencil.nv_ptr[-1])
+            ns = self.stencil.nv_ptr[-1]
+            mod.m2f(m.reshape((space_size, ns)), f.reshape((space_size, ns)))
 
     def f2m(self, f, m):
         """ Compute the moments m from the distribution functions f """
-        exec "from %s import *"%self.generator.get_module()
+        mod = self.generator.get_module()
         if self.nv_on_beg:
             space_size = np.prod(m.shape[1:])
             for k in xrange(self.nscheme):
                 s = slice(self.stencil.nv_ptr[k], self.stencil.nv_ptr[k + 1])
                 nv = self.stencil.nv[k]
-                exec "f2m_{0}(f[{1}].reshape(({2}, {3})), m[{1}].reshape(({2}, {3})))".format(k, s, nv, space_size)
+                f2m_i = getattr(mod, 'f2m_%d'%k)
+                f2m_i(f[s].reshape((nv, space_size)), m[s].reshape((nv, space_size)))
         else:
             space_size = np.prod(m.shape[:-1])
-            exec "f2m(f.reshape(({0}, {1})), m.reshape(({0}, {1})))".format(space_size, self.stencil.nv_ptr[-1])
+            ns = self.stencil.nv_ptr[-1]
+            mod.f2m(f.reshape((space_size, ns)), m.reshape((space_size, ns)))
 
     def transport(self, f):
         """ The transport phase on the distribution functions f """
-        exec "from %s import *"%self.generator.get_module()
-        exec "transport(f)"
+        mod = self.generator.get_module()
+        mod.transport(f)
 
     def equilibrium(self, m):
         """ Compute the equilibrium """
-        exec "from %s import *"%self.generator.get_module()
+        mod = self.generator.get_module()
+        func = getattr(mod, "equilibrium")
         if self.nv_on_beg:
             space_size = np.prod(m.shape[1:])
-            exec "equilibrium(m.reshape(({0}, {1})))".format(self.stencil.nv_ptr[-1], space_size)
+            ns = self.stencil.nv_ptr[-1]
+            func(m.reshape((ns, space_size)))
         else:
             space_size = np.prod(m.shape[:-1])
-            exec "equilibrium(m.reshape(({0}, {1})))".format(space_size, self.stencil.nv_ptr[-1])
+            ns = self.stencil.nv_ptr[-1]
+            func(m.reshape((space_size, ns)))
 
     def relaxation(self, m):
         """ The relaxation phase on the moments m """
-        exec "from %s import *"%self.generator.get_module()
+        mod = self.generator.get_module()
         if self.nv_on_beg:
             space_size = np.prod(m.shape[1:])
-            exec "relaxation(m.reshape(({0}, {1})))".format(self.stencil.nv_ptr[-1], space_size)
+            ns = self.stencil.nv_ptr[-1]
+            mod.relaxation(m.reshape(((ns, space_size))))
         else:
             space_size = np.prod(m.shape[:-1])
-            exec "relaxation(m.reshape(({0}, {1})))".format(space_size, self.stencil.nv_ptr[-1])
+            ns = self.stencil.nv_ptr[-1]
+            mod.relaxation(m.reshape(((space_size, ns))))
 
-    def onetimestep(self, m, f, fcuurent, in_or_out, valin):
+    def onetimestep(self, m, fold, fnew, in_or_out, valin):
         """ Compute one time step of the Lattice Boltzmann method """
-        exec "from %s import *"%self.generator.get_module()
-        exec "onetimestep(m, f, fcuurent, in_or_out, valin)"
+        mod = self.generator.get_module()
+        mod.onetimestep(m, fold, fnew, in_or_out, valin)
 
     def set_boundary_conditions(self, f, m, bc, interface, nv_on_beg):
         """
