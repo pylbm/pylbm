@@ -577,6 +577,7 @@ class Stencil(list):
             self.append(OneStencil(self.v[k], self.nv[k], self.num2index[k]))
 
         self.log.debug(self.__str__())
+        self.is_symmetric()
 
     @property
     def uvx(self):
@@ -661,6 +662,21 @@ class Stencil(list):
 
     def __repr__(self):
         return self.__str__()
+
+    def is_symmetric(self):
+        for n in range(self.nstencils):
+            a = True
+            A = np.array(self.num[n])
+            for k in range(self.nv[n]):
+                v = self.v[n][k]
+                if np.all(np.where(A == v.get_symmetric().num, False, True)):
+                    self.log.warning("The velocity " + v.__str__() + " has no symmetric velocity in the stencil {0:d}".format(n))
+                    a = False
+            if a:
+                self.log.info("The stencil {0} is symmetric".format(n))
+            else:
+                self.log.warning("The stencil {0} is not symmetric".format(n))
+
 
     def visualize(self, viewer, k=None, unique_velocities=False):
         """
