@@ -6,18 +6,42 @@
 
 import mpi4py.MPI as mpi
 import logging
+from colorlog import ColoredFormatter
 
 from .options import options
 
+loggers = {}
+
 def setLogger(name):
+    global loggers
+
     numeric_level = getattr(logging, options().loglevel.upper(), None)
     if not isinstance(numeric_level, int):
         raise ValueError('Invalid log level: %s'.format(options().loglevel))
 
-    logging.basicConfig(level=numeric_level,
-                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                        datefmt='%m-%d %H:%M')
-    logger = logging.getLogger(name)
-    logger.setLevel(level=numeric_level)
+    if loggers.get(name):
+        return loggers.get(name)
+    else:
+        formatter = ColoredFormatter(
+        "%(log_color)s[{0}] %(levelname)-8s%(reset)s %(blue)s%(name)s in function %(funcName)s\n%(black)s%(message)s".format(mpi.COMM_WORLD.Get_rank()),
+        datefmt=None,
+        reset=True,
+        log_colors={
+                'DEBUG':    'cyan',
+                'INFO':     'green',
+                'WARNING':  'yellow',
+                'ERROR':    'red',
+                'CRITICAL': 'red,bg_white',
+        },
+        style='%'
+        )
 
-    return logger
+        rank = '[{0}]'.format(mpi.COMM_WORLD.Get_rank())
+        #logging.basicConfig(level=numeric_level)
+        console = logging.StreamHandler()
+        console.setFormatter(formatter)
+        logger = logging.getLogger(name)
+        logger.setLevel(level=numeric_level)
+        logger.addHandler(console)
+        loggers[name] = logger
+        return logger
