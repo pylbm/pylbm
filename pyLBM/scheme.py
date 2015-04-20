@@ -142,10 +142,10 @@ class Scheme:
         self.generator = dico.get('generator', NumpyGenerator)()
         self.log.info("Generator used for the scheme functions:\n{0}\n".format(self.generator))
         #print self.generator
-        if isinstance(self.generator, CythonGenerator):
-            self.nv_on_beg = False
-        else:
+        if isinstance(self.generator, NumpyGenerator):
             self.nv_on_beg = True
+        else:
+            self.nv_on_beg = False
         self.log.debug("Message from scheme.py: nv_on_beg = {0}".format(self.nv_on_beg))
         self.generate()
         self.bc_compute = True
