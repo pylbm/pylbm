@@ -226,6 +226,9 @@ class Simulation:
 
     @m.setter
     def m(self, i, j, value):
+        """
+        TODO: fix dimension
+        """
         if self.nv_on_beg:
             self._m[self.scheme.stencil.nv_ptr[i] + j] = value
         else:
@@ -244,6 +247,9 @@ class Simulation:
 
     @F.setter
     def F(self, i, j, value):
+        """
+        TODO: fix dimension
+        """
         if self.nv_on_beg:
             self._F[self.scheme.stencil.nv_ptr[i] + j] = value
         else:
