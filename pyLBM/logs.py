@@ -36,12 +36,13 @@ def setLogger(name):
         style='%'
         )
 
-        rank = '[{0}]'.format(mpi.COMM_WORLD.Get_rank())
-        #logging.basicConfig(level=numeric_level)
         console = logging.StreamHandler()
         console.setFormatter(formatter)
+
         logger = logging.getLogger(name)
         logger.setLevel(level=numeric_level)
         logger.addHandler(console)
+
         loggers[name] = logger
+
         return logger
