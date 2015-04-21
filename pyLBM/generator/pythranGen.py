@@ -284,7 +284,7 @@ class PythranGenerator(Generator):
         ext = s[:-2]
 
         self.code += """
-#pythran export onetimestep(float64[]{0}, float64[]{0}, float64[]{0}, int{0}, int)
+#pythran export onetimestep(float64[]{0}, float64[]{0}, float64[]{0}, float64{0}, int32)
 def onetimestep(m, f, fnew, in_or_out, valin):
 """.format('[]'*stencil.dim)
 
@@ -329,4 +329,3 @@ def onetimestep(m, f, fnew, in_or_out, valin):
         Generator.compile(self)
         import pythran
         pythran.compile_pythranfile(self.f.name)
-           
