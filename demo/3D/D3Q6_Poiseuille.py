@@ -48,8 +48,9 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.cm as cm
 
-#from pyevtk.hl import imageToVTK
-from evtk.hl import gridToVTK
+from pyevtk.hl import imageToVTK
+from pyevtk.hl import gridToVTK
+from pyevtk.vtk import VtkFile, VtkRectilinearGrid
 
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
@@ -126,27 +127,41 @@ def plot_coupe(sol, num):
 def plot(sol, num):
     sol.time_info()
     nx, ny, nz = sol.domain.N
-    x = np.empty((nx, ny, nz))
-    y = np.empty((nx, ny, nz))
-    z = np.empty((nx, ny, nz))
-    for i in xrange(nx):
-        for j in xrange(ny):
-            for k in xrange(nz):
-                x[i,j,k] = sol.domain.x[0][i+1]
-                y[i,j,k] = sol.domain.x[1][j+1]
-                z[i,j,k] = sol.domain.x[2][k+1]
-    gridToVTK("./data/image_{0}".format(num), x, y, z, pointData = {"pressure" : sol.m[0][0][1:-1,1:-1,1:-1]})
-    """
-    imageToVTK("./data/image_{0}".format(num),
-        pointData = {
-            "p": sol._m[1:-1,1:-1,1:-1,0]
-            #"p":sol.m[0][0][1:-1,1:-1,1:-1],
-            #"qx":sol.m[1][0][1:-1,1:-1,1:-1],
-            #"qy":sol.m[2][0][1:-1,1:-1,1:-1],
-            #"qz":sol.m[3][0][1:-1,1:-1,1:-1]
-        }
-    )
-    """
+
+    start, end = (0, 0, 0), (nx-1, ny-1, nz-1)
+    w = VtkFile("./data/image_{0}".format(num), VtkRectilinearGrid)
+    w.openGrid(start = start, end = end)
+    w.openPiece(start = start, end = end)
+
+    pressure = sol.m[0][0][1:-1,1:-1,1:-1]
+    x, y, z = sol.domain.x[0][1:-1], sol.domain.x[1][1:-1], sol.domain.x[2][1:-1]
+    vx, vy, vz = sol.m[1][0][1:-1,1:-1,1:-1], sol.m[2][0][1:-1,1:-1,1:-1], sol.m[3][0][1:-1,1:-1,1:-1]
+
+    pressure = pressure.ravel(order='F')
+    vx = vx.ravel(order='F')
+    vy = vy.ravel(order='F')
+    vz = vz.ravel(order='F')
+
+    # Point data
+    w.openData("Point", scalars = "Pressure", vectors = "Velocity")
+    w.addData("Pressure", pressure)
+    w.addData("Velocity", (vx, vy, vz))
+    w.closeData("Point")
+
+    # Coordinates of cell vertices
+    w.openElement("Coordinates")
+    w.addData("x_coordinates", x);
+    w.addData("y_coordinates", y);
+    w.addData("z_coordinates", z);
+    w.closeElement("Coordinates");
+
+    w.closePiece()
+    w.closeGrid()
+
+    w.appendData(data = pressure)
+    w.appendData(data = (vx,vy,vz))
+    w.appendData(x).appendData(y).appendData(z)
+    w.save()
 
 def run(dico):
     sol = pyLBM.Simulation(dico)
@@ -160,8 +175,8 @@ def run(dico):
         if c == 16:
             im += 1
             sol.f2m()
-            plot_coupe(sol,im)
-            #plot(sol, im)
+            #plot_coupe(sol,im)
+            plot(sol, im)
             c = 0
     plt.show()
 
