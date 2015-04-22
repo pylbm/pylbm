@@ -101,7 +101,7 @@ class Geometry:
         self.list_elem = []
         self.log = setLogger(__name__)
 
-        dummylab = dico['box'].get('label', 0)
+        dummylab = dico['box'].get('label', -1)
         if isinstance(dummylab, int):
             self.box_label = [dummylab]*2*self.dim
         elif isinstance(dummylab, list):
@@ -217,6 +217,47 @@ class Geometry:
                 else:
                     coul = 'white'
                 elem._visualize(ax, coul, viewlabel)
+        elif (self.dim == 3):
+            couleurs = [(1./k, 0., 1.-1./k) for k in range(1,10)]
+            couleurs.append((0., 0., 0.))
+            ax = fig.add_subplot(111, projection='3d')
+            Pmin = [(float)(self.bounds[k][0]) for k in range(3)]
+            Pmax = [(float)(self.bounds[k][1]) for k in range(3)]
+            xmin, xm, xmax = Pmin[0], .5*(Pmin[0]+Pmax[0]), Pmax[0]
+            ymin, ym, ymax = Pmin[1], .5*(Pmin[1]+Pmax[1]), Pmax[1]
+            zmin, zm, zmax = Pmin[2], .5*(Pmin[2]+Pmax[2]), Pmax[2]
+            ct_lab = 0
+            for k in xrange(3):
+                for x0 in [Pmin[k], Pmax[k]]:
+                    XS, YS = np.meshgrid([Pmin[(k+1)%3], Pmax[(k+1)%3]],
+                                         [Pmin[(k+2)%3], Pmax[(k+2)%3]])
+                    ZS = x0 + np.zeros(XS.shape)
+                    C = [XS, YS, ZS]
+                    ax.plot_surface(C[(2-k)%3], C[(3-k)%3], C[(1-k)%3],
+                        rstride=1, cstride=1, color=couleurs[self.box_label[ct_lab]%10],
+                        shade=False, alpha=0.5,
+                        antialiased=False, linewidth=1)
+                    if viewlabel:
+                        x = .25*np.sum(C[(2-k)%3])
+                        y = .25*np.sum(C[(3-k)%3])
+                        z = .25*np.sum(C[(1-k)%3])
+                        ax.text(x, y, z, self.box_label[ct_lab], fontsize=18)
+                        ct_lab += 1
+            ax.set_xlim3d(xmin, xmax)
+            ax.set_ylim3d(ymin, ymax)
+            ax.set_zlim3d(zmin, zmax)
+            ax.set_xlabel("X")
+            ax.set_ylabel("Y")
+            ax.set_zlabel("Z")
+
+            for elem in self.list_elem:
+                if elem.isfluid:
+                    coul = plein
+                else:
+                    coul = 'white'
+                    elem._visualize(ax, coul, viewlabel)
+        else:
+            self.log.error('Error in geometry.visualize(): the dimension {0} is not allowed'.format(self.dim))
         plt.title("Geometry",fontsize=14)
         plt.draw()
         plt.hold(False)

@@ -74,6 +74,20 @@ Optionals
    * vtk
    * vispy
 
+References
+---------------------------
+
+.. [dH92] D. D'HUMIERES, *Generalized Lattice-Boltzmann Equations*,
+          Rarefied Gas Dynamics: Theory and Simulations, **159**, pp. 450-458,
+          AIAA Progress in astronomics and aeronautics (1992).
+.. [D08] F. DUBOIS, *Equivalent partial differential equations of a lattice Boltzmann scheme*,
+         Computers and Mathematics with Applications, **55**, pp. 1441-1449 (2008).
+.. [G14] B. GRAILLE, *Approximation of mono-dimensional hyperbolic systems: a lattice Boltzmann scheme as a relaxation method*,
+         Journal of Comutational Physics, **266** (3179757), pp. 74-88 (2014).
+.. [QdHL92] Y.H. QIAN, D. D'HUMIERES, and P. LALLEMAND,
+            *Lattice BGK Models for Navier-Stokes Equation*, Europhys. Lett., **17** (6), pp. 479-484 (1992).
+
+
 Indices and tables
 ---------------------------
 

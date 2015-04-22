@@ -8,7 +8,7 @@ classical framework of the d'Humières schemes.
 
 For pyLBM, the :py:class:`scheme<pyLBM.scheme.Scheme>` is performed
 through a dictionary. The generalized d'Humières framework for vectorial schemes
-is used. In the first section, we describe how build an elementary scheme. Then
+is used [dH92]_, [G14]_. In the first section, we describe how build an elementary scheme. Then
 the vectorial schemes are introduced as coupled elementary schemes.
 
 The elementary schemes
@@ -92,21 +92,18 @@ to the time :math:`t+dt` consists in the succession of these two phases.
 Examples in 1D
 ==============================
 
-The transport equation
+:math:`D1Q2` for the advection
 ------------------------------
 
 :download:`script<codes/scheme_D1Q2_advection.py>`
 
-A velocity :math:`c>0` being given, the system reads
+A velocity :math:`c\in{\mathbb R}` being given, the advection equation reads
 
 .. math::
   :nowrap:
 
-  \begin{equation*}\left\{
-  \begin{aligned}
-  &\partial_t u(t,x) + c \partial_x u(t,x) = 0, &&t>0, x\in{\mathbb R}, \\
-  &u(0, x) = u_0(x),&& x\in{\mathbb R}.
-  \end{aligned}\right.
+  \begin{equation*}
+  \partial_t u(t,x) + c \partial_x u(t,x) = 0, \qquad t>0, x\in{\mathbb R}.
   \end{equation*}
 
 Taken for instance :math:`c=0.5`, the following scheme can be used:
@@ -148,21 +145,18 @@ while the second moment :math:`m_1` relaxes to its equilibrium value
   \end{equation*}
 
 
-The Burger's equation
+:math:`D1Q2` for Burger's
 ------------------------------
 
 :download:`script<codes/scheme_D1Q2_Burgers.py>`
 
-The system reads
+The Burger's equation reads
 
 .. math::
   :nowrap:
 
-  \begin{equation*}\left\{
-  \begin{aligned}
-  &\partial_t u(t,x) + \tfrac{1}{2}\partial_x u^2(t,x) = 0, &&t>0, x\in{\mathbb R}, \\
-  &u(0, x) = u_0(x),&& x\in{\mathbb R}.
-  \end{aligned}\right.
+  \begin{equation*}
+  \partial_t u(t,x) + \tfrac{1}{2}\partial_x u^2(t,x) = 0, \qquad t>0, x\in{\mathbb R}.
   \end{equation*}
 
 The following scheme can be used:
@@ -175,11 +169,231 @@ The same dictionary has been used for this application with only one
 modification: the equilibrium value of the second moment
 :math:`m_1^{\textrm{eq}}` is taken to :math:`\tfrac{1}{2}m_0^2`.
 
-The wave equation
-------------------------------
+:math:`D1Q3` for the wave equation
+----------------------------------
 
 :download:`script<codes/scheme_D1Q3_wave.py>`
 
+The wave equation is rewritten into the system of two partial differential equations
+
+.. math::
+  :nowrap:
+
+  \begin{equation*}
+  \left\{
+  \begin{aligned}
+  &\partial_t u(t, x) + \partial_x v(t, x) = 0, & t>0, x\in{\mathbb R},\\
+  &\partial_t v(t, x) + c^2\partial_x u(t, x) = 0, & t>0, x\in{\mathbb R}.
+  \end{aligned}
+  \right.
+  \end{equation*}
+
+The following scheme can be used:
+
+.. literalinclude:: codes/scheme_D1Q3_wave.py
+    :lines: 7-
+    :linenos:
+
+
+Examples in 2D
+==============================
+
+
+:math:`D2Q4` for the advection
+------------------------------
+
+:download:`script<codes/scheme_D2Q4_advection.py>`
+
+A velocity :math:`(c_x, c_y)\in{\mathbb R}^2` being given,
+the advection equation reads
+
+.. math::
+  :nowrap:
+
+  \begin{equation*}
+  \partial_t u(t, x, y) +
+  c_x \partial_x u(t, x, y) +
+  c_y \partial_y u(t, x, y) = 0,
+  \qquad t>0, x, y \in{\mathbb R}.
+  \end{equation*}
+
+Taken for instance :math:`c_x=0.1, c_y=0.2`, the following scheme can be used:
+
+.. literalinclude:: codes/scheme_D2Q4_advection.py
+    :lines: 7-
+    :linenos:
+
+The dictionary ``d`` is used to set the dimension to 2,
+the scheme velocity to 1. The used scheme has four velocities:
+:math:`v_0=(1,0)`, :math:`v_1=(0,1)`, :math:`v_2=(-1,0)`, and
+:math:`v_3=(0,-1)`.
+The polynomials that define the moments are
+:math:`P_0 = 1`, :math:`P_1 = X`, :math:`P_2 = Y`, and
+:math:`P_3 = X^2-Y^2` so that
+the matrix of the moments is
+
+.. math::
+  :nowrap:
+
+  \begin{equation*} M =
+  \begin{pmatrix}
+  1&1&1&1\\ 1&0&-1&0\\ 0&1&0&-1\\ 1&-1&1&-1
+  \end{pmatrix}
+  \end{equation*}
+
+with the convention :math:`M_{ij} = P_i(v_j)`.
+Then, there are four distribution functions :math:`f_j, 0\leq j\leq 3`
+that move at the velocities :math:`v_j`,
+and four moments :math:`m_k = \sum_{j=0}^3 M_{kj}f_j`.
+The first moment :math:`m_0` is conserved during the relaxation phase
+(as the associated relaxation parameter is set to 0),
+while the other moments :math:`m_k, 1\leq k\leq 3` relaxe to their equilibrium values
+by the relations
+
+.. math::
+  :nowrap:
+
+  \begin{equation*}
+  \left\{
+  \begin{aligned}
+  m_1^\star &= m_1 - 1.9 (m_1 - 0.1m_0),\\
+  m_2^\star &= m_2 - 1.9 (m_2 - 0.2m_0),\\
+  m_3^\star &= (1-1.4)m_3.
+  \end{aligned}
+  \right.
+  \end{equation*}
+
+:math:`D2Q9` for Navier-Stokes
+------------------------------
+
+:download:`script<codes/scheme_D2Q9_Navier-Stokes.py>`
+
+The system of the compressible Navier-Stokes equations
+reads
+
+.. math::
+  :nowrap:
+
+  \begin{equation*}
+  \left\{
+  \begin{aligned}
+  &\partial_t \rho + \nabla{\cdot}(\rho {\boldsymbol u}) = 0,\\
+  &\partial_t (\rho {\boldsymbol u}) + \nabla{\cdot}(\rho {\boldsymbol u}{\otimes}{\boldsymbol u})
+  + \nabla p = \kappa \nabla (\nabla{\cdot}{\boldsymbol u}) + \eta \nabla{\cdot}
+  \bigl(\nabla{\boldsymbol u} + (\nabla{\boldsymbol u})^T - \nabla{\cdot}{\boldsymbol u}{\mathbb I}\bigr),
+  \end{aligned}
+  \right.
+  \end{equation*}
+
+where we removed the dependency of all unknown on the variables :math:`(t, x, y)`.
+The vector :math:`{\boldsymbol x}` stands for :math:`(x, y)` and,
+if :math:`\psi` is a scalar function of :math:`{\boldsymbol x}` and
+:math:`{\boldsymbol\phi}=(\phi_x,\phi_y)`
+is a vectorial function of :math:`{\boldsymbol x}`,
+the usual partial differential operators read
+
+.. math::
+  :nowrap:
+
+  \begin{equation*}
+  \begin{aligned}
+  &\nabla\psi = (\partial_x\psi, \partial_y\psi),\\
+  &\nabla{\cdot}{\boldsymbol\phi} = \partial_x\phi_x + \partial_y\phi_y,\\
+  &\nabla{\cdot}({\boldsymbol\phi}{\otimes}{\boldsymbol\phi}) = (\nabla{\cdot}(\phi_x{\boldsymbol\phi}), \nabla{\cdot}(\phi_y{\boldsymbol\phi})).
+  \end{aligned}
+  \end{equation*}
+
+The coefficients :math:`\kappa` and :math:`\eta` are the bulk and the shear viscosities.
+
+The following dictionary can be used to simulate the system of Navier-Stokes equations
+in the limit of small velocities:
+
+.. literalinclude:: codes/scheme_D2Q9_Navier-Stokes.py
+    :lines: 7-
+    :linenos:
+
+The scheme generated by the dictionary is the 9 velocities scheme with orthogonal
+moments introduced in [QdHL92]_
+
+Examples in 3D
+==============================
+
+
+:math:`D3Q6` for the advection
+------------------------------
+
+:download:`script<codes/scheme_D3Q6_advection.py>`
+
+A velocity :math:`(c_x, c_y, c_z)\in{\mathbb R}^2` being given,
+the advection equation reads
+
+.. math::
+  :nowrap:
+
+  \begin{equation*}
+  \partial_t u(t, x, y, z) +
+  c_x \partial_x u(t, x, y, z) +
+  c_y \partial_y u(t, x, y, z) +
+  c_z \partial_z u(t, x, y, z) = 0,
+  \quad t>0, x, y, z \in{\mathbb R}.
+  \end{equation*}
+
+Taken for instance :math:`c_x=0.1, c_y=-0.1, c_z=0.2`, the following scheme can be used:
+
+.. literalinclude:: codes/scheme_D3Q6_advection.py
+    :lines: 7-
+    :linenos:
+
+The dictionary ``d`` is used to set the dimension to 3,
+the scheme velocity to 1. The used scheme has six velocities:
+:math:`v_0=(0,0,1)`,
+:math:`v_1=(0,0,-1)`,
+:math:`v_2=(0,1,0)`,
+:math:`v_3=(0,-1,0)`,
+:math:`v_4=(1,0,0)`, and
+:math:`v_5=(-1,0,0)`.
+The polynomials that define the moments are
+:math:`P_0 = 1`, :math:`P_1 = X`, :math:`P_2 = Y`, :math:`P_3 = Z`,
+:math:`P_4 = X^2-Y^2`, and :math:`P_5 = X^2-Z^2` so that
+the matrix of the moments is
+
+.. math::
+  :nowrap:
+
+  \begin{equation*} M =
+  \begin{pmatrix}
+  1&1&1&1&1&1\\
+  0&0&0&0&1&-1\\
+  0&0&1&-1&0&0\\
+  1&-1&0&0&0&0\\
+  0&0&-1&-1&1&1\\
+  -1&-1&0&0&1&1
+  \end{pmatrix}
+  \end{equation*}
+
+with the convention :math:`M_{ij} = P_i(v_j)`.
+Then, there are six distribution functions :math:`f_j, 0\leq j\leq 5`
+that move at the velocities :math:`v_j`,
+and six moments :math:`m_k = \sum_{j=0}^5 M_{kj}f_j`.
+The first moment :math:`m_0` is conserved during the relaxation phase
+(as the associated relaxation parameter is set to 0),
+while the other moments :math:`m_k, 1\leq k\leq 5` relaxe to their equilibrium values
+by the relations
+
+.. math::
+  :nowrap:
+
+  \begin{equation*}
+  \left\{
+  \begin{aligned}
+  m_1^\star &= m_1 - 1.5 (m_1 - 0.1m_0),\\
+  m_2^\star &= m_2 - 1.5 (m_2 + 0.1m_0),\\
+  m_3^\star &= m_3 - 1.5 (m_3 - 0.2m_0),\\
+  m_4^\star &= (1-1.5)m_4,\\
+  m_5^\star &= (1-1.5)m_5.
+  \end{aligned}
+  \right.
+  \end{equation*}
 
 
 The vectorial schemes
