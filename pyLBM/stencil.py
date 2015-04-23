@@ -7,9 +7,7 @@
 
 import numpy as np
 from math import sqrt
-import logging
-import sys
-#from itertools import permutations
+from functools import wraps
 
 from .utils import itemproperty
 from .geometry import get_box
@@ -84,18 +82,15 @@ def permute_in_place(a):
                 a.reverse()
                 return
 
-def singleton(theClass):
+def singleton(wrapped_cls):
     """ decorator for a class to make a singleton out of it """
-    classInstances = {}
-
+    instances = {}
+    @wraps(wrapped_cls)
     def getInstance(*args, **kwargs):
-        """ creating or just return the one and only class instance.
-            The singleton depends on the parameters used in __init__ """
-        key = (theClass, args, str(kwargs))
-        if key not in classInstances:
-            classInstances[key] = theClass(*args, **kwargs)
-        return classInstances[key]
-
+        key = (wrapped_cls, args, str(kwargs))
+        if key not in instances:
+            instances[key] = wrapped_cls(*args, **kwargs)
+        return instances[key]
     return getInstance
 
 @singleton
