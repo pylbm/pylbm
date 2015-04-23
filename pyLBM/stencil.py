@@ -82,18 +82,14 @@ def permute_in_place(a):
                 a.reverse()
                 return
 
-def singleton(wrapped_cls):
-    """ decorator for a class to make a singleton out of it """
-    instances = {}
-    @wraps(wrapped_cls)
-    def getInstance(*args, **kwargs):
-        key = (wrapped_cls, args, str(kwargs))
-        if key not in instances:
-            instances[key] = wrapped_cls(*args, **kwargs)
-        return instances[key]
-    return getInstance
+class Singleton(type):
+    _instances = {}
+    def __call__(self, *args, **kwargs):
+        key = (self, args, str(kwargs))
+        if key not in self._instances:
+            self._instances[key] = super(Singleton, self).__call__(*args, **kwargs)
+        return self._instances[key]
 
-@singleton
 class Velocity(object):
     """
     Create a velocity.
@@ -155,6 +151,7 @@ class Velocity(object):
 
 
     """
+    __metaclass__ = Singleton
     _d = 1e3
     _R2 = np.array([[[5, 6, 4], [_d, _d, 2], [2, 5, 3]],
                     [[3, _d, _d], [_d, -1, _d], [1, _d, _d]],

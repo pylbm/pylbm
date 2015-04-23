@@ -474,7 +474,7 @@ class ClassDoc(NumpyDocString):
 
     def __init__(self, cls, doc=None, modulename='', func_doc=FunctionDoc,
                  config={}):
-        if not inspect.isclass(cls) and not inspect.isfunction(cls) and cls is not None:
+        if not inspect.isclass(cls) and cls is not None:
             raise ValueError("Expected a class or None, but got %r" % cls)
         self._cls = cls
 
