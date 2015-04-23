@@ -26,7 +26,7 @@ demo/examples/geometry/
 Examples in 1D
 ******************************
 
-The segment [0, 1]
+The segment :math:`[0, 1]`
 ==============================
 
 :download:`script<codes/geometry_1D_segment.py>`
@@ -35,17 +35,17 @@ The segment [0, 1]
     :lines: 11-
     :linenos:
 
-The segment [0,1] is created by the dictionary with the key ``box``.
-We then add the labels 0 and 1 on the ends with the key ``label``.
+The segment :math:`[0,1]` is created by the dictionary with the key ``box``.
+We then add the labels 0 and 1 on the edges with the key ``label``.
 The result is then visualized with the labels by using the method
 :py:meth:`visualize<pyLBM.geometry.Geometry.visualize>`.
-If no labels are given in the dictionary, the default value is 0.
+If no labels are given in the dictionary, the default value is -1.
 
 
 Examples in 2D
 ******************************
 
-A simple squared domain
+The square :math:`[0,1]^2`
 ==============================
 
 :download:`script<codes/geometry_2D_square_label.py>`
@@ -54,7 +54,7 @@ A simple squared domain
     :lines: 11-
     :linenos:
 
-The square [0,1]x[0,1] is created by the dictionary with the key ``box``.
+The square :math:`[0,1]^2` is created by the dictionary with the key ``box``.
 The result is then visualized by using the method
 :py:meth:`visualize <pyLBM.geometry.Geometry.visualize>`.
 
@@ -64,10 +64,10 @@ through a list of integers with the conventions:
 .. hlist::
   :columns: 2
 
-  * first for the bottom
-  * second for the right
-  * third for the top
-  * fourth for the left
+  * first for the left (:math:`x=x_{\operatorname{min}}`)
+  * third for the bottom (:math:`y=y_{\operatorname{min}}`)
+  * second for the right (:math:`x=x_{\operatorname{max}}`)
+  * fourth for the top (:math:`y=y_{\operatorname{max}}`)
 
 .. literalinclude:: codes/geometry_2D_square_label.py
     :lines: 11-
@@ -75,7 +75,7 @@ through a list of integers with the conventions:
 
 If all the labels have the same value, a shorter solution is to
 give only the integer value of the label instead of the list.
-If no labels are given in the dictionary, the default value is 0.
+If no labels are given in the dictionary, the default value is -1.
 
 A square with a hole
 ==============================
@@ -84,7 +84,7 @@ A square with a hole
 :download:`script 2<codes/geometry_2D_square_triangle.py>`
 :download:`script 3<codes/geometry_2D_square_parallelogram.py>`
 
-The unit square [0,1]x[0,1] can be holed with a circle (script 1)
+The unit square :math:`[0,1]^2` can be holed with a circle (script 1)
 or with a triangular or with a parallelogram (script 3)
 
 In the first example,
@@ -118,7 +118,7 @@ A complex cavity
 :download:`script <codes/geometry_2D_cavity.py>`
 
 A complex geometry can be build by using a list of elements. In this example,
-the box is fixed to the unit square [0,1]x[0,1]. A square hole is added with the
+the box is fixed to the unit square :math:`[0,1]^2`. A square hole is added with the
 argument ``isfluid=False``. A strip and a circle are then added with the argument
 ``isfluid=True``. Finally, a square hole is put. The value of ``elements``
 contains the list of all the previous elements. Note that the order of
@@ -144,4 +144,34 @@ in this way.
 Examples in 3D
 ******************************
 
-TODO
+The cube :math:`[0,1]^3`
+==============================
+
+:download:`script<codes/geometry_3D_cube.py>`
+
+.. literalinclude:: codes/geometry_3D_cube.py
+    :lines: 11-
+    :linenos:
+
+The cube :math:`[0,1]^3` is created by the dictionary with the key ``box``.
+The result is then visualized by using the method
+:py:meth:`visualize <pyLBM.geometry.Geometry.visualize>`.
+
+We then add the labels on each edge of the square
+through a list of integers with the conventions:
+
+.. hlist::
+  :columns: 2
+
+  * first for the left (:math:`x=x_{\operatorname{min}}`)
+  * third for the bottom (:math:`y=y_{\operatorname{min}}`)
+  * fifth for the front (:math:`z=z_{\operatorname{min}}`)
+  * second for the right (:math:`x=x_{\operatorname{max}}`)
+  * fourth for the top (:math:`y=y_{\operatorname{max}}`)
+  * sixth for the back (:math:`z=z_{\operatorname{max}}`)
+
+If all the labels have the same value, a shorter solution is to
+give only the integer value of the label instead of the list.
+If no labels are given in the dictionary, the default value is -1.
+
+.. image:: /images/geometry_3D_cube.png
