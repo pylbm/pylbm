@@ -7,9 +7,7 @@
 
 import numpy as np
 from math import sqrt
-import logging
-import sys
-#from itertools import permutations
+from functools import wraps
 
 from .utils import itemproperty
 from .geometry import get_box
@@ -84,21 +82,14 @@ def permute_in_place(a):
                 a.reverse()
                 return
 
-def singleton(theClass):
-    """ decorator for a class to make a singleton out of it """
-    classInstances = {}
+class Singleton(type):
+    _instances = {}
+    def __call__(self, *args, **kwargs):
+        key = (self, args, str(kwargs))
+        if key not in self._instances:
+            self._instances[key] = super(Singleton, self).__call__(*args, **kwargs)
+        return self._instances[key]
 
-    def getInstance(*args, **kwargs):
-        """ creating or just return the one and only class instance.
-            The singleton depends on the parameters used in __init__ """
-        key = (theClass, args, str(kwargs))
-        if key not in classInstances:
-            classInstances[key] = theClass(*args, **kwargs)
-        return classInstances[key]
-
-    return getInstance
-
-@singleton
 class Velocity(object):
     """
     Create a velocity.
@@ -160,6 +151,7 @@ class Velocity(object):
 
 
     """
+    __metaclass__ = Singleton
     _d = 1e3
     _R2 = np.array([[[5, 6, 4], [_d, _d, 2], [2, 5, 3]],
                     [[3, _d, _d], [_d, -1, _d], [1, _d, _d]],
