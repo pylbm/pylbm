@@ -18,7 +18,3 @@ The 2D elements are:
   The class Circle <class_circle>
   The class Parallelogram <class_parallelogram>
   The class Triangle <class_triangle>
-
-The 3D elements are:
-
-TODO

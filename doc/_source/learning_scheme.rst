@@ -87,7 +87,25 @@ to the time :math:`t+dt` consists in the succession of these two phases.
      0\leqslant j\leqslant q{-}1,
      \end{equation*}
 
+Notations
+==============================
 
+The :py:class:`scheme<pyLBM.scheme.Scheme>` is defined and build
+through a dictionary in pyLBM. Let us first list the several key words
+of this dictionary:
+
+- ``dim``: the spatial dimension. This argument is optional if the geometry is
+  known, that is if the dimension can be computed through the list of the variables ;
+- ``scheme_velocity``: the velocity of the scheme denoted by :math:`\lambda` in the
+  previous section and defined as the spatial step over the time step
+  (:math:`\lambda=dx/dt`) ;
+- ``schemes``: the list of the schemes. In pyLBM, several coupled schemes can be used,
+  the coupling being done through the equilibrium values of the moments.
+  Some examples with only one scheme and with more than one schemes are given in the next sections.
+  Each element of the list should be a dictionay with the following key words:
+
+  - ``velocities``: the list of the velocity indices. 
+  - titi
 
 Examples in 1D
 ==============================
