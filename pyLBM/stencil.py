@@ -3,7 +3,6 @@
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
-#from __future__ import absolute_import
 
 import numpy as np
 from math import sqrt
