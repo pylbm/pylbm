@@ -148,6 +148,7 @@ class Velocity(object):
 
     .. image:: /images/Velocities_2D.jpeg
 
+    .. image:: /images/Velocities_3D.jpeg
 
 
     """
