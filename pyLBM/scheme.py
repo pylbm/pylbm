@@ -151,7 +151,19 @@ class Scheme:
 
         self.P = [create_matrix(s['polynomials']) for s in scheme]
         self.EQ = [create_matrix(s['equilibrium']) for s in scheme]
+
+        self.iconsm, self.consm = self._get_conserved_moments(scheme)
+
+        self._EQ = copy.deepcopy(self.EQ)
+
+        m = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(self.stencil.unvtot)] for i in xrange(len(self.EQ))]
+        for im, cm in zip(self.iconsm, self.consm):
+            for i, eq in enumerate(self._EQ):
+                for j, e in enumerate(eq):
+                    self._EQ[i][j] = e.replace(cm, m[im[0]][im[1]])
+
         self.s = [s['relaxation_parameters'] for s in scheme]
+        self.param = dico.get('parameters', None)
 
         self.M, self.invM = [], []
         self.Mnum, self.invMnum = [], []
@@ -247,6 +259,35 @@ class Scheme:
                     self.invMnum[k][i, j] = (float)(self.invM[k][i, j].subs([(LA,self.la),]))
                     self.MnumGlob[self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j] = self.Mnum[k][i, j]
                     self.invMnumGlob[self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j] = self.invMnum[k][i, j]
+    def _get_conserved_moments(self, scheme):
+        consm_tmp = [s.get('conserved_moments', None) for s in scheme]
+        consm = []
+
+        def find_indices(ieq, list_eq, c):
+            if [c] in leq:
+                ic = (ieq, leq.index([c])),
+                if isinstance(c, str):
+                    cm = parse_expr(c)
+                else:
+                    cm = c
+                return ic, cm
+
+        # find the indices of the conserved moments in the equilibrium equation
+        iconsm = ()
+        for ieq, eq in enumerate(self.EQ):
+            leq = eq.tolist()
+            cm_ieq = consm_tmp[ieq]
+            if cm_ieq is not None:
+                if isinstance(cm_ieq, sp.Symbol):
+                    ic, cm = find_indices(ieq, leq, cm_ieq)
+                    iconsm += ic
+                    consm.append(cm)
+                else:
+                    for c in cm_ieq:
+                        ic, cm = find_indices(ieq, leq, c)
+                        iconsm += ic
+                        consm.append(cm)
+        return iconsm, consm
 
     def generate(self):
         """
