@@ -143,7 +143,7 @@ class Scheme:
             self.nv_on_beg = False
         else:
             self.nv_on_beg = True
-        self.log.debug("Message from scheme.py: nv_on_beg = {0}".format(self.nv_on_beg))
+        self.log.debug("nv_on_beg = {0}".format(self.nv_on_beg))
         self.generate()
         self.bc_compute = True
 
