@@ -8,15 +8,12 @@ import sys
 
 import numpy as np
 import sympy as sp
-from sympy.matrices import Matrix, zeros
 
 from .stencil import Stencil
 from .generator import *
 
 from .logs import setLogger
 
-X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
-u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
 
 class Scheme:
     """
