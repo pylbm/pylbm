@@ -155,8 +155,7 @@ class Canvas(app.Canvas):
             self.update()
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
-
-u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
+rho, qx, qy = sp.symbols('rho, qx, qy')
 
 def initialization_rho(x,y):
     return rhoo * np.ones((x.shape[0], y.shape[0]), dtype='float64')
@@ -206,10 +205,10 @@ if __name__ == "__main__":
     s8 = s7
     s  = [0.,0.,0.,s3,s4,s5,s6,s7,s8]
     dummy = 1./(LA**2*rhoo)
-    qx2 = dummy*u[0][1]**2
-    qy2 = dummy*u[0][2]**2
+    qx2 = dummy*qx**2
+    qy2 = dummy*qy**2
     q2  = qx2+qy2
-    qxy = dummy*u[0][1]*u[0][2]
+    qxy = dummy*qx*qy
 
     # group = mpi.COMM_WORLD.Get_group()
     # incl = [1, 3]
@@ -224,25 +223,27 @@ if __name__ == "__main__":
         'scheme_velocity':la,
         'inittype': 'moments',
         'schemes':[{'velocities':range(9),
-                   'polynomials':Matrix([1,
+                   'polynomials':[1,
                                  LA*X, LA*Y,
                                  3*(X**2+Y**2)-4,
                                  0.5*(9*(X**2+Y**2)**2-21*(X**2+Y**2)+8),
                                  3*X*(X**2+Y**2)-5*X, 3*Y*(X**2+Y**2)-5*Y,
-                                 X**2-Y**2, X*Y]),
+                                 X**2-Y**2, X*Y],
                     'relaxation_parameters':s,
-                    'equilibrium':Matrix([u[0][0],
-                                  u[0][1], u[0][2],
-                                  -2*u[0][0] + 3*q2,
-                                  u[0][0]+1.5*q2,
-                                  -u[0][1]/LA, -u[0][2]/LA,
-                                  qx2-qy2, qxy]),
+                    'equilibrium':[rho,
+                                  qx, qy,
+                                  -2*rho + 3*q2,
+                                  rho + 1.5*q2,
+                                  -qx/LA, -qy/LA,
+                                  qx2 - qy2, qxy],
+                    'conserved_moments': [rho, qx, qy],
                     'init':{0:(initialization_rho,),
                             1:(initialization_qx,),
                             2:(initialization_qy,)
                             },
         },
         ],
+        'parameters':{'LA': 1.},
         'boundary_conditions':{
             0:{'method':{0: pyLBM.bc.bouzidi_bounce_back}, 'value':bc_rect},
             1:{'method':{0: pyLBM.bc.neumann_vertical}, 'value':None},
