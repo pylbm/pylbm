@@ -8,12 +8,20 @@ import sys
 
 import numpy as np
 import sympy as sp
+from sympy.parsing.sympy_parser import parse_expr, standard_transformations
+import copy
 
 from .stencil import Stencil
 from .generator import *
 
 from .logs import setLogger
 
+def param_to_tuple(param):
+    if param is not None:
+        pk, pv = param.keys(), param.values()
+    else:
+        pk, pv = (), ()
+    return pk, pv
 
 class Scheme:
     """
@@ -249,16 +257,23 @@ class Scheme:
         self.MnumGlob = np.zeros((self.stencil.nv_ptr[-1], self.stencil.nv_ptr[-1]))
         self.invMnumGlob = np.zeros((self.stencil.nv_ptr[-1], self.stencil.nv_ptr[-1]))
 
-        for k in xrange(self.nscheme):
-            nvk = self.stencil.nv[k]
-            self.Mnum.append(np.empty((nvk, nvk), dtype='float64'))
-            self.invMnum.append(np.empty((nvk, nvk), dtype='float64'))
-            for i in xrange(nvk):
-                for j in xrange(nvk):
-                    self.Mnum[k][i, j] = (float)(self.M[k][i, j].subs([(LA,self.la),]))
-                    self.invMnum[k][i, j] = (float)(self.invM[k][i, j].subs([(LA,self.la),]))
-                    self.MnumGlob[self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j] = self.Mnum[k][i, j]
-                    self.invMnumGlob[self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j] = self.invMnum[k][i, j]
+        pk, pv = param_to_tuple(self.param)
+
+        try:
+            for k in xrange(self.nscheme):
+                nvk = self.stencil.nv[k]
+                self.Mnum.append(np.empty((nvk, nvk)))
+                self.invMnum.append(np.empty((nvk, nvk)))
+                for i in xrange(nvk):
+                    for j in xrange(nvk):
+                        self.Mnum[k][i, j] = sp.N(self.M[k][i, j].subs(zip(pk, pv)))
+                        self.invMnum[k][i, j] = sp.N(self.invM[k][i, j].subs(zip(pk, pv)))
+                        self.MnumGlob[self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j] = self.Mnum[k][i, j]
+                        self.invMnumGlob[self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j] = self.invMnum[k][i, j]
+        except TypeError:
+            self.log.error("Unable to convert to float the expression {0} or {1}.\nCheck the 'parameters' entry.".format(self.M[k][i, j], self.invM[k][i, j]))
+            sys.exit()
+
     def _get_conserved_moments(self, scheme):
         consm_tmp = [s.get('conserved_moments', None) for s in scheme]
         consm = []
@@ -312,8 +327,14 @@ class Scheme:
             self.generator.onetimestep(self.stencil)
 
         self.generator.transport(self.nscheme, self.stencil)
-        self.generator.equilibrium(self.nscheme, self.stencil, self.EQ, self.la)
-        self.generator.relaxation(self.nscheme, self.stencil, self.s, self.EQ, self.la)
+
+        pk, pv = param_to_tuple(self.param)
+        EQ = []
+        for e in self._EQ:
+            EQ.append(e.subs(zip(pk, pv)))
+
+        self.generator.equilibrium(self.nscheme, self.stencil, EQ)
+        self.generator.relaxation(self.nscheme, self.stencil, self.s, EQ)
         self.generator.compile()
 
     def m2f(self, m, f):
@@ -488,9 +509,12 @@ class Scheme:
             k += l
         k = 0
         list_linarization = dico.get('linearization', None)
+
+        pk, pv = param_to_tuple(self.param)
+
         for n in range(ns):
             for i in range(nv[n]):
-                eqi = self.EQ[n][i].subs([(LA, self.la),])
+                eqi = self._EQ[n][i].subs(zip(pk, pv))
                 if str(eqi) != "m[%d][%d]"%(n, i):
                     l = 0
                     for m in range(ns):
