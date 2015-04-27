@@ -199,21 +199,10 @@ class Scheme:
         for v, p in zip(self.stencil.v, self.P):
             compt+=1
             lv = len(v)
-            self.M.append(zeros(lv, lv))
-            if self.dim == 1:
-                for i in xrange(lv):
-                    for j in xrange(lv):
-                        self.M[-1][i, j] = p[i].subs([(X, v[j].vx),])
-            elif self.dim == 2:
-                for i in xrange(lv):
-                    for j in xrange(lv):
-                        self.M[-1][i, j] = p[i].subs([(X, v[j].vx), (Y, v[j].vy)])
-            elif self.dim == 3:
-                for i in xrange(lv):
-                    for j in xrange(lv):
-                        self.M[-1][i, j] = p[i].subs([(X, v[j].vx), (Y, v[j].vy), (Z, v[j].vz)])
-            else:
-                self.log.error('Function create_moments_matrices: the dimension is not correct')
+            self.M.append(sp.zeros(lv, lv))
+            for i in xrange(lv):
+                for j in xrange(lv):
+                    self.M[-1][i, j] = p[i].subs([('X', v[j].vx), ('Y', v[j].vy), ('Z', v[j].vz)])
             try:
                 self.invM.append(self.M[-1].inv())
             except:
