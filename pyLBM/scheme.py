@@ -126,8 +126,31 @@ class Scheme:
         self.la = dico['scheme_velocity']
         self.nscheme = self.stencil.nstencils
         scheme = dico['schemes']
-        self.P = [s['polynomials'] for s in scheme]
-        self.EQ = [s['equilibrium'] for s in scheme]
+
+        def create_matrix(L):
+            def auto_moments(tokens, local_dict, global_dict):
+                result = []
+                i = 0
+                while(i < len(tokens)):
+                    tokNum, tokVal = tokens[i]
+                    if tokVal == 'm':
+                        name = ''.join([val for n, val in tokens[i:i+7]])
+                        result.append((tokNum, 'Symbol("{0}")'.format(name)))
+                        i += 7
+                    else:
+                        result.append(tokens[i])
+                        i += 1
+                return result
+            res = []
+            for l in L:
+                if isinstance(l, str):
+                    res.append(parse_expr(l, transformations=(auto_moments,) + standard_transformations))
+                else:
+                    res.append(l)
+            return sp.Matrix(res)
+
+        self.P = [create_matrix(s['polynomials']) for s in scheme]
+        self.EQ = [create_matrix(s['equilibrium']) for s in scheme]
         self.s = [s['relaxation_parameters'] for s in scheme]
 
         self.M, self.invM = [], []
