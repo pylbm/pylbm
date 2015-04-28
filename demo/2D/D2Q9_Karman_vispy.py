@@ -221,7 +221,7 @@ if __name__ == "__main__":
         'elements':[pyLBM.Circle([.3, 0.5*(ymin+ymax)+2*dx], rayon, label=2)],
         'space_step':dx,
         'scheme_velocity':la,
-        'inittype': 'moments',
+        #'inittype': 'moments',
         'schemes':[{'velocities':range(9),
                    'polynomials':[1,
                                  LA*X, LA*Y,
@@ -243,7 +243,7 @@ if __name__ == "__main__":
                             },
         },
         ],
-        'parameters':{'LA': 1.},
+        'parameters':{'LA':la},
         'boundary_conditions':{
             0:{'method':{0: pyLBM.bc.bouzidi_bounce_back}, 'value':bc_rect},
             1:{'method':{0: pyLBM.bc.neumann_vertical}, 'value':None},
