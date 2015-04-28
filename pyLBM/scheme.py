@@ -136,7 +136,16 @@ class Scheme:
         scheme = dico['schemes']
 
         def create_matrix(L):
+            """
+            convert a list of strings to a sympy Matrix.
+            """
             def auto_moments(tokens, local_dict, global_dict):
+                """
+                if the user uses a string to describe the moments like
+                'm[0][0]', this function converts it as Symbol('m[0][0]').
+                This fix the problem of auto_symbol that doesn't support
+                indexing.
+                """
                 result = []
                 i = 0
                 while(i < len(tokens)):
@@ -163,7 +172,7 @@ class Scheme:
         self.P = [create_matrix(s['polynomials']) for s in scheme]
         self.EQ = [create_matrix(s['equilibrium']) for s in scheme]
 
-        self.iconsm, self.consm = self._get_conserved_moments(scheme)
+        self.consm = self._get_conserved_moments(scheme)
 
         # rename conserved moments with the notation m[x][y]
         # needed to generate the code
@@ -172,10 +181,10 @@ class Scheme:
         self._EQ = copy.deepcopy(self.EQ)
 
         m = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(self.stencil.unvtot)] for i in xrange(len(self.EQ))]
-        for im, cm in zip(self.iconsm, self.consm):
+        for cm, icm in self.consm.iteritems():
             for i, eq in enumerate(self._EQ):
                 for j, e in enumerate(eq):
-                    self._EQ[i][j] = e.replace(cm, m[im[0]][im[1]])
+                    self._EQ[i][j] = e.replace(cm, m[icm[0]][icm[1]])
 
         self.s = [s['relaxation_parameters'] for s in scheme]
         self.param = dico.get('parameters', None)
@@ -185,10 +194,9 @@ class Scheme:
 
         self.create_moments_matrices()
 
-        #self.nv_on_beg = nv_on_beg
         self.generator = dico.get('generator', NumpyGenerator)(comm=dico.get('comm', mpi.COMM_WORLD))
         self.log.info("Generator used for the scheme functions:\n{0}\n".format(self.generator))
-        #print self.generator
+
         if isinstance(self.generator, CythonGenerator):
             self.nv_on_beg = False
         else:
@@ -282,34 +290,45 @@ class Scheme:
             sys.exit()
 
     def _get_conserved_moments(self, scheme):
+        """
+        return conserved moments and their indices in the scheme entry.
+
+        Parameters
+        ----------
+
+        scheme : dictionnary that describes the LBM schemes
+
+        Output
+        ------
+
+        consm : dictionnary where the keys are the conserved moments and
+                the values their indices in the LBM schemes.
+        """
         consm_tmp = [s.get('conserved_moments', None) for s in scheme]
-        consm = []
+        consm = {}
 
         def find_indices(ieq, list_eq, c):
             if [c] in leq:
-                ic = (ieq, leq.index([c])),
+                ic = (ieq, leq.index([c]))
                 if isinstance(c, str):
                     cm = parse_expr(c)
                 else:
                     cm = c
                 return ic, cm
 
-        # find the indices of the conserved moments in the equilibrium equation
-        iconsm = ()
+        # find the indices of the conserved moments in the equilibrium equations
         for ieq, eq in enumerate(self.EQ):
             leq = eq.tolist()
             cm_ieq = consm_tmp[ieq]
             if cm_ieq is not None:
                 if isinstance(cm_ieq, sp.Symbol):
                     ic, cm = find_indices(ieq, leq, cm_ieq)
-                    iconsm += ic
-                    consm.append(cm)
+                    consm[cm] = ic
                 else:
                     for c in cm_ieq:
                         ic, cm = find_indices(ieq, leq, c)
-                        iconsm += ic
-                        consm.append(cm)
-        return iconsm, consm
+                        consm[cm] = ic
+        return consm
 
     def generate(self):
         """
