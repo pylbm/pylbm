@@ -189,11 +189,14 @@ class Scheme:
         self.s = [s['relaxation_parameters'] for s in scheme]
         self.param = dico.get('parameters', None)
 
+        self.init = self.set_initialization(scheme)
+
         self.M, self.invM = [], []
         self.Mnum, self.invMnum = [], []
 
         self.create_moments_matrices()
 
+        # generate the code
         self.generator = dico.get('generator', NumpyGenerator)(comm=dico.get('comm', mpi.COMM_WORLD))
         self.log.info("Generator used for the scheme functions:\n{0}\n".format(self.generator))
 
@@ -203,6 +206,7 @@ class Scheme:
             self.nv_on_beg = True
         self.log.debug("nv_on_beg = {0}".format(self.nv_on_beg))
         self.generate()
+
         self.bc_compute = True
 
         # stability
@@ -329,6 +333,55 @@ class Scheme:
                         ic, cm = find_indices(ieq, leq, c)
                         consm[cm] = ic
         return consm
+
+    def set_initialization(self, scheme):
+        """
+        set the initialization functions for the conserved moments.
+
+        Parameters
+        ----------
+
+        scheme : dictionnary that describes the LBM schemes
+
+        Output
+        ------
+
+        init : dictionnary where the keys are the indices of the
+               conserved moments and the values must be
+
+               a constant (int or float)
+               a tuple of size 2 that describes a function and its
+               extra args
+        
+        """
+        init = {}
+        for ns, s in enumerate(scheme):
+            for k, v in s['init'].iteritems():
+
+                try:
+                    if isinstance(k, str):
+                        indices = self.consm[parse_expr(k)]
+                    elif isinstance(k, sp.Symbol):
+                        indices = self.consm[k]
+                    elif isinstance(k, int):
+                        indices = (ns, k)
+                    else:
+                        raise ValueError
+
+                    init[indices] = v
+
+                except ValueError:
+                    sss = 'Error in the creation of the scheme: wrong dictionnary\n'
+                    sss += 'the key `init` should contain a dictionnary with'
+                    sss += '   key: the moment to init'
+                    sss += '        should be the name of the moment as a string or'
+                    sss += '        a sympy Symbol or an integer'
+                    sss += '   value: the initial value'
+                    sss += '        should be a constant, a tuple with a function'
+                    sss += '        and extra args or a lambda function'
+                    self.log.error(sss)
+                    sys.exit()
+        return init
 
     def generate(self):
         """

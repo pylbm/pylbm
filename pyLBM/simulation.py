@@ -339,25 +339,29 @@ class Simulation:
             #y = self.domain.x[1][: ,np.newaxis]
             coords = (x, y)
 
-        schemes = dico['schemes']
-        for ns, s in enumerate(schemes):
-            for k, v in s['init'].iteritems():
+        if inittype == 'moments':
+            array_to_init = self._m
+        elif inittype == 'distributions':
+            array_to_init = self._F
+        else:
+            sss = 'Error in the creation of the scheme: wrong dictionnary\n'
+            sss += 'the key `inittype` should be moments or distributions'
+            self.log.error(sss)
+            sys.exit()
+
+        for k, v in self.scheme.init.iteritems():
+            if self.nv_on_beg:
+                indices = self.scheme.stencil.nv_ptr[k[0]] + k[1]
+            else:
+                indices = (slice(None),)*self.dim + (self.scheme.stencil.nv_ptr[k[0]] + k[1],)
+
+            if isinstance(v, tuple):
                 f = v[0]
                 extraargs = v[1] if len(v) == 2 else ()
                 fargs = coords + extraargs
-                if self.nv_on_beg:
-                    indices = self.scheme.stencil.nv_ptr[ns] + k
-                else:
-                    indices = (slice(None),)*self.dim + (self.scheme.stencil.nv_ptr[ns] + k,)
-                if inittype == 'moments':
-                    self._m[indices] = f(*fargs)
-                elif inittype == 'distributions':
-                    self._F[indices] = f(*fargs)
-                else:
-                    sss = 'Error in the creation of the scheme: wrong dictionnary\n'
-                    sss += 'the key `inittype` should be moments or distributions'
-                    self.log.error(sss)
-                    sys.exit()
+                array_to_init[indices] = f(*fargs)
+            else:
+                array_to_init[indices] = v
 
 
         if inittype == 'moments':
