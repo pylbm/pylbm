@@ -143,7 +143,10 @@ class Scheme:
                     tokNum, tokVal = tokens[i]
                     if tokVal == 'm':
                         name = ''.join([val for n, val in tokens[i:i+7]])
-                        result.append((tokNum, 'Symbol("{0}")'.format(name)))
+                        result.extend([(1, 'Symbol'),
+                                       (51, '('),
+                                       (3, "'{0}'".format(name)),
+                                       (51, ')')])
                         i += 7
                     else:
                         result.append(tokens[i])
@@ -162,6 +165,10 @@ class Scheme:
 
         self.iconsm, self.consm = self._get_conserved_moments(scheme)
 
+        # rename conserved moments with the notation m[x][y]
+        # needed to generate the code
+        # where x is the number of the scheme
+        #       y is the index in equilibrium corresponding to the conserved moment
         self._EQ = copy.deepcopy(self.EQ)
 
         m = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(self.stencil.unvtot)] for i in xrange(len(self.EQ))]
