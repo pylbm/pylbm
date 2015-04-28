@@ -345,24 +345,14 @@ class Simulation:
                 f = v[0]
                 extraargs = v[1] if len(v) == 2 else ()
                 fargs = coords + extraargs
+                if self.nv_on_beg:
+                    indices = self.scheme.stencil.nv_ptr[ns] + k
+                else:
+                    indices = (slice(None),)*self.dim + (self.scheme.stencil.nv_ptr[ns] + k,)
                 if inittype == 'moments':
-                    if self.nv_on_beg:
-                        self._m[self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
-                    else:
-                        self.log.debug('tricky for the treatment of the dimension')
-                        if self.dim == 1:
-                            self._m[:, self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
-                        elif self.dim == 2:
-                            self._m[:, :, self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
-                        elif self.dim == 3:
-                            self._m[:, :, :, self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
-                        else:
-                            self.log.error('Problem of dimension in initialization')
+                    self._m[indices] = f(*fargs)
                 elif inittype == 'distributions':
-                    if self.nv_on_beg:
-                        self._F[self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
-                    else:
-                        self._F[:, :, self.scheme.stencil.nv_ptr[ns] + k] = f(*fargs)
+                    self._F[indices] = f(*fargs)
                 else:
                     sss = 'Error in the creation of the scheme: wrong dictionnary\n'
                     sss += 'the key `inittype` should be moments or distributions'
