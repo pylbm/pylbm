@@ -237,7 +237,7 @@ if __name__ == "__main__":
                                   -qx/LA, -qy/LA,
                                   qx2 - qy2, qxy],
                     'conserved_moments': [rho, qx, qy],
-                    'init':{'rho1': rhoo,
+                    'init':{rho: rhoo,
                             qx: uo,
                             qy: 0.
                             },
