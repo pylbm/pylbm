@@ -448,6 +448,8 @@ class Stencil(list):
       get the numbering of the unique velocities
     num :
       get the numbering of the velocities for the stencil k
+    get_all_velocities :
+      get all the velocities for all the stencils in one array
     visualize :
       plot the stencil of velocities
 
@@ -634,6 +636,16 @@ class Stencil(list):
         """
         vectorize = np.vectorize(lambda obj: obj.num)
         return vectorize(self.v[k])
+
+    def get_all_velocities(self):
+        """
+        get all the velocities for all the stencils in one array
+        """
+        vec = np.vectorize(lambda obj: np.array([obj.vx, obj.vy, obj.vz])[:self.dim])
+        allv = vec(self.v).flatten()
+        # with the dimension < 3, we have None so the array is
+        # of dtype=object. We convert this array to dtype=int
+        return np.asarray(allv.tolist(), dtype=int)
 
     def __str__(self):
         s = "Stencil informations\n"
