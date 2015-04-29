@@ -197,7 +197,7 @@ from libc.stdlib cimport malloc, free
         self.code += get_f + "\n"
         self.code += set_f + "\n"
 
-    def equilibrium(self, ns, stencil, eq, la, dtype = 'f8'):
+    def equilibrium(self, ns, stencil, eq, dtype = 'f8'):
         """
         generate the code of the projection on the equilibrium
 
@@ -210,8 +210,6 @@ from libc.stdlib cimport malloc, free
           the stencil of velocities
         eq : sympy matrix
           the equilibrium (formally given)
-        la : double
-          the value of the scheme velocity (dx/dt)
         dtype : string, optional
           the type of the data (default 'f8')
 
@@ -244,7 +242,7 @@ from libc.stdlib cimport malloc, free
             for i in xrange(stencil.nv[k]):
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
                     if eq[k][i] != 0:
-                        str2input = str(eq[k][i].subs([(sp.symbols('LA'), la),]))
+                        str2input = str(eq[k][i])
                         res = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", subpow, str2input)
                         res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub, res)
 
@@ -253,7 +251,7 @@ from libc.stdlib cimport malloc, free
                         self.code += "\t\tm[i, %d] = 0.\n"%(stencil.nv_ptr[k] + i)
         self.code += "\n"
 
-    def relaxation(self, ns, stencil, s, eq, la, dtype = 'f8'):
+    def relaxation(self, ns, stencil, s, eq, dtype = 'f8'):
         """
         generate the code of the relaxation phase
 
@@ -268,8 +266,6 @@ from libc.stdlib cimport malloc, free
           the values of the relaxation parameters
         eq : sympy matrix
           the equilibrium (formally given)
-        la : double
-          the value of the scheme velocity (dx/dt)
         dtype : string, optional
           the type of the data (default 'f8')
 
@@ -297,7 +293,7 @@ from libc.stdlib cimport malloc, free
             for i in xrange(stencil.nv[k]):
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
                     if eq[k][i] != 0:
-                        str2input = str(eq[k][i].subs([(sp.symbols('LA'), la),]))
+                        str2input = str(eq[k][i])
                         res = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", subpow, str2input)
                         res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub, res)
 

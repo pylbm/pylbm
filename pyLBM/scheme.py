@@ -197,13 +197,13 @@ class Scheme:
         self.create_moments_matrices()
 
         # generate the code
-        self.generator = dico.get('generator', NumpyGenerator)(comm=dico.get('comm', mpi.COMM_WORLD))
+        self.generator = dico.get('generator', NumpyGenerator)()
         self.log.info("Generator used for the scheme functions:\n{0}\n".format(self.generator))
 
-        if isinstance(self.generator, CythonGenerator):
-            self.nv_on_beg = False
-        else:
+        if isinstance(self.generator, NumpyGenerator):
             self.nv_on_beg = True
+        else:
+            self.nv_on_beg = False
         self.log.debug("nv_on_beg = {0}".format(self.nv_on_beg))
         self.generate()
 
@@ -352,7 +352,7 @@ class Scheme:
                a constant (int or float)
                a tuple of size 2 that describes a function and its
                extra args
-        
+
         """
         init = {}
         for ns, s in enumerate(scheme):

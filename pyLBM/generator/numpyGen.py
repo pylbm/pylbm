@@ -79,7 +79,7 @@ class NumpyGenerator(Generator):
         self.code += load_or_store('f', 'f', -v, v, indent='\t')
         self.code += "\n"
 
-    def equilibrium(self, ns, stencil, eq, la, dtype = 'f8'):
+    def equilibrium(self, ns, stencil, eq, dtype = 'f8'):
         """
         generate the code of the projection on the equilibrium
 
@@ -92,8 +92,6 @@ class NumpyGenerator(Generator):
           the stencil of velocities
         eq : sympy matrix
           the equilibrium (formally given)
-        la : double
-          the value of the scheme velocity (dx/dt)
         dtype : string, optional
           the type of the data (default 'f8')
 
@@ -116,13 +114,13 @@ class NumpyGenerator(Generator):
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
                     if eq[k][i] != 0:
                         res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub,
-                                   str(eq[k][i].subs([(sp.symbols('LA'), la),])))
+                                   str(eq[k][i]))
                         self.code += "\tm[%d] = %s\n"%(stencil.nv_ptr[k] + i, res)
                     else:
                         self.code += "\tm[%d] = 0.\n"%(stencil.nv_ptr[k] + i)
         self.code += "\n"
 
-    def relaxation(self, ns, stencil, s, eq, la, dtype = 'f8'):
+    def relaxation(self, ns, stencil, s, eq, dtype = 'f8'):
         """
         generate the code of the relaxation phase
 
@@ -137,8 +135,6 @@ class NumpyGenerator(Generator):
           the values of the relaxation parameters
         eq : sympy matrix
           the equilibrium (formally given)
-        la : double
-          the value of the scheme velocity (dx/dt)
         dtype : string, optional
           the type of the data (default 'f8')
 
@@ -161,7 +157,7 @@ class NumpyGenerator(Generator):
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
                     if eq[k][i] != 0:
                         res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub,
-                                   str(eq[k][i].subs([(sp.symbols('LA'), la),])))
+                                   str(eq[k][i]))
                         self.code += "\tm[{0:d}] += {1:.16f}*({2} - m[{0:d}])\n".format(stencil.nv_ptr[k] + i, s[k][i], res)
                     else:
                         self.code += "\tm[{0:d}] *= (1. - {1:.16f})\n".format(stencil.nv_ptr[k] + i, s[k][i])

@@ -249,7 +249,7 @@ if __name__ == "__main__":
             1:{'method':{0: pyLBM.bc.neumann_vertical}, 'value':None},
             2:{'method':{0: pyLBM.bc.bouzidi_bounce_back}, 'value':None},
         },
-        'generator': pyLBM.generator.CythonGenerator,
+        'generator': pyLBM.generator.PythranGenerator,
     }
 
     if mpi.COMM_WORLD.Get_rank() == 0:
