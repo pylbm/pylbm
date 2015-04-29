@@ -8,15 +8,20 @@ import sys
 
 import numpy as np
 import sympy as sp
-from sympy.matrices import Matrix, zeros
+from sympy.parsing.sympy_parser import parse_expr, standard_transformations
+import copy
 
 from .stencil import Stencil
 from .generator import *
 
 from .logs import setLogger
 
-X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
-u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
+def param_to_tuple(param):
+    if param is not None:
+        pk, pv = param.keys(), param.values()
+    else:
+        pk, pv = (), ()
+    return pk, pv
 
 class Scheme:
     """
@@ -129,25 +134,79 @@ class Scheme:
         self.la = dico['scheme_velocity']
         self.nscheme = self.stencil.nstencils
         scheme = dico['schemes']
-        self.P = [s['polynomials'] for s in scheme]
-        self.EQ = [s['equilibrium'] for s in scheme]
+
+        def create_matrix(L):
+            """
+            convert a list of strings to a sympy Matrix.
+            """
+            def auto_moments(tokens, local_dict, global_dict):
+                """
+                if the user uses a string to describe the moments like
+                'm[0][0]', this function converts it as Symbol('m[0][0]').
+                This fix the problem of auto_symbol that doesn't support
+                indexing.
+                """
+                result = []
+                i = 0
+                while(i < len(tokens)):
+                    tokNum, tokVal = tokens[i]
+                    if tokVal == 'm':
+                        name = ''.join([val for n, val in tokens[i:i+7]])
+                        result.extend([(1, 'Symbol'),
+                                       (51, '('),
+                                       (3, "'{0}'".format(name)),
+                                       (51, ')')])
+                        i += 7
+                    else:
+                        result.append(tokens[i])
+                        i += 1
+                return result
+            res = []
+            for l in L:
+                if isinstance(l, str):
+                    res.append(parse_expr(l, transformations=(auto_moments,) + standard_transformations))
+                else:
+                    res.append(l)
+            return sp.Matrix(res)
+
+        self.P = [create_matrix(s['polynomials']) for s in scheme]
+        self.EQ = [create_matrix(s['equilibrium']) for s in scheme]
+
+        self.consm = self._get_conserved_moments(scheme)
+
+        # rename conserved moments with the notation m[x][y]
+        # needed to generate the code
+        # where x is the number of the scheme
+        #       y is the index in equilibrium corresponding to the conserved moment
+        self._EQ = copy.deepcopy(self.EQ)
+
+        m = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(self.stencil.unvtot)] for i in xrange(len(self.EQ))]
+        for cm, icm in self.consm.iteritems():
+            for i, eq in enumerate(self._EQ):
+                for j, e in enumerate(eq):
+                    self._EQ[i][j] = e.replace(cm, m[icm[0]][icm[1]])
+
         self.s = [s['relaxation_parameters'] for s in scheme]
+        self.param = dico.get('parameters', None)
+
+        self.init = self.set_initialization(scheme)
 
         self.M, self.invM = [], []
         self.Mnum, self.invMnum = [], []
 
         self.create_moments_matrices()
 
-        #self.nv_on_beg = nv_on_beg
+        # generate the code
         self.generator = dico.get('generator', NumpyGenerator)(comm=dico.get('comm', mpi.COMM_WORLD))
         self.log.info("Generator used for the scheme functions:\n{0}\n".format(self.generator))
-        #print self.generator
+
         if isinstance(self.generator, CythonGenerator):
             self.nv_on_beg = False
         else:
             self.nv_on_beg = True
-        self.log.debug("Message from scheme.py: nv_on_beg = {0}".format(self.nv_on_beg))
+        self.log.debug("nv_on_beg = {0}".format(self.nv_on_beg))
         self.generate()
+
         self.bc_compute = True
 
         # stability
@@ -202,21 +261,10 @@ class Scheme:
         for v, p in zip(self.stencil.v, self.P):
             compt+=1
             lv = len(v)
-            self.M.append(zeros(lv, lv))
-            if self.dim == 1:
-                for i in xrange(lv):
-                    for j in xrange(lv):
-                        self.M[-1][i, j] = p[i].subs([(X, v[j].vx),])
-            elif self.dim == 2:
-                for i in xrange(lv):
-                    for j in xrange(lv):
-                        self.M[-1][i, j] = p[i].subs([(X, v[j].vx), (Y, v[j].vy)])
-            elif self.dim == 3:
-                for i in xrange(lv):
-                    for j in xrange(lv):
-                        self.M[-1][i, j] = p[i].subs([(X, v[j].vx), (Y, v[j].vy), (Z, v[j].vz)])
-            else:
-                self.log.error('Function create_moments_matrices: the dimension is not correct')
+            self.M.append(sp.zeros(lv, lv))
+            for i in xrange(lv):
+                for j in xrange(lv):
+                    self.M[-1][i, j] = p[i].subs([('X', v[j].vx), ('Y', v[j].vy), ('Z', v[j].vz)])
             try:
                 self.invM.append(self.M[-1].inv())
             except:
@@ -228,16 +276,112 @@ class Scheme:
         self.MnumGlob = np.zeros((self.stencil.nv_ptr[-1], self.stencil.nv_ptr[-1]))
         self.invMnumGlob = np.zeros((self.stencil.nv_ptr[-1], self.stencil.nv_ptr[-1]))
 
-        for k in xrange(self.nscheme):
-            nvk = self.stencil.nv[k]
-            self.Mnum.append(np.empty((nvk, nvk), dtype='float64'))
-            self.invMnum.append(np.empty((nvk, nvk), dtype='float64'))
-            for i in xrange(nvk):
-                for j in xrange(nvk):
-                    self.Mnum[k][i, j] = (float)(self.M[k][i, j].subs([(LA,self.la),]))
-                    self.invMnum[k][i, j] = (float)(self.invM[k][i, j].subs([(LA,self.la),]))
-                    self.MnumGlob[self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j] = self.Mnum[k][i, j]
-                    self.invMnumGlob[self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j] = self.invMnum[k][i, j]
+        pk, pv = param_to_tuple(self.param)
+
+        try:
+            for k in xrange(self.nscheme):
+                nvk = self.stencil.nv[k]
+                self.Mnum.append(np.empty((nvk, nvk)))
+                self.invMnum.append(np.empty((nvk, nvk)))
+                for i in xrange(nvk):
+                    for j in xrange(nvk):
+                        self.Mnum[k][i, j] = sp.N(self.M[k][i, j].subs(zip(pk, pv)))
+                        self.invMnum[k][i, j] = sp.N(self.invM[k][i, j].subs(zip(pk, pv)))
+                        self.MnumGlob[self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j] = self.Mnum[k][i, j]
+                        self.invMnumGlob[self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j] = self.invMnum[k][i, j]
+        except TypeError:
+            self.log.error("Unable to convert to float the expression {0} or {1}.\nCheck the 'parameters' entry.".format(self.M[k][i, j], self.invM[k][i, j]))
+            sys.exit()
+
+    def _get_conserved_moments(self, scheme):
+        """
+        return conserved moments and their indices in the scheme entry.
+
+        Parameters
+        ----------
+
+        scheme : dictionnary that describes the LBM schemes
+
+        Output
+        ------
+
+        consm : dictionnary where the keys are the conserved moments and
+                the values their indices in the LBM schemes.
+        """
+        consm_tmp = [s.get('conserved_moments', None) for s in scheme]
+        consm = {}
+
+        def find_indices(ieq, list_eq, c):
+            if [c] in leq:
+                ic = (ieq, leq.index([c]))
+                if isinstance(c, str):
+                    cm = parse_expr(c)
+                else:
+                    cm = c
+                return ic, cm
+
+        # find the indices of the conserved moments in the equilibrium equations
+        for ieq, eq in enumerate(self.EQ):
+            leq = eq.tolist()
+            cm_ieq = consm_tmp[ieq]
+            if cm_ieq is not None:
+                if isinstance(cm_ieq, sp.Symbol):
+                    ic, cm = find_indices(ieq, leq, cm_ieq)
+                    consm[cm] = ic
+                else:
+                    for c in cm_ieq:
+                        ic, cm = find_indices(ieq, leq, c)
+                        consm[cm] = ic
+        return consm
+
+    def set_initialization(self, scheme):
+        """
+        set the initialization functions for the conserved moments.
+
+        Parameters
+        ----------
+
+        scheme : dictionnary that describes the LBM schemes
+
+        Output
+        ------
+
+        init : dictionnary where the keys are the indices of the
+               conserved moments and the values must be
+
+               a constant (int or float)
+               a tuple of size 2 that describes a function and its
+               extra args
+        
+        """
+        init = {}
+        for ns, s in enumerate(scheme):
+            for k, v in s['init'].iteritems():
+
+                try:
+                    if isinstance(k, str):
+                        indices = self.consm[parse_expr(k)]
+                    elif isinstance(k, sp.Symbol):
+                        indices = self.consm[k]
+                    elif isinstance(k, int):
+                        indices = (ns, k)
+                    else:
+                        raise ValueError
+
+                    init[indices] = v
+
+                except ValueError:
+                    sss = 'Error in the creation of the scheme: wrong dictionnary\n'
+                    sss += 'the key `init` should contain a dictionnary with'
+                    sss += '   key: the moment to init'
+                    sss += '        should be the name of the moment as a string or'
+                    sss += '        a sympy Symbol or an integer'
+                    sss += '   value: the initial value'
+                    sss += '        should be a constant, a tuple with a function'
+                    sss += '        and extra args or a lambda function'
+                    self.log.error(sss)
+                    sys.exit()
+        return init
 
     def generate(self):
         """
@@ -262,8 +406,14 @@ class Scheme:
             self.generator.onetimestep(self.stencil)
 
         self.generator.transport(self.nscheme, self.stencil)
-        self.generator.equilibrium(self.nscheme, self.stencil, self.EQ, self.la)
-        self.generator.relaxation(self.nscheme, self.stencil, self.s, self.EQ, self.la)
+
+        pk, pv = param_to_tuple(self.param)
+        EQ = []
+        for e in self._EQ:
+            EQ.append(e.subs(zip(pk, pv)))
+
+        self.generator.equilibrium(self.nscheme, self.stencil, EQ)
+        self.generator.relaxation(self.nscheme, self.stencil, self.s, EQ)
         self.generator.compile()
 
     def m2f(self, m, f):
@@ -438,9 +588,12 @@ class Scheme:
             k += l
         k = 0
         list_linarization = dico.get('linearization', None)
+
+        pk, pv = param_to_tuple(self.param)
+
         for n in range(ns):
             for i in range(nv[n]):
-                eqi = self.EQ[n][i].subs([(LA, self.la),])
+                eqi = self._EQ[n][i].subs(zip(pk, pv))
                 if str(eqi) != "m[%d][%d]"%(n, i):
                     l = 0
                     for m in range(ns):
