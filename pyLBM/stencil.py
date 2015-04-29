@@ -214,7 +214,7 @@ class Velocity(object):
         if axis >= self.dim:
             self.log.error("axis must be less than the dimension of the velocity (axis:{0}, dim:{1})".format(axis, self.dim))
             raise ValueError
-            
+
         svx = -self.vx
         svy = None if self.vy is None else -self.vy
         svz = None if self.vz is None else -self.vz
@@ -641,12 +641,17 @@ class Stencil(list):
     def get_all_velocities(self):
         """
         get all the velocities for all the stencils in one array
+
+        TODO: write a more simple function...
         """
-        vec = np.vectorize(lambda obj: np.array([obj.vx, obj.vy, obj.vz])[:self.dim])
-        allv = vec(self.v).flatten()
-        # with the dimension < 3, we have None so the array is
-        # of dtype=object. We convert this array to dtype=int
-        return np.asarray(allv.tolist(), dtype=int)
+        size = self.nv_ptr[-1]
+        allv = np.empty((size, self.dim), dtype='int')
+        for iv, v in enumerate(self):
+            vx = self.vx[iv]
+            vy = self.vy[iv]
+            vz = self.vz[iv]
+            allv[self.nv_ptr[iv]:self.nv_ptr[iv+1], :] = np.asarray([vx, vy, vz][:self.dim]).T
+        return allv
 
     def __str__(self):
         s = "Stencil informations\n"
