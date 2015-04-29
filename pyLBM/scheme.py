@@ -356,6 +356,10 @@ class Scheme:
         """
         init = {}
         for ns, s in enumerate(scheme):
+            init_scheme = s.get('init', None)
+            if init_scheme is None:
+                self.log.warning("You don't define initialization step for your conserved moments")
+                continue
             for k, v in s['init'].iteritems():
 
                 try:
