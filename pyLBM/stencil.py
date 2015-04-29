@@ -174,7 +174,7 @@ class Velocity(object):
             elif vx is not None:
                 self.dim = 1
             else:
-                raise TypeError("The parameters could not be all None when creating a velocity")
+                raise ValueError("The parameters could not be all None when creating a velocity")
 
         if num is None:
             self._set_num()
@@ -212,8 +212,9 @@ class Velocity(object):
 
         """
         if axis >= self.dim:
-            self.log.error("axis must be less than the dimension of the velocity (axis:%d, dim:%d)".format(axis, self.dim))
-
+            self.log.error("axis must be less than the dimension of the velocity (axis:{0}, dim:{1})".format(axis, self.dim))
+            raise ValueError
+            
         svx = -self.vx
         svy = None if self.vy is None else -self.vy
         svz = None if self.vz is None else -self.vz
