@@ -243,13 +243,13 @@ if __name__ == "__main__":
                             },
         },
         ],
-        'parameters':{'LA':la},
+        'parameters':{'LA': la},
         'boundary_conditions':{
             0:{'method':{0: pyLBM.bc.bouzidi_bounce_back}, 'value':bc_rect},
             1:{'method':{0: pyLBM.bc.neumann_vertical}, 'value':None},
             2:{'method':{0: pyLBM.bc.bouzidi_bounce_back}, 'value':None},
         },
-        'generator': pyLBM.generator.PythranGenerator,
+        'generator': pyLBM.generator.CythonGenerator,
     }
 
     if mpi.COMM_WORLD.Get_rank() == 0:
