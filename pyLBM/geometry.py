@@ -4,6 +4,9 @@
 #
 # License: BSD 3 clause
 
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
+from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import matplotlib.pyplot as plt
 import numpy as np
 import mpi4py.MPI as mpi
@@ -101,7 +104,7 @@ class Geometry:
         self.list_elem = []
         self.log = setLogger(__name__)
 
-        dummylab = dico['box'].get('label', -1)
+        dummylab = dico['box'].get('label', 0)
         if isinstance(dummylab, int):
             self.box_label = [dummylab]*2*self.dim
         elif isinstance(dummylab, list):
@@ -218,8 +221,7 @@ class Geometry:
                     coul = 'white'
                 elem._visualize(ax, coul, viewlabel)
         elif (self.dim == 3):
-            couleurs = [(1./k, 0., 1.-1./k) for k in range(1,10)]
-            couleurs.append((0., 0., 0.))
+            couleurs = [(1./k, 0., 1.-1./k) for k in range(1,11)]
             ax = fig.add_subplot(111, projection='3d')
             Pmin = [(float)(self.bounds[k][0]) for k in range(3)]
             Pmax = [(float)(self.bounds[k][1]) for k in range(3)]

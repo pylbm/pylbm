@@ -226,6 +226,9 @@ class Simulation:
 
     @m.setter
     def m(self, i, j, value):
+        """
+        TODO: fix dimension
+        """
         if self.nv_on_beg:
             self._m[self.scheme.stencil.nv_ptr[i] + j] = value
         else:
@@ -244,6 +247,9 @@ class Simulation:
 
     @F.setter
     def F(self, i, j, value):
+        """
+        TODO: fix dimension
+        """
         if self.nv_on_beg:
             self._F[self.scheme.stencil.nv_ptr[i] + j] = value
         else:
@@ -290,14 +296,18 @@ class Simulation:
             s += '{0:3d}ms'.format(tms) + ' '*13 + '*'
         else:
             s += ' '*18 + '*'
+        if t['total'] == 0:
+            ttotal = 1.e-15
+        else:
+            ttotal = t['total']
         s += '\n* ' + '-'*46 + ' *'
-        s += '\n* relaxation         : {0:2d}%'.format(int(100*t['relaxation']/t['total']))
+        s += '\n* relaxation         : {0:2d}%'.format(int(100*t['relaxation']/ttotal))
         s += ' '*23 + '*'
-        s += '\n* transport          : {0:2d}%'.format(int(100*t['transport']/t['total']))
+        s += '\n* transport          : {0:2d}%'.format(int(100*t['transport']/ttotal))
         s += ' '*23 + '*'
-        s += '\n* f2m_m2f            : {0:2d}%'.format(int(100*t['f2m_m2f']/t['total']))
+        s += '\n* f2m_m2f            : {0:2d}%'.format(int(100*t['f2m_m2f']/ttotal))
         s += ' '*23 + '*'
-        s += '\n* boundary conditions: {0:2d}%'.format(int(100*t['boundary_conditions']/t['total']))
+        s += '\n* boundary conditions: {0:2d}%'.format(int(100*t['boundary_conditions']/ttotal))
         s += ' '*23 + '*'
         s += '\n' + '*'*50
         print s
@@ -333,11 +343,16 @@ class Simulation:
             x = self.domain.x[0]
             coords = (x,)
         elif self.dim == 2:
-            x = self.domain.x[0][:,np.newaxis]
+            x = self.domain.x[0][:, np.newaxis]
             y = self.domain.x[1][np.newaxis, :]
             #x = self.domain.x[0][np.newaxis, :]
             #y = self.domain.x[1][: ,np.newaxis]
             coords = (x, y)
+        elif self.dim == 3:
+            x = self.domain.x[0][:, np.newaxis, np.newaxis]
+            y = self.domain.x[1][np.newaxis, :, np.newaxis]
+            z = self.domain.x[2][np.newaxis, np.newaxis, :]
+            coords = (x, y, z)
 
         if inittype == 'moments':
             array_to_init = self._m
