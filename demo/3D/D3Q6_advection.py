@@ -49,11 +49,12 @@ d = {
     'scheme_velocity':la,
     'schemes':[{
         'velocities': range(1,7),
-        'polynomials': Matrix([1, LA*X, LA*Y, LA*Z, X**2-Y**2, X**2-Z**2]),
-        'equilibrium': Matrix([u[0][0], ux*u[0][0], uy*u[0][0], uz*u[0][0], 0., 0.]),
+        'polynomials': [1, LA*X, LA*Y, LA*Z, X**2-Y**2, X**2-Z**2],
+        'equilibrium': [u[0][0], ux*u[0][0], uy*u[0][0], uz*u[0][0], 0., 0.],
         'relaxation_parameters': [0., s, s, s, s, s],
         'init':{0:(initialization,),},
     },],
+    'parameters': {LA: la},
     'generator': pyLBM.generator.CythonGenerator,
 }
 """
