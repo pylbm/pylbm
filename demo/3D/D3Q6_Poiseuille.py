@@ -54,20 +54,7 @@ from pyevtk.vtk import VtkFile, VtkRectilinearGrid
 
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
-
-u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
-
-def initialization_rho(x, y, z):
-    return np.zeros((x.size, y.size, z.size), dtype='float64')
-
-def initialization_qx(x, y, z):
-    return np.zeros((x.size, y.size, z.size), dtype='float64')
-
-def initialization_qy(x, y, z):
-    return np.zeros((x.size, y.size, z.size), dtype='float64')
-
-def initialization_qz(x, y, z):
-    return np.zeros((x.size, y.size, z.size), dtype='float64')
+rho, qx, qy, qz = sp.symbols('rho, qx, qy, qz')
 
 def bc_in(f, m, x, y, z, scheme):
     ######### BEGIN OF WARNING #########
@@ -241,28 +228,33 @@ if __name__ == "__main__":
         'schemes':[{'velocities':vitesse,
                     'polynomials':polynomes,
                     'relaxation_parameters':vs,
-                    'equilibrium':Matrix([u[0][0], u[1][0], u[2][0], u[3][0], 0., 0.]),
-                    'init':{0:(initialization_rho,)},
+                    'equilibrium':[rho, qx, qy, qz, 0., 0.],
+                    'init':{rho: 0.},
+                    'conserved_moments': rho,
                     },
                     {'velocities':vitesse,
                     'polynomials':polynomes,
                     'relaxation_parameters':vs,
-                    'equilibrium':Matrix([u[1][0], u[1][0]**2 + u[0][0]/cte, u[1][0]*u[2][0], u[1][0]*u[3][0], 0., 0.]),
-                    'init':{0:(initialization_qx,)},
+                    'equilibrium':[qx, qx**2 + rho/cte, qx*qy, qx*qz, 0., 0.],
+                    'init':{qx: 0.},
+                    'conserved_moments': qx,
                     },
                     {'velocities':vitesse,
                     'polynomials':polynomes,
                     'relaxation_parameters':vs,
-                    'equilibrium':Matrix([u[2][0], u[1][0]*u[2][0], u[2][0]**2 + u[0][0]/cte, u[2][0]*u[3][0], 0., 0.]),
-                    'init':{0:(initialization_qy,)},
+                    'equilibrium':[qy, qx*qy, qy**2 + rho/cte, qy*qz, 0., 0.],
+                    'init':{qy: 0.},
+                    'conserved_moments': qy,
                     },
                     {'velocities':vitesse,
                     'polynomials':polynomes,
                     'relaxation_parameters':vs,
-                    'equilibrium':Matrix([u[3][0], u[1][0]*u[3][0], u[2][0]*u[3][0], u[3][0]**2 + u[0][0]/cte, 0., 0.]),
-                    'init':{0:(initialization_qz,)},
+                    'equilibrium':[qz, qx*qz, qy*qz, qz**2 + rho/cte, 0., 0.],
+                    'init':{qz: 0.},
+                    'conserved_moments': qz,
                     },
         ],
+        'parameters':{'LA': la},
         'boundary_conditions':{
             0:{'method':{0: pyLBM.bc.bouzidi_bounce_back,
                          1: pyLBM.bc.bouzidi_anti_bounce_back,
