@@ -6,14 +6,14 @@ from pyevtk.hl import imageToVTK
 import pylab as plt
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
-u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
+rho = sp.symbols('rho')
 
 # advective velocity
 ux, uy, uz = .5, .2, .1
 # domain of the computation
 xmin, xmax, ymin, ymax, zmin, zmax = 0., 1., 0., 1., 0., 1.
 
-def initialization(x, y, z):
+def rhoo(x, y, z):
     xm, ym, zm = .5*(xmin+xmax), .5*(ymin+ymax), .5*(zmin+zmax)
     return .5*np.ones((x.size, y.size, z.size)) \
           + .5*(((x-xm)**2+(y-ym)**2+(z-zm)**2)<.25**2)
@@ -49,10 +49,11 @@ d = {
     'scheme_velocity':la,
     'schemes':[{
         'velocities': range(1,7),
+        'conserved_moments':[rho],
         'polynomials': [1, LA*X, LA*Y, LA*Z, X**2-Y**2, X**2-Z**2],
-        'equilibrium': [u[0][0], ux*u[0][0], uy*u[0][0], uz*u[0][0], 0., 0.],
+        'equilibrium': [rho, ux*rho, uy*rho, uz*rho, 0., 0.],
         'relaxation_parameters': [0., s, s, s, s, s],
-        'init':{0:(initialization,),},
+        'init':{rho:(rhoo,)},
     },],
     'parameters': {LA: la},
     'generator': pyLBM.generator.CythonGenerator,

@@ -54,7 +54,19 @@ from pyevtk.vtk import VtkFile, VtkRectilinearGrid
 
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
-rho, qx, qy, qz = sp.symbols('rho, qx, qy, qz')
+p, ux, uy, uz = sp.symbols('p,ux,uy,uz')
+
+def initialization_p(x, y, z):
+    return np.zeros((x.size, y.size, z.size), dtype='float64')
+
+def initialization_ux(x, y, z):
+    return np.zeros((x.size, y.size, z.size), dtype='float64')
+
+def initialization_uy(x, y, z):
+    return np.zeros((x.size, y.size, z.size), dtype='float64')
+
+def initialization_uz(x, y, z):
+    return np.zeros((x.size, y.size, z.size), dtype='float64')
 
 def bc_in(f, m, x, y, z, scheme):
     ######### BEGIN OF WARNING #########
@@ -169,27 +181,27 @@ def run(dico):
 
 
     print "*"*50
-    rho = sol.m[0][0][1:-1, 1:-1, 1:-1]
-    qx = sol.m[1][0][1:-1, 1:-1, 1:-1]
-    qy = sol.m[2][0][1:-1, 1:-1, 1:-1]
-    qz = sol.m[3][0][1:-1, 1:-1, 1:-1]
+    p = sol.m[0][0][1:-1, 1:-1, 1:-1]
+    ux = sol.m[1][0][1:-1, 1:-1, 1:-1]
+    uy = sol.m[2][0][1:-1, 1:-1, 1:-1]
+    uz = sol.m[3][0][1:-1, 1:-1, 1:-1]
     x = sol.domain.x[0][1:-1]
     y = sol.domain.x[1][1:-1]
     x = x[:, np.newaxis, np.newaxis]
     y = y[np.newaxis, :, np.newaxis]
     coeff = sol.domain.dx / np.sqrt(Largeur*Longueur)
-    Err_rho = coeff * np.linalg.norm(rho - (x-0.5*Longueur) * grad_pression)
-    Err_qx = coeff * np.linalg.norm(qx - max_velocity * (1 - 4 * y**2 / Largeur**2))
-    Err_qy = coeff * np.linalg.norm(qy)
-    Err_qz = coeff * np.linalg.norm(qz)
-    print "Norm of the error on rho: {0:10.3e}".format(Err_rho)
-    print "Norm of the error on qx:  {0:10.3e}".format(Err_qx)
-    print "Norm of the error on qy:  {0:10.3e}".format(Err_qy)
-    print "Norm of the error on qz:  {0:10.3e}".format(Err_qz)
+    Err_p = coeff * np.linalg.norm(p - (x-0.5*Longueur) * grad_pression)
+    Err_ux = coeff * np.linalg.norm(ux - max_velocity * (1 - 4 * y**2 / Largeur**2))
+    Err_uy = coeff * np.linalg.norm(uy)
+    Err_uz = coeff * np.linalg.norm(uz)
+    print "Norm of the error on p: {0:10.3e}".format(Err_p)
+    print "Norm of the error on ux:  {0:10.3e}".format(Err_ux)
+    print "Norm of the error on uy:  {0:10.3e}".format(Err_uy)
+    print "Norm of the error on uz:  {0:10.3e}".format(Err_uz)
 
     plt.figure(2)
     plt.clf()
-    plt.imshow(np.float32(qx - max_velocity * (1 - 4 * y**2 / Largeur**2)), origin='lower', cmap=cm.gray)
+    plt.imshow(np.float32(ux - max_velocity * (1 - 4 * y**2 / Largeur**2)), origin='lower', cmap=cm.gray)
     plt.colorbar()
     plt.show()
 
@@ -219,42 +231,42 @@ if __name__ == "__main__":
 
 
     vitesse = range(1, 7)
-    polynomes = Matrix([1, LA*X, LA*Y, LA*Z, X**2-Y**2, X**2-Z**2])
+    polynomes = [1, LA*X, LA*Y, LA*Z, X**2-Y**2, X**2-Z**2]
 
     dico = {
         'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'z':[zmin, zmax], 'label':[1, 2, 0, 0, -1, -1]},
         'space_step':dx,
         'scheme_velocity':la,
-        'schemes':[{'velocities':vitesse,
-                    'polynomials':polynomes,
-                    'relaxation_parameters':vs,
-                    'equilibrium':[rho, qx, qy, qz, 0., 0.],
-                    'init':{rho: 0.},
-                    'conserved_moments': rho,
-                    },
-                    {'velocities':vitesse,
-                    'polynomials':polynomes,
-                    'relaxation_parameters':vs,
-                    'equilibrium':[qx, qx**2 + rho/cte, qx*qy, qx*qz, 0., 0.],
-                    'init':{qx: 0.},
-                    'conserved_moments': qx,
-                    },
-                    {'velocities':vitesse,
-                    'polynomials':polynomes,
-                    'relaxation_parameters':vs,
-                    'equilibrium':[qy, qx*qy, qy**2 + rho/cte, qy*qz, 0., 0.],
-                    'init':{qy: 0.},
-                    'conserved_moments': qy,
-                    },
-                    {'velocities':vitesse,
-                    'polynomials':polynomes,
-                    'relaxation_parameters':vs,
-                    'equilibrium':[qz, qx*qz, qy*qz, qz**2 + rho/cte, 0., 0.],
-                    'init':{qz: 0.},
-                    'conserved_moments': qz,
-                    },
+        'schemes':[{
+            'velocities':vitesse,
+            'conserved_moments':[p],
+            'polynomials':polynomes,
+            'relaxation_parameters':vs,
+            'equilibrium':[p, ux, uy, uz, 0., 0.],
+            'init':{p:(initialization_p,)},
+            },{
+            'velocities':vitesse,
+            'conserved_moments':[ux],
+            'polynomials':polynomes,
+            'relaxation_parameters':vs,
+            'equilibrium':[ux, ux**2 + p/cte, ux*uy, ux*uz, 0., 0.],
+            'init':{ux:(initialization_ux,)},
+            },{
+            'velocities':vitesse,
+            'conserved_moments':[uy],
+            'polynomials':polynomes,
+            'relaxation_parameters':vs,
+            'equilibrium':[uy, uy*ux, uy**2 + p/cte, uy*uz, 0., 0.],
+            'init':{uy:(initialization_uy,)},
+            },{
+            'velocities':vitesse,
+            'conserved_moments':[uz],
+            'polynomials':polynomes,
+            'relaxation_parameters':vs,
+            'equilibrium':[uz, uz*ux, uz*uy, uz**2 + p/cte, 0., 0.],
+            'init':{uz:(initialization_uz,)},
+            },
         ],
-        'parameters':{'LA': la},
         'boundary_conditions':{
             0:{'method':{0: pyLBM.bc.bouzidi_bounce_back,
                          1: pyLBM.bc.bouzidi_anti_bounce_back,
@@ -278,6 +290,7 @@ if __name__ == "__main__":
                 'value':bc_in,
             },
         },
+        'parameters': {LA: la},
         'generator': pyLBM.generator.CythonGenerator,
     }
 

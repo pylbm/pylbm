@@ -345,8 +345,6 @@ class Simulation:
         elif self.dim == 2:
             x = self.domain.x[0][:, np.newaxis]
             y = self.domain.x[1][np.newaxis, :]
-            #x = self.domain.x[0][np.newaxis, :]
-            #y = self.domain.x[1][: ,np.newaxis]
             coords = (x, y)
         elif self.dim == 3:
             x = self.domain.x[0][:, np.newaxis, np.newaxis]
@@ -377,6 +375,7 @@ class Simulation:
                 array_to_init[indices] = f(*fargs)
             else:
                 array_to_init[indices] = v
+
 
 
         if inittype == 'moments':

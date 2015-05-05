@@ -1,23 +1,11 @@
 import sys
-import cmath
-from math import pi, sqrt
 import numpy as np
 import sympy as sp
-from sympy.matrices import Matrix, zeros
-import mpi4py.MPI as mpi
-import time
-
-import matplotlib
 import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-import matplotlib.cm as cm
-
+from matplotlib.lines import Line2D
 import pyLBM
-import pyLBM.Geometry as pyLBMGeom
-import pyLBM.Simulation as pyLBMSimu
 
-X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
-u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
+ua, ub, X, LA = sp.symbols('ua,ub,X,LA,')
 
 def Riemann_pb(x, ug, ud):
     xm = 0.5*(xmin+xmax)
@@ -31,35 +19,35 @@ def p(x):
 
 def intp(x,xo):
     alpha = -0.5*(gamma-1)
-    y = sqrt(gamma)/alpha*(x**alpha-xo**alpha)
+    y = np.sqrt(gamma)/alpha*(x**alpha-xo**alpha)
     return y
 
 def f1(u1,ug1,ug2): # parametrisation de la 1-onde
     (pu1,dpu1,ddpu1) = p(u1)
     if u1 < ug1: # 1-choc
 	(pug1,dpug1,ddpug1) = p(ug1)
-	u2  = ug2 - sqrt((pu1-pug1)*(u1-ug1))
-	up2 = -(dpu1*(u1-ug1)+pu1-pug1)/sqrt((pu1-pug1)*(u1-ug1))/2
+	u2  = ug2 - np.sqrt((pu1-pug1)*(u1-ug1))
+	up2 = -(dpu1*(u1-ug1)+pu1-pug1)/np.sqrt((pu1-pug1)*(u1-ug1))/2
     elif u1 > ug1: # 1-detente
 	u2  = ug2 + intp(u1,ug1)
-	up2 = sqrt(dpu1)
+	up2 = np.sqrt(dpu1)
     else: # rien
 	u2  = ug2
-	up2 = sqrt(dpu1)
+	up2 = np.sqrt(dpu1)
     return (u2,up2)
 
 def f2(u1,ud1,ud2): # parametrisation de la 2-onde
     (pu1,dpu1,ddpu1) = p(u1)
     if u1 < ud1: # 2-choc
 	(pud1,dpud1,ddpud1) = p(ud1)
-	u2  = ud2 + sqrt((pu1-pud1)*(u1-ud1))
-	up2 =  (dpu1*(u1-ud1)+pu1-pud1)/sqrt((pu1-pud1)*(u1-ud1))/2
+	u2  = ud2 + np.sqrt((pu1-pud1)*(u1-ud1))
+	up2 =  (dpu1*(u1-ud1)+pu1-pud1)/np.sqrt((pu1-pud1)*(u1-ud1))/2
     elif u1 > ud1: # 2-detente
 	u2  = ud2 - intp(u1,ud1)
-        up2 = - sqrt(dpu1)
+        up2 = - np.sqrt(dpu1)
     else:
 	u2  = ud2
-        up2 = - sqrt(dpu1)
+        up2 = - np.sqrt(dpu1)
     return (u2,up2)
 
 def interstate(uag,ubg,uad,ubd):
@@ -77,97 +65,109 @@ def interstate(uag,ubg,uad,ubd):
     (ub, dummy) = f1(ua,uag,ubg)
     return (ua,ub)
 
+def plot_init(num = 0):
+    fig = plt.figure(num,figsize=(16, 8))
+    ax1 = fig.add_subplot(1, 2, 1)
+    ax2 = fig.add_subplot(1, 2, 2)
+    l1 = Line2D([], [], color='b', marker='*', linestyle='None')
+    l2 = Line2D([], [], color='r', marker='d', linestyle='None')
+    ax1.add_line(l1)
+    ax2.add_line(l2)
+    ax1.set_xlim(xmin, xmax)
+    ax2.set_xlim(xmin, xmax)
+    ax1.set_ylim(.9*ymina, 1.1*ymaxa)
+    ax2.set_ylim(.9*yminb, 1.1*ymaxb)
+    t1 = ax1.text(0.5*(xmin+xmax), ymaxa, '')
+    t2 = ax2.text(0.5*(xmin+xmax), ymaxb, '')
+    return [l1, l2, t1, t2]
+
+def plot(sol, l):
+    sol.f2m()
+    x = sol.domain.x[0][1:-1]
+    l[0].set_data(x, sol.m[0][0][1:-1])
+    l[1].set_data(x, sol.m[1][0][1:-1])
+    l[2].set_text(r'$u_a$ at $t = {0:f}$'.format(sol.t))
+    l[3].set_text(r'$u_b$ at $t = {0:f}$'.format(sol.t))
+    plt.pause(1.e-3)
 
 if __name__ == "__main__":
+    # parameters
+    gamma = 2./3.        # exponent in the p-function
+    xmin, xmax = 0., 1.  # bounds of the domain
+    dx = 1./256          # spatial step
+    la = 2.              # velocity of the scheme
+    s = 1.7              # relaxation parameter
+    Tf = 0.25            # final time
+
     # init values
     try:
         numonde = int(sys.argv[1])
     except:
         numonde = 0
-    # parameters
-    gamma = 2./3. # exponent in the p-function
-    dim = 1 # spatial dimension
-    xmin, xmax = 0., 1.
-    dx = 0.001 # spatial step
-    la = 2. # velocity of the scheme
     if (numonde == 0): # 1-shock, 2-shock
         uag, uad, ubg, ubd = 1.50, 1.25, 1.50, 1.00
+        ymina, ymaxa, yminb, ymaxb = 1., 1.75, 1., 1.5
     elif (numonde == 1): # 1-shock, 2-rarefaction
         uag, uad, ubg, ubd = 1.50, 1.00, 1.25, 1.00
+        ymina, ymaxa, yminb, ymaxb = 1., 1.75, 1., 1.5
     elif (numonde == 2): # 1-rarefaction, 2-shock
         uag, uad, ubg, ubd = 1.00, 1.50, 1.00, 1.25
+        ymina, ymaxa, yminb, ymaxb = 1., 1.75, 1., 1.5
     elif (numonde == 3): # 1-rarefaction, 2-rarefaction
         uag, uad, ubg, ubd = 1.25, 1.00, 1.25, 1.50
+        ymina, ymaxa, yminb, ymaxb = 1., 1.5, 1.2, 1.6
     elif (numonde == 4): # 2-shock
         uag, uad, ubd = 1.00, 1.25, 1.25
         (ubg,dummy) = f2(uag, uad, ubd)
+        ymina, ymaxa, yminb, ymaxb = 1., 1.3, 1.25, 1.5
     elif (numonde == 5): # 2-rarefaction
         uag, uad, ubd = 1.25, 1.00, 1.25
         (ubg,dummy) = f2(uag, uad, ubd)
+        ymina, ymaxa, yminb, ymaxb = 1., 1.3, 1., 1.3
     elif (numonde == 6): # 1-shock
         uag, uad, ubg = 1.25, 1.00, 1.25
         (ubd,dummy) = f1(uad, uag, ubg)
+        ymina, ymaxa, yminb, ymaxb = 1., 1.3, 1., 1.3
     elif (numonde == 7): # 1-rarefaction
         uag, uad, ubg = 1.00, 1.25, 1.25
         (ubd,dummy) = f1(uad, uag, ubg)
+        ymina, ymaxa, yminb, ymaxb = 1., 1.3, 1.25, 1.5
     else:
         print "Odd initialization: numonde = " + str(numonde)
         sys.exit()
-    Tf = 0.3 # final time
-    NbImages = 10 # number of figures
-    
-    dico = {'dim':dim,
-            'box':([xmin, xmax],),
-            'space_step':dx,
-            'scheme_velocity':la,
-            'number_of_schemes':2,
-            'init':'moments',
-            0:{'velocities':[2,1],
-               'polynomials':Matrix([1,LA*X]),
-               'relaxation_parameters':[0.,1.9],
-               'equilibrium':Matrix([u[0][0], -u[1][0]]),
-               'init':{0:Riemann_pb},
-               'init_args':{0:(uag, uad)}
-               },
-            1:{'velocities':[2,1],
-               'polynomials':Matrix([1,LA*X]),
-               'relaxation_parameters':[0.,1.9],
-               'equilibrium':Matrix([u[1][0], u[0][0]**(-gamma)]),
-               'init':{0:Riemann_pb},
-               'init_args':{0:(ubg, ubd)}
-               }
-            }
 
-    geom = pyLBMGeom.Geometry(dico)
-    sol = pyLBMSimu.Simulation(dico, geom)
+    dico = {
+        'box':{'x':[xmin, xmax], 'label':0},
+        'space_step':dx,
+        'scheme_velocity':la,
+        'schemes':[
+            {
+                'velocities':[1,2],
+                'conserved_moments':[ua],
+                'polynomials':[1, LA*X],
+                'relaxation_parameters':[0, s],
+                'equilibrium':[ua, -ub],
+                'init':{ua:(Riemann_pb, (uag, uad))},
+            },
+            {
+                'velocities':[1,2],
+                'conserved_moments':[ub],
+                'polynomials':[1, LA*X],
+                'relaxation_parameters':[0, s],
+                'equilibrium':[ub, ua**(-gamma)],
+                'init':{ub:(Riemann_pb, (ubg, ubd))},
+            },
+        ],
+        'boundary_conditions':{
+            0:{'method':{0: pyLBM.bc.neumann, 1: pyLBM.bc.neumann}, 'value':None},
+        },
+        'parameters':{LA:la},
+    }
 
-    fig = plt.figure(0,figsize=(16, 8))
-    fig.clf()
-    plt.ion()
-    plt.subplot(121)
-    plt.plot(sol.Domain.x[0][1:-1],sol.m[0][0][1:-1])
-    plt.title("Solution mass at t={0:.3f}".format(sol.t),fontsize=14)
-    plt.subplot(122)
-    plt.plot(sol.Domain.x[0][1:-1],sol.m[1][0][1:-1])
-    plt.title("Solution velocity at t={0:.3f}".format(sol.t),fontsize=14)
-    plt.draw()
-    plt.pause(1.e-3)
-    compt = 0
-    Ncompt = (int)(Tf/(NbImages*sol.dt))
-    im = 0
-    while (sol.t<=Tf):
-        compt += 1
+    sol = pyLBM.Simulation(dico)
+    l = plot_init()
+    plot(sol, l)
+    while (sol.t<Tf):
         sol.one_time_step()
-        if (compt%Ncompt==0):
-            im += 1
-            fig.clf()
-            plt.subplot(121)
-            plt.plot(sol.Domain.x[0][1:-1],sol.m[0][0][1:-1])
-            plt.title("Solution mass at t={0:.3f}".format(sol.t), fontsize=14)
-            plt.subplot(122)
-            plt.plot(sol.Domain.x[0][1:-1],sol.m[1][0][1:-1])
-            plt.title("Solution velocity at t={0:.3f}".format(sol.t), fontsize=14)
-            plt.draw()
-            plt.pause(1.e-3)
-    plt.ioff()
+        plot(sol, l)
     plt.show()

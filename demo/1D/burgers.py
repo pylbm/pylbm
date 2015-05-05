@@ -1,193 +1,142 @@
-import sys
-import cmath
-from math import pi, sqrt
+##############################################################################
+#
+# Solver D1Q2 and D1Q3 for the Burger's equation on [-1, 1]
+#
+# d_t(u) + d_x(u^2/2) = 0, t > 0, 0 < x < 1,
+# u(t=0,x) = u0(x),
+# d_t(u)(t,x=0) = d_t(u)(t,x=1) = 0
+#
+# the initial condition is a Riemann problem,
+# that is a picewise constant function
+#
+# u0(x) = uL if x<0, uR if x>0.
+#
+# The solution is a shock wave if uL>uR and a linear rarefaction wave if uL<uR
+#
+##############################################################################
+
 import numpy as np
 import sympy as sp
-from sympy.matrices import Matrix, zeros
-import mpi4py.MPI as mpi
-import time
 
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-import matplotlib.cm as cm
+import pylab as plt
 
 import pyLBM
-import pyLBM.geometry as pyLBMGeom
-import pyLBM.simulation as pyLBMSimu
-import pyLBM.domain as pyLBMDom
-import pyLBM.scheme as pyLBMScheme
 
-X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
-u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
+X, LA, u = sp.symbols('X,LA,u')
 
-def minit_lisse(x):
-    Nx = x.shape[0]
-    u = np.zeros((Nx, ), dtype = 'float64')
-    largeur = 0.25
-    hauteur = 0.5
-    milieu = 0.5*(xmin+xmax)
-    for k in xrange(Nx):
-        xx = x[k] - milieu
-        if xx < -largeur:
-            u[k] = -hauteur
-        elif xx > largeur:
-            u[k] = hauteur
-        elif xx>=0:
-            u[k] = hauteur * (1 + (xx/largeur-1)**3)
-        else:
-            u[k] = -hauteur * (1 + (-xx/largeur-1)**3)
-    return u
-
-def solution_lisse(t,x):
-    Nx = x.shape[0]
-    u = np.zeros((Nx, ), dtype = 'float64')
-    largeur = 0.25
-    hauteur = 0.5
-    milieu = 0.5*(xmin+xmax)
-    for k in xrange(Nx):
-        xx = x[k] - milieu
-        if xx <= -largeur-hauteur*t:
-            u[k] = -hauteur
-        elif xx >= largeur+hauteur*t:
-            u[k] = hauteur
-        else:
-            if t>0:
-                if xx>=0:
-                    #xo =  (largeur+2*t*hauteur-sqrt((largeur+2*t*hauteur)**2-4*t*hauteur*xx))*largeur/(2*t*hauteur)
-                    #u[k] = hauteur * (1 - (xo/largeur-1)**2)
-                    xo = ((1./6)*((-108*t*hauteur-108*largeur+108*xx+12*sqrt(3)*sqrt((4*largeur**3+27*t**3*hauteur**3+54*t**2*hauteur**2*largeur-54*t**2*hauteur**2*xx+27*t*hauteur*largeur**2-54*t*hauteur*largeur*xx+27*t*hauteur*xx**2)/(t*hauteur)))*t**2*hauteur**2)**(1./3)/(t*hauteur)-2*largeur/((-108*t*hauteur-108*largeur+108*xx+12*sqrt(3)*sqrt((4*largeur**3+27*t**3*hauteur**3+54*t**2*hauteur**2*largeur-54*t**2*hauteur**2*xx+27*t*hauteur*largeur**2-54*t*hauteur*largeur*xx+27*t*hauteur*xx**2)/(t*hauteur)))*t**2*hauteur**2)**(1./3)+1)*largeur
-                    u[k] = hauteur * (1 + (xo/largeur-1)**3)
-                else:
-                    #xo = -(largeur+2*t*hauteur-sqrt((largeur+2*t*hauteur)**2+4*t*hauteur*xx))*largeur/(2*t*hauteur)
-                    #u[k] = -hauteur * (1 - (-xo/largeur-1)**2)
-                    xo = ((1./6)*((108*t*hauteur+108*largeur+108*xx+12*sqrt(3)*sqrt((4*largeur**3+27*t**3*hauteur**3+54*t**2*hauteur**2*largeur+54*t**2*hauteur**2*xx+27*t*hauteur*largeur**2+54*t*hauteur*largeur*xx+27*t*hauteur*xx**2)/(t*hauteur)))*t**2*hauteur**2)**(1./3)/(t*hauteur)-2*largeur/((108*t*hauteur+108*largeur+108*xx+12*sqrt(3)*sqrt((4*largeur**3+27*t**3*hauteur**3+54*t**2*hauteur**2*largeur+54*t**2*hauteur**2*xx+27*t*hauteur*largeur**2+54*t*hauteur*largeur*xx+27*t*hauteur*xx**2)/(t*hauteur)))*t**2*hauteur**2)**(1./3)-1)*largeur
-                    u[k] = -hauteur * (1 + (-xo/largeur-1)**3)
-            else:
-                if xx>=0:
-                    #u[k] = hauteur * (1 - (xx/largeur-1)**2)
-                    u[k] = hauteur * (1 + (xx/largeur-1)**3)
-                else:
-                    #u[k] = -hauteur * (1 - (-xx/largeur-1)**2)
-                    u[k] = -hauteur * (1 + (-xx/largeur-1)**3)
-    return u
-
-def minit_Riemann(x):
-    largeur = 0.2
-    rhog = -0.3
-    rhom =  0.2
-    rhod =  0.0
+def u0(x): # initial condition
     xm = 0.5*(xmin+xmax)
-    return (rhog-rhom)*(x<xm-largeur) + rhom*(x<xm+largeur) + rhod*(x>=xm+largeur)
-
-def solution_Riemann(t,x):
-    Nx = x.shape[0]
-    u = np.zeros(x.shape, dtype = 'float64')
-    largeur = 0.2
-    rhog = -0.3
-    rhom =  0.2
-    rhod =  0.0
-    milieu = 0.5*(xmin+xmax)
-    for k in xrange(Nx):
-        xx = x[k] - milieu
-        if xx <= -largeur+rhog*t:
-            u[k] = rhog
-        elif xx < -largeur+rhom*t:
-            u[k] = (xx+largeur)/t
-        elif xx<= largeur+0.5*(rhom+rhod)*t:
-            u[k] = rhom
-        else:
-            u[k] = rhod
+    u = np.empty(x.shape, dtype = 'float64')
+    ind_L = np.where(x < xm)
+    ind_M = np.where(x == xm)
+    ind_R = np.where(x > xm)
+    u[ind_L] = uL
+    u[ind_M] = .5*(uL+uR)
+    u[ind_R] = uR
     return u
 
-if __name__ == "__main__":
-    # parameters
-    dim = 1 # spatial dimension
-    xmin, xmax = -1., 1.
-    dx = 0.005 # spatial step
-    Tf = 0.25
-    NbImages = 20
-    s = 1.99
-    FINIT = minit_Riemann
-    FSOL = solution_Riemann
-    #FINIT = minit_lisse
-    #FSOL = solution_lisse
+def solution(t,x): # solution
+    xm = 0.5*(xmin+xmax)
+    Nx = x.shape[0]
+    u = np.empty(x.shape, dtype = 'float64')
+    if (uL >= uR) or (t==0): # shock wave
+        xD = xm + .5*t*(uL+uR)
+        ind_L = np.where(x < xD)
+        ind_M = np.where(x == xD)
+        ind_R = np.where(x > xD)
+        u[ind_L] = uL
+        u[ind_M] = .5*(uL+uR)
+        u[ind_R] = uR
+    else: # rarefaction wave
+        xL = xm + t*uL
+        xR = xm + t*uR
+        ind_L = np.where(x < xL)
+        ind_D = np.where(np.logical_and(x>=xL, x<=xR))
+        ind_R = np.where(x > xR)
+        u[ind_L] = uL
+        u[ind_D] = (uL * (xR-x[ind_D]) + uR * (x[ind_D]-xL)) / (xR-xL)
+        u[ind_R] = uR
+    return u
 
-    dico_geometry = {'dim':dim,
-                     'box':{'x':[xmin, xmax], 'label':[0,0]},
-                     #'Elements':[]
-                     }
-    
-    dico1 = {'dim':dim,
-              'geometry':dico_geometry,
-              'space_step':dx,
-              'scheme_velocity':1.,
-              'number_of_schemes':1,
-              'init':'moments',
-              0:{'velocities':[2,1],
-                 'polynomials':Matrix([1,LA*X]),
-                 'relaxation_parameters':[0.,s],
-                 'equilibrium':Matrix([u[0][0], u[0][0]**2/2]),
-                 'init':{0:FINIT}
-                 }
-              }
-    """
-    alpha = 0.45
-    dico2 = {'dim':dim,
-              'box':([xmin, xmax],),
-              'space_step':dx,
-              'scheme_velocity':1.,
-              'number_of_schemes':1,
-              'init':'moments',
-              0:{'velocities':[2,0,1],
-                 'polynomials':Matrix([1,LA*X,LA**2*X**2]),
-                 'relaxation_parameters':s,
-                 'equilibrium':Matrix([u[0][0], u[0][0]**2/2, alpha*LA**2*u[0][0]]),
-                 'init':{0:FINIT}
-                 }
-              }
-    """
-    dico2 = {'dim':dim,
-              'geometry':dico_geometry,
-              'space_step':dx,
-              'scheme_velocity':1.,
-              'number_of_schemes':1,
-              'init':'moments',
-              0:{'velocities':[2,0,1],
-                 'polynomials':Matrix([1,LA*X,LA**2*X**2]),
-                 'relaxation_parameters':[0., s, s],
-                 #'equilibrium':Matrix([u[0][0], u[0][0]**2/2, LA*u[0][0]*sp.Abs(u[0][0])/2]),
-                 'equilibrium':Matrix([u[0][0], u[0][0]**2/2, LA**2*u[0][0]/3 + 2*u[0][0]**3/9]),
-                 'init':{0:FINIT}
-                 }
-              }
-    
-    fig = plt.figure(0,figsize=(8, 8))
-    fig.clf()
-    plt.ion()
-    plt.hold(True)
+def plot_init(num = 0):
+    fig = plt.figure(num,figsize=(16, 8))
+    plt.clf()
+    l1 = plt.plot([], [], 'b', label=r'$D_1Q_2$')[0]
+    l2 = plt.plot([], [], 'r', label=r'$D_1Q_3$')[0]
+    l3 = plt.plot([], [], 'k', label='exact')[0]
+    plt.xlim(xmin, xmax)
+    ymin, ymax = min([uL,uR])-.1*abs(uL-uR), max([uL,uR])+.1*abs(uL-uR)
+    plt.ylim(ymin, ymax)
+    plt.legend()
+    return [l1, l2, l3]
 
-    geom = pyLBMGeom.Geometry(dico1)
-    sol = pyLBMSimu.Simulation(dico1, geom)
-    while (sol.t<Tf-0.5*sol.dt):
-        sol.one_time_step()
-    plt.plot(sol.Domain.x[0][1:-1],sol.m[0][0][1:-1],'r*')
-    plt.title("Solution at t={0:.3f}".format(sol.t), fontsize=14)
-    plt.draw()
+def plot(sol1, sol2, l):
+    sol1.f2m()
+    sol2.f2m()
+    x1 = sol1.domain.x[0][1:-1]
+    l[0].set_data(x1, sol1.m[0][0][1:-1])
+    x2 = sol2.domain.x[0][1:-1]
+    l[1].set_data(x2, sol2.m[0][0][1:-1])
+    l[2].set_data(x1, solution(sol1.t, x1))
+    plt.title('solution at t = {0:f}'.format(sol1.t))
     plt.pause(1.e-3)
-    print 'final time for the first scheme: {0:f}, dt={1:f}'.format(sol.t, sol.dt)
-    
-    geom = pyLBMGeom.Geometry(dico2)
-    sol = pyLBMSimu.Simulation(dico2, geom)
-    while (sol.t<Tf-0.5*sol.dt):
-        sol.one_time_step()
-    plt.plot(sol.Domain.x[0][1:-1],sol.m[0][0][1:-1],'bd')
-    plt.title("Solution at t={0:.3f}".format(sol.t), fontsize=14)
-    plt.draw()
-    plt.pause(1.e-3)
-    print 'final time for the second scheme: {0:f}, dt={1:f}'.format(sol.t, sol.dt)
 
-    plt.plot(sol.Domain.x[0][1:-1],FSOL(sol.t,sol.Domain.x[0][1:-1]),'k-')
-    plt.hold(False)
-    plt.ioff()
-    plt.show()
+# parameters
+xmin, xmax = -1., 1.  # bounds of the domain
+uL =  0.3             # left value
+uR =  0.0             # right value
+L = 0.2               # length of the middle area
+dx = 1./256           # spatial step
+la = 1.               # scheme velocity (la = dx/dt)
+Tf = .5               # final time
+s = 1.8               # relaxation parameter
+# dictionary for the D1Q2
+dico1 = {
+    'box':{'x':[xmin, xmax], 'label':0},
+    'space_step':dx,
+    'scheme_velocity':la,
+    'schemes':[
+        {
+            'velocities':[1,2],
+            'conserved_moments':[u],
+            'polynomials':[1,LA*X],
+            'relaxation_parameters':[0., s],
+            'equilibrium':[u, u**2/2],
+            'init':{u:(u0,)},
+        },
+    ],
+    'boundary_conditions':{
+        0:{'method':{0: pyLBM.bc.neumann}, 'value':None},
+    },
+    'parameters': {LA: la},
+}
+# dictionary for the D1Q3
+dico2 = {
+    'box':{'x':[xmin, xmax], 'label':0},
+    'space_step':dx,
+    'scheme_velocity':la,
+    'schemes':[
+        {
+            'velocities':range(3),
+            'conserved_moments':[u],
+            'polynomials':[1,LA*X,LA**2*X**2],
+            'relaxation_parameters':[0., s, s],
+            'equilibrium':[u, u**2/2, LA**2*u/3 + 2*u**3/9],
+            'init':{u:(u0,)},
+        },
+    ],
+    'boundary_conditions':{
+        0:{'method':{0: pyLBM.bc.neumann}, 'value':None},
+    },
+    'parameters': {LA: la},
+}
+# simulation
+sol1 = pyLBM.Simulation(dico1) # build the simulation with D1Q2
+sol2 = pyLBM.Simulation(dico2) # build the simulation with D1Q3
+l = plot_init(0)               # initialize the plot
+plot(sol1, sol2, l)            # plot initial condition
+while (sol1.t<Tf):             # time loop
+    sol1.one_time_step()       # increment the solution of one time step
+    sol2.one_time_step()       # increment the solution of one time step
+    plot(sol1, sol2, l)        # plot the solution
+plt.show()
