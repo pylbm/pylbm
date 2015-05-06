@@ -118,7 +118,7 @@ dico2 = {
     'schemes':[
         {
             'velocities':range(3),
-            'conserved_moments':[u],
+            'conserved_moments':u,
             'polynomials':[1,LA*X,LA**2*X**2],
             'relaxation_parameters':[0., s, s],
             'equilibrium':[u, u**2/2, LA**2*u/3 + 2*u**3/9],

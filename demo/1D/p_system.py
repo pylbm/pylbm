@@ -143,7 +143,7 @@ if __name__ == "__main__":
         'schemes':[
             {
                 'velocities':[1,2],
-                'conserved_moments':[ua],
+                'conserved_moments':ua,
                 'polynomials':[1, LA*X],
                 'relaxation_parameters':[0, s],
                 'equilibrium':[ua, -ub],
@@ -151,7 +151,7 @@ if __name__ == "__main__":
             },
             {
                 'velocities':[1,2],
-                'conserved_moments':[ub],
+                'conserved_moments':ub,
                 'polynomials':[1, LA*X],
                 'relaxation_parameters':[0, s],
                 'equilibrium':[ub, ua**(-gamma)],

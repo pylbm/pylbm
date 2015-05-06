@@ -57,7 +57,7 @@ dico = {
     'schemes':[
         {
             'velocities':[1,2],
-            'conserved_moments':[u],
+            'conserved_moments':u,
             'polynomials':[1,LA*X],
             'relaxation_parameters':[0., s],
             'equilibrium':[u, c*u],

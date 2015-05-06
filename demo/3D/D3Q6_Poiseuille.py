@@ -56,18 +56,6 @@ from pyevtk.vtk import VtkFile, VtkRectilinearGrid
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 p, ux, uy, uz = sp.symbols('p,ux,uy,uz')
 
-def initialization_p(x, y, z):
-    return np.zeros((x.size, y.size, z.size), dtype='float64')
-
-def initialization_ux(x, y, z):
-    return np.zeros((x.size, y.size, z.size), dtype='float64')
-
-def initialization_uy(x, y, z):
-    return np.zeros((x.size, y.size, z.size), dtype='float64')
-
-def initialization_uz(x, y, z):
-    return np.zeros((x.size, y.size, z.size), dtype='float64')
-
 def bc_in(f, m, x, y, z, scheme):
     ######### BEGIN OF WARNING #########
     # the order depends on the compilater
@@ -239,32 +227,32 @@ if __name__ == "__main__":
         'scheme_velocity':la,
         'schemes':[{
             'velocities':vitesse,
-            'conserved_moments':[p],
+            'conserved_moments':p,
             'polynomials':polynomes,
             'relaxation_parameters':vs,
             'equilibrium':[p, ux, uy, uz, 0., 0.],
-            'init':{p:(initialization_p,)},
+            'init':{p:0.},
             },{
             'velocities':vitesse,
-            'conserved_moments':[ux],
+            'conserved_moments':ux,
             'polynomials':polynomes,
             'relaxation_parameters':vs,
             'equilibrium':[ux, ux**2 + p/cte, ux*uy, ux*uz, 0., 0.],
-            'init':{ux:(initialization_ux,)},
+            'init':{ux:0.},
             },{
             'velocities':vitesse,
-            'conserved_moments':[uy],
+            'conserved_moments':uy,
             'polynomials':polynomes,
             'relaxation_parameters':vs,
             'equilibrium':[uy, uy*ux, uy**2 + p/cte, uy*uz, 0., 0.],
-            'init':{uy:(initialization_uy,)},
+            'init':{uy:0.},
             },{
             'velocities':vitesse,
-            'conserved_moments':[uz],
+            'conserved_moments':uz,
             'polynomials':polynomes,
             'relaxation_parameters':vs,
             'equilibrium':[uz, uz*ux, uz*uy, uz**2 + p/cte, 0., 0.],
-            'init':{uz:(initialization_uz,)},
+            'init':{uz:0.},
             },
         ],
         'boundary_conditions':{
