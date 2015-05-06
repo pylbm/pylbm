@@ -226,9 +226,10 @@ from libc.stdlib cimport malloc, free
         self.code += "\tfor i in xrange(n):\n"
 
         def subpow(g):
-            s = g.group('m')
+            s = '(' + g.group('m')
             for i in xrange(int(g.group('pow')) - 1):
                 s += '*' + g.group('m')
+            s += ')'
             return s
 
         def sub(g):
@@ -278,9 +279,10 @@ from libc.stdlib cimport malloc, free
         self.code += "cdef void relaxation(double *m) nogil:\n"
 
         def subpow(g):
-            s = g.group('m')
+            s = '(' + g.group('m')
             for i in xrange(int(g.group('pow')) - 1):
                 s += '*' + g.group('m')
+            s += ')'
             return s
 
         def sub(g):

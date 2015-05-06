@@ -138,6 +138,8 @@ if __name__ == "__main__":
     if sol1.t != sol2.t:
         print "Problem of time !!!"
 
+    print sol1.scheme.generator.code
+    print sol2.scheme.generator.code
 
     f, ax = plt.subplots(2, 3)
     ax[0,0].plot(x, rho1-rho2)

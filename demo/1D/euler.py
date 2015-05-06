@@ -90,7 +90,7 @@ if __name__ == "__main__":
             },
         },
         'parameters':{LA:la},
-        #'generator': pyLBM.generator.CythonGenerator,
+        'generator': pyLBM.generator.CythonGenerator,
     }
 
     sol = pyLBM.Simulation(dico)
