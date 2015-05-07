@@ -1,20 +1,27 @@
-import sympy as sp
-from sympy.matrices import Matrix, zeros
-import pyLBM
-X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
-u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
+# Authors:
+#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Benjamin Graille <benjamin.graille@math.u-psud.fr>
+#
+# License: BSD 3 clause
 
-if __name__ == "__main__":
-    d = {
-      'dim':1,
-      'scheme_velocity':1.,
-      'schemes':[{
-          'velocities': range(1,3),
-          'polynomials': Matrix([1, X]),
-          'equilibrium': Matrix([u[0][0], .5*u[0][0]]),
-          'relaxation_parameters': [0., 1.9],
-          },
-      ],
-    }
-    s = pyLBM.Scheme(d)
-    print(s)
+"""
+Example of a two velocities scheme for the advection equation in 1D
+"""
+import sympy as sp
+import pyLBM
+u, X = sp.symbols('u,X')
+d = {
+    'dim':1,
+    'scheme_velocity':1.,
+    'schemes':[
+        {
+            'velocities': range(1,3),
+            'conserved_moments':u,
+            'polynomials': [1, X],
+            'equilibrium': [u, .5*u],
+            'relaxation_parameters': [0., 1.9],
+        },
+    ],
+}
+s = pyLBM.Scheme(d)
+print(s)
