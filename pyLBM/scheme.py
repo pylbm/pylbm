@@ -212,7 +212,15 @@ class Scheme:
         # stability
         dicostab = dico.get('stability', None)
         if dicostab is not None:
-            self.compute_amplification_matrix_relaxation(dicostab)
+            dico_linearization = dicostab.get('linearization', None)
+            if dico_linearization is not None:
+                self.list_linearization = []
+                for cm, cv in dico_linearization.iteritems():
+                    icm = self.consm[cm]
+                    self.list_linearization.append((m[icm[0]][icm[1]], cv))
+            else:
+                self.list_linearization = None
+            self.compute_amplification_matrix_relaxation()
             Li_stab = dicostab.get('test_maximum_principle', False)
             if Li_stab:
                 if self.is_stable_Linfinity():
@@ -597,7 +605,7 @@ class Scheme:
                                 bc.method_bc[l][n](f[: ,:, :, self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]], bv, self.stencil[n].num2index, bc.floc[l][n][k], nv_on_beg)
         self.bc_compute = False
 
-    def compute_amplification_matrix_relaxation(self, dico):
+    def compute_amplification_matrix_relaxation(self):
         ns = self.stencil.nstencils # number of stencil
         nv = self.stencil.nv # number of velocities for each stencil
         nvtot = sum(nv)
@@ -616,22 +624,21 @@ class Scheme:
             R[k:k+l, k:k+l] = np.diag(self.s[n])
             k += l
         k = 0
-        list_linarization = dico.get('linearization', None)
 
         pk, pv = param_to_tuple(self.param)
-
+        m = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(self.stencil.unvtot)] for i in xrange(len(self.EQ))]
         for n in range(ns):
             for i in range(nv[n]):
                 eqi = self._EQ[n][i].subs(zip(pk, pv))
-                if str(eqi) != "m[%d][%d]"%(n, i):
+                if str(eqi) != "u[%d][%d]"%(n, i):
                     l = 0
-                    for m in range(ns):
-                        for j in range(nv[m]):
-                            dummy = sp.diff(eqi, u[m][j])
-                            if list_linarization is not None:
-                                dummy = dummy.subs(list_linarization)
+                    for mm in range(ns):
+                        for j in range(nv[mm]):
+                            dummy = sp.diff(eqi, m[mm][j])
+                            if self.list_linearization is not None:
+                                dummy = dummy.subs(self.list_linearization)
                             E[k+i, l+j] = dummy
-                        l += nv[m]
+                        l += nv[mm]
             k += nv[n]
         C = np.dot(R, E - np.eye(nvtot))
         # global amplification matrix for the relaxation

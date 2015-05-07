@@ -1,12 +1,18 @@
+# Authors:
+#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Benjamin Graille <benjamin.graille@math.u-psud.fr>
+#
+# License: BSD 3 clause
+
+"""
+Stability of the D1Q2
+"""
 import numpy as np
 import pylab as plt
 import sympy as sp
-from sympy.matrices import Matrix, zeros
-import pyLBM.scheme as sch
+import pyLBM
 
-X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
-u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
-
+u, X = sp.symbols('u,X')
 
 def scheme_constructor(ux, s):
     dico = {
@@ -15,9 +21,10 @@ def scheme_constructor(ux, s):
         'schemes':[
             {
             'velocities':range(1, 3),
-            'polynomials':Matrix([1, X]),
+            'conserved_moments':u,
+            'polynomials':[1, X],
             'relaxation_parameters':[0., s],
-            'equilibrium':Matrix([u[0][0], ux*u[0][0]]),
+            'equilibrium':[u, ux*u],
             },
         ],
         'stability':{
@@ -25,7 +32,7 @@ def scheme_constructor(ux, s):
             'test_L2_stability':False,
         },
     }
-    return sch.Scheme(dico)
+    return pyLBM.Scheme(dico)
 
 def vp_plot(ux):
     Nk = 100
@@ -96,5 +103,5 @@ def stability_array_recur(vs, vux, mR, l, nb_calcul):
     return mR, nb_calcul
 
 if __name__ == "__main__":
-    #vp_plot(0.75)
+    vp_plot(0.75)
     stability_array()

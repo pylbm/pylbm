@@ -1,12 +1,18 @@
+# Authors:
+#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Benjamin Graille <benjamin.graille@math.u-psud.fr>
+#
+# License: BSD 3 clause
+
+"""
+Stability of the D2Q9
+"""
 import numpy as np
 import pylab as plt
 import sympy as sp
-from sympy.matrices import Matrix, zeros
-import pyLBM.scheme as sch
+import pyLBM
 
-X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
-u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
-
+rho, qx, qy, X, Y, LA = sp.symbols('rho,qx,qy,X,Y,LA')
 
 def scheme_constructor(ux, uy, s_mu, s_eta):
     rhoo = 1.
@@ -19,41 +25,43 @@ def scheme_constructor(ux, uy, s_mu, s_eta):
     s8 = s7
     s  = [0.,0.,0.,s3,s4,s5,s6,s7,s8]
     dummy = 1./(LA**2*rhoo)
-    qx2 = dummy*u[0][1]**2
-    qy2 = dummy*u[0][2]**2
+    qx2 = dummy*qx**2
+    qy2 = dummy*qy**2
     q2  = qx2+qy2
-    qxy = dummy*u[0][1]*u[0][2]
+    qxy = dummy*qx*qy
 
-    dico1 = {
+    dico = {
         'dim':2,
         'scheme_velocity':la,
+        'parameters':{LA:la},
         'schemes':[
             {
             'velocities':range(9),
-            'polynomials':Matrix([
+            'conserved_moments':[rho, qx, qy],
+            'polynomials':[
                 1,
                 LA*X, LA*Y,
                 3*(X**2+Y**2)-4,
                 0.5*(9*(X**2+Y**2)**2-21*(X**2+Y**2)+8),
                 3*X*(X**2+Y**2)-5*X, 3*Y*(X**2+Y**2)-5*Y,
                 X**2-Y**2, X*Y
-            ]),
+            ],
             'relaxation_parameters':s,
-            'equilibrium':Matrix([u[0][0],
-                u[0][1], u[0][2],
-                -2*u[0][0] + 3*q2,
-                u[0][0]+1.5*q2,
-                -u[0][1]/LA, -u[0][2]/LA,
-                qx2-qy2, qxy]),
+            'equilibrium':[rho, qx, qy,
+                -2*rho + 3*q2,
+                rho+1.5*q2,
+                -qx/LA, -qy/LA,
+                qx2-qy2, qxy
+            ],
             },
         ],
         'stability':{
-            'linearization':[(u[0][0], rhoo), (u[0][1], ux), (u[0][2], uy)],
+            'linearization':{rho: rhoo, qx: ux, qy: uy},
             'test_maximum_principle':False,
             'test_L2_stability':False,
         },
     }
-    return sch.Scheme(dico1)
+    return pyLBM.Scheme(dico)
 
 def vp_plot(ux, uy, s_mu, s_eta):
     S = scheme_constructor(ux, uy, s_mu, s_eta)
@@ -178,14 +186,14 @@ def stability_array_in_s_recur(vs_mu, vs_eta, ux, uy, mR, l, nb_calcul):
     return mR, nb_calcul
 
 if __name__ == "__main__":
-    #ux, uy = 0.1, 0.1
-    #s_mu = 1.7
-    #s_eta = 1.5
-    #vp_plot(ux, uy, s_mu, s_eta)
+    ux, uy = 0.1, 0.1
+    s_mu = 1.7
+    s_eta = 1.5
+    vp_plot(ux, uy, s_mu, s_eta)
     ####
-    #s_mu = 1.9
-    #s_eta = 1.
-    #stability_array_in_u(s_mu, s_eta)
+    s_mu = 1.9
+    s_eta = 1.
+    stability_array_in_u(s_mu, s_eta)
     ####
     ux, uy = 0.1, 0.1
     stability_array_in_s(ux, uy)

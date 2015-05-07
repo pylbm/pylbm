@@ -1,23 +1,32 @@
+# Authors:
+#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Benjamin Graille <benjamin.graille@math.u-psud.fr>
+#
+# License: BSD 3 clause
+
+"""
+Stability of the D2Q4
+"""
 import numpy as np
 import pylab as plt
 import sympy as sp
-from sympy.matrices import Matrix, zeros
-import pyLBM.scheme as sch
+import pyLBM
 
-X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
-u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
-
+u, X, Y, LA = sp.symbols('u,X,Y,LA')
 
 def scheme_constructor(ux, uy, s, s3):
-    dico1 = {
+    la = 1.
+    dico = {
         'dim':2,
-        'scheme_velocity':1.,
+        'scheme_velocity':la,
+        'parameters':{LA:la},
         'schemes':[
             {
             'velocities':range(1, 5),
-            'polynomials':Matrix([1, LA*X, LA*Y, LA**2*(X**2-Y**2)]),
+            'conserved_moments':u,
+            'polynomials':[1, LA*X, LA*Y, LA**2*(X**2-Y**2)],
             'relaxation_parameters':[0., s, s, s3],
-            'equilibrium':Matrix([u[0][0], ux*u[0][0], uy*u[0][0], 0.]),
+            'equilibrium':[u, ux*u, uy*u, 0.],
             },
         ],
         'stability':{
@@ -25,55 +34,7 @@ def scheme_constructor(ux, uy, s, s3):
             'test_L2_stability':False,
         },
     }
-    dico2 = {
-        'dim':2,
-        'scheme_velocity':1.,
-        'schemes':[
-            {
-            'velocities':range(1, 5),
-            'polynomials':Matrix([1, LA*(X-ux), LA*(Y-uy), LA**2*((X-ux)**2-(Y-uy)**2)]),
-            'relaxation_parameters':[0., s, s, s3],
-            'equilibrium':Matrix([u[0][0], 0., 0., 0.]),
-            },
-        ],
-        'stability':{
-            'test_maximum_principle':False,
-            'test_L2_stability':False,
-        },
-    }
-    dico3 = {
-        'dim':2,
-        'scheme_velocity':1.,
-        'schemes':[
-            {
-            'velocities':range(5, 9),
-            'polynomials':Matrix([1, LA*X, LA*Y, LA**2*X*Y]),
-            'relaxation_parameters':[0., s, s, s3],
-            'equilibrium':Matrix([u[0][0], ux*u[0][0], uy*u[0][0], 0.]),
-            },
-        ],
-        'stability':{
-            'test_maximum_principle':False,
-            'test_L2_stability':False,
-        },
-    }
-    dico4 = {
-        'dim':2,
-        'scheme_velocity':1.,
-        'schemes':[
-            {
-            'velocities':range(5, 9),
-            'polynomials':Matrix([1, LA*(X-ux), LA*(Y-uy), LA**2*(X-ux)*(Y-uy)]),
-            'relaxation_parameters':[0., s, s, s3],
-            'equilibrium':Matrix([u[0][0], 0., 0., 0.]),
-            },
-        ],
-        'stability':{
-            'test_maximum_principle':False,
-            'test_L2_stability':False,
-        },
-    }
-    return sch.Scheme(dico1)
+    return pyLBM.Scheme(dico)
 
 def vp_plot(ux, uy, s, s3):
     S = scheme_constructor(ux, uy, s, s3)
