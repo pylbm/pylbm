@@ -1,9 +1,16 @@
-import pyLBM
+# Authors:
+#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Benjamin Graille <benjamin.graille@math.u-psud.fr>
+#
+# License: BSD 3 clause
 
-if __name__ == "__main__":
-    dgeom = {
-        'box':{'x': [0, 1], 'y': [0, 1], 'label':0},
-        'elements':[pyLBM.Circle((0.5,0.5), 0.125, label = 1)],
-    }
-    geom = pyLBM.Geometry(dgeom)
-    geom.visualize(viewlabel=True)
+"""
+Example of a 2D geometry: the square [0,1]x[0,1] with a circular hole
+"""
+import pyLBM
+dgeom = {
+    'box':{'x': [0, 1], 'y': [0, 1], 'label':0},
+    'elements':[pyLBM.Circle((0.5,0.5), 0.125, label = 1)],
+}
+geom = pyLBM.Geometry(dgeom)
+geom.visualize(viewlabel=True)
