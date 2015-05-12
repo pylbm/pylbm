@@ -65,6 +65,42 @@ class Boundary:
                     self.method_bc[-1].append(dico_bound[label]['method'][n])
                     self.be[-1].append([self.bv[label][self.domain.stencil.unum2index[numk]] for numk in self.domain.stencil.num[n]])
 
+def bounce_back(f, bv, num2index, feq, nv_on_beg):
+    v = bv.v
+    k = num2index[v.num]
+    ksym = num2index[v.get_symmetric().num]
+
+    mask = bv.distance >= 0
+    i1 = list(bv.indices[:, mask])
+    i2 = [i + j for i, j in zip(i1, v.v)]
+
+    if nv_on_beg:
+        f[[k] + i1] = f[[ksym] + i2]
+        if feq is not None and np.any(mask):
+            f[[k] + i1] += feq[k, mask] - feq[ksym, mask]
+    else:
+        f[i1 + [k]] = f[i2 + [ksym]]
+        if feq is not None and np.any(mask):
+            f[i1 + [k]] += feq[mask, k] - feq[mask, ksym]
+
+def anti_bounce_back(f, bv, num2index, feq, nv_on_beg):
+    v = bv.v
+    k = num2index[v.num]
+    ksym = num2index[v.get_symmetric().num]
+
+    mask = bv.distance >= 0
+    i1 = list(bv.indices[:, mask])
+    i2 = [i + j for i, j in zip(i1, v.v)]
+
+    if nv_on_beg:
+        f[[k] + i1] = -f[[ksym] + i2]
+        if feq is not None and np.any(mask):
+            f[[k] + i1] += feq[k, mask] + feq[ksym, mask]
+    else:
+        f[i1 + [k]] = -f[i2 + [ksym]]
+        if feq is not None and np.any(mask):
+            f[i1 + [k]] += feq[mask, k] + feq[mask, ksym]
+
 def bouzidi_bounce_back(f, bv, num2index, feq, nv_on_beg):
     v = bv.v
     k = num2index[v.num]
