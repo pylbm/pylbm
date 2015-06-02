@@ -22,6 +22,7 @@ import pyLBM.simulation as pyLBMSimu
 import pyLBM.boundary as pyLBMBound
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
+rho, qx, qy = sp.symbols('rho, qx, qy')
 
 u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
 
@@ -35,9 +36,9 @@ def initialization_qy(x,y):
     return np.zeros((x.shape[0], y.shape[0]), dtype='float64')
 
 def bc_up(f, m, x, y, scheme):
-    m[0][0] = 0.
-    m[0][1] = rhoo * driven_velocity
-    m[0][2] = 0.
+    m[:, 0] = 0.
+    m[:, 1] = rhoo * driven_velocity
+    m[:, 2] = 0.
     scheme.equilibrium(m)
     scheme.m2f(m, f)
 
@@ -45,9 +46,9 @@ def plot_quiver(sol):
     pas = 4
     plt.clf()
     X, Y = np.meshgrid(sol.domain.x[0][1:-1:pas], sol.domain.x[1][1:-1:pas])
-    u = sol.m[0][1,1:-1:pas,1:-1:pas].transpose()
-    v = sol.m[0][2,1:-1:pas,1:-1:pas].transpose()
-    normu = np.sqrt(sol.m[0][1,1:-1,1:-1]**2+sol.m[0][2,1:-1,1:-1]**2).max()
+    u = sol.m[0][1][1:-1:pas,1:-1:pas].transpose()
+    v = sol.m[0][2][1:-1:pas,1:-1:pas].transpose()
+    normu = np.sqrt(sol.m[0][1][1:-1,1:-1]**2+sol.m[0][2][1:-1,1:-1]**2).max()
     nv = u**2+v**2
     plt.quiver(X, Y, u, v, nv, pivot='mid', scale=normu*10)
     plt.title('Velocity at t = {0:f}'.format(sol.t))
@@ -58,8 +59,8 @@ def plot_stream(sol):
     pas = 1
     plt.clf()
     X, Y = np.meshgrid(sol.domain.x[0][1:-1:pas], sol.domain.x[1][1:-1:pas])
-    u = sol.m[0][1,1:-1:pas,1:-1:pas].transpose()
-    v = sol.m[0][2,1:-1:pas,1:-1:pas].transpose()
+    u = sol.m[0][1][1:-1:pas,1:-1:pas].transpose()
+    v = sol.m[0][2][1:-1:pas,1:-1:pas].transpose()
     normu = np.sqrt(u**2+v**2)
     nv = u**2+v**2
     plt.streamplot(X, Y, u, v, color=normu, linewidth=2, cmap=plt.cm.autumn)
@@ -105,28 +106,29 @@ if __name__ == "__main__":
     dico = {
         'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[0,0,1,0]},
         'space_step':dx,
-        'number_of_schemes':1,
         'scheme_velocity':la,
-        0:{'velocities':range(9),
-           'polynomials':Matrix([1,
+        'schemes':[{'velocities':range(9),
+                   'polynomials':[1,
                                  LA*X, LA*Y,
                                  3*(X**2+Y**2)-4,
                                  0.5*(9*(X**2+Y**2)**2-21*(X**2+Y**2)+8),
                                  3*X*(X**2+Y**2)-5*X, 3*Y*(X**2+Y**2)-5*Y,
-                                 X**2-Y**2, X*Y]),
-            'relaxation_parameters':s,
-            'equilibrium':Matrix([u[0][0],
-                                  u[0][1], u[0][2],
-                                  -2*u[0][0] + 3*q2,
-                                  u[0][0]+1.5*q2,
-                                  -u[0][1]/LA, -u[0][2]/LA,
-                                  qx2-qy2, qxy]),
+                                 X**2-Y**2, X*Y],
+                    'relaxation_parameters':s,
+                    'equilibrium':[rho,
+                                  qx, qy,
+                                  -2*rho + 3*q2,
+                                  rho + 1.5*q2,
+                                  -qx/LA, -qy/LA,
+                                  qx2 - qy2, qxy],
+                    'conserved_moments': [rho, qx, qy],
+                    'init':{rho: rhoo,
+                            qx: 0.,
+                            qy: 0.
+                            },
         },
-        'init':{'type':'moments', 0:{0:(initialization_rho,),
-                                     1:(initialization_qx,),
-                                     2:(initialization_qy,)
-                                     }
-        },
+        ],
+        'parameters':{'LA':la},
         'boundary_conditions':{
             0:{'method':{0: pyLBMBound.bouzidi_bounce_back}, 'value':None},
             1:{'method':{0: pyLBMBound.bouzidi_bounce_back}, 'value':bc_up}
@@ -160,7 +162,6 @@ if __name__ == "__main__":
             plot_quiver(sol)
             #plot_stream(sol)
             #plot_vorticity(sol)
-        
+
     plt.ioff()
     plt.show()
-    
