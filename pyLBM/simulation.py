@@ -363,18 +363,21 @@ class Simulation:
             sys.exit()
 
         for k, v in self.scheme.init.iteritems():
-            if self.nv_on_beg:
-                indices = self.scheme.stencil.nv_ptr[k[0]] + k[1]
-            else:
-                indices = (slice(None),)*self.dim + (self.scheme.stencil.nv_ptr[k[0]] + k[1],)
+            ns = self.scheme.stencil.nv_ptr[k[0]] + k[1]
 
             if isinstance(v, tuple):
                 f = v[0]
                 extraargs = v[1] if len(v) == 2 else ()
                 fargs = coords + extraargs
-                array_to_init[indices] = f(*fargs)
+                if self.nv_on_beg:
+                    array_to_init[ns] = f(*fargs)
+                else:
+                    array_to_init[..., ns] = f(*fargs)
             else:
-                array_to_init[indices] = v
+                if self.nv_on_beg:
+                    array_to_init[ns] = v
+                else:
+                    array_to_init[..., ns] = v
 
 
 
