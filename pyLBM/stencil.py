@@ -194,6 +194,9 @@ class Velocity(object):
         s += ')'
         return s
 
+    def __repr__(self):
+        return self.__str__()
+
     def get_symmetric(self, axis=None):
         """
         return the symmetric velocity.
