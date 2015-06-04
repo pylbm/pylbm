@@ -13,3 +13,4 @@ from generator import *
 from scheme import Scheme
 from elements import *
 from geometry import Geometry
+import viewer
