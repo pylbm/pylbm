@@ -12,7 +12,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.cm as cm
-from matplotlib.patches import Ellipse, Polygon
 
 from .logs import setLogger
 
@@ -168,14 +167,12 @@ class Circle:
         return self.__str__()
 
 
-    def _visualize(self, ax, coul, viewlabel):
-        ax.add_patch(Ellipse(self.center, 2*self.radius, 2*self.radius, fill=True, color=coul))
+    def _visualize(self, viewer, color, viewlabel):
+        viewer.ellipse(self.center, [self.radius]*2, color)
         if viewlabel:
             theta = self.center[0] + 2*self.center[1]+10*self.radius
             x, y = self.center[0] + self.radius*cos(theta), self.center[1] + self.radius*sin(theta)
-            plt.text(x, y, str(self.label[0]),
-                fontsize=18, horizontalalignment='center',verticalalignment='center')
-
+            viewer.text(str(self.label[0]), [x, y])
 
 class Parallelogram:
     """
@@ -332,26 +329,17 @@ class Parallelogram:
     def __repr__(self):
         return self.__str__()
 
-    def _visualize(self, ax, coul, viewlabel):
+    def _visualize(self, viewer, color, viewlabel):
         A = [self.point[k] for k in xrange(2)]
         B = [A[k] + self.v0[k] for k in xrange(2)]
         C = [B[k] + self.v1[k] for k in xrange(2)]
         D = [A[k] + self.v1[k] for k in xrange(2)]
-        ax.add_patch(Polygon([A,B,C,D], closed=True, fill=True, color=coul))
+        viewer.polygon([A,B,C,D], color)
         if viewlabel:
-            plt.text(0.5*(A[0]+B[0]), 0.5*(A[1]+B[1]), str(self.label[0]),
-                fontsize=18,
-                horizontalalignment='center',verticalalignment='center')
-            plt.text(0.5*(A[0]+D[0]), 0.5*(A[1]+D[1]), str(self.label[1]),
-                fontsize=18,
-                horizontalalignment='center',verticalalignment='center')
-            plt.text(0.5*(C[0]+D[0]), 0.5*(C[1]+D[1]), str(self.label[2]),
-                fontsize=18,
-                horizontalalignment='center',verticalalignment='center')
-            plt.text(0.5*(B[0]+C[0]), 0.5*(B[1]+C[1]), str(self.label[3]),
-                fontsize=18,
-                horizontalalignment='center',verticalalignment='center')
-
+            viewer.text(str(self.label[0]), [0.5*(A[0]+B[0]), 0.5*(A[1]+B[1])])
+            viewer.text(str(self.label[1]), [0.5*(A[0]+D[0]), 0.5*(A[1]+D[1])])
+            viewer.text(str(self.label[2]), [0.5*(C[0]+D[0]), 0.5*(C[1]+D[1])])
+            viewer.text(str(self.label[3]), [0.5*(B[0]+C[0]), 0.5*(B[1]+C[1])])
 
 class Triangle:
     """
@@ -518,21 +506,15 @@ class Triangle:
     def __repr__(self):
         return self.__str__()
 
-    def _visualize(self, ax, coul, viewlabel):
+    def _visualize(self, viewer, color, viewlabel):
         A = [self.point[k] for k in xrange(2)]
         B = [A[k] + self.v0[k] for k in xrange(2)]
         D = [A[k] + self.v1[k] for k in xrange(2)]
-        ax.add_patch(Polygon([A,B,D], closed=True, fill=True, color=coul))
+        viewer.polygon([A,B,D], color)
         if viewlabel:
-            plt.text(0.5*(A[0]+B[0]), 0.5*(A[1]+B[1]), str(self.label[0]),
-                fontsize=18,
-                horizontalalignment='center',verticalalignment='center')
-            plt.text(0.5*(A[0]+D[0]), 0.5*(A[1]+D[1]), str(self.label[1]),
-                fontsize=18,
-                horizontalalignment='center',verticalalignment='center')
-            plt.text(0.5*(B[0]+D[0]), 0.5*(B[1]+D[1]), str(self.label[2]),
-                fontsize=18,
-                horizontalalignment='center',verticalalignment='center')
+            viewer.text(str(self.label[0]), [0.5*(A[0]+B[0]), 0.5*(A[1]+B[1])])
+            viewer.text(str(self.label[1]), [0.5*(A[0]+D[0]), 0.5*(A[1]+D[1])])
+            viewer.text(str(self.label[2]), [0.5*(B[0]+D[0]), 0.5*(B[1]+D[1])])
 
 
 def intersection_two_lines(p1, v1, p2, v2):
