@@ -11,6 +11,7 @@ from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import matplotlib.cm as cm
 import matplotlib as plt
 import sys
+import copy
 
 from .elements import *
 from .geometry import Geometry
@@ -202,12 +203,14 @@ class Domain:
         flag_view = self.flag[phys_domain]
 
         def new_indices(dvik, iuv, indices, dist_view):
+            new_ind = copy.deepcopy(indices)
             ind = np.where(dist_view[indices] > dvik)
             ii = 1
             for j in xrange(self.dim):
                 if j != iuv:
-                    indices[j + 1] = ind[ii]
+                    new_ind[j + 1] = ind[ii]
                     ii += 1
+            return new_ind
 
         s = self.stencil
         uvel = [s.uvx, s.uvy, s.uvz]
@@ -219,16 +222,16 @@ class Domain:
                     for i in xrange(-vk):
                         indices[iuv + 1] = i
                         dvik = -(i + .5)/vk
-                        new_indices(dvik, iuv, indices, dist_view)
-                        dist_view[indices] = dvik
-                        flag_view[indices] = label[2*iuv]
+                        nind = new_indices(dvik, iuv, indices, dist_view)
+                        dist_view[nind] = dvik
+                        flag_view[nind] = label[2*iuv]
                 elif vk > 0 and label[2*iuv + 1] != -2:
                     for i in xrange(vk):
                         indices[iuv + 1] = -i -1
                         dvik = (i + .5)/vk
-                        new_indices(dvik, iuv, indices, dist_view)
-                        dist_view[indices] = dvik
-                        flag_view[indices] = label[2*iuv+1]
+                        nind = new_indices(dvik, iuv, indices, dist_view)
+                        dist_view[nind] = dvik
+                        flag_view[nind] = label[2*iuv+1]
 
 
     def __add_elem(self, elem):
