@@ -13,4 +13,4 @@ dgeom = {
     'elements':[pyLBM.Circle((0.5,0.5), 0.125, label = 1)],
 }
 geom = pyLBM.Geometry(dgeom)
-geom.visualize(viewlabel=True)
+geom.visualize(pyLBM.viewer.VispyViewer, viewlabel=True)

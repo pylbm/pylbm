@@ -15,6 +15,7 @@ dico = {
     'schemes':[{'velocities':range(13)}],
 }
 dom = pyLBM.Domain(dico)
-dom.visualize(opt=0)
+#dom.visualize(opt=0)
 dom.visualize(opt=1)
-pyLBM.domain.verification(dom, with_color = True)
+dom.visualize(pyLBM.viewer.VispyViewer, opt=1)
+#pyLBM.domain.verification(dom, with_color = True)

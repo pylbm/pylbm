@@ -25,4 +25,4 @@ geom.add_elem(pyLBM.Parallelogram((0.9, 0.9), (-0.05, 0), (0, -0.05), isfluid=Tr
 geom.add_elem(pyLBM.Circle((0.85, 0.85), 0.05, isfluid=False))
 geom.add_elem(pyLBM.Parallelogram((0.9, 0.1), (-0.05, 0), (0, 0.05), isfluid=True))
 geom.add_elem(pyLBM.Circle((0.85, 0.15), 0.05, isfluid=False))
-geom.visualize()
+geom.visualize(pyLBM.viewer.VispyViewer)
