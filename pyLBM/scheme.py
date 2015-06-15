@@ -221,15 +221,15 @@ class Scheme:
             else:
                 self.list_linearization = None
             self.compute_amplification_matrix_relaxation()
-            Li_stab = dicostab.get('test_maximum_principle', False)
+            Li_stab = dicostab.get('test_monotonic_stability', False)
             if Li_stab:
-                if self.is_stable_Linfinity():
-                    print "The scheme satisfies a maximum principle"
+                if self.is_monotonically_stable():
+                    print "The scheme is monotonically stable"
                 else:
-                    print "The scheme does not satisfy a maximum principle"
+                    print "The scheme is not monotonically stable"
             L2_stab = dicostab.get('test_L2_stability', False)
             if L2_stab:
-                if self.is_stable_L2():
+                if self.is_L2_stable():
                     print "The scheme is stable for the norm L2"
                 else:
                     print "The scheme is not stable for the norm L2"
@@ -663,7 +663,7 @@ class Scheme:
         vp = np.linalg.eig(self.amplification_matrix(wave_vector))
         return vp[0]
 
-    def is_stable_L2(self, Nk = 101):
+    def is_L2_stable(self, Nk = 101):
         R = 1.
         vk = np.linspace(0., 2*np.pi, Nk)
         if self.dim == 1:
@@ -697,7 +697,7 @@ class Scheme:
             self.log.warning("dim should be in [1, 3] for the scheme")
         return True
 
-    def is_stable_Linfinity(self):
+    def is_monotonically_stable(self):
         if np.min(self.amplification_matrix_relaxation) < 0:
             return False
         else:
