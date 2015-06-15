@@ -112,14 +112,14 @@ fig = viewer.Fig(2, 3)
 fig[0,0].plot(x, rho)
 fig[0,0].title = 'mass'
 fig[0,1].plot(x, u)
-#fig[0,1].title = 'velocity'
+fig[0,1].title = 'velocity'
 fig[0,2].plot(x, p)
-#fig[0,2].title = 'pressure'
+fig[0,2].title = 'pressure'
 fig[1,0].plot(x, E)
-#fig[1,0].title = 'energy'
+fig[1,0].title = 'energy'
 fig[1,1].plot(x, q)
-#fig[1,1].title = 'momentum'
+fig[1,1].title = 'momentum'
 fig[1,2].plot(x, e)
-#fig[1,2].title = 'internal energy'
+fig[1,2].title = 'internal energy'
 
 fig.show()

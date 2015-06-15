@@ -93,6 +93,9 @@ class PlotWidget(vp.PlotWidget):
         self.add(self.text(text, [x, y, 0.], color='k'))
         self._set_camera(scene.PanZoomCamera, aspect=1)
 
+    def legend(self, loc=None):
+        pass
+
     def image(self, f, fargs=(), cmap='cubehelix', clim='auto'):
         if isinstance(f, np.ndarray):
             data = f
