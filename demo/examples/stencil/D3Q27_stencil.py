@@ -8,12 +8,10 @@
 Example of a 27 velocities scheme in 3D
 """
 import pyLBM
-from pyLBM.viewer import VtkViewer
 dsten = {
     'dim':3,
     'schemes':[{'velocities':range(27)},],
 }
 s = pyLBM.Stencil(dsten)
 print s
-v = VtkViewer()
-s.visualize(v)
+s.visualize(pyLBM.viewer.vispyViewer)

@@ -15,11 +15,6 @@
 import numpy as np
 import sympy as sp
 
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-import matplotlib.cm as cm
-
 import pyLBM
 
 u, X, Y, LA = sp.symbols('u,X,Y,LA')
@@ -68,13 +63,26 @@ dico = {
 
 sol = pyLBM.Simulation(dico)
 
-fig = plt.figure(0,figsize=(16, 8))
-plot(sol)
+# create the viewer to plot the solution
+viewer = pyLBM.viewer.matplotlibViewer
+fig = viewer.Fig()
+ax = fig[0]
+
+im = ax.image(sol.m[0][0].transpose())
+ax.title = 'solution at t = {0:f}'.format(sol.t)
+
 compt = 0
-while (sol.t<Tf):
-    sol.one_time_step()
-    compt += 1
-    if compt == 128:
-        plot(sol)
-        compt = 0
-plt.show()
+
+def update(iframe):
+    global compt
+    if sol.t<Tf:                 # time loop
+        sol.one_time_step()      # increment the solution of one time step
+        compt += 1
+        if compt == 128:
+            compt = 0
+            sol.f2m()
+            im.set_data(sol.m[0][0].transpose())
+            ax.title = 'solution at t = {0:f}'.format(sol.t)
+
+fig.animate(update)
+fig.show()

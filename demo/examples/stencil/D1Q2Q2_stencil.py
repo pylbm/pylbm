@@ -8,7 +8,6 @@
 Example of a vectorial 2 velocities scheme in 1D
 """
 import pyLBM
-from pyLBM.viewer import MatplotlibViewer
 dsten = {
     'dim':1,
     'schemes':[
@@ -18,5 +17,4 @@ dsten = {
 }
 s = pyLBM.Stencil(dsten)
 print s
-v = MatplotlibViewer()
-s.visualize(v)
+s.visualize()

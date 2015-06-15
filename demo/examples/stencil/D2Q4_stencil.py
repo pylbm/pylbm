@@ -8,15 +8,13 @@
 Example of two different two velocities schemes in 2D
 """
 import pyLBM
-from pyLBM.viewer import MatplotlibViewer
 dsten = {
     'dim':2,
     'schemes':[{'velocities':range(1,5)}],
 }
 s = pyLBM.Stencil(dsten)
 print s
-v = MatplotlibViewer()
-s.visualize(v)
+s.visualize()
 
 dsten = {
     'dim':2,
@@ -24,5 +22,5 @@ dsten = {
 }
 s = pyLBM.Stencil(dsten)
 print s
-v = MatplotlibViewer()
-s.visualize(v)
+
+s.visualize()

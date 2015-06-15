@@ -8,12 +8,10 @@
 Example of a 3 velocities scheme in 1D
 """
 import pyLBM
-from pyLBM.viewer import MatplotlibViewer
 dsten = {
     'dim':1,
     'schemes':[{'velocities':range(3)},],
 }
 s = pyLBM.Stencil(dsten)
 print s
-v = MatplotlibViewer()
-s.visualize(v)
+s.visualize()
