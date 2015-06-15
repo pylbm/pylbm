@@ -11,6 +11,7 @@ from functools import wraps
 from .utils import itemproperty
 from .geometry import get_box
 from .logs import setLogger
+from . import viewer
 
 def permute_in_place(a):
     """
@@ -691,7 +692,7 @@ class Stencil(list):
                 self.log.warning("The stencil {0} is not symmetric".format(n))
 
 
-    def visualize(self, viewer, k=None, unique_velocities=False):
+    def visualize(self, viewer_mod=viewer.matplotlibViewer, k=None, unique_velocities=False):
         """
         plot the velocities
 
@@ -705,18 +706,21 @@ class Stencil(list):
         unique_velocities : if True plot the unique velocities
 
         """
-        if self.dim == 3 and not viewer.is3d:
-            #raise ValueError("viewer doesn't support 3D visualization")
-            self.log.error("viewer doesn't support 3D visualization")
+        # if self.dim == 3 and not viewer.is3d:
+        #     #raise ValueError("viewer doesn't support 3D visualization")
+        #     self.log.error("viewer doesn't support 3D visualization")
 
         xmin = xmax = 0
         ymin = ymax = 0
         zmin = zmax = 0
 
-        vectorize = np.vectorize(lambda txt, vx, vy, vz: viewer.add_text(txt, vx, vy, vz))
 
         if unique_velocities:
-            viewer.figure("unique_velocities")
+            view = viewer_mod.Fig()
+            ax = view[0]
+            #ax.title = "unique_velocities"
+
+            vectorize = np.vectorize(lambda txt, vx, vy, vz: ax.text(str(txt), [vx, vy, vz]))
 
             vx = self.uvx
             vy = vz = 0
@@ -725,14 +729,18 @@ class Stencil(list):
             if self.dim == 3:
                 vz = self.uvz
 
-            vectorize(self.unum, vx, vy, vz)
+            pos = np.zeros((vx.size, 3))
+            pos[:, 0] = vx
+            pos[:, 1] = vy
+            pos[:, 2] = vz
+
+            ax.text(map(str, self.unum), pos, dim = self.dim)
 
             xmin, xmax = np.min(vx) - 1, np.max(vx) + 1
             ymin, ymax = np.min(vy) - 1, np.max(vy) + 1
             zmin, zmax = np.min(vz) - 1, np.max(vz) + 1
 
-            viewer.axis(xmin, xmax, ymin, ymax, zmin, zmax)
-
+            ax.axis(xmin, xmax, ymin, ymax, zmin, zmax)
         else:
             if k is None:
                 lv = range(self.nstencils)
@@ -741,8 +749,11 @@ class Stencil(list):
             else:
                 lv = k
 
-            for i in lv:
-                viewer.figure("stencil %d"%i)
+            view = viewer_mod.Fig(len(lv), 1)
+
+            for ii, i in enumerate(lv):
+                ax = view[ii]
+                #ax.title = "stencil %d"%i
 
                 vx = self.vx[i]
                 vy = vz = 0
@@ -751,15 +762,19 @@ class Stencil(list):
                 if self.dim == 3:
                     vz = self.vz[i]
 
-                vectorize(self.num[i], vx, vy, vz)
+                pos = np.zeros((vx.size, 3))
+                pos[:, 0] = vx
+                pos[:, 1] = vy
+                pos[:, 2] = vz
+
+                ax.text(map(str, self.num[i]), pos, dim = self.dim)
 
                 xmin, xmax = np.min(vx) - 1, np.max(vx) + 1
                 ymin, ymax = np.min(vy) - 1, np.max(vy) + 1
                 zmin, zmax = np.min(vz) - 1, np.max(vz) + 1
+                ax.axis(xmin, xmax, ymin, ymax, zmin, zmax)
 
-                viewer.axis(xmin, xmax, ymin, ymax, zmin, zmax)
-
-        viewer.draw()
+        view.show()
 
 if __name__ == '__main__':
     """

@@ -167,8 +167,9 @@ class Circle:
         return self.__str__()
 
 
-    def _visualize(self, viewer, color, viewlabel):
-        viewer.ellipse(self.center, [self.radius]*2, color)
+    def _visualize(self, viewer, color, viewlabel=False, scale=np.ones(2)):
+        print self.center*scale, self.radius*scale
+        viewer.ellipse(self.center*scale, tuple(self.radius*scale), color)
         if viewlabel:
             theta = self.center[0] + 2*self.center[1]+10*self.radius
             x, y = self.center[0] + self.radius*cos(theta), self.center[1] + self.radius*sin(theta)

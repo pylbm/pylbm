@@ -5,11 +5,6 @@
 # License: BSD 3 clause
 
 import numpy as np
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import cm
-from matplotlib.ticker import LinearLocator, FormatStrFormatter
-import matplotlib.cm as cm
-import matplotlib as plt
 import sys
 import copy
 
@@ -305,7 +300,7 @@ class Domain:
                 dist_view[k][ind4[0][ind3[0]], ind4[1][ind3[0]]] = alpha[ind4[0][ind3[0]], ind4[1][ind3[0]]]
                 flag_view[k][ind4[0][ind3[0]], ind4[1][ind3[0]]] = border[ind4[0][ind3[0]], ind4[1][ind3[0]]]
 
-    def visualize(self, viewer_app=viewer.MatplotlibViewer, opt=0):
+    def visualize(self, viewer_app=viewer.matplotlibViewer, opt=0):
         """
         Visualize the domain by creating a plot.
 
@@ -358,16 +353,22 @@ class Domain:
             view.axis(xmin - L/2, xmax + L/2, -10*h, 10*h)
 
         elif (self.dim == 2):
-            xmin, xmax = self.bounds[0][:]
-            ymin, ymax = self.bounds[1][:]
-
-            xpercent = 0.05*(xmax-xmin)
-            ypercent = 0.05*(ymax-ymin)
-            view.axis(xmin-xpercent, xmax+xpercent, ymin-ypercent, ymax+ypercent)
 
             if (opt==0):
-                plt.imshow(self.in_or_out.transpose()>=0, origin='lower', cmap=cm.gray, interpolation='nearest')
+                inT = self.in_or_out
+                xmax, ymax = inT.shape
+                xpercent = 0.05*xmax
+                ypercent = 0.05*ymax
+                view.axis(-xpercent, xmax+xpercent, -ypercent, ymax+ypercent)
+                view.imshow(inT>=0)
             else:
+                xmin, xmax = self.bounds[0][:]
+                ymin, ymax = self.bounds[1][:]
+
+                xpercent = 0.05*(xmax-xmin)
+                ypercent = 0.05*(ymax-ymin)
+                view.axis(xmin-xpercent, xmax+xpercent, ymin-ypercent, ymax+ypercent)
+
                 x, y = self.x[:]
                 dx = self.dx
                 vxkmax, vykmax = self.stencil.vmax[:self.dim]
@@ -390,42 +391,42 @@ class Domain:
                 view.markers(np.asarray([x[indinx], y[indiny]]).T, 500*self.dx, symbol='o')
                 indoutx, indouty = np.where(self.in_or_out==self.valout)
                 view.markers(np.asarray([x[indoutx], y[indouty]]).T, 500*self.dx, symbol='s')
-        elif (self.dim == 3):
-            ax = fig.add_subplot(111, projection='3d')
-            x = self.x[0][:, np.newaxis, np.newaxis]
-            y = self.x[1][np.newaxis, :, np.newaxis]
-            z = self.x[1][np.newaxis, np.newaxis, :]
-            indinx, indiny, indinz = np.where(self.in_or_out==self.valin)
-            ax.scatter(x[indinx, 0, 0], y[0, indiny, 0], z[0, 0, indinz],
-                       s = 100*self.dx**2, color='1.', marker='o'
-                       )
-            indoutx, indouty, indoutz = np.where(self.in_or_out==self.valout)
-            ax.scatter(x[indoutx, 0, 0], y[0, indouty, 0], z[0, 0, indoutz],
-                       s = 100*self.dx**2, c='0.', marker='o'
-                       )
-            ax.set_xlabel("X")
-            ax.set_ylabel("Y")
-            ax.set_zlabel("Z")
-            if (opt!=0):
-                vxkmax = self.stencil.vmax[0]
-                vykmax = self.stencil.vmax[1]
-                vzkmax = self.stencil.vmax[2]
-                for k in xrange(self.stencil.unvtot):
-                    vxk = self.stencil.unique_velocities[k].vx
-                    vyk = self.stencil.unique_velocities[k].vy
-                    vzk = self.stencil.unique_velocities[k].vz
-                    coul = (1.-(vxkmax+vxk)*0.5/vxkmax, (vykmax+vyk)*0.5/vykmax, (vzkmax+vzk)*0.5/vzkmax)
-                    indbordx, indbordy, indbordz = np.where(self.distance[k,:]<=1)
-                    for i in xrange(indbordx.shape[0]):
-                        ax.text(x[indbordx[i],0,0]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vxk,
-                                 y[0,indbordy[i],0]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vyk,
-                                 z[0,0,indbordz[i]]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vzk,
-                                 str(self.flag[k,indbordx[i],indbordy[i],indbordz[i]]),
-                                 fontsize=18)#, horizontalalignment='center',verticalalignment='center')
-                        ax.plot([x[indbordx[i],0,0],x[indbordx[i],0,0]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vxk],
-                                 [y[0,indbordy[i],0],y[0,indbordy[i],0]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vyk],
-                                 [z[0,0,indbordz[i]],z[0,0,indbordz[i]]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vzk],
-                                 c=coul)
+        # elif (self.dim == 3):
+        #     ax = fig.add_subplot(111, projection='3d')
+        #     x = self.x[0][:, np.newaxis, np.newaxis]
+        #     y = self.x[1][np.newaxis, :, np.newaxis]
+        #     z = self.x[1][np.newaxis, np.newaxis, :]
+        #     indinx, indiny, indinz = np.where(self.in_or_out==self.valin)
+        #     ax.scatter(x[indinx, 0, 0], y[0, indiny, 0], z[0, 0, indinz],
+        #                s = 100*self.dx**2, color='1.', marker='o'
+        #                )
+        #     indoutx, indouty, indoutz = np.where(self.in_or_out==self.valout)
+        #     ax.scatter(x[indoutx, 0, 0], y[0, indouty, 0], z[0, 0, indoutz],
+        #                s = 100*self.dx**2, c='0.', marker='o'
+        #                )
+        #     ax.set_xlabel("X")
+        #     ax.set_ylabel("Y")
+        #     ax.set_zlabel("Z")
+        #     if (opt!=0):
+        #         vxkmax = self.stencil.vmax[0]
+        #         vykmax = self.stencil.vmax[1]
+        #         vzkmax = self.stencil.vmax[2]
+        #         for k in xrange(self.stencil.unvtot):
+        #             vxk = self.stencil.unique_velocities[k].vx
+        #             vyk = self.stencil.unique_velocities[k].vy
+        #             vzk = self.stencil.unique_velocities[k].vz
+        #             coul = (1.-(vxkmax+vxk)*0.5/vxkmax, (vykmax+vyk)*0.5/vykmax, (vzkmax+vzk)*0.5/vzkmax)
+        #             indbordx, indbordy, indbordz = np.where(self.distance[k,:]<=1)
+        #             for i in xrange(indbordx.shape[0]):
+        #                 ax.text(x[indbordx[i],0,0]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vxk,
+        #                          y[0,indbordy[i],0]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vyk,
+        #                          z[0,0,indbordz[i]]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vzk,
+        #                          str(self.flag[k,indbordx[i],indbordy[i],indbordz[i]]),
+        #                          fontsize=18)#, horizontalalignment='center',verticalalignment='center')
+        #                 ax.plot([x[indbordx[i],0,0],x[indbordx[i],0,0]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vxk],
+        #                          [y[0,indbordy[i],0],y[0,indbordy[i],0]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vyk],
+        #                          [z[0,0,indbordz[i]],z[0,0,indbordz[i]]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vzk],
+        #                          c=coul)
         else:
             self.log.error('Error in domain.visualize(): the dimension {0} is not allowed'.format(self.dim))
 
