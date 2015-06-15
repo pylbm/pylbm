@@ -16,7 +16,7 @@
 import sympy as sp
 import pyLBM
 
-ua, ub, X, LA = sp.symbols('ua,ub,X,LA,')
+ua, ub, X, LA = sp.symbols('ua, ub, X, LA')
 
 def Riemann_pb(x, ug, ud):
     xm = 0.5*(xmin+xmax)
@@ -75,9 +75,9 @@ x = sol.domain.x[0][1:-1]
 l1 = ax1.plot(x, sol.m[0][0][1:-1])[0]
 l2 = ax2.plot(x, sol.m[1][0][1:-1])[0]
 p1 = [0.5*(xmin+xmax), ymaxa]
-t1 = ax1.text(r'$u_a$ at $t = {0:f}$'.format(sol.t), p1)[0]
+#t1 = ax1.text(r'$u_a$ at $t = {0:f}$'.format(sol.t), p1)[0]
 p2 = [0.5*(xmin+xmax), ymaxb]
-t2 = ax2.text(r'$u_b$ at $t = {0:f}$'.format(sol.t), p2)[0]
+#t2 = ax2.text(r'$u_b$ at $t = {0:f}$'.format(sol.t), p2)[0]
 
 def update(iframe):
     if sol.t<Tf:
@@ -85,8 +85,10 @@ def update(iframe):
         sol.f2m()
         l1.set_data(x, sol.m[0][0][1:-1])
         l2.set_data(x, sol.m[1][0][1:-1])
-        t1.set_text(r'$u_a$ at $t = {0:f}$'.format(sol.t))
-        t2.set_text(r'$u_b$ at $t = {0:f}$'.format(sol.t))
+        #t1.set_text(r'$u_a$ at $t = {0:f}$'.format(sol.t))
+        #t2.set_text(r'$u_b$ at $t = {0:f}$'.format(sol.t))
+        fig[0,0].title = r'$u_a$ at $t = {0:f}$'.format(sol.t)
+        fig[1,0].title = r'$u_b$ at $t = {0:f}$'.format(sol.t)
 
 fig.animate(update)
 fig.show()

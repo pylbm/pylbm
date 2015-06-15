@@ -14,7 +14,7 @@
 import sympy as sp
 import pyLBM
 
-X, LA, u = sp.symbols('X,LA,u')
+X, LA, u = sp.symbols('X, LA, u')
 
 def u0(x):
     milieu = 0.5*(xmin+xmax)
@@ -58,8 +58,8 @@ ymin, ymax = -.2, 1.2
 ax.axis(xmin, xmax, ymin, ymax)
 
 x = sol.domain.x[0][1:-1]
-l1 = ax.plot(x, sol.m[0][0][1:-1], width=2, color='b')[0]
-l2 = ax.plot(x, u0(x-c*sol.t), width=2, color='k')[0]
+l1 = ax.plot(x, sol.m[0][0][1:-1], width=2, color='b', label='D1Q2')[0]
+l2 = ax.plot(x, u0(x-c*sol.t), width=2, color='k', label='exact')[0]
 
 def update(iframe):
     if sol.t<Tf:                 # time loop
@@ -68,6 +68,7 @@ def update(iframe):
         l1.set_data(x, sol.m[0][0][1:-1])
         l2.set_data(x, u0(x-c*sol.t))
         ax.title = 'solution at t = {0:f}'.format(sol.t)
+        ax.legend()
 
 fig.animate(update)
 fig.show()

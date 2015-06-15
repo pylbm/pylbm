@@ -50,6 +50,9 @@ class PlotWidget(object):
     def title(self, text):
         self.ax.set_title(text)
 
+    def legend(self, loc = 'upper left'):
+        self.ax.legend(loc = loc)
+
     def text(self, text, pos, fontsize=18, color='k', dim=2):
         allt = []
         if isinstance(text, str):
@@ -62,8 +65,8 @@ class PlotWidget(object):
     def line(self, pos, width=2, color='k'):
         return self.ax.plot(pos[:, 0], pos[:, 1], c=color, lw=width)
 
-    def plot(self, x, y, width=2, color='k'):
-        return self.ax.plot(x, y, c=color, lw=width)
+    def plot(self, x, y, width=2, color='k', label=''):
+        return self.ax.plot(x, y, c=color, lw=width, label=label)
 
     def segments(self, pos,  width=5, color='k', **kwargs):
         for i in range(pos.shape[0]/2):
