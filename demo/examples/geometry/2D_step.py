@@ -9,8 +9,8 @@ Example of a 2D geometry: the backward facing step
 """
 import pyLBM
 dgeom = {
-    'box':{'x': [0, 3], 'y': [0, 1], 'label':[0, 1, 0, 2]},
-    'elements':[pyLBM.Parallelogram((0.,0.), (.5,0.), (0., .5), label = 0)],
+    'box':{'x': [0, 3], 'y': [0, 1], 'label':[0, 1, 2, 3]},
+    'elements':[pyLBM.Parallelogram((0.,0.), (.5,0.), (0., .5), label = [4,5,6,7])],
 }
 geom = pyLBM.Geometry(dgeom)
-geom.visualize()
+geom.visualize(viewlabel=True)

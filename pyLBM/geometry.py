@@ -225,7 +225,7 @@ class Geometry:
 
             xpercent = 0.05*(xmax-xmin)
             ypercent = 0.05*(ymax-ymin)
-            #view.axis(xmin-xpercent, xmax+xpercent, ymin-ypercent, ymax+ypercent)
+            ax.axis(xmin-xpercent, xmax+xpercent, ymin-ypercent, ymax+ypercent)
         elif self.dim == 3:
             couleurs = [(1./k, 0., 1.-1./k) for k in range(1,11)]
             ax = fig.add_subplot(111, projection='3d')

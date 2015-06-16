@@ -53,13 +53,16 @@ class PlotWidget(object):
     def legend(self, loc = 'upper left'):
         self.ax.legend(loc = loc)
 
-    def text(self, text, pos, fontsize=18, color='k', dim=2):
+    def text(self, text, pos, fontsize=18, color='k', dim=2, horizontalalignment='center', verticalalignment='center'):
         allt = []
         if isinstance(text, str):
             text = (text,)
             pos = (pos,)
         for t, p in zip(text, pos):
-            allt.append(self.ax.text(p[0], p[1], t, fontsize=fontsize, color=color))
+            allt.append(self.ax.text(p[0], p[1], t,
+                fontsize=fontsize, color=color,
+                horizontalalignment=horizontalalignment,
+                verticalalignment=verticalalignment))
         return allt
 
     def line(self, pos, width=2, color='k'):

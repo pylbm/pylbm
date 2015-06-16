@@ -358,10 +358,12 @@ class Domain:
             if (opt==0):
                 inT = self.in_or_out
                 xmax, ymax = inT.shape
+                xmax -= 1
+                ymax -= 1
                 xpercent = 0.05*xmax
                 ypercent = 0.05*ymax
                 view.axis(-xpercent, xmax+xpercent, -ypercent, ymax+ypercent)
-                view.image(inT>=0)
+                view.image(inT.transpose()>=0)
             else:
                 xmin, xmax = self.bounds[0][:]
                 ymin, ymax = self.bounds[1][:]

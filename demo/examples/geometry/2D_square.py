@@ -12,5 +12,5 @@ dgeom = {
     'box':{'x': [0, 1], 'y': [0, 1], 'label':0},
 }
 geom = pyLBM.Geometry(dgeom)
-geom.visualize(pyLBM.viewer.vispyViewer)
-#geom.visualize()
+#geom.visualize(pyLBM.viewer.vispyViewer, viewlabel=True)
+geom.visualize()

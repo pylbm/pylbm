@@ -312,8 +312,8 @@ class Parallelogram:
 
         # points and triangle edges which define the lines for the intersections
         # with the lines defined by (x, y) and v
-        p = [[0, 0], [0, 0], self.v0, self.v1]
-        vt = [self.v0, self.v1, self.v1, self.v0]
+        p = [[0, 0], [0, 0], self.v1, self.v0]
+        vt = [self.v0, self.v1, self.v0, self.v1]
 
         return distance_lines(x - self.point[0], y - self.point[1],
                               v, p, vt, dmax, self.label)

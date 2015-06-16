@@ -2,22 +2,17 @@ import sys
 
 import numpy as np
 import sympy as sp
-from sympy.matrices import Matrix
 
 import pyLBM
 
 import pylab as plt
 import matplotlib.cm as cm
 
-X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
-
-u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
+X, Y, LA = sp.symbols('X, Y, LA')
+rho, qx, qy = sp.symbols('rho, qx, qy')
 
 def initialization_rho(x,y):
     return rhoo * np.ones((x.size, y.size), dtype='float64') + deltarho * ((x-0.5*(xmin+xmax))**2+(y-0.5*(ymin+ymax))**2 < 0.25**2)
-
-def initialization_q(x,y):
-    return np.zeros((x.size, y.size), dtype='float64')
 
 def plot_init(num = 0):
     plt.ion()
@@ -27,13 +22,19 @@ def plot_init(num = 0):
     l = ax.imshow([], origin='lower', cmap=cm.gray, interpolation='nearest')[0]
     return l
 
-def plot(sol, l):
-    sol.f2m()
-    l.set_data(sol.m[0][0][1:-1,1:-1])
-    plt.title('depth h at t = {0:f}'.format(sol.t))
-    plt.pause(1.e-3)
+def update(iframe):
+    if sol.t<Tf:                 # time loop
+        for k in xrange(32):
+            sol.one_time_step()      # increment the solution of one time step
+        sol.f2m()
+        im.set_data(sol.m[0][0].transpose())
+        ax.title = 'solution at t = {0:f}'.format(sol.t)
 
-def simu():
+if __name__ == "__main__":
+    rhoo = 1.
+    deltarho = 1.
+    Taille = 5.
+    xmin, xmax, ymin, ymax = -0.5*Taille, 0.5*Taille, -0.5*Taille, 0.5*Taille
     # parameters
     dx = 1./256 # spatial step
     la = 4 # velocity of the scheme
@@ -48,56 +49,51 @@ def simu():
     s1  = [0., s_1qx, s_1qx, s_1xy]
 
     vitesse = range(1,5)
-    polynomes = Matrix([1, LA*X, LA*Y, X**2-Y**2])
+    polynomes = [1, LA*X, LA*Y, X**2-Y**2]
 
     dico   = {
         'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':-1},
         'space_step':dx,
         'scheme_velocity':la,
-        'inittype':'moments',
-        'schemes':[{'velocities':vitesse,
-                    'polynomials':polynomes,
-                    'relaxation_parameters':s0,
-                    'equilibrium':Matrix([u[0][0], u[1][0], u[2][0], 0.]),
-                    'init':{0:(initialization_rho,)},
-                    },
-                    {'velocities':vitesse,
-                    'polynomials':polynomes,
-                    'relaxation_parameters':s1,
-                    'equilibrium':Matrix([u[1][0], u[1][0]**2/u[0][0] + 0.5*g*u[0][0]**2, u[1][0]*u[2][0]/u[0][0], 0.]),
-                    'init':{0:(initialization_q,)},
-                    },
-                    {'velocities':vitesse,
-                    'polynomials':polynomes,
-                    'relaxation_parameters':s1,
-                    'equilibrium':Matrix([u[2][0], u[1][0]*u[2][0]/u[0][0], u[2][0]**2/u[0][0] + 0.5*g*u[0][0]**2, 0.]),
-                    'init':{0:(initialization_q,)},
-                    },
+        'parameters':{LA:la},
+        'schemes':[
+            {
+                'velocities':vitesse,
+                'conserved_moments':rho,
+                'polynomials':polynomes,
+                'relaxation_parameters':s0,
+                'equilibrium':[rho, qx, qy, 0.],
+                'init':{rho:(initialization_rho,)},
+            },
+            {
+                'velocities':vitesse,
+                'conserved_moments':qx,
+                'polynomials':polynomes,
+                'relaxation_parameters':s1,
+                'equilibrium':[qx, qx**2/rho + 0.5*g*rho**2, qx*qy/rho, 0.],
+                'init':{qx:0.},
+            },
+            {
+                'velocities':vitesse,
+                'conserved_moments':qy,
+                'polynomials':polynomes,
+                'relaxation_parameters':s1,
+                'equilibrium':[qy, qy*qx/rho, qy**2/rho + 0.5*g*rho**2, 0.],
+                'init':{qy:0.},
+            },
         ],
         'generator': pyLBM.generator.CythonGenerator,
         }
 
     sol = pyLBM.Simulation(dico)
 
+    viewer = pyLBM.viewer.matplotlibViewer
+    #viewer = pyLBM.viewer.vispyViewer
+    fig = viewer.Fig()
+    ax = fig[0]
 
-    #l = plot_init(0)
-    #plot(sol, l)
+    im = ax.image(sol.m[0][0].transpose(), clim=[rhoo-deltarho, rhoo+2*deltarho])
+    ax.title = 'solution at t = {0:f}'.format(sol.t)
 
-    plt.figure(1)
-    plt.clf()
-    plt.imshow(sol.m[0][0][1:-1,1:-1])
-
-    while (sol.t<Tf):
-        sol.one_time_step()
-        #plot(sol, l)
-        sol.f2m()
-        plt.imshow(sol.m[0][0][1:-1,1:-1])
-        plt.pause(1.e-3)
-    sol.time_info()
-
-if __name__ == "__main__":
-    rhoo = 1.
-    deltarho = 1.
-    Taille = 5.
-    xmin, xmax, ymin, ymax = -0.5*Taille, 0.5*Taille, -0.5*Taille, 0.5*Taille
-    simu()
+    fig.animate(update, interval=1)
+    fig.show()
