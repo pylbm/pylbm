@@ -23,14 +23,6 @@ def u0(x,y):
     return np.ones((x.shape[0], y.shape[0]), dtype='float64') \
            + .5 * ((x-0.5*(xmin+xmax))**2+(y-0.5*(ymin+ymax))**2 < 0.01)
 
-def plot(sol):
-    sol.f2m()
-    plt.clf()
-    plt.imshow(np.float32(sol.m[0][0].transpose()), origin='lower', cmap=cm.gray)
-    plt.title('mass at t = {0:5.2f}'.format(sol.t))
-    plt.draw()
-    plt.pause(1.e-3)
-
 # parameters
 xmin, xmax, ymin, ymax = 0., 1., 0., 1. # bounds of the domain
 cx, cy = 0.2, 0.5                       # velocity of the advection
@@ -84,5 +76,5 @@ def update(iframe):
             im.set_data(sol.m[0][0].transpose())
             ax.title = 'solution at t = {0:f}'.format(sol.t)
 
-fig.animate(update)
+fig.animate(update, interval=1)
 fig.show()

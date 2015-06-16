@@ -317,7 +317,8 @@ class Domain:
         If dim = 2 or 3 and opt = 0
              - plot a imshow figure, white for inner domain and black for outer domain
         """
-        view = viewer_app()
+        fig = viewer_app.Fig()
+        view = fig[0]
 
         if (self.dim == 1):
             x = self.x[0]
@@ -360,7 +361,7 @@ class Domain:
                 xpercent = 0.05*xmax
                 ypercent = 0.05*ymax
                 view.axis(-xpercent, xmax+xpercent, -ypercent, ymax+ypercent)
-                view.imshow(inT>=0)
+                view.image(inT>=0)
             else:
                 xmin, xmax = self.bounds[0][:]
                 ymin, ymax = self.bounds[1][:]
@@ -430,7 +431,7 @@ class Domain:
         else:
             self.log.error('Error in domain.visualize(): the dimension {0} is not allowed'.format(self.dim))
 
-        view.title("Domain")
+        view.title = "Domain"
         view.draw()
 
         # plt.title("Domain",fontsize=14)
