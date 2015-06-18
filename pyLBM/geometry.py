@@ -178,8 +178,10 @@ class Geometry:
 
         viewlabel : boolean to activate the labels mark (optional)
         """
-        view = viewer_app.Fig()
-        ax = view[0]
+        if self.dim in [1, 2]:
+            view = viewer_app.Fig()
+            ax = view[0]
+
         if self.dim == 1:
             xmin, xmax = self.bounds[0][:]
             L = xmax - xmin
@@ -227,6 +229,7 @@ class Geometry:
             ypercent = 0.05*(ymax-ymin)
             ax.axis(xmin-xpercent, xmax+xpercent, ymin-ypercent, ymax+ypercent)
         elif self.dim == 3:
+            fig = plt.figure()
             couleurs = [(1./k, 0., 1.-1./k) for k in range(1,11)]
             ax = fig.add_subplot(111, projection='3d')
             Pmin = [(float)(self.bounds[k][0]) for k in range(3)]
@@ -266,8 +269,12 @@ class Geometry:
                     elem._visualize(ax, coul, viewlabel)
         else:
             self.log.error('Error in geometry.visualize(): the dimension {0} is not allowed'.format(self.dim))
-        view.title = "Geometry"
-        view.show()
+
+        if self.dim in [1, 2]:
+            view.title = "Geometry"
+            view.show()
+        else:
+            plt.show()
 
     def list_of_labels(self):
         """

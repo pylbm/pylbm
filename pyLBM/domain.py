@@ -317,10 +317,11 @@ class Domain:
         If dim = 2 or 3 and opt = 0
              - plot a imshow figure, white for inner domain and black for outer domain
         """
-        fig = viewer_app.Fig()
-        view = fig[0]
+        if self.dim in [1, 2]:
+            fig = viewer_app.Fig()
+            view = fig[0]
 
-        if (self.dim == 1):
+        if self.dim == 1:
             x = self.x[0]
             y = np.zeros(x.shape)
             vkmax = self.stencil.vmax[0]
@@ -394,53 +395,55 @@ class Domain:
                 view.markers(np.asarray([x[indinx], y[indiny]]).T, 500*self.dx, symbol='o')
                 indoutx, indouty = np.where(self.in_or_out==self.valout)
                 view.markers(np.asarray([x[indoutx], y[indouty]]).T, 500*self.dx, symbol='s')
-        # elif (self.dim == 3):
-        #     ax = fig.add_subplot(111, projection='3d')
-        #     x = self.x[0][:, np.newaxis, np.newaxis]
-        #     y = self.x[1][np.newaxis, :, np.newaxis]
-        #     z = self.x[1][np.newaxis, np.newaxis, :]
-        #     indinx, indiny, indinz = np.where(self.in_or_out==self.valin)
-        #     ax.scatter(x[indinx, 0, 0], y[0, indiny, 0], z[0, 0, indinz],
-        #                s = 100*self.dx**2, color='1.', marker='o'
-        #                )
-        #     indoutx, indouty, indoutz = np.where(self.in_or_out==self.valout)
-        #     ax.scatter(x[indoutx, 0, 0], y[0, indouty, 0], z[0, 0, indoutz],
-        #                s = 100*self.dx**2, c='0.', marker='o'
-        #                )
-        #     ax.set_xlabel("X")
-        #     ax.set_ylabel("Y")
-        #     ax.set_zlabel("Z")
-        #     if (opt!=0):
-        #         vxkmax = self.stencil.vmax[0]
-        #         vykmax = self.stencil.vmax[1]
-        #         vzkmax = self.stencil.vmax[2]
-        #         for k in xrange(self.stencil.unvtot):
-        #             vxk = self.stencil.unique_velocities[k].vx
-        #             vyk = self.stencil.unique_velocities[k].vy
-        #             vzk = self.stencil.unique_velocities[k].vz
-        #             coul = (1.-(vxkmax+vxk)*0.5/vxkmax, (vykmax+vyk)*0.5/vykmax, (vzkmax+vzk)*0.5/vzkmax)
-        #             indbordx, indbordy, indbordz = np.where(self.distance[k,:]<=1)
-        #             for i in xrange(indbordx.shape[0]):
-        #                 ax.text(x[indbordx[i],0,0]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vxk,
-        #                          y[0,indbordy[i],0]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vyk,
-        #                          z[0,0,indbordz[i]]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vzk,
-        #                          str(self.flag[k,indbordx[i],indbordy[i],indbordz[i]]),
-        #                          fontsize=18)#, horizontalalignment='center',verticalalignment='center')
-        #                 ax.plot([x[indbordx[i],0,0],x[indbordx[i],0,0]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vxk],
-        #                          [y[0,indbordy[i],0],y[0,indbordy[i],0]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vyk],
-        #                          [z[0,0,indbordz[i]],z[0,0,indbordz[i]]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vzk],
-        #                          c=coul)
+        elif self.dim == 3:
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+            x = self.x[0][:, np.newaxis, np.newaxis]
+            y = self.x[1][np.newaxis, :, np.newaxis]
+            z = self.x[1][np.newaxis, np.newaxis, :]
+            indinx, indiny, indinz = np.where(self.in_or_out==self.valin)
+            ax.scatter(x[indinx, 0, 0], y[0, indiny, 0], z[0, 0, indinz],
+                       s = 100*self.dx**2, color='1.', marker='o'
+                       )
+            indoutx, indouty, indoutz = np.where(self.in_or_out==self.valout)
+            ax.scatter(x[indoutx, 0, 0], y[0, indouty, 0], z[0, 0, indoutz],
+                       s = 100*self.dx**2, c='0.', marker='o'
+                       )
+            ax.set_xlabel("X")
+            ax.set_ylabel("Y")
+            ax.set_zlabel("Z")
+            if (opt!=0):
+                vxkmax = self.stencil.vmax[0]
+                vykmax = self.stencil.vmax[1]
+                vzkmax = self.stencil.vmax[2]
+                for k in xrange(self.stencil.unvtot):
+                    vxk = self.stencil.unique_velocities[k].vx
+                    vyk = self.stencil.unique_velocities[k].vy
+                    vzk = self.stencil.unique_velocities[k].vz
+                    coul = (1.-(vxkmax+vxk)*0.5/vxkmax, (vykmax+vyk)*0.5/vykmax, (vzkmax+vzk)*0.5/vzkmax)
+                    indbordx, indbordy, indbordz = np.where(self.distance[k,:]<=1)
+                    for i in xrange(indbordx.shape[0]):
+                        ax.text(x[indbordx[i],0,0]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vxk,
+                                 y[0,indbordy[i],0]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vyk,
+                                 z[0,0,indbordz[i]]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vzk,
+                                 str(self.flag[k,indbordx[i],indbordy[i],indbordz[i]]),
+                                 fontsize=18)#, horizontalalignment='center',verticalalignment='center')
+                        ax.plot([x[indbordx[i],0,0],x[indbordx[i],0,0]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vxk],
+                                 [y[0,indbordy[i],0],y[0,indbordy[i],0]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vyk],
+                                 [z[0,0,indbordz[i]],z[0,0,indbordz[i]]+self.dx*self.distance[k,indbordx[i],indbordy[i],indbordz[i]]*vzk],
+                                 c=coul)
         else:
             self.log.error('Error in domain.visualize(): the dimension {0} is not allowed'.format(self.dim))
 
-        view.title = "Domain"
-        view.draw()
-
-        # plt.title("Domain",fontsize=14)
-        # plt.draw()
-        # plt.hold(False)
-        # plt.ioff()
-        # plt.show()
+        if self.dim in [1, 2]:
+            view.title = "Domain"
+            view.draw()
+        else:
+            plt.title("Domain",fontsize=14)
+            plt.draw()
+            plt.hold(False)
+            plt.ioff()
+            plt.show()
 
 
 def verification(dom, with_color=False):
