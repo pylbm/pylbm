@@ -39,7 +39,7 @@ extensions = ['sphinx.ext.autodoc',
               #'sphinx.ext.viewcode',
               ]
 #mathjax_path="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
-mathjax_path="/Users/graille/.ipython/nbextensions/mathjax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+#mathjax_path="/Users/graille/.ipython/nbextensions/mathjax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 autodoc_member_order = 'bysource'
 numpydoc_show_class_members = True
 numpydoc_class_members_toctree = False
@@ -108,16 +108,16 @@ pygments_style = 'sphinx'
 # HTML output
 # -----------------------------------------------------------------------------
 
-html_theme = 'scipy'
+html_theme = 'scikit-image'
 html_theme_path = ['../_theme']
 
-html_theme_options = {
-    "edit_link": True,
-    "sidebar": "right",
-    "scipy_org_logo": True,
-    "rootlinks": [("http://math.u-psud.fr/~pyLBM", "pyLBM"),
-                  ("http://math.u-psud.fr/~pyLBM/doc", "Docs")],
-}
+# html_theme_options = {
+#     "edit_link": True,
+#     "sidebar": "right",
+#     "scipy_org_logo": True,
+#     "rootlinks": [("http://math.u-psud.fr/~pyLBM", "pyLBM"),
+#                   ("http://math.u-psud.fr/~pyLBM/doc", "Docs")],
+# }
 
 html_title = "%s v%s Manual" % (project, version)
 html_static_path = ['../_static']
@@ -178,6 +178,13 @@ html_static_path = ['../_static']
 
 # Custom sidebar templates, maps document names to template names.
 #html_sidebars = {}
+# Custom sidebar templates, maps document names to template names.
+html_sidebars = {
+    '**': ['navigation.html',
+           'localtoc.html',
+           #'versions.html'
+          ],
+}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
