@@ -66,7 +66,6 @@ class Fig(scene.SceneCanvas):
         app.run()
 
     def show(self):
-        #self.camera = scene.PanZoomCamera(aspect=1)
         app.run()
 
 class PlotWidget(vp.PlotWidget):
@@ -91,7 +90,7 @@ class PlotWidget(vp.PlotWidget):
         x = .5*(bounds[0][1]-bounds[0][1])
         y = bounds[1][1]+1
         self.add(self.text(text, [x, y, 0.], color='k'))
-        self._set_camera(scene.PanZoomCamera, aspect=1)
+        #self._set_camera(scene.PanZoomCamera, aspect=1)
 
     def legend(self, loc=None):
         pass
