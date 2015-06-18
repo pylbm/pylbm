@@ -546,7 +546,7 @@ class Scheme:
                             if (bc.value_bc[l] is not None):
                                 if self.dim == 1:
                                     ix = bv.indices[0]
-                                    s  = bv.distance
+                                    s  = 1.-bv.distance
                                     if nv_on_beg:
                                         mloc = np.ascontiguousarray(m[:, ix])
                                     else:
@@ -561,7 +561,7 @@ class Scheme:
                                 elif self.dim == 2:
                                     ix = bv.indices[0]
                                     iy = bv.indices[1]
-                                    s  = bv.distance
+                                    s  = 1.-bv.distance
                                     if nv_on_beg:
                                         mloc = np.ascontiguousarray(m[:, ix, iy])
                                     else:
@@ -578,7 +578,7 @@ class Scheme:
                                     ix = bv.indices[0]
                                     iy = bv.indices[1]
                                     iz = bv.indices[2]
-                                    s  = bv.distance
+                                    s  = 1.-bv.distance
                                     if nv_on_beg:
                                         mloc = np.ascontiguousarray(m[:, ix, iy, iz])
                                     else:
