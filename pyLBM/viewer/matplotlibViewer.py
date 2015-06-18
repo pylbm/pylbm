@@ -12,7 +12,7 @@ import itertools
 
 import numpy as np
 
-from base import Viewer
+from .base import Viewer
 
 class Fig:
     def __init__(self, nrows=1, ncols=1):
@@ -68,8 +68,8 @@ class PlotWidget(object):
     def line(self, pos, width=2, color='k'):
         return self.ax.plot(pos[:, 0], pos[:, 1], c=color, lw=width)
 
-    def plot(self, x, y, width=2, color='k', label=''):
-        return self.ax.plot(x, y, c=color, lw=width, label=label)
+    def plot(self, x, y, width=2, color='k', label='', marker=''):
+        return self.ax.plot(x, y, c=color, lw=width, marker=marker, label=label)
 
     def segments(self, pos,  width=5, color='k', **kwargs):
         for i in range(pos.shape[0]/2):
