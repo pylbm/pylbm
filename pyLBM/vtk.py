@@ -40,10 +40,13 @@ class VTKFile:
         self.x = x
         self.y = y
         self.z = z
+        self.dim = 1
         self.end[0] = x.size - 1
         if y is not None:
+            self.dim = 2
             self.end[1] = y.size - 1
         if z is not None:
+            self.dim = 3
             self.end[2] = z.size - 1
 
         self.vtkfile.openGrid(start = (0,)*3, end = self.end.tolist())
@@ -88,6 +91,8 @@ class VTKFile:
         for d in data:
             tdata += (d.ravel(order='F'),)
 
+        if self.dim == 2:
+            tdata += (np.zeros(tdata[0].shape),)
         self.vectors[name] = tdata
 
     def save(self):
@@ -117,6 +122,8 @@ class VTKFile:
             self.vtkfile.addData("y_coordinates", self.y);
         if self.z is not None:
             self.vtkfile.addData("z_coordinates", self.z);
+        else:
+            self.vtkfile.addData("z_coordinates", np.zeros(self.x.shape));
         self.vtkfile.closeElement("Coordinates");
 
         self.vtkfile.closePiece()
