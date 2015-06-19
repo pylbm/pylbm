@@ -5,12 +5,6 @@ import math
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 mass, qx, qy, qz = sp.symbols('mass,qx,qy,qz')
 
-def initialization_rho(x, y, z):
-    return np.ones((x.size, y.size, z.size))
-
-def initialization_q(x, y, z):
-    return np.zeros((x.size, y.size, z.size))
-
 def bc_up(f, m, x, y, z, scheme):
     if scheme.nv_on_beg:
         m[3] = -math.sqrt(2)/20.
