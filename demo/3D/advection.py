@@ -12,12 +12,9 @@
 # u(t,x,y,z) = u0(x-cx*t,y-cy*t,z-cz*t)
 #
 ##############################################################################
-
 import numpy as np
 import sympy as sp
 import pyLBM
-from pyevtk.hl import imageToVTK
-import pylab as plt
 
 u, X, Y, Z, LA = sp.symbols('u,X,Y,Z,LA')
 
@@ -31,10 +28,11 @@ def u0(x, y, z):
     return .5*np.ones((x.size, y.size, z.size)) \
           + .5*(((x-xm)**2+(y-ym)**2+(z-zm)**2)<.25**2)
 
-def plot(sol, num):
-    sol.f2m()
-    sol.save[:] = sol.m[0][0][1:-1,1:-1,1:-1]
-    imageToVTK("./data/advection_{0}".format(num), pointData = {"u" : sol.save} )
+def plot(x, y, z, m, num):
+    vtk = pyLBM.VTKFile('advection_{0}'.format(num), './data')
+    vtk.set_grid(x, y, z)
+    vtk.add_scalar('u', m[0][0])
+    vtk.save()
 
 s = 1.
 la = 1.
@@ -56,16 +54,12 @@ d = {
 }
 
 sol = pyLBM.Simulation(d)
-nx, ny, nz = sol.m[0][0].shape
-sol.save = np.empty((nx-2, ny-2, nz-2))
+
+x, y, z = sol.domain.x[0], sol.domain.x[1], sol.domain.x[2]
 
 im = 0
-plot(sol,im)
-
 while sol.t<1.:
     sol.one_time_step()
-    print sol.t
     im += 1
-    plot(sol,im)
-
-sol.time_info()
+    sol.f2m()
+    plot(x, y, z, sol.m, im)
