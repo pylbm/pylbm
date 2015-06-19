@@ -28,10 +28,10 @@ def u0(x, y, z):
     return .5*np.ones((x.size, y.size, z.size)) \
           + .5*(((x-xm)**2+(y-ym)**2+(z-zm)**2)<.25**2)
 
-def plot(x, y, z, m, num):
-    vtk = pyLBM.VTKFile('advection_{0}'.format(num), './data')
+def save(x, y, z, m, num):
+    vtk = pyLBM.VTKFile(filename + '_{0}'.format(num), path)
     vtk.set_grid(x, y, z)
-    vtk.add_scalar('u', m[0][0])
+    vtk.add_scalar('u', m[0][0][1:-1,1:-1,1:-1])
     vtk.save()
 
 s = 1.
@@ -55,11 +55,16 @@ d = {
 
 sol = pyLBM.Simulation(d)
 
-x, y, z = sol.domain.x[0], sol.domain.x[1], sol.domain.x[2]
+x, y, z = sol.domain.x[0][1:-1], sol.domain.x[1][1:-1], sol.domain.x[2][1:-1]
+
+filename = 'advection'
+path = './data'
 
 im = 0
 while sol.t<1.:
     sol.one_time_step()
-    im += 1
     sol.f2m()
-    plot(x, y, z, sol.m, im)
+    save(x, y, z, sol.m, im)
+    im += 1
+
+pyLBM.write_collection(filename, path, im)
