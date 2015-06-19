@@ -63,7 +63,7 @@ class VTKFile:
         else:
             data = f(*fargs)
 
-        if np.all(np.asarray(data.shape) != self.end + 1):
+        if np.all(np.asarray(data.shape) != (self.end + 1)[:self.dim]):
             self.log.error("""The shape of the scalar data {0} ({1})
                             must have the shape of the grid ({2})""".format(
                             name, data.shape, self.end + 1
@@ -81,7 +81,7 @@ class VTKFile:
             data = f(*fargs)
 
         for d in data:
-            if np.all(np.asarray(d.shape) != self.end + 1):
+            if np.all(np.asarray(d.shape) != (self.end + 1)[:self.dim]):
                 self.log.error("""The shape of each component
                             of the vector data {0}
                             must have the shape of the grid ({1})""".format(
@@ -140,74 +140,37 @@ class VTKFile:
         else:
             self.vtkfile.appendData(self.x)
 
-        if self._para:
-            self._write_pvtr()
+        if self._para and mpi.COMM_WORLD.Get_rank() == 0:
+            self._write_pvd()
 
         self.vtkfile.save()
 
-    def _write_pvtr(self):
-        dim = 1
-        xglob = mpi.COMM_WORLD.gather(self.x.size)
-        if self.y is not None:
-            dim = 2
-            yglob = mpi.COMM_WORLD.gather(self.y.size)
-        else:
-            yglob = [0]
-        if self.z is not None:
-            dim = 3
-            zglob = mpi.COMM_WORLD.gather(self.z.size)
-        else:
-            zglob = [0]
-
-        if mpi.COMM_WORLD.Get_rank() == 0:
-            gsize = [0]*(2*dim)
-            gsize[1] = np.sum(np.asarray(yglob))
-            if self.y is not None:
-                gsize[3] = np.sum(np.asarray(yglob))
-            if self.z is not None:
-                gsize[5] = np.sum(np.asarray(zglob))
-
-            pvtr = """<?xml version=\"1.0\"?>
-<VTKFile type=\"PRectilinearGrid\" version=\"0.1\" byte_order=\"LittleEndian\">
-<PRectilinearGrid WholeExtent=\"{0}\" GhostLevel=\"0\">
-<PCoordinates>
-<PDataArray NumberOfComponents="1" type="Float64" Name="x_coordinates"/>
-<PDataArray NumberOfComponents="1" type="Float64" Name="y_coordinates"/>
-<PDataArray NumberOfComponents="1" type="Float64" Name="z_coordinates"/>
-</PCoordinates>
-<PPointData>
-""".format(' '.join(map(str, gsize)), dim)
-
-            for s in self.scalars.keys():
-                pvtr += "<PDataArray type=\"Float64\" Name=\"{0}\"/>\n".format(s)
-            for v in self.vectors.keys():
-                pvtr += "<PDataArray type=\"Float64\" Name=\"{0}\"/>\n".format(v)
-
-            pvtr += "</PPointData>"
-
-            z = [0]*2
-            ind = 0
-            for k in xrange(self.npz):
-                y = [0]*2
-                z[1] += zglob[k] - 1
-                for j in xrange(self.npy):
-                    x = [0]*2
-                    y[1] += yglob[j] - 1
-                    for i in xrange(self.npx):
-                        x[1] += xglob[i] - 1
-                        tmp = x + y + z
-                        pvtr += """
-<Piece Extent=\"{0}\" Source=\"./{1}\"/>
-""".format(' '.join(map(str, tmp[:dim*2])), self.filename+'_'+str(ind)+'.vtr')
-                        x[0] = x[1] + 1
-                        ind += 1
-                    y[0] = y[1] + 1
-                z[0] = z[1] + 1
-
-            pvtr += """
-</PRectilinearGrid>
+    def _write_pvd(self):
+        pvd = """<VTKFile type="Collection" version="0.1" byte_order="LittleEndian">
+<Collection>
+"""
+        for i in xrange(mpi.COMM_WORLD.Get_size()):
+            pvd += "<DataSet part=\"{0}\" file=\"./{1}_{0}.vtr\"/>\n".format(i, self.filename)
+        pvd +="""</Collection>
 </VTKFile>
 """
-            f = open(self.path + '/' + self.filename + '.pvtr', 'w')
-            f.write(pvtr)
-            f.close()
+        f = open(self.path + '/' + self.filename + '.pvd', 'w')
+        f.write(pvd)
+        f.close()
+
+def write_collection(filename, path, ntime):
+    size = mpi.COMM_WORLD.Get_size()
+    rank = mpi.COMM_WORLD.Get_rank()
+
+    pvd = """<VTKFile type="Collection" version="0.1" byte_order="LittleEndian">
+<Collection>
+"""
+    for nt in xrange(ntime):
+        for i in xrange(size):
+            pvd += "<DataSet timestep=\"{2}\" part=\"{0}\" file=\"./{1}_{2}_{0}.vtr\"/>\n".format(i, filename, nt)
+    pvd +="""</Collection>
+</VTKFile>
+"""
+    f = open(path + '/' + filename + '.pvd', 'w')
+    f.write(pvd)
+    f.close()
