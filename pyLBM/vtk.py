@@ -6,12 +6,9 @@ import os
 from .logs import setLogger
 
 class VTKFile:
-    def __init__(self, filename, path='', npx=1, npy=1, npz=1):
-        self._para = False
-        prefix = ''
-        if mpi.COMM_WORLD.Get_size() != 1:
-            self._para = True
-            prefix = '_{0}'.format(mpi.COMM_WORLD.Get_rank())
+    def __init__(self, filename, path='', timestep=0, npx=1, npy=1, npz=1):
+        self.timestep = timestep
+        prefix = '_{0}_{1}'.format(timestep, mpi.COMM_WORLD.Get_rank())
 
         if not os.path.exists(path):
             os.mkdir(path)
@@ -140,8 +137,8 @@ class VTKFile:
         else:
             self.vtkfile.appendData(self.x)
 
-        if self._para and mpi.COMM_WORLD.Get_rank() == 0:
-            self._write_pvd()
+        #if mpi.COMM_WORLD.Get_rank() == 0:
+        #    self._write_pvd()
 
         self.vtkfile.save()
 
@@ -150,11 +147,11 @@ class VTKFile:
 <Collection>
 """
         for i in xrange(mpi.COMM_WORLD.Get_size()):
-            pvd += "<DataSet part=\"{0}\" file=\"./{1}_{0}.vtr\"/>\n".format(i, self.filename)
+            pvd += "<DataSet timestep=\"0\" part=\"{0}\" file=\"./{2}_{1}_{0}.vtr\"/>\n".format(i, self.timestep, self.filename)
         pvd +="""</Collection>
 </VTKFile>
 """
-        f = open(self.path + '/' + self.filename + '.pvd', 'w')
+        f = open(self.path + '/' + self.filename + '_{0}.pvd'.format(self.timestep), 'w')
         f.write(pvd)
         f.close()
 
