@@ -396,8 +396,9 @@ class OneStencil:
 
 class Stencil(list):
     """
-    Create the stencil of velocities used by the scheme.
-    A specific numbering is used in order to simplify the creation of the schemes.
+    Create the stencil of velocities used by the scheme(s).
+
+    The numbering of the velocities follows the convention for 1D and 2D.
 
     Parameters
     ----------
@@ -412,58 +413,56 @@ class Stencil(list):
     ----------
 
     dim : int
-      the spatial dimension (1, 2 or 3)
-    unique_velocities : numpy array
-      array of all velocities involved in the stencils.
-      each unique velocity appeared only once.
+        the spatial dimension (1, 2 or 3).
+    unique_velocities : NumPy array
+        array of all velocities involved in the stencils.
+        each unique velocity appeared only once.
+    uvx : NumPy array
+        the x component of the unique velocities.
+    uvy : NumPy array
+        the y component of the unique velocities.
+    uvz : NumPy array
+        the z component of the unique velocities.
+    unum : NumPy array
+        the numbering of the unique velocities.
     unvtot : int
-      the number of unique velocities involved in the stencils.
-      unvtot = size(unique_velocties)
+        the number of unique velocities involved in the stencils.
+        unvtot = size(unique_velocties)
     vmax : int
-      the maximal velocity in norm for each spatial direction.
+        the maximal velocity in norm for each spatial direction.
     vmin : int
-      the minimal velocity in norm for each spatial direction.
+        the minimal velocity in norm for each spatial direction.
     nstencils : int
-      the number of elementary stencils.
+        the number of elementary stencils.
     nv : list of integers
-      the number of velocities for each elementary stencil
+        the number of velocities for each elementary stencil.
     v : list of velocities
-      list of all the velocities for each elementary stencil
+        list of all the velocities for each elementary stencil.
+    vx[k] : NumPy array
+        the x component of the velocities for the stencil k.
+    vy[k] : NumPy array
+        the y component of the velocities for the stencil k.
+    vz[k] : NumPy array
+        the z component of the velocities for the stencil k.
+    num[k] : NumPy array
+        the numbering of the velocities for the stencil k.
     nv_ptr : list of integers
-      used to obtain the list of the velocities involved in a stencil.
-      For instance, the list for the kth stencil is
-      v[nv_ptr[k]:nv_ptr[k+1]]
+        used to obtain the list of the velocities involved in a stencil.
+        For instance, the list for the kth stencil is
+            v[nv_ptr[k]:nv_ptr[k+1]]
 
     Methods
     -------
 
-    uvx :
-      get the x component of the unique velocities
-    uvy :
-      get the y component of the unique velocities
-    uvz :
-      get the z component of the unique velocities
-    vx :
-      get the x component of the velocities for the stencil k
-    vy :
-      get the y component of the velocities for the stencil k
-    vz :
-      get the z component of the velocities for the stencil k
-    unum :
-      get the numbering of the unique velocities
-    num :
-      get the numbering of the velocities for the stencil k
     get_all_velocities :
-      get all the velocities for all the stencils in one array
+        get all the velocities for all the stencils in one array
     visualize :
-      plot the stencil of velocities
+        plot the stencil of velocities
 
     Notes
     -----
 
-    The member methods uvx, uvy, uvz, vx, vy, vz
-    are just the properties of the velocities
-    that are called by using decorators.
+    The velocities for each schemes are defined as a Python list.
 
     Examples
     --------
@@ -645,8 +644,6 @@ class Stencil(list):
     def get_all_velocities(self):
         """
         get all the velocities for all the stencils in one array
-
-        TODO: write a more simple function...
         """
         size = self.nv_ptr[-1]
         allv = np.empty((size, self.dim), dtype='int')
