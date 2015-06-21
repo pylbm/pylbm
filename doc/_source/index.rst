@@ -6,7 +6,6 @@
 
 pyLBM is an all-in-one package for numerical simulations using
 Lattice Boltzmann solvers.
-It is written in python 2.7 for the moment.
 
 pyLBM is licensed under the BSD license,
 enabling reuse with few restrictions.
@@ -16,8 +15,6 @@ First steps
 
 pyLBM can be a simple way to make numerical simulations
 by using the Lattice Boltzmann method.
-The module can be downloaded `here <http://www.math.u-psud.fr/~pyLBM/>`_.
-Before installing, please check the required and optional modules (see below).
 
 Once the module is installed by the command::
 
@@ -57,22 +54,6 @@ Documentation of the code
   The class Scheme <class_scheme>
   The module generator <module_generator>
   The class Simulation <class_simulation>
-
-Requires
----------------------------
-
-   * numpy
-   * sympy
-   * matplotlib
-   * time
-
-Optionals
----------------------------
-
-   * cython
-   * mpi4py
-   * vtk
-   * vispy
 
 References
 ---------------------------

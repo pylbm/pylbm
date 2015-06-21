@@ -21,11 +21,12 @@ pre {
 
 h1, h2, h3, h4, h5, h6 {
     clear: left;
+    border-bottom: 1px solid #ccc;
+    color: #197395;
 }
 h1 {
     font-size: 30px;
     line-height: 36px;
-    color: #197395;
 }
 h2 {
     font-size: 24px;
@@ -133,10 +134,11 @@ h6:hover .headerlink {
 /* general table settings */
 table.docutils {
     margin-bottom: 10px;
-    border-color: #ccc;
+    border: 0px;
 }
 table.docutils td, table.docutils th {
-    padding: 5px;
+    padding: 1px 8px 1px 5px;
+    border: 0px;
     border-color: #ccc;
     text-align: left;
 }
@@ -240,6 +242,13 @@ p.admonition-title {
     max-width: 200px;
 }
 
+.section img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 40%;
+}
+
 .figure .caption {
     width: 200px;
     text-align: center !important;
@@ -248,4 +257,8 @@ p.admonition-title {
 /* misc */
 div.math {
     text-align: center;
+}
+
+p{
+  text-align: justify;
 }
