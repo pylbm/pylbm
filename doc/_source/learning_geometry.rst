@@ -33,7 +33,6 @@ The segment :math:`[0, 1]`
 
 .. literalinclude:: codes/geometry_1D_segment.py
     :lines: 11-
-    :linenos:
 
 The segment :math:`[0,1]` is created by the dictionary with the key ``box``.
 We then add the labels 0 and 1 on the edges with the key ``label``.
@@ -52,7 +51,6 @@ The square :math:`[0,1]^2`
 
 .. literalinclude:: codes/geometry_2D_square.py
     :lines: 11-
-    :linenos:
 
 The square :math:`[0,1]^2` is created by the dictionary with the key ``box``.
 The result is then visualized by using the method
@@ -71,7 +69,6 @@ through a list of integers with the conventions:
 
 .. literalinclude:: codes/geometry_2D_square_label.py
     :lines: 11-
-    :linenos:
 
 If all the labels have the same value, a shorter solution is to
 give only the integer value of the label instead of the list.
@@ -94,7 +91,6 @@ with a center of (0.5, 0.5) and a radius of 0.125
 
 .. literalinclude:: codes/geometry_2D_square_hole.py
     :lines: 11-
-    :linenos:
 
 The dictionary of the geometry then contains an additional key ``elements``
 that is a list of elements.
@@ -104,13 +100,11 @@ The element can be also a :py:class:`triangle <pyLBM.elements.Triangle>`
 
 .. literalinclude:: codes/geometry_2D_square_triangle.py
     :lines: 11-
-    :linenos:
 
 or a :py:class:`parallelogram <pyLBM.elements.Parallelogram>`
 
 .. literalinclude:: codes/geometry_2D_square_parallelogram.py
     :lines: 11-
-    :linenos:
 
 A complex cavity
 ==============================
@@ -126,7 +120,6 @@ the elements in the list is relevant.
 
 .. literalinclude:: codes/geometry_2D_cavity.py
     :lines: 11-19
-    :linenos:
 
 .. image:: /images/geometry_2D_cavity_1.png
 
@@ -136,7 +129,6 @@ in this way.
 
 .. literalinclude:: codes/geometry_2D_cavity.py
     :lines: 21-
-    :linenos:
 
 .. image:: /images/geometry_2D_cavity_2.png
 
@@ -151,7 +143,6 @@ The cube :math:`[0,1]^3`
 
 .. literalinclude:: codes/geometry_3D_cube.py
     :lines: 11-
-    :linenos:
 
 The cube :math:`[0,1]^3` is created by the dictionary with the key ``box``.
 The result is then visualized by using the method

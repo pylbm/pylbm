@@ -1,8 +1,15 @@
+# Authors:
+#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Benjamin Graille <benjamin.graille@math.u-psud.fr>
+#
+# License: BSD 3 clause
+
+"""
+Example of a D1Q3 for the wave equation
+"""
 import sympy as sp
-from sympy.matrices import Matrix, zeros
 import pyLBM
-X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
-u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
+u, v, X = sp.symbols('u, v, X')
 
 c = 0.5
 d = {
@@ -10,8 +17,9 @@ d = {
   'scheme_velocity':1.,
   'schemes':[{
     'velocities': range(3),
-    'polynomials': Matrix([1, X, 0.5*X**2]),
-    'equilibrium': Matrix([u[0][0], u[0][1], .5*c**2*u[0][0]]),
+    'conserved_moments':[u, v],
+    'polynomials': [1, X, 0.5*X**2],
+    'equilibrium': [u, v, .5*c**2*u],
     'relaxation_parameters': [0., 0., 1.9],
     },
   ],
