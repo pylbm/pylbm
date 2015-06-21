@@ -413,3 +413,34 @@ by the relations
 
 The vectorial schemes
 ******************************
+
+With pyLBM, vectorial schemes can be easily built by using a list of elementary schemes.
+Each elementary scheme is given by a dictionary as in the previous section.
+The conserved moments of all the elementary schemes can be used in the equilibrium values of the non conserved moments,
+in order to couple the schemes.
+
+Examples in 1D
+==============================
+
+:math:`D1Q2` for the shallow water equation
+--------------------------------------------------
+
+:download:`script<codes/scheme_D1Q2_shallow_water.py>`
+
+A constant :math:`g\in{\mathbb R}` being given, the shallow water system reads
+
+.. math::
+  :nowrap:
+
+  \begin{align*}
+  &\partial_t h(t,x) + \partial_x q(t,x) = 0, &\qquad t>0, x\in{\mathbb R},\\
+  &\partial_t q(t,x) + \partial_x \bigl(q^2(t,x)/h(t,x) + gh^2(t,x)/2\bigr) = 0, &\qquad t>0, x\in{\mathbb R}.
+  \end{align*}
+
+Taken for instance :math:`g=1`, the following scheme can be used:
+
+.. literalinclude:: codes/scheme_D1Q2_shallow_water.py
+    :lines: 10-
+
+Two elementary schemes have been built: the equilibrium values of the non conserved moments
+depend on the two conserved moments :math:`h` and :math:`q`.
