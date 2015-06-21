@@ -416,14 +416,14 @@ class Stencil(list):
         the spatial dimension (1, 2 or 3).
     unique_velocities : NumPy array
         array of all velocities involved in the stencils.
-        each unique velocity appeared only once.
-    uvx : NumPy array
+        Each unique velocity appeared only once.
+    uvx :
         the x component of the unique velocities.
-    uvy : NumPy array
+    uvy :
         the y component of the unique velocities.
-    uvz : NumPy array
+    uvz :
         the z component of the unique velocities.
-    unum : NumPy array
+    unum :
         the numbering of the unique velocities.
     unvtot : int
         the number of unique velocities involved in the stencils.
