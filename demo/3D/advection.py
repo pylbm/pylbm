@@ -29,7 +29,7 @@ def u0(x, y, z):
           + .5*(((x-xm)**2+(y-ym)**2+(z-zm)**2)<.25**2)
 
 def save(x, y, z, m, num):
-    vtk = pyLBM.VTKFile(filename + '_{0}'.format(num), path)
+    vtk = pyLBM.VTKFile(filename, path, num)
     vtk.set_grid(x, y, z)
     vtk.add_scalar('u', m[0][0][1:-1,1:-1,1:-1])
     vtk.save()
