@@ -26,7 +26,7 @@ def vorticity(sol):
     return vort.T
 
 def update(iframe):
-    nrep = 100
+    nrep = 256
     for i in xrange(nrep):
          sol.one_time_step()
 
@@ -56,10 +56,12 @@ qx2 = dummy*qx**2
 qy2 = dummy*qy**2
 q2  = qx2+qy2
 qxy = dummy*qx*qy
+xc = xmin + 0.75*(xmax-xmin)
+yc = ymin + 0.75*(ymax-ymin)
 
 dico = {
     'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[2, 0, 1, 0]},
-    'elements':[pyLBM.Parallelogram((xmin,ymin),(0.75*(xmax-xmin),0),(0,0.75*(ymax-ymin)), label=0)],
+    'elements':[pyLBM.Parallelogram((xmin,ymin),(xc,ymin),(xmin,yc), label=0)],
     'scheme_velocity':la,
     'space_step': dx,
     'schemes':[{'velocities':range(9),
@@ -72,7 +74,8 @@ dico = {
                 'relaxation_parameters':s,
                 'equilibrium':[rho, qx, qy,
                             -2*rho + 3*qx**2 + 3*qy**2,
-                            rho + 3/2*qx**2 + 3/2*qy**2,
+                            #rho + 3/2*qx**2 + 3/2*qy**2,
+                            rho - 3*qx**2 - 3*qy**2,
                             -qx, -qy,
                             qx**2 - qy**2, qx*qy],
                 'conserved_moments': [rho, qx, qy],
@@ -93,6 +96,7 @@ viewer = pyLBM.viewer.matplotlibViewer
 fig = viewer.Fig()
 ax = fig[0]
 image = ax.image(vorticity, (sol,), cmap='jet', clim=[0, .1])
+ax.polygon([[xmin/dx, ymin/dx],[xmin/dx, yc/dx], [xc/dx, yc/dx], [xc/dx, ymin/dx]], 'k')
 
 # run the simulation
 fig.animate(update, interval=1)
