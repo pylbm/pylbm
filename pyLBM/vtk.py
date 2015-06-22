@@ -10,7 +10,7 @@ class VTKFile:
         self.timestep = timestep
         prefix = '_{0}_{1}'.format(timestep, mpi.COMM_WORLD.Get_rank())
 
-        if not os.path.exists(path):
+        if not os.path.exists(path) and mpi.COMM_WORLD.Get_rank()==0:
             os.mkdir(path)
 
         self.path = path
