@@ -125,6 +125,7 @@ class Simulation:
         self.log = setLogger(__name__)
         self.type = dtype
         self.order = 'C'
+        self._update_m = True
 
         self.log.info('Build the domain')
         try:
@@ -193,6 +194,9 @@ class Simulation:
 
     @utils.item2property
     def m(self, i, j):
+        if self._update_m:
+            self._update_m = False
+            self.f2m()
         if type(j) is slice:
             jstart, jstop = j.start, j.stop
             if j.start is None:
@@ -229,6 +233,7 @@ class Simulation:
         """
         TODO: fix dimension
         """
+        self._update_m = False
         if self.nv_on_beg:
             self._m[self.scheme.stencil.nv_ptr[i] + j] = value
         else:
@@ -469,6 +474,8 @@ class Simulation:
         - relaxation
         - m2f
         """
+        self._update_m = True # we recompute f so m will be not correct
+
         t1 = mpi.Wtime()
         self.boundary_condition()
 
