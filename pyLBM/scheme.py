@@ -10,6 +10,7 @@ import numpy as np
 import sympy as sp
 from sympy.parsing.sympy_parser import parse_expr, standard_transformations
 import copy
+from textwrap import dedent
 
 from .stencil import Stencil
 from .generator import *
@@ -169,6 +170,9 @@ class Scheme:
                     res.append(l)
             return sp.Matrix(res)
 
+
+        self._check_entry_size(scheme, 'polynomials')
+        self._check_entry_size(scheme, 'equilibrium')
         self.P = [create_matrix(s['polynomials']) for s in scheme]
         self.EQ = [create_matrix(s['equilibrium']) for s in scheme]
 
@@ -186,6 +190,7 @@ class Scheme:
                 for j, e in enumerate(eq):
                     self._EQ[i][j] = e.replace(cm, m[icm[0]][icm[1]])
 
+        self._check_entry_size(scheme, 'relaxation_parameters')
         self.s = [s['relaxation_parameters'] for s in scheme]
         self.param = dico.get('parameters', None)
 
@@ -233,6 +238,15 @@ class Scheme:
                     print "The scheme is stable for the norm L2"
                 else:
                     print "The scheme is not stable for the norm L2"
+
+    def _check_entry_size(self, schemes, key):
+        for i, s in enumerate(schemes):
+            ls = len(s[key])
+            nv = self.stencil.nv[i]
+            if ls != nv:
+                self.log.error(dedent("""\
+                               the size of the entry for the key {0} in the scheme {1}
+                               has not the same size of the stencil {1}: {2}, {3}""".format(key, i, ls, nv)))
 
     def __str__(self):
         s = "Scheme informations\n"
