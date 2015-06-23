@@ -6,7 +6,7 @@ import os
 from .logs import setLogger
 
 class VTKFile:
-    def __init__(self, filename, path='', timestep=0, npx=1, npy=1, npz=1):
+    def __init__(self, filename, path='', timestep=0, npx=1, npy=1, npz=1, init_pvd=False):
         self.timestep = timestep
         prefix = '_{0}_{1}'.format(timestep, mpi.COMM_WORLD.Get_rank())
 
@@ -22,8 +22,8 @@ class VTKFile:
         self.z = None
         self.scalars = {}
         self.vectors = {}
-        self._init_grid = False
-
+        self._init_grid = True
+        self._init_pvd = init_pvd
         self.npx = npx
         self.npy = npy
         self.npz = npz
@@ -31,7 +31,7 @@ class VTKFile:
         self.log = setLogger(__name__)
 
     def set_grid(self, x, y=None, z=None):
-        if self._init_grid:
+        if not self._init_grid:
             self.log.warning("vtk grid redefined.")
 
         self.x = x
@@ -48,10 +48,10 @@ class VTKFile:
 
         self.vtkfile.openGrid(start = (0,)*3, end = self.end.tolist())
         self.vtkfile.openPiece(start = (0,)*3, end = self.end.tolist())
-        self._init_grid = True
+        self._init_grid = False
 
     def add_scalar(self, name, f, *fargs):
-        if not self._init_grid:
+        if self._init_grid:
             self.log.error("""You must define the grid before to add scalar
                             (see set_grid method)""")
 
@@ -68,7 +68,7 @@ class VTKFile:
         self.scalars[name] = data.ravel(order='F')
 
     def add_vector(self, name, f, *fargs):
-        if not self._init_grid:
+        if self._init_grid:
             self.log.error("""You must define the grid before to add scalar
                             (see set_grid method)""")
 
@@ -93,7 +93,7 @@ class VTKFile:
         self.vectors[name] = tdata
 
     def save(self):
-        if not self._init_grid:
+        if self._init_grid:
             self.log.error("""You must define the grid before save data
                             (see set_grid method)""")
 
@@ -137,37 +137,36 @@ class VTKFile:
         else:
             self.vtkfile.appendData(self.x)
 
-        #if mpi.COMM_WORLD.Get_rank() == 0:
-        #    self._write_pvd()
+        if mpi.COMM_WORLD.Get_rank() == 0:
+            self._write_pvd()
 
         self.vtkfile.save()
 
     def _write_pvd(self):
-        pvd = """<VTKFile type="Collection" version="0.1" byte_order="LittleEndian">
+        size = mpi.COMM_WORLD.Get_size()
+
+        if self._init_pvd:
+            pvd = """<VTKFile type="Collection" version="0.1" byte_order="LittleEndian">
 <Collection>
 """
-        for i in xrange(mpi.COMM_WORLD.Get_size()):
-            pvd += "<DataSet timestep=\"0\" part=\"{0}\" file=\"./{2}_{1}_{0}.vtr\"/>\n".format(i, self.timestep, self.filename)
-        pvd +="""</Collection>
+            for i in xrange(size):
+                pvd += "<DataSet timestep=\"{2}\" part=\"{0}\" file=\"./{1}_{2}_{0}.vtr\"/>\n".format(i, self.filename, self.timestep)
+            pvd +="""</Collection>
 </VTKFile>
 """
-        f = open(self.path + '/' + self.filename + '_{0}.pvd'.format(self.timestep), 'w')
-        f.write(pvd)
+            f = open(self.path + '/' + self.filename + '.pvd', 'w')
+            f.write(pvd)
+        else:
+            oldlines = open(self.path + '/' + self.filename + '.pvd', 'r').readlines()
+
+            pvd = ''
+            for i in xrange(size):
+                pvd += "<DataSet timestep=\"{2}\" part=\"{0}\" file=\"./{1}_{2}_{0}.vtr\"/>\n".format(i, self.filename, self.timestep)
+            pvd +="""</Collection>
+</VTKFile>
+"""
+            f = open(self.path + '/' + self.filename + '.pvd', 'w')
+            f.writelines(oldlines[:-2])
+            f.write(pvd)
+
         f.close()
-
-def write_collection(filename, path, ntime):
-    size = mpi.COMM_WORLD.Get_size()
-    rank = mpi.COMM_WORLD.Get_rank()
-
-    pvd = """<VTKFile type="Collection" version="0.1" byte_order="LittleEndian">
-<Collection>
-"""
-    for nt in xrange(ntime):
-        for i in xrange(size):
-            pvd += "<DataSet timestep=\"{2}\" part=\"{0}\" file=\"./{1}_{2}_{0}.vtr\"/>\n".format(i, filename, nt)
-    pvd +="""</Collection>
-</VTKFile>
-"""
-    f = open(path + '/' + filename + '.pvd', 'w')
-    f.write(pvd)
-    f.close()
