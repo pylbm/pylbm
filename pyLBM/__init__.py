@@ -14,4 +14,4 @@ from scheme import Scheme
 from elements import *
 from geometry import Geometry
 import viewer
-from vtk import VTKFile, write_collection
+from vtk import VTKFile
