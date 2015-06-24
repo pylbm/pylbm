@@ -134,11 +134,6 @@ class Domain:
         self.dx = dico['space_step'] if space_step is None else space_step
         self.dim = self.geom.dim
 
-        if self.geom.dim != self.stencil.dim:
-            s = 'Error in the dimension: stencil and geometry dimensions are different'
-            s += 'geometry: {0:d}, stencil: {1:d}'.format(self.geom.dim, self.stencil.dim)
-            self.log.error(s)
-
         self.globalbounds = self.geom.globalbounds # the box where the domain lies
         self.bounds = self.geom.bounds # the local box of the process
 
