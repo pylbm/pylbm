@@ -6,7 +6,7 @@
 
 import numpy as np
 from math import sqrt
-from functools import wraps
+from textwrap import dedent
 
 from .utils import itemproperty
 from .geometry import get_box
@@ -518,8 +518,19 @@ class Stencil(list):
         # get the dimension of the stencil (given in the dictionnary or computed
         # through the geometrical box)
         self.dim = dico.get('dim', None)
+
+        box = dico.get('box', None)
+        if box is not None:
+            dbox, bounds = get_box(dico)
+
         if self.dim is None:
-            self.dim, bounds = get_box(dico)
+            self.dim = dbox
+
+        if dbox != self.dim:
+            self.log.warning(dedent("""\
+                             you define a scheme with dimension {0} and
+                             a box with dimension {1}.
+                             They must be the same.""".format(self.dim, dbox)))
 
         # get the schemes
         try:
