@@ -526,7 +526,7 @@ class Stencil(list):
         if self.dim is None:
             self.dim = dbox
 
-        if dbox != self.dim:
+        if box is not None and dbox != self.dim:
             self.log.warning(dedent("""\
                              you define a scheme with dimension {0} and
                              a box with dimension {1}.
