@@ -535,7 +535,11 @@ class Stencil(list):
         # get the schemes
         try:
             v_index = []
-            for s in dico['schemes']:
+            schemes = dico['schemes']
+            if not isinstance(schemes, list):
+                self.log.error("The entry 'schemes' must be a list.")
+
+            for s in schemes:
                 # get the list of the velocities of each stencil
                 v_index.append(np.asarray(s['velocities']))
         except:

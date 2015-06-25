@@ -135,6 +135,8 @@ class Scheme:
         self.la = dico['scheme_velocity']
         self.nscheme = self.stencil.nstencils
         scheme = dico['schemes']
+        if not isinstance(scheme, list):
+            self.log.error("The entry 'schemes' must be a list.")
 
         def create_matrix(L):
             """
