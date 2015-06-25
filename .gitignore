@@ -9,3 +9,4 @@ dist
 *.egg-info
 *.vtr
 *.pvd
+.ipynb_checkpoints
