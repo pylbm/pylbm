@@ -12,6 +12,8 @@ class VTKFile:
 
         if not os.path.exists(path) and mpi.COMM_WORLD.Get_rank()==0:
             os.mkdir(path)
+        # All the processes wait for the creation of the output directory
+        mpi.COMM_WORLD.Barrier()
 
         self.path = path
         self.filename = filename
