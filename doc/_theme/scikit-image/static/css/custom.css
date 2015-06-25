@@ -11,12 +11,11 @@ select,
 textarea {
     font-family: "Lora";
 }
-pre {
-    font-size: 11px;
-}
 
 .navbar .nav>li>a{
-    color: #000;
+  font-weight: bold;
+  color: #197395;
+  background-image: linear-gradient(to bottom, #FFF, #F9FAFF);
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -261,4 +260,18 @@ div.math {
 
 p{
   text-align: justify;
+}
+
+code, pre {
+    font-family: Source Code Pro;
+    background-color: #F9FAFF;
+}
+
+.nav {
+  background-color: #F9FAFF;
+}
+
+.navbar-inner{
+  background-color: #F9FAFF;
+  background-image: linear-gradient(to bottom, #FFF, #F9FAFF);
 }
