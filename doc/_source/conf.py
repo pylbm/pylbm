@@ -31,6 +31,7 @@ extensions = ['sphinx.ext.autodoc',
               #'sphinx.ext.pngmath',
               'sphinx.ext.mathjax',
               'numpydoc',
+              'lbm_ext',
               #'sphinx.ext.intersphinx',
               #'sphinx.ext.coverage',
               #'sphinx.ext.doctest',
@@ -39,7 +40,7 @@ extensions = ['sphinx.ext.autodoc',
               #'sphinx.ext.viewcode',
               ]
 #mathjax_path="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
-#mathjax_path="/Users/graille/.ipython/nbextensions/mathjax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+#mathjax_path="/home/gouarin/.ipython/nbextensions/mathjax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 autodoc_member_order = 'bysource'
 numpydoc_show_class_members = True
 numpydoc_class_members_toctree = False
@@ -108,6 +109,7 @@ pygments_style = 'sphinx'
 # HTML output
 # -----------------------------------------------------------------------------
 
+#html_theme = 'scipy'
 html_theme = 'scikit-image'
 html_theme_path = ['../_theme']
 
