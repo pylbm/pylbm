@@ -295,14 +295,17 @@ class Domain:
                 dist_view[k][ind4[0][ind3[0]], ind4[1][ind3[0]]] = alpha[ind4[0][ind3[0]], ind4[1][ind3[0]]]
                 flag_view[k][ind4[0][ind3[0]], ind4[1][ind3[0]]] = border[ind4[0][ind3[0]], ind4[1][ind3[0]]]
 
-    def visualize(self, viewer_app=viewer.matplotlibViewer, opt=0):
+    def visualize(self, viewer_app=viewer.matplotlibViewer, view_distance=False):
         """
         Visualize the domain by creating a plot.
 
         Parameters
         ----------
-        opt : int, optional
-          optional argument for 2D geometries
+        viewer_app : Viewer, optional
+            define the viewer to plot the domain
+            default is viewer.matplotlibViewer
+        view_distance : boolean, optional
+            view the distance between the interior points and the border
 
         Returns
         -------
@@ -349,9 +352,9 @@ class Domain:
             l = L/50
             view.axis(xmin - L/2, xmax + L/2, -10*h, 10*h)
 
-        elif (self.dim == 2):
+        elif self.dim == 2:
 
-            if (opt==0):
+            if not view_distance:
                 inT = self.in_or_out
                 xmax, ymax = inT.shape
                 xmax -= 1
@@ -407,7 +410,7 @@ class Domain:
             ax.set_xlabel("X")
             ax.set_ylabel("Y")
             ax.set_zlabel("Z")
-            if (opt!=0):
+            if view_distance:
                 vxkmax = self.stencil.vmax[0]
                 vykmax = self.stencil.vmax[1]
                 vzkmax = self.stencil.vmax[2]
