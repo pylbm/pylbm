@@ -37,6 +37,7 @@ Documentation for users
    :maxdepth: 2
 
    The geometry of the simulation <learning_geometry>
+   The domain of the simulation <learning_domain>
    The scheme <learning_scheme>
    The boundary conditions <learning_bounds>
 
