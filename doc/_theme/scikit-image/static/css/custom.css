@@ -267,6 +267,10 @@ code, pre {
     background-color: #F9FAFF;
 }
 
+code{
+  color: #197395;
+}
+
 .nav {
   background-color: #F9FAFF;
 }
@@ -275,3 +279,23 @@ code, pre {
   background-color: #F9FAFF;
   background-image: linear-gradient(to bottom, #FFF, #F9FAFF);
 }
+
+a.download{
+  display: block;
+  float: right;
+  color: #197395;
+  border-radius: 50px;
+}
+
+/*a.download{
+  display: flex;
+  flex-direction: column;
+  align-self: flex-end;
+  color: #197395;
+  border-radius: 50px;
+}*/
+
+/*span.pre{
+  color: #197395;
+  border-radius: 50px;
+}*/

@@ -113,10 +113,10 @@ of this dictionary:
 Examples in 1D
 ==============================
 
+:download:`script<codes/scheme_D1Q2_advection.py>`
+
 :math:`D1Q2` for the advection
 ------------------------------
-
-:download:`script<codes/scheme_D1Q2_advection.py>`
 
 A velocity :math:`c\in{\mathbb R}` being given, the advection equation reads
 
@@ -164,11 +164,10 @@ while the second moment :math:`m_1` relaxes to its equilibrium value
   m_1^\star = m_1 - 1.9 (m_1 - 0.5m_0).
   \end{equation*}
 
+:download:`script<codes/scheme_D1Q2_Burgers.py>`
 
 :math:`D1Q2` for Burger's
 ------------------------------
-
-:download:`script<codes/scheme_D1Q2_Burgers.py>`
 
 The Burger's equation reads
 
@@ -188,10 +187,10 @@ The same dictionary has been used for this application with only one
 modification: the equilibrium value of the second moment
 :math:`m_1^{\textrm{eq}}` is taken to :math:`\tfrac{1}{2}m_0^2`.
 
+:download:`script<codes/scheme_D1Q3_wave.py>`
+
 :math:`D1Q3` for the wave equation
 ----------------------------------
-
-:download:`script<codes/scheme_D1Q3_wave.py>`
 
 The wave equation is rewritten into the system of two partial differential equations
 
@@ -216,11 +215,10 @@ The following scheme can be used:
 Examples in 2D
 ==============================
 
+:download:`script<codes/scheme_D2Q4_advection.py>`
 
 :math:`D2Q4` for the advection
 ------------------------------
-
-:download:`script<codes/scheme_D2Q4_advection.py>`
 
 A velocity :math:`(c_x, c_y)\in{\mathbb R}^2` being given,
 the advection equation reads
@@ -280,10 +278,10 @@ by the relations
   \right.
   \end{equation*}
 
+:download:`script<codes/scheme_D2Q9_Navier-Stokes.py>`
+
 :math:`D2Q9` for Navier-Stokes
 ------------------------------
-
-:download:`script<codes/scheme_D2Q9_Navier-Stokes.py>`
 
 The system of the compressible Navier-Stokes equations
 reads
@@ -334,11 +332,10 @@ moments introduced in [QdHL92]_
 Examples in 3D
 ==============================
 
+:download:`script<codes/scheme_D3Q6_advection.py>`
 
 :math:`D3Q6` for the advection
 ------------------------------
-
-:download:`script<codes/scheme_D3Q6_advection.py>`
 
 A velocity :math:`(c_x, c_y, c_z)\in{\mathbb R}^2` being given,
 the advection equation reads
@@ -422,10 +419,10 @@ in order to couple the schemes.
 Examples in 1D
 ==============================
 
+:download:`script<codes/scheme_D1Q2_shallow_water.py>`
+
 :math:`D1Q2` for the shallow water equation
 --------------------------------------------------
-
-:download:`script<codes/scheme_D1Q2_shallow_water.py>`
 
 A constant :math:`g\in{\mathbb R}` being given, the shallow water system reads
 

@@ -71,6 +71,7 @@ def create_notebooks(notebooks):
         f.write('========\n')
         #f.write('    :maxdepth: 1\n\n')
         for filename, name in notebooks:
+            f.write(":download:`get the notebook<{0}>`\n\n".format('./notebooks/' + name + '.ipynb'))
             f.write("\n:doc:`{0}`\n\n".format('./notebooks/' + name))
             meta = filename[:-6] + '.meta'
             if os.path.isfile(meta):

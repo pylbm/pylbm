@@ -1,10 +1,7 @@
 the module generator
 ------------------------------
 
-.. autoclass:: pyLBM.generator.Generator
-   :members:
-
 .. automodule:: pyLBM.generator
+
+.. autoclass:: pyLBM.generator.NumpyGenerator
    :members:
-   :member-order: bysource
-   :exclude-members: Generator

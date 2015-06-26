@@ -26,10 +26,10 @@ demo/examples/geometry/
 Examples in 1D
 ******************************
 
+:download:`script<codes/geometry_1D_segment.py>`
+
 The segment :math:`[0, 1]`
 ==============================
-
-:download:`script<codes/geometry_1D_segment.py>`
 
 .. literalinclude:: codes/geometry_1D_segment.py
     :lines: 11-
@@ -44,10 +44,10 @@ If no labels are given in the dictionary, the default value is -1.
 Examples in 2D
 ******************************
 
+:download:`script<codes/geometry_2D_square_label.py>`
+
 The square :math:`[0,1]^2`
 ==============================
-
-:download:`script<codes/geometry_2D_square_label.py>`
 
 .. literalinclude:: codes/geometry_2D_square.py
     :lines: 11-
@@ -74,12 +74,12 @@ If all the labels have the same value, a shorter solution is to
 give only the integer value of the label instead of the list.
 If no labels are given in the dictionary, the default value is -1.
 
+:download:`script 3<codes/geometry_2D_square_parallelogram.py>`
+:download:`script 2<codes/geometry_2D_square_triangle.py>`
+:download:`script 1<codes/geometry_2D_square_hole.py>`
+
 A square with a hole
 ==============================
-
-:download:`script 1<codes/geometry_2D_square_hole.py>`
-:download:`script 2<codes/geometry_2D_square_triangle.py>`
-:download:`script 3<codes/geometry_2D_square_parallelogram.py>`
 
 The unit square :math:`[0,1]^2` can be holed with a circle (script 1)
 or with a triangular or with a parallelogram (script 3)
@@ -106,10 +106,10 @@ or a :py:class:`parallelogram <pyLBM.elements.Parallelogram>`
 .. literalinclude:: codes/geometry_2D_square_parallelogram.py
     :lines: 11-
 
+:download:`script <codes/geometry_2D_cavity.py>`
+
 A complex cavity
 ==============================
-
-:download:`script <codes/geometry_2D_cavity.py>`
 
 A complex geometry can be build by using a list of elements. In this example,
 the box is fixed to the unit square :math:`[0,1]^2`. A square hole is added with the
@@ -136,10 +136,10 @@ in this way.
 Examples in 3D
 ******************************
 
+:download:`script<codes/geometry_3D_cube.py>`
+
 The cube :math:`[0,1]^3`
 ==============================
-
-:download:`script<codes/geometry_3D_cube.py>`
 
 .. literalinclude:: codes/geometry_3D_cube.py
     :lines: 11-
