@@ -55,6 +55,9 @@ class SOA:
     def size(self):
         return self.array.size
 
+    def reshape(self):
+        return self.array.reshape((self.nv, np.prod(self.nspace)))
+
 class AOS:
     """
     This class defines an array of structures to store the
@@ -100,9 +103,11 @@ class AOS:
     def __setitem__(self, key, values):
         if isinstance(key, slice):
             k = (slice(None, None, None), key)
+        elif isinstance(key, int):
+            k = (slice(None, None, None), slice(None, None, None), key)
         else:
             k = key[1:] + (key[0],)
-        self.array.__setitem__(k, np.rollaxis(values, 0, self.array.ndim))
+        self.array.__setitem__(k, np.rollaxis(values, 0, self.array.ndim-1))
 
     @property
     def nspace(self):
@@ -120,6 +125,8 @@ class AOS:
     def size(self):
         return self.array.size
 
+    def reshape(self):
+        return self.array.reshape((np.prod(self.nspace), self.nv))
 
 if __name__ == '__main__':
     nrep = 100
