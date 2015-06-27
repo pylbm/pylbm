@@ -5,14 +5,14 @@
 # License: BSD 3 clause
 
 """
-Example of the backward facing step in 2D
+Example of a square in 2D with a circular hole with a D2Q13
 """
 import pyLBM
 dico = {
-    'box':{'x': [0, 3], 'y': [0, 1]},
-    'elements':[pyLBM.Parallelogram((0.,0.), (.5,0.), (0., .5))],
-    'space_step':0.125,
-    'schemes':[{'velocities':range(9)}],
+    'box':{'x': [0, 2], 'y': [0, 1]},
+    'elements':[pyLBM.Circle((0.5,0.5), 0.2)],
+    'space_step':0.05,
+    'schemes':[{'velocities':range(13)}],
 }
 dom = pyLBM.Domain(dico)
 dom.visualize()

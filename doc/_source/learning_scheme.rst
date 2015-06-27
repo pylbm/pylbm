@@ -411,10 +411,11 @@ by the relations
 The vectorial schemes
 ******************************
 
-With pyLBM, vectorial schemes can be easily built by using a list of elementary schemes.
+With pyLBM, vectorial schemes can be built easily by using a list of elementary schemes.
 Each elementary scheme is given by a dictionary as in the previous section.
 The conserved moments of all the elementary schemes can be used in the equilibrium values of the non conserved moments,
-in order to couple the schemes.
+in order to couple the schemes. For more details on the vectorial schemes,
+the reader can refer to [G14]_.
 
 Examples in 1D
 ==============================
@@ -439,5 +440,10 @@ Taken for instance :math:`g=1`, the following scheme can be used:
 .. literalinclude:: codes/scheme_D1Q2_shallow_water.py
     :lines: 10-
 
-Two elementary schemes have been built: the equilibrium values of the non conserved moments
-depend on the two conserved moments :math:`h` and :math:`q`.
+Two elementary schemes have been built, these two schemes are identical
+except for the equilibrium values of the non conserved moment and of the relaxation parameter:
+The first one is used to simulate the equation on :math:`h` and the second one
+to simulate the equation on :math:`q`.
+For each scheme, the equilibrium value of the non conserved moment is equal
+to the flux of the corresponding equation: the equilibrium value of the kth scheme
+can so depend on all the conserved moments (and not only on those of the kth scheme).

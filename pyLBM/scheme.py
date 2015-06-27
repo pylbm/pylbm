@@ -46,8 +46,9 @@ class Scheme:
     Each dictionary of the list `schemes` should contains the following `key:value`
 
     - velocities : list of the velocities number
-    - polynomials : sympy matrix of the polynomial functions that define the moments
-    - equilibrium : sympy matrix of the values that define the equilibrium
+    - conserved moments : list of the moments conserved by each scheme
+    - polynomials : list of the polynomial functions that define the moments
+    - equilibrium : list of the values that define the equilibrium
     - relaxation_parameters : list of the value of the relaxation parameters
     - init : a dictionary to define the initial conditions (see examples)
 
@@ -132,7 +133,13 @@ class Scheme:
         else:
             self.stencil = Stencil(dico)
         self.dim = self.stencil.dim
-        self.la = dico['scheme_velocity']
+        la = dico.get('scheme_velocity', None)
+        if la is None:
+            self.log.error("The entry 'scheme_velocity' has to be given.")
+        if isinstance(la, int) or isinstance(la, float):
+            self.la = la
+        else:
+            self.log.error("The entry 'scheme_velocity' has to be a float.")
         self.nscheme = self.stencil.nstencils
         scheme = dico['schemes']
         if not isinstance(scheme, list):

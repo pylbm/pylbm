@@ -5,14 +5,13 @@
 # License: BSD 3 clause
 
 """
-Example of the cube in 3D
+Example of a segment in 1D with a D1Q5
 """
 import pyLBM
 dico = {
-    'box':{'x': [0, 2], 'y': [0, 2], 'z':[0, 2]},
-    'space_step':1,
-    'schemes':[{'velocities':range(19)}]
+    'box':{'x': [0, 1],},
+    'space_step':0.1,
+    'schemes':[{'velocities':range(5)}],
 }
 dom = pyLBM.Domain(dico)
-print dom
-dom.visualize(view_distance=True)
+dom.visualize()

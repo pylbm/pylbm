@@ -26,15 +26,15 @@ demo/examples/domain/
 Examples in 1D
 ******************************
 
-:download:`script<codes/domain_1D_segment.py>`
+:download:`script<codes/domain_D1Q3_segment.py>`
 
-The segment :math:`[0, 1]`
-==============================
+The segment :math:`[0, 1]` with a :math:`D1Q3`
+==============================================
 
-.. literalinclude:: codes/domain_1D_segment.py
+.. literalinclude:: codes/domain_D1Q3_segment.py
     :lines: 11-
 
-.. image:: /images/domain_1D_segment.png
+.. plot:: codes/domain_D1Q3_segment.py
 
 The segment :math:`[0,1]` is created by the dictionary with the key ``box``.
 The stencil is composed by the velocity :math:`v_0=0`, :math:`v_1=1`, and
@@ -43,131 +43,109 @@ the domain.
 The space step :math:`dx` is taken to :math:`0.1` to allow the visualization.
 The result is then visualized with the distance of the boundary points
 by using the method
-:py:meth:`visualize<pyLBM.geometry.Geometry.visualize>`.
+:py:meth:`visualize<pyLBM.domain.Domain.visualize>`.
+
+:download:`script<codes/domain_D1Q5_segment.py>`
+
+The segment :math:`[0, 1]` with a :math:`D1Q5`
+==============================================
+
+.. literalinclude:: codes/domain_D1Q5_segment.py
+    :lines: 11-
+
+.. plot:: codes/domain_D1Q5_segment.py
+
+The segment :math:`[0,1]` is created by the dictionary with the key ``box``.
+The stencil is composed by the velocity :math:`v_0=0`, :math:`v_1=1`,
+:math:`v_2=-1`, :math:`v_3=2`, :math:`v_4=-2`.
+Two phantom cells are then added at the left and at the right of
+the domain.
+The space step :math:`dx` is taken to :math:`0.1` to allow the visualization.
+The result is then visualized with the distance of the boundary points
+by using the method
+:py:meth:`visualize<pyLBM.domain.Domain.visualize>`.
 
 
 Examples in 2D
 ******************************
 
-The square :math:`[0,1]^2`
-==============================
+:download:`script<codes/domain_D2Q9_square.py>`
 
-:download:`script<codes/geometry_2D_square_label.py>`
+The square :math:`[0,1]^2` with a :math:`D2Q9`
+===============================================
 
-.. literalinclude:: codes/geometry_2D_square.py
+.. literalinclude:: codes/domain_D2Q9_square.py
     :lines: 11-
+
+.. plot::  codes/domain_D2Q9_square.py
 
 The square :math:`[0,1]^2` is created by the dictionary with the key ``box``.
+The stencil is composed by the nine velocities
+
+.. math::
+    :nowrap:
+
+    v_0=(0,0),\\
+    v_1=(1,0), v_2=(0,1), v_3=(-1,0), v_4=(0,-1),\\
+    v_5=(1,1), v_6=(-1,1), v_7=(-1,-1), v_8=(1,-1).
+
+One phantom cell is then added all around the square.
+The space step :math:`dx` is taken to :math:`0.1` to allow the visualization.
 The result is then visualized by using the method
-:py:meth:`visualize <pyLBM.geometry.Geometry.visualize>`.
+:py:meth:`visualize <pyLBM.domain.Domain.visualize>`.
+This method can be used without parameter: the domain is visualize in white
+for the fluid part (where the computation is done) and in black for the solid part
+(the phantom cells or the obstacles).
+An optional parameter view_distance can be used to visualize more precisely the
+points (a black circle inside the domain and a square outside). Color lines are added
+to visualize the position of the border: for each point that can reach the border
+for a given velocity in one time step, the distance to the border is computed.
 
-We then add the labels on each edge of the square
-through a list of integers with the conventions:
+:download:`script 1<codes/domain_D2Q13_square_hole.py>`
 
-.. hlist::
-  :columns: 2
+A square with a hole with a :math:`D2Q13`
+=========================================
 
-  * first for the left (:math:`x=x_{\operatorname{min}}`)
-  * third for the bottom (:math:`y=y_{\operatorname{min}}`)
-  * second for the right (:math:`x=x_{\operatorname{max}}`)
-  * fourth for the top (:math:`y=y_{\operatorname{max}}`)
-
-.. literalinclude:: codes/geometry_2D_square_label.py
-    :lines: 11-
-
-If all the labels have the same value, a shorter solution is to
-give only the integer value of the label instead of the list.
-If no labels are given in the dictionary, the default value is -1.
-
-A square with a hole
-==============================
-
-:download:`script 1<codes/geometry_2D_square_hole.py>`
-:download:`script 2<codes/geometry_2D_square_triangle.py>`
-:download:`script 3<codes/geometry_2D_square_parallelogram.py>`
-
-The unit square :math:`[0,1]^2` can be holed with a circle (script 1)
-or with a triangular or with a parallelogram (script 3)
-
-In the first example,
+The unit square :math:`[0,1]^2` can be holed with a circle.
+In this example,
 a solid disc lies in the fluid domain defined by
 a :py:class:`circle <pyLBM.elements.Circle>`
 with a center of (0.5, 0.5) and a radius of 0.125
 
-.. literalinclude:: codes/geometry_2D_square_hole.py
+.. literalinclude:: codes/domain_D2Q13_square_hole.py
     :lines: 11-
 
-The dictionary of the geometry then contains an additional key ``elements``
-that is a list of elements.
-In this example, the circle is labelized by 1 while the edges of the square by 0.
+.. plot:: codes/domain_D2Q13_square_hole.py
 
-The element can be also a :py:class:`triangle <pyLBM.elements.Triangle>`
 
-.. literalinclude:: codes/geometry_2D_square_triangle.py
-    :lines: 11-
+:download:`script <codes/domain_D2Q9_step.py>`
 
-or a :py:class:`parallelogram <pyLBM.elements.Parallelogram>`
-
-.. literalinclude:: codes/geometry_2D_square_parallelogram.py
-    :lines: 11-
-
-A complex cavity
+A step with a :math:`D2Q9`
 ==============================
 
-:download:`script <codes/geometry_2D_cavity.py>`
+A step can be build by removing a rectangle in the left corner.
+For a :math:`D2Q9`, it gives the following domain.
 
-A complex geometry can be build by using a list of elements. In this example,
-the box is fixed to the unit square :math:`[0,1]^2`. A square hole is added with the
-argument ``isfluid=False``. A strip and a circle are then added with the argument
-``isfluid=True``. Finally, a square hole is put. The value of ``elements``
-contains the list of all the previous elements. Note that the order of
-the elements in the list is relevant.
+.. literalinclude:: codes/domain_D2Q9_step.py
+    :lines: 11-
 
-.. literalinclude:: codes/geometry_2D_cavity.py
-    :lines: 11-19
-
-.. image:: /images/geometry_2D_cavity_1.png
-
-Once the geometry is built, it can be modified by adding or deleting
-other elements. For instance, the four corners of the cavity can be rounded
-in this way.
-
-.. literalinclude:: codes/geometry_2D_cavity.py
-    :lines: 21-
-
-.. image:: /images/geometry_2D_cavity_2.png
+.. plot:: codes/domain_D2Q9_step.py
 
 
 Examples in 3D
 ******************************
 
-The cube :math:`[0,1]^3`
-==============================
+:download:`script<codes/domain_D3Q19_cube.py>`
 
-:download:`script<codes/geometry_3D_cube.py>`
+The cube :math:`[0,1]^3` with a :math:`D3Q19`
+=============================================
 
-.. literalinclude:: codes/geometry_3D_cube.py
+.. literalinclude:: codes/domain_D3Q19_cube.py
     :lines: 11-
 
-The cube :math:`[0,1]^3` is created by the dictionary with the key ``box``.
+.. plot::  codes/domain_D3Q19_cube.py
+
+The cube :math:`[0,1]^3` is created by the dictionary with the key ``box``
+and the first 19th  velocities.
 The result is then visualized by using the method
-:py:meth:`visualize <pyLBM.geometry.Geometry.visualize>`.
-
-We then add the labels on each edge of the square
-through a list of integers with the conventions:
-
-.. hlist::
-  :columns: 2
-
-  * first for the left (:math:`x=x_{\operatorname{min}}`)
-  * third for the bottom (:math:`y=y_{\operatorname{min}}`)
-  * fifth for the front (:math:`z=z_{\operatorname{min}}`)
-  * second for the right (:math:`x=x_{\operatorname{max}}`)
-  * fourth for the top (:math:`y=y_{\operatorname{max}}`)
-  * sixth for the back (:math:`z=z_{\operatorname{max}}`)
-
-If all the labels have the same value, a shorter solution is to
-give only the integer value of the label instead of the list.
-If no labels are given in the dictionary, the default value is -1.
-
-.. image:: /images/geometry_3D_cube.png
+:py:meth:`visualize <pyLBM.domain.Domain.visualize>`.

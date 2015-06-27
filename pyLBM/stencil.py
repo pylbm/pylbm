@@ -144,12 +144,7 @@ class Velocity(object):
     Notes
     ------
 
-    .. image:: /images/Velocities_1D.jpeg
-
-    .. image:: /images/Velocities_2D.jpeg
-
-    .. image:: /images/Velocities_3D.jpeg
-
+    .. plot:: codes/Velocities.py
 
     """
     __metaclass__ = Singleton

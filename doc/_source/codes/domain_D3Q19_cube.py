@@ -5,15 +5,13 @@
 # License: BSD 3 clause
 
 """
-Example of a square in 2D with a circular hole
+Example of the cube in 3D with a D3Q19
 """
 import pyLBM
 dico = {
-    'box':{'x': [0, 2], 'y': [0, 1]},
-    'elements':[pyLBM.Circle((0.5,0.5), 0.2)],
-    'space_step':0.05,
-    'schemes':[{'velocities':range(13)}],
+    'box':{'x': [0, 2], 'y': [0, 2], 'z':[0, 2]},
+    'space_step':1,
+    'schemes':[{'velocities':range(19)}]
 }
 dom = pyLBM.Domain(dico)
-dom.visualize()
 dom.visualize(view_distance=True)

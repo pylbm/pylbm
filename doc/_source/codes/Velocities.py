@@ -48,7 +48,7 @@ def Velocities_1D(n):
     plt.ylim(ymin-2*e, ymax+2*e)
     plt.draw()
     plt.hold(False)
-    plt.savefig('Velocities_{0:1d}D.jpeg'.format(dim), dpi = 80)
+    #plt.savefig('Velocities_{0:1d}D.jpeg'.format(dim), dpi = 80)
 
 def Velocities_2D(n):
     dim = 2
@@ -87,7 +87,7 @@ def Velocities_2D(n):
     plt.ylim(ymin-2*e, ymax+2*e)
     plt.draw()
     plt.hold(False)
-    plt.savefig('Velocities_{0:1d}D.jpeg'.format(dim), dpi = 80)
+    #plt.savefig('Velocities_{0:1d}D.jpeg'.format(dim), dpi = 80)
 
 def Velocities_3D(n):
     dim = 3
@@ -157,7 +157,7 @@ def Velocities_3D(n):
     plt.axis('off')
     plt.draw()
     plt.hold(False)
-    plt.savefig('Velocities_{0:1d}D.jpeg'.format(dim), dpi = 80)
+    #plt.savefig('Velocities_{0:1d}D.jpeg'.format(dim), dpi = 80)
 
 def Velocities(dim, n):
     if dim == 1:
@@ -168,8 +168,8 @@ def Velocities(dim, n):
         Velocities_3D(n)
     else:
         print "error of dimension"
+    plt.show()
 
-if __name__ == "__main__":
-    Velocities(1, 3)
-    Velocities(2, 2)
-    Velocities(3, 1)
+Velocities(1, 3)
+Velocities(2, 2)
+Velocities(3, 1)

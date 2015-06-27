@@ -57,22 +57,25 @@ class Domain:
     In that case, dico does not need to contain the informations for generate
     the geometry and/or the stencil
 
-    In 1D, distance[k, i] is the distance between the point x[0][i]
-    and the border in the direction of the kth velocity.
+    In 1D, distance[q, i] is the distance between the point x[0][i]
+    and the border in the direction of the qth velocity.
 
-    In 2D, distance[k, j, i] is the distance between the point
-    (x[0][i], x[1][j]) and the border in the direction of kth
+    In 2D, distance[q, j, i] is the distance between the point
+    (x[0][i], x[1][j]) and the border in the direction of qth
     velocity
 
-    In 3D, TODO
+    In 3D, distance[q, k, j, i] is the distance between the point
+    (x[0][i], x[1][j], x[2][k]) and the border in the direction of qth
+    velocity
 
-    In 1D, flag[k, i] is the flag of the border reached by the point
-    x[0][i] in the direction of the kth velocity
+    In 1D, flag[q, i] is the flag of the border reached by the point
+    x[0][i] in the direction of the qth velocity
 
-    In 2D, flag[k, j, i] is the flag of the border reached by the point
-    (x[0][i], x[1][j]) in the direction of kth velocity
+    In 2D, flag[q, j, i] is the flag of the border reached by the point
+    (x[0][i], x[1][j]) in the direction of qth velocity
 
-    In 3D, TODO
+    In 2D, flag[q, k, j, i] is the flag of the border reached by the point
+    (x[0][i], x[1][j], x[2][k]) in the direction of qth velocity
 
     Warnings
     --------

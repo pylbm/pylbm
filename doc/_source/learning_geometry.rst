@@ -34,6 +34,8 @@ The segment :math:`[0, 1]`
 .. literalinclude:: codes/geometry_1D_segment.py
     :lines: 11-
 
+.. plot:: codes/geometry_1D_segment.py
+
 The segment :math:`[0,1]` is created by the dictionary with the key ``box``.
 We then add the labels 0 and 1 on the edges with the key ``label``.
 The result is then visualized with the labels by using the method
@@ -52,6 +54,8 @@ The square :math:`[0,1]^2`
 .. literalinclude:: codes/geometry_2D_square.py
     :lines: 11-
 
+.. plot:: codes/geometry_2D_square.py
+
 The square :math:`[0,1]^2` is created by the dictionary with the key ``box``.
 The result is then visualized by using the method
 :py:meth:`visualize <pyLBM.geometry.Geometry.visualize>`.
@@ -69,6 +73,8 @@ through a list of integers with the conventions:
 
 .. literalinclude:: codes/geometry_2D_square_label.py
     :lines: 11-
+
+.. plot:: codes/geometry_2D_square_label.py
 
 If all the labels have the same value, a shorter solution is to
 give only the integer value of the label instead of the list.
@@ -92,6 +98,8 @@ with a center of (0.5, 0.5) and a radius of 0.125
 .. literalinclude:: codes/geometry_2D_square_hole.py
     :lines: 11-
 
+.. plot:: codes/geometry_2D_square_hole.py
+
 The dictionary of the geometry then contains an additional key ``elements``
 that is a list of elements.
 In this example, the circle is labelized by 1 while the edges of the square by 0.
@@ -101,10 +109,14 @@ The element can be also a :py:class:`triangle <pyLBM.elements.Triangle>`
 .. literalinclude:: codes/geometry_2D_square_triangle.py
     :lines: 11-
 
+.. plot:: codes/geometry_2D_square_triangle.py
+
 or a :py:class:`parallelogram <pyLBM.elements.Parallelogram>`
 
 .. literalinclude:: codes/geometry_2D_square_parallelogram.py
     :lines: 11-
+
+.. plot:: codes/geometry_2D_square_parallelogram.py
 
 :download:`script <codes/geometry_2D_cavity.py>`
 
@@ -121,8 +133,6 @@ the elements in the list is relevant.
 .. literalinclude:: codes/geometry_2D_cavity.py
     :lines: 11-19
 
-.. image:: /images/geometry_2D_cavity_1.png
-
 Once the geometry is built, it can be modified by adding or deleting
 other elements. For instance, the four corners of the cavity can be rounded
 in this way.
@@ -130,7 +140,7 @@ in this way.
 .. literalinclude:: codes/geometry_2D_cavity.py
     :lines: 21-
 
-.. image:: /images/geometry_2D_cavity_2.png
+.. plot:: codes/geometry_2D_cavity.py
 
 
 Examples in 3D
@@ -143,6 +153,8 @@ The cube :math:`[0,1]^3`
 
 .. literalinclude:: codes/geometry_3D_cube.py
     :lines: 11-
+
+.. plot:: codes/geometry_3D_cube.py
 
 The cube :math:`[0,1]^3` is created by the dictionary with the key ``box``.
 The result is then visualized by using the method
@@ -164,5 +176,3 @@ through a list of integers with the conventions:
 If all the labels have the same value, a shorter solution is to
 give only the integer value of the label instead of the list.
 If no labels are given in the dictionary, the default value is -1.
-
-.. image:: /images/geometry_3D_cube.png
