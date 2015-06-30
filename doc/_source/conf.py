@@ -40,8 +40,8 @@ extensions = ['sphinx.ext.autodoc',
               #'sphinxarg.ext',
               #'sphinx.ext.viewcode',
               ]
-#mathjax_path="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
-mathjax_path="/Users/graille/.ipython/nbextensions/mathjax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+mathjax_path="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+#mathjax_path="/Users/graille/.ipython/nbextensions/mathjax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 #mathjax_path="/home/gouarin/.ipython/nbextensions/mathjax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 autodoc_member_order = 'bysource'
 numpydoc_show_class_members = True
