@@ -105,7 +105,7 @@ class Geometry:
         self.list_elem = []
         self.log = setLogger(__name__)
 
-        dummylab = dico['box'].get('label', 0)
+        dummylab = dico['box'].get('label', -1)
         if isinstance(dummylab, int):
             self.box_label = [dummylab]*2*self.dim
         elif isinstance(dummylab, list):
