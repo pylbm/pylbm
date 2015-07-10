@@ -163,7 +163,7 @@ class NumpyGenerator(Generator):
                         self.code += "\tm[{0:d}] *= (1. - {1:.16f})\n".format(stencil.nv_ptr[k] + i, s[k][i])
         self.code += "\n"
 
-    def m2f(self, A, k, dim, dtype = 'f8'):
+    def m2f(self, A, dim, dtype = 'f8'):
         """
         generate the code to compute the distribution functions from the moments
 
@@ -192,11 +192,12 @@ class NumpyGenerator(Generator):
         to generate one function per elementary scheme
         because the index corresponding to the stencil is the first index.
         """
-        self.code += "def m2f_{0:d}(m, f):\n".format(k)
+        #self.code += "def m2f_{0:d}(m, f):\n".format(k)
+        self.code += "def m2f(m, f):\n"
         self.code += matMult(A, 'm', 'f', '\t')
         self.code += "\n"
 
-    def f2m(self, A, k, dim, dtype = 'f8'):
+    def f2m(self, A, dim, dtype = 'f8'):
         """
         generate the code to compute the moments from the distribution functions
 
@@ -225,6 +226,16 @@ class NumpyGenerator(Generator):
         to generate one function per elementary scheme
         because the index corresponding to the stencil is the first index.
         """
-        self.code += "def f2m_{0:d}(f, m):\n".format(k)
+        #self.code += "def f2m_{0:d}(f, m):\n".format(k)
+        self.code += "def f2m(f, m):\n"
         self.code += matMult(A, 'f', 'm', '\t')
         self.code += "\n"
+
+    def onetimestep(self, stencil):
+        self.code += """
+def onetimestep(m, f, fnew, in_or_out, valin):
+    transport(f)
+    f2m(f, m)
+    relaxation(m)
+    m2f(m, f)
+"""
