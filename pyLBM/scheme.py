@@ -207,10 +207,11 @@ class Scheme:
         self.generator = dico.get('generator', NumpyGenerator)()
         self.log.info("Generator used for the scheme functions:\n{0}\n".format(self.generator))
 
-        if isinstance(self.generator, NumpyGenerator):
-            self.nv_on_beg = True
-        else:
-            self.nv_on_beg = False
+        self.nv_on_beg = True
+        # if isinstance(self.generator, NumpyGenerator):
+        #      self.nv_on_beg = True
+        # else:
+        #      self.nv_on_beg = False
         self.log.debug("nv_on_beg = {0}".format(self.nv_on_beg))
         self.generate()
 
@@ -423,15 +424,9 @@ class Scheme:
         >>> print S.generator.code
         """
         self.generator.setup()
-        if self.nv_on_beg:
-            for k in xrange(self.nscheme):
-                self.generator.m2f(self.invMnum[k], k, self.dim)
-                self.generator.f2m(self.Mnum[k], k, self.dim)
-        else:
-            # ne marche que pour cython
-            self.generator.m2f(self.invMnumGlob, 0, self.dim)
-            self.generator.f2m(self.MnumGlob, 0, self.dim)
-            self.generator.onetimestep(self.stencil)
+        self.generator.m2f(self.invMnumGlob, 0, self.dim)
+        self.generator.f2m(self.MnumGlob, 0, self.dim)
+        self.generator.onetimestep(self.stencil)
 
         self.generator.transport(self.nscheme, self.stencil)
 
@@ -447,32 +442,34 @@ class Scheme:
     def m2f(self, m, f):
         """ Compute the distribution functions f from the moments m """
         mod = self.generator.get_module()
-        if self.nv_on_beg:
-            space_size = np.prod(m.shape[1:])
-            for k in xrange(self.nscheme):
-                s = slice(self.stencil.nv_ptr[k], self.stencil.nv_ptr[k + 1])
-                nv = self.stencil.nv[k]
-                m2f_i = getattr(mod, 'm2f_%d'%k)
-                m2f_i(m[s].reshape((nv, space_size)), f[s].reshape((nv, space_size)))
-        else:
-            space_size = np.prod(m.shape[:-1])
-            ns = self.stencil.nv_ptr[-1]
-            mod.m2f(m.reshape((space_size, ns)), f.reshape((space_size, ns)))
+        mod.m2f(m.reshape(), f.reshape())
+        # if self.nv_on_beg:
+        #     space_size = np.prod(m.shape[1:])
+        #     for k in xrange(self.nscheme):
+        #         s = slice(self.stencil.nv_ptr[k], self.stencil.nv_ptr[k + 1])
+        #         nv = self.stencil.nv[k]
+        #         m2f_i = getattr(mod, 'm2f_%d'%k)
+        #         m2f_i(m[s].reshape((nv, space_size)), f[s].reshape((nv, space_size)))
+        # else:
+        #     space_size = np.prod(m.shape[:-1])
+        #     ns = self.stencil.nv_ptr[-1]
+        #     mod.m2f(m.reshape((space_size, ns)), f.reshape((space_size, ns)))
 
     def f2m(self, f, m):
         """ Compute the moments m from the distribution functions f """
         mod = self.generator.get_module()
-        if self.nv_on_beg:
-            space_size = np.prod(m.shape[1:])
-            for k in xrange(self.nscheme):
-                s = slice(self.stencil.nv_ptr[k], self.stencil.nv_ptr[k + 1])
-                nv = self.stencil.nv[k]
-                f2m_i = getattr(mod, 'f2m_%d'%k)
-                f2m_i(f[s].reshape((nv, space_size)), m[s].reshape((nv, space_size)))
-        else:
-            space_size = np.prod(m.shape[:-1])
-            ns = self.stencil.nv_ptr[-1]
-            mod.f2m(f.reshape((space_size, ns)), m.reshape((space_size, ns)))
+        mod.f2m(f.reshape(), m.reshape())
+        # if self.nv_on_beg:
+        #     space_size = np.prod(m.shape[1:])
+        #     for k in xrange(self.nscheme):
+        #         s = slice(self.stencil.nv_ptr[k], self.stencil.nv_ptr[k + 1])
+        #         nv = self.stencil.nv[k]
+        #         f2m_i = getattr(mod, 'f2m_%d'%k)
+        #         f2m_i(f[s].reshape((nv, space_size)), m[s].reshape((nv, space_size)))
+        # else:
+        #     space_size = np.prod(m.shape[:-1])
+        #     ns = self.stencil.nv_ptr[-1]
+        #     mod.f2m(f.reshape((space_size, ns)), m.reshape((space_size, ns)))
 
     def transport(self, f):
         """ The transport phase on the distribution functions f """
@@ -483,31 +480,33 @@ class Scheme:
         """ Compute the equilibrium """
         mod = self.generator.get_module()
         func = getattr(mod, "equilibrium")
-        if self.nv_on_beg:
-            space_size = np.prod(m.shape[1:])
-            ns = self.stencil.nv_ptr[-1]
-            func(m.reshape((ns, space_size)))
-        else:
-            space_size = np.prod(m.shape[:-1])
-            ns = self.stencil.nv_ptr[-1]
-            func(m.reshape((space_size, ns)))
+        func(m.reshape())
+        # if self.nv_on_beg:
+        #     space_size = np.prod(m.shape[1:])
+        #     ns = self.stencil.nv_ptr[-1]
+        #     func(m.reshape((ns, space_size)))
+        # else:
+        #     space_size = np.prod(m.shape[:-1])
+        #     ns = self.stencil.nv_ptr[-1]
+        #     func(m.reshape((space_size, ns)))
 
     def relaxation(self, m):
         """ The relaxation phase on the moments m """
         mod = self.generator.get_module()
-        if self.nv_on_beg:
-            space_size = np.prod(m.shape[1:])
-            ns = self.stencil.nv_ptr[-1]
-            mod.relaxation(m.reshape(((ns, space_size))))
-        else:
-            space_size = np.prod(m.shape[:-1])
-            ns = self.stencil.nv_ptr[-1]
-            mod.relaxation(m.reshape(((space_size, ns))))
+        mod.relaxation(m.reshape())
+        # if self.nv_on_beg:
+        #     space_size = np.prod(m.shape[1:])
+        #     ns = self.stencil.nv_ptr[-1]
+        #     mod.relaxation(m.reshape(((ns, space_size))))
+        # else:
+        #     space_size = np.prod(m.shape[:-1])
+        #     ns = self.stencil.nv_ptr[-1]
+        #     mod.relaxation(m.reshape(((space_size, ns))))
 
     def onetimestep(self, m, fold, fnew, in_or_out, valin):
         """ Compute one time step of the Lattice Boltzmann method """
         mod = self.generator.get_module()
-        mod.onetimestep(m, fold, fnew, in_or_out, valin)
+        mod.onetimestep(m.array, fold.array, fnew.array, in_or_out, valin)
 
     def set_boundary_conditions(self, f, m, bc, interface, nv_on_beg):
         """
@@ -547,7 +546,10 @@ class Scheme:
          +---------------+----------------+-----------------+
 
         """
-        interface.update(f)
+        f.update()
+        # tmp = np.ascontiguousarray(f.swaparray)
+        # interface.update(tmp)
+        # f.swaparray[:] = tmp
 
         # non periodic conditions
         if self.bc_compute:
