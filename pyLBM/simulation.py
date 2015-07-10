@@ -207,28 +207,9 @@ class Simulation:
                 jstop = self.scheme.stencil.nv[i] - 1
             jj = slice(self.scheme.stencil.nv_ptr[i] + jstart,
                        self.scheme.stencil.nv_ptr[i] + jstop)
-            if self.nv_on_beg:
-                return self._m[jj]
-            else:
-                if self.dim == 1:
-                    return self._m[:, jj]
-                elif self.dim == 2:
-                    return self._m[:, :, jj]
-                elif self.dim == 3:
-                    return self._m[:, :, :, jj]
-                else:
-                    self.log.error('Bad value of spatial dimension dim = {0}'.format(self.dim))
-        if self.nv_on_beg:
-            return self._m[self.scheme.stencil.nv_ptr[i] + j]
-        else:
-            if self.dim == 1:
-                return self._m[:, self.scheme.stencil.nv_ptr[i] + j]
-            elif self.dim == 2:
-                return self._m[:, :, self.scheme.stencil.nv_ptr[i] + j]
-            elif self.dim == 3:
-                return self._m[:, :, :, self.scheme.stencil.nv_ptr[i] + j]
-            else:
-                self.log.error('Bad value of spatial dimension dim = {0}'.format(self.dim))
+            return self._m[jj]
+
+        return self._m[self.scheme.stencil.nv_ptr[i] + j]
 
     @m.setter
     def m(self, i, j, value):
@@ -236,17 +217,11 @@ class Simulation:
         TODO: fix dimension
         """
         self._update_m = False
-        if self.nv_on_beg:
-            self._m[self.scheme.stencil.nv_ptr[i] + j] = value
-        else:
-            self._m[:, :, self.scheme.stencil.nv_ptr[i] + j] = value
+        self._m[self.scheme.stencil.nv_ptr[i] + j] = value
 
     @utils.item2property
     def F(self, i, j):
-        if self.nv_on_beg:
-            return self._F[self.scheme.stencil.nv_ptr[i] + j]
-        else:
-            return self._F[:, :, self.scheme.stencil.nv_ptr[i] + j]
+        return self._F[self.scheme.stencil.nv_ptr[i] + j]
 
     @property
     def mglobal(self):
@@ -376,17 +351,9 @@ class Simulation:
                 f = v[0]
                 extraargs = v[1] if len(v) == 2 else ()
                 fargs = coords + extraargs
-                if self.nv_on_beg:
-                    array_to_init[ns] = f(*fargs)
-                else:
-                    array_to_init[..., ns] = f(*fargs)
+                array_to_init[ns] = f(*fargs)
             else:
-                if self.nv_on_beg:
-                    array_to_init[ns] = v
-                else:
-                    array_to_init[..., ns] = v
-
-
+                array_to_init[ns] = v
 
         if inittype == 'moments':
             self.scheme.equilibrium(self._m)
@@ -394,8 +361,7 @@ class Simulation:
         elif inittype == 'distributions':
             self.scheme.f2m(self._F, self._m)
 
-        if not self.nv_on_beg:
-            self._Fold[:] = self._F[:]
+        #self._Fold[:] = self._F[:]
 
     def transport(self):
         """
@@ -481,18 +447,12 @@ class Simulation:
         t1 = mpi.Wtime()
         self.boundary_condition()
 
-        if self.nv_on_beg:
-            self.transport()
-            self.f2m()
-            self.relaxation()
-            self.m2f()
-        else:
-            tloci = mpi.Wtime()
-            self.scheme.onetimestep(self._m, self._F, self._Fold, self.domain.in_or_out, self.domain.valin)
-            self._F, self._Fold = self._Fold, self._F
-            tlocf = mpi.Wtime()
-            self.cpu_time['transport'] += 0.5*(tlocf-tloci)
-            self.cpu_time['relaxation'] += 0.5*(tlocf-tloci)
+        tloci = mpi.Wtime()
+        self.scheme.onetimestep(self._m, self._F, self._Fold, self.domain.in_or_out, self.domain.valin)
+        self._F, self._Fold = self._Fold, self._F
+        tlocf = mpi.Wtime()
+        self.cpu_time['transport'] += 0.5*(tlocf-tloci)
+        self.cpu_time['relaxation'] += 0.5*(tlocf-tloci)
         t2 = mpi.Wtime()
         self.cpu_time['total'] += t2 - t1
         self.cpu_time['number_of_iterations'] += 1
