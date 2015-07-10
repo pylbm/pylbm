@@ -21,10 +21,11 @@ from .scheme import Scheme
 from .geometry import Geometry
 from .stencil import Stencil
 from .boundary import Boundary
-
-from pyLBM import utils
-
+from . import utils
 from .logs import setLogger
+from .storage import AOS, SOA
+from .generator import NumpyGenerator
+
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
@@ -163,18 +164,19 @@ class Simulation:
         #self.nv_on_beg = nv_on_beg
         self.nv_on_beg = self.scheme.nv_on_beg
 
-        if self.nv_on_beg:
-            msize = [self.scheme.stencil.nv_ptr[-1]] + self.domain.shape
-            self._m = np.empty(msize, dtype=self.type, order=self.order)
-            self._F = np.empty(msize, dtype=self.type, order=self.order)
-        else:
-            msize = self.domain.shape + [self.scheme.stencil.nv_ptr[-1]]
-            self._m = np.empty(msize, dtype=self.type, order=self.order)
-            self._F = np.empty(msize, dtype=self.type, order=self.order)
-            self._Fold = np.empty(msize, dtype=self.type, order=self.order)
-
         self.interface = self.domain.geom.interface
-        self.interface.set_subarray(self._F.shape, self.domain.stencil.vmax, self.nv_on_beg)
+
+        nv = self.scheme.stencil.nv_ptr[-1]
+        nspace = self.domain.shape
+        vmax = self.domain.stencil.vmax
+        if isinstance(self.scheme.generator, NumpyGenerator):
+            self._m = SOA(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
+            self._F = SOA(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
+            self._Fold = self._F
+        else:
+            self._m = AOS(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
+            self._F = AOS(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
+            self._Fold = AOS(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
 
         self.log.info('Build boundary conditions')
         self.bc = Boundary(self.domain, dico)
