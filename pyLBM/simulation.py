@@ -5,6 +5,7 @@
 # License: BSD 3 clause
 
 import sys
+import types
 import cmath
 import numpy as np
 import sympy as sp
@@ -21,13 +22,25 @@ from .scheme import Scheme
 from .geometry import Geometry
 from .stencil import Stencil
 from .boundary import Boundary
+from .validate_dictionary import *
 
 from pyLBM import utils
 
 from .logs import setLogger
 
-X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
-u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
+proto_simu = {
+    'box':(is_dico_box,),
+    'elements':(types.NoneType, is_list_elem),
+    'dim':(types.NoneType, types.IntType),
+    'space_step':(types.FloatType,),
+    'scheme_velocity':(types.IntType, types.FloatType),
+    'parameters':(types.NoneType, is_dico_sp_float),
+    'schemes':(is_list_sch,),
+    'boundary_conditions':(types.NoneType, is_dico_bc),
+    'generator':(types.NoneType, is_generator),
+    'stability':(types.NoneType, is_dico_stab),
+    'inittype':(types.NoneType, types.StringType),
+}
 
 class Simulation:
     """
@@ -127,12 +140,20 @@ class Simulation:
         self.order = 'C'
         self._update_m = True
 
+        self.log.info('Check the dictionary')
+        test, aff = validate(dico, proto_simu)
+        if test:
+            self.log.info(aff)
+        else:
+            self.log.error(aff)
+            sys.exit()
+
         self.log.info('Build the domain')
         try:
             if domain is not None:
                 self.domain = domain
             else:
-                self.domain = Domain(dico)
+                self.domain = Domain(dico, verif=False)
         except KeyError:
             self.log.error('Error in the creation of the domain: wrong dictionnary')
             sys.exit()

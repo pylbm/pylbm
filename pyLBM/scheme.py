@@ -14,8 +14,24 @@ from textwrap import dedent
 
 from .stencil import Stencil
 from .generator import *
+from .validate_dictionary import *
 
 from .logs import setLogger
+
+proto_sch = {
+    'velocities': (is_list_int,),
+    'conserved_moments': (sp.Symbol, types.StringType, is_list_symb),
+    'polynomials': (is_list_sp_or_nb,),
+    'equilibrium': (is_list_sp_or_nb,),
+    'relaxation_parameters': (is_list_float,),
+    'init':(types.NoneType, is_dico_init),
+}
+
+proto_stab = {
+    'linearization':(types.NoneType, is_dico_sp_float),
+    'test_maximum_principle':(types.NoneType, types.BooleanType),
+    'test_L2_stability':(types.NoneType, types.BooleanType),
+}
 
 def param_to_tuple(param):
     if param is not None:

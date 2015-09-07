@@ -11,8 +11,23 @@ import copy
 from .elements import *
 from .geometry import Geometry
 from .stencil import Stencil
+from .validate_dictionary import *
 from .logs import setLogger
 from . import viewer
+
+proto_domain = {
+    'box':(is_dico_box,),
+    'elements':(types.NoneType, is_list_elem),
+    'dim':(types.NoneType, types.IntType),
+    'space_step':(types.FloatType,),
+    'scheme_velocity':(types.IntType, types.FloatType),
+    'parameters':(types.NoneType, is_dico_sp_float),
+    'schemes':(is_list_sch,),
+    'boundary_conditions':(types.NoneType, is_dico_bc),
+    'generator':(types.NoneType, is_generator),
+    'stability':(types.NoneType, is_dico_stab),
+    'inittype':(types.NoneType, types.StringType),
+}
 
 class Domain:
     """
@@ -129,8 +144,16 @@ class Domain:
 
 
     """
-    def __init__(self, dico=None, geometry=None, stencil=None, space_step=None):
+    def __init__(self, dico=None, geometry=None, stencil=None, space_step=None, verif=True):
         self.log = setLogger(__name__)
+
+        self.log.info('Check the dictionary')
+        test, aff = validate(dico, proto_domain)
+        if test:
+            self.log.info(aff)
+        else:
+            self.log.error(aff)
+            sys.exit()
 
         self.geom = Geometry(dico) if geometry is None else geometry
         self.stencil = Stencil(dico) if stencil is None else stencil

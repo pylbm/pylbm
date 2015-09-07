@@ -3,13 +3,10 @@ import sympy as sp
 import numpy as np
 import pyLBM
 
-
 """
 TODO
 
-- autoriser les string plutot que les symbols sympy
-- tester que toutes les clés sont bien renseignées (sinon les mettre en rouge)
-- faire les tests de compatiblités et mettre un message en rouge dans le cas contraire
+- faire les tests de compatiblites et mettre un message en rouge dans le cas contraire
 
 """
 class PrintInColor:
@@ -29,6 +26,10 @@ class PrintInColor:
         return cls.END + str(s) + cls.END
 
     @classmethod
+    def missing(cls, s):
+        return cls.PURPLE + str(s) + cls.END
+
+    @classmethod
     def unknown(cls, s, b):
         if b:
             return cls.correct(s)
@@ -40,9 +41,9 @@ def space(ntab):
 
 def debut(b):
     if b:
-        return PrintInColor.correct("\n|   ")
+        return PrintInColor.correct("\n   |")
     else:
-        return PrintInColor.error("\n|>>>")
+        return PrintInColor.error("\n>>>|")
 
 def is_dico_generic(d, ltk, ltv, ntab=0):
     test = isinstance(d, types.DictionaryType)
@@ -62,11 +63,6 @@ def is_dico_generic(d, ltk, ltv, ntab=0):
                 test_k = False
                 ligne_k += PrintInColor.error(v)
             ligne += debut(test_k) + space(ntab) + ligne_k
-            #if test_k:
-            #    ligne += "\n|   "
-            #else:
-            #    ligne += "\n|>>>"
-            #ligne += space(ntab) + ligne_k
     else:
         ligne = ''
     return test, ligne
@@ -95,13 +91,13 @@ def is_list_generic(l, lte, size=None):
     return test, ligne
 
 def is_dico_sp_float(d, ntab=0):
-    return is_dico_generic(d, sp.Symbol, (types.IntType, types.FloatType), ntab=ntab)
+    return is_dico_generic(d, (sp.Symbol, types.StringType), (types.IntType, types.FloatType), ntab=ntab)
 
 def is_dico_int_func(d, ntab=0):
     return is_dico_generic(d, types.IntType, types.FunctionType, ntab=ntab)
 
 def is_dico_box(d, ntab=0):
-    return test_dico_prototype(d, proto_box, ntab=ntab)
+    return test_dico_prototype(d, pyLBM.geometry.proto_box, ntab=ntab)
 
 def is_dico_bc(d, ntab=0):
     test = isinstance(d, types.DictionaryType)
@@ -116,7 +112,7 @@ def is_dico_bc(d, ntab=0):
                 debut_l = debut(True) + space(ntab)
                 ligne_l = PrintInColor.correct(label) + ": "
                 if isinstance(dico_bc_label, types.DictionaryType):
-                    test_lk, ligne_lk = test_dico_prototype(dico_bc_label, proto_bc, ntab=ntab+1)
+                    test_lk, ligne_lk = test_dico_prototype(dico_bc_label, pyLBM.boundary.proto_bc, ntab=ntab+1)
                     if not test_lk:
                         debut_l = debut(False) + space(ntab)
                     ligne_l += ligne_lk
@@ -132,7 +128,7 @@ def is_dico_init(d, ntab=0):
     return is_dico_generic(d, (sp.Symbol, types.StringType), (types.TupleType, types.IntType, types.FloatType), ntab=ntab)
 
 def is_dico_stab(d, ntab=0):
-    return test_dico_prototype(d, proto_stab, ntab=ntab)
+    return test_dico_prototype(d, pyLBM.scheme.proto_stab, ntab=ntab)
 
 def is_list_sch(l, ntab=0):
     test = isinstance(l, (types.ListType, types.TupleType))
@@ -141,7 +137,7 @@ def is_list_sch(l, ntab=0):
         compt = 0
         for sch in l:
             if isinstance(sch, types.DictionaryType):
-                test_l, ligne_l = test_dico_prototype(sch, proto_sch, ntab=ntab+1)
+                test_l, ligne_l = test_dico_prototype(sch, pyLBM.scheme.proto_sch, ntab=ntab+1)
             else:
                 test_l = False
                 ligne_l = PrintInColor.error(sch)
@@ -170,52 +166,17 @@ def is_generator(d, ntab=None):
         test = False
     return test, PrintInColor.unknown(d, test)
 
+def is_list_elem(l, ntab=None):
+    return is_list_generic(l, pyLBM.elements.Element)
+
 def is_list_sp(l, ntab=None):
-    return is_list_generic(l, sp.Expr)
+    return is_list_generic(l, (sp.Expr, types.StringType))
 
 def is_list_sp_or_nb(l, ntab=None):
-    return is_list_generic(l, (types.IntType, types.FloatType, sp.Expr))
+    return is_list_generic(l, (types.IntType, types.FloatType, sp.Expr, types.StringType))
 
 def is_list_symb(l, ntab=None):
-    return is_list_generic(l, sp.Symbol)
-
-proto_simu = {
-    'box':(is_dico_box,),
-    'dim':(types.NoneType, types.IntType),
-    'scheme_velocity':(types.IntType, types.FloatType),
-    'parameters':(types.NoneType, is_dico_sp_float),
-    'schemes':(is_list_sch,),
-    'boundary_conditions':(types.NoneType, is_dico_bc),
-    'generator':(types.NoneType, is_generator),
-    'stability':(types.NoneType, is_dico_stab),
-}
-
-proto_box = {
-    'x': (is_2_list_int_or_float,),
-    'y': (types.NoneType, is_2_list_int_or_float,),
-    'z': (types.NoneType, is_2_list_int_or_float,),
-    'label': (types.NoneType, types.IntType, types.StringType, is_list_int_or_string),
-}
-
-proto_sch = {
-    'velocities': (is_list_int,),
-    'conserved_moments': (sp.Symbol, is_list_symb),
-    'polynomials': (is_list_sp_or_nb,),
-    'equilibrium': (is_list_sp_or_nb,),
-    'relaxation_parameters': (is_list_float,),
-    'init':(types.NoneType, is_dico_init),
-}
-
-proto_stab = {
-    'linearization':(types.NoneType, is_dico_sp_float),
-    'test_maximum_principle':(types.NoneType, types.BooleanType),
-    'test_L2_stability':(types.NoneType, types.BooleanType),
-}
-
-proto_bc = {
-    'method':(is_dico_int_func, ),
-    'value':(types.NoneType, types.FunctionType),
-}
+    return is_list_generic(l, (sp.Symbol, types.StringType))
 
 def test_dico_prototype(dico, proto, ntab=0):
     test_g = True
@@ -243,7 +204,139 @@ def test_dico_prototype(dico, proto, ntab=0):
                     print "\n\n" + "*"*50 + "\nUnknown type\n" + "*"*50
         aff += debut(test_loc) + space(ntab) + aff_k
         test_g = test_g and test_loc
+    for key_p, value_p in proto.items():
+        value = dico.get(key_p, None)
+        if value is None:
+            if value_p[0] == types.NoneType:
+                aff += debut(True) + space(ntab) + PrintInColor.correct(key_p) + ': None'
+            else:
+                aff += debut(False) + space(ntab) + PrintInColor.missing(str(key_p) + ': ???')
+                test_g = False
     return test_g, aff
+
+def test_compatibility_dim(dico):
+    test = True
+    aff = ''
+    dim = dico.get('dim', None)
+    dbox = dico.get('box', None)
+    if (dbox is not None) and (dim is not None):
+        dx = dbox.get('x', None)
+        dy = dbox.get('y', None)
+        dz = dbox.get('z', None)
+        if dim == 1:
+            if (dx is None) or (dy is not None) or (dz is not None):
+                aff += PrintInColor.error("The dimension 1 is not compatible with the box.\n")
+                test = False
+        if dim == 2:
+            if (dx is None) or (dy is None) or (dz is not None):
+                aff += PrintInColor.error("The dimension 2 is not compatible with the box.\n")
+                test = False
+        if dim == 3:
+            if (dx is None) or (dy is None) or (dz is None):
+                aff += PrintInColor.error("The dimension 3 is not compatible with the box.\n")
+                test = False
+    return test, aff
+
+def test_compatibility_schemes(dico):
+    test = True
+    aff = ''
+    lds = dico.get('schemes', None)
+    inittype = dico.get('inittype', 'moments')
+    if lds is not None:
+        for ds in lds: # loop over the schemes
+            # test over the length of the lists
+            v = ds.get('velocities', [])
+            n = len(v)
+            for k in ['polynomials', 'equilibrium', 'relaxation_parameters']:
+                kk = ds.get(k, None)
+                if kk is None:
+                    aff += PrintInColor.missing("The key '" + k + "' is not given.\n")
+                elif len(kk) != n:
+                    aff += PrintInColor.error("The size of the list '" + k + "' is not valid.\n")
+                    test = False
+            # test over the conserved moments
+            cm = ds.get('conserved_moments', None)
+            ceq = ds.get('equilibrium', None)
+            crp = ds.get('relaxation_parameters', None)
+            if cm is not None and ceq is not None and crp is not None:
+                if not isinstance(cm, list):
+                    cm = [cm,]
+                for cmk in cm:
+                    search_cmk = False
+                    for l in range(len(ceq)):
+                        if (sp.simplify(ceq[l] - cmk) == 0) and (crp[l] == 0.):
+                            search_cmk = True
+                    if not search_cmk:
+                        aff += PrintInColor.error("The moment " + str(cmk) + " is not conserved.\n")
+                        test = False
+            # test if the conserved moments are initialized
+            dsi = ds.get('init', None)
+            if (inittype == 'moments') and (dsi is not None):
+                for cmk in cm:
+                    test_init = False
+                    for ki, vi in dsi.items():
+                        if cmk == ki:
+                            test_init = True
+                            if not isinstance(vi, (types.FloatType, types.IntType, types.TupleType)):
+                                aff += PrintInColor.error("Bad initialisation of " + str(cmk) + ".")
+                    if not test_init:
+                        print "Warning: the moment " + str(cmk) + " is not initialized.\n"
+            # test if the conserved moments are initialized
+            dsi = ds.get('init', None)
+            if (inittype == 'moments') and (dsi is not None):
+                for ki in dsi.keys():
+                    test_init = False
+                    for cmk in cm:
+                        if cmk == ki:
+                            test_init = True
+                    if not test_init:
+                        print "Warning: the initialization of " + str(ki) + " is not valid.\n"
+    return test, aff
+
+def test_compatibility_bc(dico):
+    test = True
+    aff = ''
+    dbox = dico.get('box', None)
+    if dbox is not None:
+        labels = dbox.get('label', [])
+        if isinstance(labels, int):
+            labels = [labels,]
+        if len(labels) == 0:
+            aff += PrintInColor.correct("No label given in the dictionary: default is -1 for periodic.\n")
+        else:
+            if any(l!=-1 for l in labels):
+                dbc = dico.get('boundary_conditions', None)
+                if dbc is None:
+                    aff += PrintInColor.error("No boundary condition given in the dictionary.\n")
+                    test = False
+                for l in labels:
+                    test_l = (l==-1) or any(k==l for k in dbc.keys())
+                    if not test_l:
+                        test = False
+                        aff += PrintInColor.error("The label {0} has no corresponding boundary condition.\n".format(l))
+    return test, aff
+
+def validate(dico, proto):
+    aff = "\n" + "*"*75
+    aff += "\nTest of the dictionary\n"
+    aff += "*"*75
+    test, aff_d = test_dico_prototype(dico, proto)
+    aff += aff_d
+    if test:
+        test_c1, aff_c1 = test_compatibility_dim(dico)
+        test_c2, aff_c2 = test_compatibility_schemes(dico)
+        test_c3, aff_c3 = test_compatibility_bc(dico)
+        test = test_c1 and test_c2 and test_c3
+        if not test:
+            aff += '\n' + '-'*60 + '\n'
+            aff += aff_c1
+            aff += aff_c2
+            aff += aff_c3
+            aff += '-'*60 + '\n'
+        else:
+            aff += '\n'
+    aff += "*"*75 + '\n'
+    return test, aff
 
 if __name__ == "__main__":
 
@@ -255,19 +348,20 @@ if __name__ == "__main__":
         return x
 
     dico = {
-        'box':{'x':(0., 1.), 'y':[0,1,2], 'label':[0, 'out', 0, 0]},
-        'dim':2,
+        'box':{'x':(0., 1.), 'y':[0,1], 'label':[0, 'out', 0, 0]},
+        'dim':1,
+        'space_step':1.,
         'generator':pyLBM.generator.CythonGenerator,
         'scheme_velocity':1.,
         'schemes':[{
             'velocities':range(1,5),
-            'conserved_moments':[rho,1.],
-            'polynomials':[1, X, Y, X**2-Y**2],
+            'conserved_moments':rho,
+            'polynomials':[1, X, Y, X**2-Y**2, 2],
             'equilibrium':[rho, ux*rho, uy*rho, 0.],
-            'relaxation_parameters':[0., 1., 1., 1.],
+            'relaxation_parameters':[0., 1., 1.],
             'init':{rho:1.,},
         }],
-        'parameters':{1.:LA},
+        'parameters':{LA:1.},
         'stability':{
             'linearization':{rho: rhoo,},
             'test_maximum_principle':False,
@@ -275,13 +369,9 @@ if __name__ == "__main__":
         },
         'boundary_conditions':{
             0:{'method':{0:pyLBM.bc.anti_bounce_back}, 'value':fin},
-            'out':{'method':{0:pyLBM.bc.neumann}, 'value':None, 'toto':2},
+            'in':{'method':{0:pyLBM.bc.neumann}, 'value':None},
         },
     }
 
-    test, aff = test_dico_prototype(dico, proto_simu)
-    if test:
-        print PrintInColor.correct("The dictionary is valid.")
-    else:
-        print PrintInColor.error("The dictionary is not valid.")
+    test, aff = validate(dico, pyLBM.simulation.proto_simu)
     print aff

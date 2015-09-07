@@ -15,7 +15,40 @@ import matplotlib.cm as cm
 
 from .logs import setLogger
 
-class Circle:
+class Element:
+    """
+    Class Element
+
+    generic class for the elements
+    """
+    number_of_bounds = 0
+    def __init__(self):
+        self.log = setLogger(__name__)
+        self.isfluid = False
+        self.label = []
+        self.log.info(self.__str__())
+
+    def get_bounds(self):
+        return float('Inf'), -float('Inf')
+
+    def point_inside(self, x, y):
+        return x**2 + y**2 < -1.
+
+    def distance(self, x, y, v, dmax=None):
+        alpha = -np.ones((x.size, y.size))
+        border = -np.ones((x.size, y.size))
+        return alpha, border
+
+    def __str__(self):
+        return 'Generic element'
+
+    def __repr__(self):
+        return self.__str__()
+
+    def _visualize(self, viewer, color, viewlabel=False, scale=np.ones(2)):
+        pass
+
+class Circle(Element):
     """
     Class Circle
 
@@ -72,9 +105,9 @@ class Circle:
             self.label = [label]*self.number_of_bounds
         else:
             self.label = label
-        str = 'circle centered in '
-        str += '({0:f},{1:f})'.format(self.center[0], self.center[1])
-        str += ' with radius {0:f}'.format(self.radius)
+        #str = 'circle centered in '
+        #str += '({0:f},{1:f})'.format(self.center[0], self.center[1])
+        #str += ' with radius {0:f}'.format(self.radius)
         #self.description = [str]
         self.log.info(self.__str__())
 
@@ -163,10 +196,6 @@ class Circle:
             s += '(solid)'
         return s
 
-    def __repr__(self):
-        return self.__str__()
-
-
     def _visualize(self, viewer, color, viewlabel=False, scale=np.ones(2)):
         print self.center*scale, self.radius*scale
         viewer.ellipse(self.center*scale, tuple(self.radius*scale), color)
@@ -175,7 +204,7 @@ class Circle:
             x, y = self.center[0] + self.radius*cos(theta), self.center[1] + self.radius*sin(theta)
             viewer.text(str(self.label[0]), [x, y])
 
-class Parallelogram:
+class Parallelogram(Element):
     """
     Class Parallelogram
 
@@ -244,12 +273,6 @@ class Parallelogram:
         b = self.point + self.v0
         c = self.point + self.v1
         d = self.point + self.v0 + self.v1
-        # self.description = [
-        #     'edge 0: ({0:f},{1:f})->({2:f},{3:f})'.format(a[0], a[1], b[0], b[1]),
-        #     'edge 1: ({0:f},{1:f})->({2:f},{3:f})'.format(b[0], b[1], d[0], d[1]),
-        #     'edge 2: ({0:f},{1:f})->({2:f},{3:f})'.format(d[0], d[1], c[0], c[1]),
-        #     'edge 3: ({0:f},{1:f})->({2:f},{3:f})'.format(c[0], c[1], a[0], a[1])
-        #     ]
         self.log.info(self.__str__())
 
     def get_bounds(self):
@@ -327,9 +350,6 @@ class Parallelogram:
             s += '(solid)'
         return s
 
-    def __repr__(self):
-        return self.__str__()
-
     def _visualize(self, viewer, color, viewlabel):
         A = [self.point[k] for k in xrange(2)]
         B = [A[k] + self.v0[k] for k in xrange(2)]
@@ -342,7 +362,7 @@ class Parallelogram:
             viewer.text(str(self.label[2]), [0.5*(C[0]+D[0]), 0.5*(C[1]+D[1])])
             viewer.text(str(self.label[3]), [0.5*(B[0]+C[0]), 0.5*(B[1]+C[1])])
 
-class Triangle:
+class Triangle(Element):
     """
     Class Triangle
 
@@ -503,9 +523,6 @@ class Triangle:
         else:
             s += '(solid)'
         return s
-
-    def __repr__(self):
-        return self.__str__()
 
     def _visualize(self, viewer, color, viewlabel):
         A = [self.point[k] for k in xrange(2)]

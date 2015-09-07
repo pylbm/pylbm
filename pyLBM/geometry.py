@@ -4,6 +4,7 @@
 #
 # License: BSD 3 clause
 
+import types
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
@@ -15,6 +16,14 @@ from .elements import *
 from .interface import Interface
 from .logs import setLogger
 from . import viewer
+from .validate_dictionary import *
+
+proto_box = {
+    'x': (is_2_list_int_or_float,),
+    'y': (types.NoneType, is_2_list_int_or_float,),
+    'z': (types.NoneType, is_2_list_int_or_float,),
+    'label': (types.NoneType, types.IntType, types.StringType, is_list_int_or_string),
+}
 
 def get_box(dico):
     """
