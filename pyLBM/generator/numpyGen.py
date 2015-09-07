@@ -76,7 +76,7 @@ class NumpyGenerator(Generator):
         """
         self.code += "def transport(f):\n"
         v = stencil.get_all_velocities()
-        self.code += load_or_store('f', 'f', -v, v, indent='\t')
+        self.code += load_or_store('f', 'f', -v, v, self.inv, self.inspace, indent=' '*4)
         self.code += "\n"
 
     def equilibrium(self, ns, stencil, eq, dtype = 'f8'):
@@ -104,20 +104,24 @@ class NumpyGenerator(Generator):
         self.code += "def equilibrium(m):\n"
 
         def sub(g):
+            slices = [':']*(len(self.inspace) + 1)
             i = int(g.group('i'))
             j = int(g.group('j'))
+            slices[self.inv] = str(stencil.nv_ptr[i] + j)
+            return '[%s]'%(', '.join(slices))
 
-            return '[' + str(stencil.nv_ptr[i] + j) + ']'
+        slices = [':']*(len(self.inspace) + 1)
 
         for k in xrange(ns):
             for i in xrange(stencil.nv[k]):
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
+                    slices[self.inv] = str(stencil.nv_ptr[k] + i)
                     if eq[k][i] != 0:
                         res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub,
                                    str(eq[k][i]))
-                        self.code += "\tm[%d] = %s\n"%(stencil.nv_ptr[k] + i, res)
+                        self.code += ' '*4 + "m[%s] = %s\n"%(', '.join(slices), res)
                     else:
-                        self.code += "\tm[%d] = 0.\n"%(stencil.nv_ptr[k] + i)
+                        self.code += ' '*4 + "m[%s] = 0.\n"%(', '.join(slices))
         self.code += "\n"
 
     def relaxation(self, ns, stencil, s, eq, dtype = 'f8'):
@@ -147,20 +151,24 @@ class NumpyGenerator(Generator):
         self.code += "def relaxation(m):\n"
 
         def sub(g):
+            slices = [':']*(len(self.inspace) + 1)
             i = int(g.group('i'))
             j = int(g.group('j'))
+            slices[self.inv] = str(stencil.nv_ptr[i] + j)
+            return '[%s]'%(', '.join(slices))
 
-            return '[' + str(stencil.nv_ptr[i] + j) + ']'
+        slices = [':']*(len(self.inspace) + 1)
 
         for k in xrange(ns):
             for i in xrange(stencil.nv[k]):
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
+                    slices[self.inv] = str(stencil.nv_ptr[k] + i)
                     if eq[k][i] != 0:
                         res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub,
                                    str(eq[k][i]))
-                        self.code += "\tm[{0:d}] += {1:.16f}*({2} - m[{0:d}])\n".format(stencil.nv_ptr[k] + i, s[k][i], res)
+                        self.code += ' '*4 + "m[{0}] += {1:.16f}*({2} - m[{0}])\n".format(', '.join(slices), s[k][i], res)
                     else:
-                        self.code += "\tm[{0:d}] *= (1. - {1:.16f})\n".format(stencil.nv_ptr[k] + i, s[k][i])
+                        self.code += ' '*4 + "m[{0}] *= (1. - {1:.16f})\n".format(', '.join(slices), s[k][i])
         self.code += "\n"
 
     def m2f(self, A, dim, dtype = 'f8'):
@@ -194,7 +202,7 @@ class NumpyGenerator(Generator):
         """
         #self.code += "def m2f_{0:d}(m, f):\n".format(k)
         self.code += "def m2f(m, f):\n"
-        self.code += matMult(A, 'm', 'f', '\t')
+        self.code += matMult(A, 'm', 'f', self.inv, self.inspace, indent=' '*4)
         self.code += "\n"
 
     def f2m(self, A, dim, dtype = 'f8'):
@@ -228,7 +236,7 @@ class NumpyGenerator(Generator):
         """
         #self.code += "def f2m_{0:d}(f, m):\n".format(k)
         self.code += "def f2m(f, m):\n"
-        self.code += matMult(A, 'f', 'm', '\t')
+        self.code += matMult(A, 'f', 'm', self.inv, self.inspace, indent=' '*4)
         self.code += "\n"
 
     def onetimestep(self, stencil):
@@ -238,4 +246,5 @@ def onetimestep(m, f, fnew, in_or_out, valin):
     f2m(f, m)
     relaxation(m)
     m2f(m, f)
+
 """

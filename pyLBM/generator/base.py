@@ -68,6 +68,8 @@ class Generator:
     """
     def __init__(self, build_dir=None, suffix='.py'):
         self.log = setLogger(__name__)
+        self.inv = None
+        self.inspace = None
         self.build_dir = build_dir
         self.modulename = None
         self.importmodule = None

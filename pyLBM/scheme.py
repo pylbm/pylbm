@@ -213,7 +213,6 @@ class Scheme:
         # else:
         #      self.nv_on_beg = False
         self.log.debug("nv_on_beg = {0}".format(self.nv_on_beg))
-        self.generate()
 
         self.bc_compute = True
 
@@ -412,7 +411,7 @@ class Scheme:
                     sys.exit()
         return init
 
-    def generate(self):
+    def generate(self, inv, inspace):
         """
         Generate the code by using the appropriated generator
 
@@ -423,6 +422,8 @@ class Scheme:
 
         >>> print S.generator.code
         """
+        self.generator.inv = inv
+        self.generator.inspace = inspace
         self.generator.setup()
         self.generator.m2f(self.invMnumGlob, 0, self.dim)
         self.generator.f2m(self.MnumGlob, 0, self.dim)

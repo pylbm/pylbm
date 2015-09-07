@@ -3,8 +3,10 @@
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
+from string import Template
+import numpy as np
 
-def matMult(A, x, y, indent='', prefix='', suffix=''):
+def matMult(A, x, y, inv=None, inspace=None, vectorized=True, indent=''):
     """
     return a string representing the unroll matrix vector operation y = Ax
 
@@ -57,15 +59,31 @@ def matMult(A, x, y, indent='', prefix='', suffix=''):
     nvk1, nvk2 = A.shape
     code = ''
 
-    for i in xrange(nvk1):
-        code += indent + "{1}[{2}{0:d}{3}] = ".format(i, y, prefix, suffix)
-        for j in xrange(nvk2):
+    if inspace is not None:
+        tmp = ['']*(len(inspace) + 1)
+        for i, v in enumerate(inspace):
+            tmp[v] = ':' if vectorized else 'i{0}'.format(i)
+
+    for i in range(nvk1):
+        if inv is None and inspace is None:
+            tmp = [str(i)]
+        else:
+            tmp[inv] = str(i)
+
+        code += indent + "{0}[{1}] = ".format(y, ', '.join(tmp))
+
+        for j in range(nvk2):
             coef = A[i, j]
             scoef = '' if  abs(coef) == 1 else '{0:.16f}*'.format(abs(coef))
             sign = ' + ' if coef > 0 else ' - '
 
+            if inv is None and inspace is None:
+                tmp = [str(j)]
+            else:
+                tmp[inv] = str(j)
+
             if coef != 0:
-                code += "{1}{2}{3}[{4}{0:d}{5}]".format(j, sign, scoef, x, prefix, suffix)
+                code += "{0}{1}{2}[{3}]".format(sign, scoef, x, ', '.join(tmp))
 
         code += "\n"
 
@@ -74,60 +92,60 @@ def matMult(A, x, y, indent='', prefix='', suffix=''):
 def give_slice(X):
     res = []
     for x in X:
-        s = ''
-        lx = len(x)
+        res.append([])
         for iv, v in enumerate(x):
             if v > 0:
-                s += '{0:d}:'.format(v)
+                res[-1].append('{0:d}:'.format(v))
             elif v < 0:
-                s += ':{0:d}'.format(v)
+                res[-1].append(':{0:d}'.format(v))
             else:
-                s += ':'
-            comma = (', ' if iv < lx - 1 else '')
-            s += comma
-        res.append(s)
+                res[-1].append(':')
     return res
 
 def give_indices(X):
     res = []
     for x in X:
-        s = ''
-        lx = len(x)
+        res.append([])
         for iv, v in enumerate(x):
             if v > 0:
-                s += 'i{0:d} - {1:d}'.format(iv, v)
+                res[-1].append('i{0:d} - {1:d}'.format(iv, v))
             elif v < 0:
-                s += 'i{0:d} + {1:d}'.format(iv, -v)
+                res[-1].append('i{0:d} + {1:d}'.format(iv, -v))
             else:
-                s += 'i{0:d}'.format(iv)
-            comma = (', ' if iv < lx - 1 else '')
-            s += comma
-        res.append(s)
+                res[-1].append('i{0:d}'.format(iv))
     return res
 
-def load_or_store(x, y, load_list, store_list, indent='', vec_form = True, avoid_copy=True, nv_on_beg=True):
+def get_indices(s, ind, inv, inspace):
+    if s is '':
+        res = [str(ind)]
+    else:
+        res = ['']*(len(inspace) + 1)
+        for i, v in enumerate(inspace):
+            res[v] = s[i]
+        res[inv] = str(ind)
+    return res
+
+def load_or_store(x, y, load_list, store_list, inv, inspace, indent='', vectorized = True, avoid_copy=True):
+
     if load_list is not None:
-        s1 = give_slice(load_list) if vec_form else give_indices(load_list)
+        s1 = give_slice(load_list) if vectorized else give_indices(load_list)
     if store_list is not None:
-        s2 = give_slice(store_list) if vec_form else give_indices(store_list)
+        s2 = give_slice(store_list) if vectorized else give_indices(store_list)
 
     if load_list is None:
         s1 = ['']*len(s2)
     if store_list is None:
         s2 = ['']*len(s1)
 
+    t = Template("$indent$x[$indx] = $y[$indy]")
     code = ''
     ind = 0
     for ss1, ss2 in zip(s1, s2):
-        if not (ss1 == ss2 and avoid_copy):
-            comma1 = '' if ss1 == '' else ', '
-            comma2 = '' if ss2 == '' else ', '
-            if nv_on_beg:
-                code += "{6}{0}[{1:d}{4}{2}] = {7}[{1:d}{5}{3}]\n".format(x, ind,
-                        ss2, ss1, comma2, comma1, indent, y)
-            else:
-                code += "{6}{0}[{2}{4}{1:d}] = {7}[{3}{5}{1:d}]\n".format(x, ind,
-                        ss2, ss1, comma2, comma1, indent, y)
+        tmp1 = get_indices(ss1, ind, inv, inspace)
+        tmp2 = get_indices(ss2, ind, inv, inspace)
+        if not (tmp1 == tmp2 and avoid_copy):
+            code += "{0}{1}[{2}] = {3}[{4}]\n".format(indent, x, ', '.join(tmp1),
+                        y, ', '.join(tmp2))
         ind += 1
 
     return code
@@ -136,6 +154,19 @@ if __name__ == '__main__':
     import numpy as np
     v = np.asarray([[0, 0], [1, 0], [0, 1], [-1, 0], [0, -1], [1, 1], [-1, 1], [-1, -1], [1, -1]])
 
-    print load_or_store('f', 'f', -v, v)
-    print load_or_store('floc', 'f', v, None, vec_form=False, nv_on_beg=False)
-    print load_or_store('f', 'floc', None, np.zeros(v.shape), vec_form=False, nv_on_beg=False)
+    nv = 2
+    nspace = [0, 1]
+    print load_or_store('f', 'f', -v, v, nv, nspace)
+    print load_or_store('floc', 'f', v, None, nv, nspace, vectorized=False)
+    print load_or_store('f', 'floc', None, np.zeros(v.shape), nv, nspace, vectorized=False)
+
+    nv = 1
+    nspace = [0, 2]
+    print load_or_store('f', 'f', -v, v, nv, nspace)
+    print load_or_store('floc', 'f', v, None, nv, nspace, vectorized=False)
+    print load_or_store('f', 'floc', None, np.zeros(v.shape), nv, nspace, vectorized=False)
+
+    A = np.arange(12).reshape(4,3)
+    A[2, :] *= -1
+    print matMult(A, 'm', 'f')
+    print matMult(A, 'm', 'f', nv, nspace, '\t')

@@ -173,10 +173,15 @@ class Simulation:
             self._m = SOA(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
             self._F = SOA(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
             self._Fold = self._F
+            inv = 0
+            inspace = np.arange(1, self.dim+1)
         else:
             self._m = AOS(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
             self._F = AOS(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
             self._Fold = AOS(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
+            inv = self.dim
+            inspace = np.arange(self.dim)
+        self.scheme.generate(inv, inspace)
 
         self.log.info('Build boundary conditions')
         self.bc = Boundary(self.domain, dico)
