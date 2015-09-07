@@ -91,7 +91,7 @@ class Interface:
         self.npy = int(options().npy)
         self.npz = int(options().npz)
 
-    def set_subarray(self, n, vmax, nv_on_beg=False):
+    def set_subarray(self, nv, nspace, vmax, nv_on_beg=True):
         """
         Create the neigbors and the subarrays to update interfaces
         between each processes.
@@ -113,15 +113,8 @@ class Interface:
         coords = self.cartcomm.Get_coords(rank)
 
         # set nloc without the ghost points
-        if nv_on_beg:
-            nloc = [i - 2*v for i, v in zip(n[1:], vmax)]
-            nv = n[0]
-            nn = n[1:]
-        else:
-            nloc = [i - 2*v for i, v in zip(n[:-1], vmax)]
-            nv = n[-1]
-            nn = n[:-1]
-
+        nloc = [i - 2*v for i, v in zip(nspace, vmax)]
+        n = (nv,) + nspace
         # set the size and the start indices
         # for the send and receive messages
         start_send = []
@@ -129,8 +122,8 @@ class Interface:
         msize = []
         stag, rtag = get_tags(self.dim)
         for i in xrange(self.dim):
-            start_send.append([vmax[i], vmax[i], nn[i]-2*vmax[i]])
-            start_recv.append([0, vmax[i], nn[i]-vmax[i]])
+            start_send.append([vmax[i], vmax[i], nspace[i]-2*vmax[i]])
+            start_recv.append([0, vmax[i], nspace[i]-vmax[i]])
             msize.append([vmax[i], nloc[i], vmax[i]])
         start_send = np.asarray(start_send)
         start_recv = np.asarray(start_recv)
@@ -151,14 +144,9 @@ class Interface:
                     neighbor = self.cartcomm.Get_cart_rank(coords + d)
                     self.neighbors.append(neighbor)
 
-                    if nv_on_beg:
-                        ms = [nv] + list(msize[rows, d+1])
-                        ss = [0] + list(start_send[rows, d+1])
-                        sr = [0] + list(start_recv[rows, d+1])
-                    else:
-                        ms = list(msize[rows, d+1]) + [nv]
-                        ss = list(start_send[rows, d+1]) + [0]
-                        sr = list(start_recv[rows, d+1]) + [0]
+                    ms = [nv] + list(msize[rows, d+1])
+                    ss = [0] + list(start_send[rows, d+1])
+                    sr = [0] + list(start_recv[rows, d+1])
 
                     self.sendType.append(mpi.DOUBLE.Create_subarray(n, ms, ss))
                     self.recvType.append(mpi.DOUBLE.Create_subarray(n, ms, sr))
@@ -178,7 +166,6 @@ class Interface:
         update ghost points on the interface with the datas of the neighbors.
         """
         req = []
-
         for i in xrange(len(self.recvType)):
             req.append(self.comm.Irecv([f, self.recvType[i]], source = self.neighbors[i], tag=self.recvTag[i]))
 
