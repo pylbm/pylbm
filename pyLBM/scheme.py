@@ -827,17 +827,53 @@ class Scheme:
         if self.dim>2:
             v[2, :] = self.stencil.vz[0]
 
+        # build the matrix of equilibrium
         Eeq = sp.zeros(nvtot, nvtot)
         m = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(nvtot)] for i in xrange(1)]
-        for i in range(nvtot):
-            eqi = self._EQ[0][i]
-            for j in range(nvtot):
-                Eeq[i, j] = sp.diff(eqi, m[0][j])
+        il = 0
+        for n_i in xrange(len(self.ind_cons)):
+            for k_i in self.ind_cons[n_i]:
+                Eeq[il, il] = 1
+                ## the equilibrium value of the conserved moments is itself
+                #eqk = self._EQ[n_i][k_i]
+                #ic = 0
+                #for n_j in xrange(len(self.ind_cons)):
+                #    for k_j in self.ind_cons[n_j]:
+                #        Eeq[il, ic] = sp.diff(eqk, m[n_j][k_j])
+                #        ic += 1
+                #for n_j in xrange(len(self.ind_noncons)):
+                #    for k_j in self.ind_noncons[n_j]:
+                #        Eeq[il, ic] = sp.diff(eqk, m[n_j][k_j])
+                #        ic += 1
+                il += 1
+        for n_i in xrange(len(self.ind_noncons)):
+            for k_i in self.ind_noncons[n_i]:
+                eqk = self._EQ[n_i][k_i]
+                ic = 0
+                for n_j in xrange(len(self.ind_cons)):
+                    for k_j in self.ind_cons[n_j]:
+                        Eeq[il, ic] = sp.diff(eqk, m[n_j][k_j])
+                        ic += 1
+                ## the equilibrium value of the non conserved moments
+                ## does not depend on the non conserved moments
+                #for n_j in xrange(len(self.ind_noncons)):
+                #    for k_j in self.ind_noncons[n_j]:
+                #        Eeq[il, ic] = sp.diff(eqk, m[n_j][k_j])
+                #        ic += 1
+                il += 1
+
         S = sp.zeros(nvtot, nvtot)
-        for k in xrange(nvtot):
-            S[k, k] = self.s_symb[0][k]
+        il = 0
+        for n_i in xrange(len(self.ind_cons)):
+            for k_i in self.ind_cons[n_i]:
+                S[il, il] = self.s_symb[n_i][k_i]
+                il += 1
+        for n_i in xrange(len(self.ind_noncons)):
+            for k_i in self.ind_noncons[n_i]:
+                S[il, il] = self.s_symb[n_i][k_i]
+                il += 1
+
         J = sp.eye(nvtot) - S + S * Eeq
-        print S
 
         def ABCD(n):
             dummy = sp.zeros(nvtot, nvtot)
@@ -909,7 +945,7 @@ class Scheme:
 
         W = sp.zeros(N, 1)
         for wk, ik in self.consm.iteritems():
-            W[ik[1],0] = wk
+            W[self.ind_cons[ik[0]].index(ik[1]),0] = wk
         for k in xrange(N):
             lhs = sp.simplify(drondt * W[k,0] - (alpha[1]*W)[k,0])
             rhs = sp.Integer(0)
