@@ -5,6 +5,7 @@
 # License: BSD 3 clause
 
 import sys
+import types
 
 import numpy as np
 import sympy as sp
@@ -23,7 +24,7 @@ proto_sch = {
     'conserved_moments': (sp.Symbol, types.StringType, is_list_symb),
     'polynomials': (is_list_sp_or_nb,),
     'equilibrium': (is_list_sp_or_nb,),
-    'relaxation_parameters': (is_list_float,),
+    'relaxation_parameters': (is_list_sp_or_nb,),
     'init':(types.NoneType, is_dico_init),
 }
 
@@ -31,6 +32,10 @@ proto_stab = {
     'linearization':(types.NoneType, is_dico_sp_float),
     'test_maximum_principle':(types.NoneType, types.BooleanType),
     'test_L2_stability':(types.NoneType, types.BooleanType),
+}
+
+proto_cons = {
+    'order': (types.IntType,),
 }
 
 def param_to_tuple(param):
@@ -143,6 +148,9 @@ class Scheme:
     """
     def __init__(self, dico, stencil=None):
         self.log = setLogger(__name__)
+        # symbolic parameters
+        self.param = dico.get('parameters', None)
+        pk, pv = param_to_tuple(self.param)
 
         if stencil is not None:
             self.stencil = stencil
@@ -150,12 +158,14 @@ class Scheme:
             self.stencil = Stencil(dico)
         self.dim = self.stencil.dim
         la = dico.get('scheme_velocity', None)
-        if la is None:
-            self.log.error("The entry 'scheme_velocity' has to be given.")
-        if isinstance(la, int) or isinstance(la, float):
+        if isinstance(la, (int, float)):
             self.la = la
+            self.la_symb = None
+        elif isinstance(la, sp.Symbol):
+            self.la_symb = la
+            self.la = sp.N(la.subs(zip(pk, pv)))
         else:
-            self.log.error("The entry 'scheme_velocity' has to be a float.")
+            self.log.error("The entry 'scheme_velocity' is wrong.")
         self.nscheme = self.stencil.nstencils
         scheme = dico['schemes']
         if not isinstance(scheme, list):
@@ -202,6 +212,7 @@ class Scheme:
         self.EQ = [create_matrix(s['equilibrium']) for s in scheme]
 
         self.consm = self._get_conserved_moments(scheme)
+        self.ind_cons, self.ind_noncons = self._get_indices_cons_noncons()
 
         # rename conserved moments with the notation m[x][y]
         # needed to generate the code
@@ -216,8 +227,15 @@ class Scheme:
                     self._EQ[i][j] = e.replace(cm, m[icm[0]][icm[1]])
 
         self._check_entry_size(scheme, 'relaxation_parameters')
-        self.s = [s['relaxation_parameters'] for s in scheme]
-        self.param = dico.get('parameters', None)
+        self.s_symb = [s['relaxation_parameters'] for s in scheme]
+        self.s = [copy.deepcopy(s['relaxation_parameters']) for s in scheme]
+        for k in xrange(len(self.s)):
+            for l in xrange(len(self.s[k])):
+                if not isinstance(self.s[k][l], (int, float)):
+                    try:
+                        self.s[k][l] = sp.N(self.s[k][l].subs(zip(pk, pv)))
+                    except:
+                        self.log.error('cannot evaluate relaxation parameter')
 
         self.init = self.set_initialization(scheme)
 
@@ -263,6 +281,11 @@ class Scheme:
                     print "The scheme is stable for the norm L2"
                 else:
                     print "The scheme is not stable for the norm L2"
+
+        dicocons = dico.get('consistency', None)
+        if dicocons is not None:
+            self.compute_consistency(dicocons)
+
 
     def _check_entry_size(self, schemes, key):
         for i, s in enumerate(schemes):
@@ -380,6 +403,30 @@ class Scheme:
                         ic, cm = find_indices(ieq, leq, c)
                         consm[cm] = ic
         return consm
+
+    def _get_indices_cons_noncons(self):
+        """
+        return the list of the conserved moments and the list of the non conserved moments
+
+        Output
+        ------
+
+        l_cons : the list of the indices of the conserved moments
+        l_noncons : the list of the indices of the non conserver moments
+        """
+
+        ns = self.stencil.nstencils # number of stencil
+        nv = self.stencil.nv # number of velocities for each stencil
+        l_cons = [[]]*ns
+        l_noncons = [range(n) for n in nv]
+        for vk in self.consm.values():
+            l_cons[vk[0]].append(vk[1])
+            l_noncons[vk[0]].remove(vk[1])
+        for n in xrange(ns):
+            l_cons[n].sort()
+            l_noncons[n].sort()
+        return l_cons, l_noncons
+
 
     def set_initialization(self, scheme):
         """
@@ -741,6 +788,135 @@ class Scheme:
             return False
         else:
             return True
+
+    def compute_consistency(self, dicocons):
+        order = dicocons['order']
+        ns = self.stencil.nstencils # number of stencil
+        nv = self.stencil.nv # number of velocities for each stencil
+        nvtot = sum(nv) # total number of velocities (with repetition)
+        if ns > 1:
+            self.log.error('Consistency for vectorial schemes not yet implemented')
+        N = len(self.consm) # number of conserved moments
+        time_step = sp.Symbol('h')
+        drondt = sp.Symbol("dt") # time derivative
+        drondx = [sp.Symbol("dx"), sp.Symbol("dy"), sp.Symbol("dz")] # spatial derivatives
+        if self.la_symb is not None:
+            LA = self.la_symb
+        else:
+            LA = self.la
+
+        self.ind_cons, self.ind_noncons
+        M = sp.zeros(nvtot, nvtot)
+        invM = sp.zeros(nvtot, nvtot)
+        il = 0
+        for n in xrange(len(self.ind_cons)):
+            for k in self.ind_cons[n]:
+                M[il,self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]] = self.M[n][k,:]
+                invM[self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1],il] = self.invM[n][:,k]
+                il += 1
+        for n in xrange(len(self.ind_noncons)):
+            for k in self.ind_noncons[n]:
+                M[il,self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]] = self.M[n][k,:]
+                invM[self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1],il] = self.invM[n][:,k]
+                il += 1
+
+        v = np.empty((self.dim, nvtot))
+        v[0, :] = self.stencil.vx[0]
+        if self.dim>1:
+            v[1, :] = self.stencil.vy[0]
+        if self.dim>2:
+            v[2, :] = self.stencil.vz[0]
+
+        Eeq = sp.zeros(nvtot, nvtot)
+        m = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(nvtot)] for i in xrange(1)]
+        for i in range(nvtot):
+            eqi = self._EQ[0][i]
+            for j in range(nvtot):
+                Eeq[i, j] = sp.diff(eqi, m[0][j])
+        S = sp.zeros(nvtot, nvtot)
+        for k in xrange(nvtot):
+            S[k, k] = self.s_symb[0][k]
+        J = sp.eye(nvtot) - S + S * Eeq
+        print S
+
+        def ABCD(n):
+            dummy = sp.zeros(nvtot, nvtot)
+            for k in xrange(nvtot):
+                for p in xrange(nvtot):
+                    for j in xrange(nvtot):
+                        for l in xrange(nvtot):
+                            toto = 0
+                            for alpha in xrange(self.dim):
+                                toto -= LA * sp.Integer(v[alpha, j]) * drondx[alpha]
+                            dummy[k, p] += M[k,j] * invM[j,l] * J[l,p] * toto**n / np.math.factorial(n)
+            dummy.simplify()
+            A = dummy[:N, :N]
+            B = dummy[:N, N:]
+            C = dummy[N:, :N]
+            D = dummy[N:, N:]
+            return A, B, C, D
+
+        matA, matB, matC, matD = [], [], [], []
+        for n in xrange(order+1):
+            # "Compute A{0:d}, B{0:d}, C{0:d}, D{0:d}".format(n)
+            result = ABCD(n)
+            matA.append(result[0])
+            matB.append(result[1])
+            matC.append(result[2])
+            matD.append(result[3])
+
+        def Gamma(k, j):
+            if k<j:
+                self.log.error("index problem in Gamma")
+            if j == 1:
+                res = alpha[k]
+            if j == 2:
+                res = sp.zeros(N, N)
+                for l in xrange(k-j+1):
+                    res = res + alpha[l+1] * alpha[k-j-l+1]
+            if j > 2:
+                self.log.error('Not yet implemented')
+            return res
+
+        def K(k, j):
+            if k < j:
+                self.log.error("index problem in K")
+            res = sp.zeros(nvtot-N, N)
+            for l in xrange(k-j+1):
+                res = res + beta[l] * Gamma(k-l, j)
+            return res
+
+        alpha, beta = [], []
+        iS = S[N:,N:].inv()
+        for k in xrange(order+1):
+            # "Compute alpha{0:d} and beta{0:d}".format(k)
+            dummy = matA[k]
+            for j in xrange(1,k+1):
+                dummy = dummy + matB[j] * beta[k-j]
+            for j in xrange(2, k+1):
+                dummy = dummy - Gamma(k,j)/np.math.factorial(j)
+            dummy.simplify()
+            alpha.append(dummy)
+            dummy = matC[k]
+            for j in xrange(1,k+1):
+                dummy = dummy + matD[j] * beta[k-j]
+            for j in xrange(1, k+1):
+                dummy = dummy - K(k,j)/np.math.factorial(j)
+            dummy = iS * dummy
+            dummy.simplify()
+            beta.append(dummy)
+        alpha[0] = sp.zeros(N,N)
+
+        W = sp.zeros(N, 1)
+        for wk, ik in self.consm.iteritems():
+            W[ik[1],0] = wk
+        for k in xrange(N):
+            lhs = sp.simplify(drondt * W[k,0] - (alpha[1]*W)[k,0])
+            rhs = sp.Integer(0)
+            for n in xrange(1,order):
+                rhs += time_step**n * (alpha[n+1]*W)[k,0]
+            rhs = sp.simplify(rhs)
+            print lhs, " = ", rhs
 
 
 def test_1D(opt):

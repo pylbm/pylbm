@@ -33,12 +33,13 @@ proto_simu = {
     'elements':(types.NoneType, is_list_elem),
     'dim':(types.NoneType, types.IntType),
     'space_step':(types.FloatType,),
-    'scheme_velocity':(types.IntType, types.FloatType),
+    'scheme_velocity':(types.IntType, types.FloatType, sp.Symbol),
     'parameters':(types.NoneType, is_dico_sp_float),
     'schemes':(is_list_sch,),
     'boundary_conditions':(types.NoneType, is_dico_bc),
     'generator':(types.NoneType, is_generator),
     'stability':(types.NoneType, is_dico_stab),
+    'consistency':(types.NoneType, is_dico_cons),
     'inittype':(types.NoneType, types.StringType),
 }
 

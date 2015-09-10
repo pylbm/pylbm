@@ -1,14 +1,14 @@
+# Authors:
+#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Benjamin Graille <benjamin.graille@math.u-psud.fr>
+#
+# License: BSD 3 clause
+
 import types
 import sympy as sp
 import numpy as np
 import pyLBM
 
-"""
-TODO
-
-- faire les tests de compatiblites et mettre un message en rouge dans le cas contraire
-
-"""
 class PrintInColor:
     RED = '\033[91m'
     GREEN = '\033[92m'
@@ -129,6 +129,9 @@ def is_dico_init(d, ntab=0):
 
 def is_dico_stab(d, ntab=0):
     return test_dico_prototype(d, pyLBM.scheme.proto_stab, ntab=ntab)
+
+def is_dico_cons(d, ntab=0):
+    return test_dico_prototype(d, pyLBM.scheme.proto_cons, ntab=ntab)
 
 def is_list_sch(l, ntab=0):
     test = isinstance(l, (types.ListType, types.TupleType))
@@ -333,8 +336,8 @@ def validate(dico, proto):
             aff += aff_c2
             aff += aff_c3
             aff += '-'*60 + '\n'
-        else:
-            aff += '\n'
+    else:
+        aff += '\n'
     aff += "*"*75 + '\n'
     return test, aff
 
