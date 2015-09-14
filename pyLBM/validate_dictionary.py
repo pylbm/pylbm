@@ -93,6 +93,9 @@ def is_list_generic(l, lte, size=None):
 def is_dico_sp_float(d, ntab=0):
     return is_dico_generic(d, (sp.Symbol, types.StringType), (types.IntType, types.FloatType), ntab=ntab)
 
+def is_dico_sp_sporfloat(d, ntab=0):
+    return is_dico_generic(d, (sp.Symbol, types.StringType), (types.IntType, types.FloatType, sp.Symbol, types.StringType), ntab=ntab)
+
 def is_dico_int_func(d, ntab=0):
     return is_dico_generic(d, types.IntType, types.FunctionType, ntab=ntab)
 

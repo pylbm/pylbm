@@ -36,6 +36,7 @@ proto_stab = {
 
 proto_cons = {
     'order': (types.IntType,),
+    'linearization':(types.NoneType, is_dico_sp_sporfloat),
 }
 
 def param_to_tuple(param):
@@ -417,7 +418,7 @@ class Scheme:
 
         ns = self.stencil.nstencils # number of stencil
         nv = self.stencil.nv # number of velocities for each stencil
-        l_cons = [[]]*ns
+        l_cons = [[] for n in nv]
         l_noncons = [range(n) for n in nv]
         for vk in self.consm.values():
             l_cons[vk[0]].append(vk[1])
@@ -790,12 +791,9 @@ class Scheme:
             return True
 
     def compute_consistency(self, dicocons):
-        order = dicocons['order']
         ns = self.stencil.nstencils # number of stencil
         nv = self.stencil.nv # number of velocities for each stencil
-        nvtot = sum(nv) # total number of velocities (with repetition)
-        if ns > 1:
-            self.log.error('Consistency for vectorial schemes not yet implemented')
+        nvtot = self.stencil.nv_ptr[-1] # total number of velocities (with repetition)
         N = len(self.consm) # number of conserved moments
         time_step = sp.Symbol('h')
         drondt = sp.Symbol("dt") # time derivative
@@ -805,33 +803,38 @@ class Scheme:
         else:
             LA = self.la
 
-        self.ind_cons, self.ind_noncons
+        m = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(nvtot)] for i in xrange(ns)]
+        order = dicocons['order']
+        if order<1:
+            order = 1
+        dico_linearization = dicocons.get('linearization', None)
+        if dico_linearization is not None:
+            self.list_linearization = []
+            for cm, cv in dico_linearization.iteritems():
+                icm = self.consm[cm]
+                self.list_linearization.append((m[icm[0]][icm[1]], cv))
+        else:
+            self.list_linearization = None
+
         M = sp.zeros(nvtot, nvtot)
         invM = sp.zeros(nvtot, nvtot)
         il = 0
-        for n in xrange(len(self.ind_cons)):
+        for n in xrange(ns):
             for k in self.ind_cons[n]:
                 M[il,self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]] = self.M[n][k,:]
                 invM[self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1],il] = self.invM[n][:,k]
                 il += 1
-        for n in xrange(len(self.ind_noncons)):
+        for n in xrange(ns):
             for k in self.ind_noncons[n]:
                 M[il,self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]] = self.M[n][k,:]
                 invM[self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1],il] = self.invM[n][:,k]
                 il += 1
-
-        v = np.empty((self.dim, nvtot))
-        v[0, :] = self.stencil.vx[0]
-        if self.dim>1:
-            v[1, :] = self.stencil.vy[0]
-        if self.dim>2:
-            v[2, :] = self.stencil.vz[0]
+        v = self.stencil.get_all_velocities().transpose()
 
         # build the matrix of equilibrium
         Eeq = sp.zeros(nvtot, nvtot)
-        m = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(nvtot)] for i in xrange(1)]
         il = 0
-        for n_i in xrange(len(self.ind_cons)):
+        for n_i in xrange(ns):
             for k_i in self.ind_cons[n_i]:
                 Eeq[il, il] = 1
                 ## the equilibrium value of the conserved moments is itself
@@ -846,13 +849,16 @@ class Scheme:
                 #        Eeq[il, ic] = sp.diff(eqk, m[n_j][k_j])
                 #        ic += 1
                 il += 1
-        for n_i in xrange(len(self.ind_noncons)):
+        for n_i in xrange(ns):
             for k_i in self.ind_noncons[n_i]:
                 eqk = self._EQ[n_i][k_i]
                 ic = 0
-                for n_j in xrange(len(self.ind_cons)):
+                for n_j in xrange(ns):
                     for k_j in self.ind_cons[n_j]:
-                        Eeq[il, ic] = sp.diff(eqk, m[n_j][k_j])
+                        dummy = sp.diff(eqk, m[n_j][k_j])
+                        if self.list_linearization is not None:
+                            dummy = dummy.subs(self.list_linearization)
+                        Eeq[il, ic] = dummy
                         ic += 1
                 ## the equilibrium value of the non conserved moments
                 ## does not depend on the non conserved moments
@@ -864,16 +870,17 @@ class Scheme:
 
         S = sp.zeros(nvtot, nvtot)
         il = 0
-        for n_i in xrange(len(self.ind_cons)):
+        for n_i in xrange(ns):
             for k_i in self.ind_cons[n_i]:
                 S[il, il] = self.s_symb[n_i][k_i]
                 il += 1
-        for n_i in xrange(len(self.ind_noncons)):
+        for n_i in xrange(ns):
             for k_i in self.ind_noncons[n_i]:
                 S[il, il] = self.s_symb[n_i][k_i]
                 il += 1
 
         J = sp.eye(nvtot) - S + S * Eeq
+        print J
 
         def ABCD(n):
             dummy = sp.zeros(nvtot, nvtot)
@@ -894,7 +901,7 @@ class Scheme:
 
         matA, matB, matC, matD = [], [], [], []
         for n in xrange(order+1):
-            # "Compute A{0:d}, B{0:d}, C{0:d}, D{0:d}".format(n)
+            print "Compute A{0:d}, B{0:d}, C{0:d}, D{0:d}".format(n)
             result = ABCD(n)
             matA.append(result[0])
             matB.append(result[1])
@@ -925,7 +932,7 @@ class Scheme:
         alpha, beta = [], []
         iS = S[N:,N:].inv()
         for k in xrange(order+1):
-            # "Compute alpha{0:d} and beta{0:d}".format(k)
+            print "Compute alpha{0:d} and beta{0:d}".format(k)
             dummy = matA[k]
             for j in xrange(1,k+1):
                 dummy = dummy + matB[j] * beta[k-j]
@@ -944,15 +951,25 @@ class Scheme:
         alpha[0] = sp.zeros(N,N)
 
         W = sp.zeros(N, 1)
+        dummy = [0]
+        for n in xrange(ns):
+            dummy.append(dummy[-1] + len(self.ind_cons[n]))
         for wk, ik in self.consm.iteritems():
-            W[self.ind_cons[ik[0]].index(ik[1]),0] = wk
+            W[dummy[ik[0]] + self.ind_cons[ik[0]].index(ik[1]),0] = wk
+        self.consistency = {}
         for k in xrange(N):
+            wk = W[k,0]
+            self.consistency[wk] = {'lhs':[sp.simplify(drondt * W[k,0]), sp.simplify(-(alpha[1]*W)[k,0])]}
             lhs = sp.simplify(drondt * W[k,0] - (alpha[1]*W)[k,0])
             rhs = sp.Integer(0)
+            dummy = []
             for n in xrange(1,order):
                 rhs += time_step**n * (alpha[n+1]*W)[k,0]
+                dummy.append(sp.simplify(time_step**n * (alpha[n+1]*W)[k,0]))
+            self.consistency[wk]['rhs'] = dummy
             rhs = sp.simplify(rhs)
             print lhs, " = ", rhs
+        #print self.consistency
 
 
 def test_1D(opt):
