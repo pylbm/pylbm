@@ -12,7 +12,7 @@ import pyLBM
 
 X, Y, LA = sp.symbols('X, Y, LA')
 rho, qx, qy = sp.symbols('rho, qx, qy')
-#rhoo, ux, uy = sp.symbols('rhoo, ux, uy')
+rhoo, ux, uy = sp.symbols('rhoo, ux, uy')
 sigma_mu, sigma_eta = sp.symbols('sigma_mu, sigma_eta')
 
 rhoo_num = 1.
@@ -25,7 +25,7 @@ s7 = 1/(sigma_eta+sp.Rational(1, 2))
 s8 = s7
 s  = [0.,0.,0.,s3,s4,s5,s6,s7,s8]
 
-dummy = 1./(LA**2*rhoo)
+dummy = 1/(LA**2*rhoo)
 qx2 = dummy*qx**2
 qy2 = dummy*qy**2
 q2  = qx2+qy2
@@ -58,7 +58,7 @@ dico = {
     ],
     'consistency':{
         'order':2,
-        'linearization':{rho: 1, qx: 0, qy: 0},
+        'linearization':{rho: 1, qx: ux, qy: uy},
     },
 }
 

@@ -891,7 +891,7 @@ class Scheme:
                             toto = 0
                             for alpha in xrange(self.dim):
                                 toto -= LA * sp.Integer(v[alpha, j]) * drondx[alpha]
-                            dummy[k, p] += M[k,j] * invM[j,l] * J[l,p] * toto**n / np.math.factorial(n)
+                            dummy[k, p] += M[k,j] * invM[j,l] * J[l,p] * toto**n / sp.factorial(n)
             dummy.simplify()
             A = dummy[:N, :N]
             B = dummy[:N, N:]
@@ -937,14 +937,14 @@ class Scheme:
             for j in xrange(1,k+1):
                 dummy = dummy + matB[j] * beta[k-j]
             for j in xrange(2, k+1):
-                dummy = dummy - Gamma(k,j)/np.math.factorial(j)
+                dummy = dummy - Gamma(k,j)/sp.factorial(j)
             dummy.simplify()
             alpha.append(dummy)
             dummy = matC[k]
             for j in xrange(1,k+1):
                 dummy = dummy + matD[j] * beta[k-j]
             for j in xrange(1, k+1):
-                dummy = dummy - K(k,j)/np.math.factorial(j)
+                dummy = dummy - K(k,j)/sp.factorial(j)
             dummy = iS * dummy
             dummy.simplify()
             beta.append(dummy)
