@@ -57,8 +57,9 @@ dico = {
         },
     ],
     'consistency':{
-        'order':2,
-        'linearization':{rho: 1, qx: ux, qy: uy},
+        'order':3,
+        #'linearization':{rho: 1, qx: 0, qy: 0},
+        'linearization':{rho: rhoo, qx: rhoo*ux, qy: rhoo*uy},
     },
 }
 

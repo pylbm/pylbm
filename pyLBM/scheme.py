@@ -18,6 +18,8 @@ from .generator import *
 from .validate_dictionary import *
 
 from .logs import setLogger
+import mpi4py.MPI as mpi
+
 
 proto_sch = {
     'velocities': (is_list_int,),
@@ -791,6 +793,7 @@ class Scheme:
             return True
 
     def compute_consistency(self, dicocons):
+        t0 = mpi.Wtime()
         ns = self.stencil.nstencils # number of stencil
         nv = self.stencil.nv # number of velocities for each stencil
         nvtot = self.stencil.nv_ptr[-1] # total number of velocities (with repetition)
@@ -880,75 +883,56 @@ class Scheme:
                 il += 1
 
         J = sp.eye(nvtot) - S + S * Eeq
-        print J
 
-        def ABCD(n):
-            dummy = sp.zeros(nvtot, nvtot)
-            for k in xrange(nvtot):
-                for p in xrange(nvtot):
-                    for j in xrange(nvtot):
-                        for l in xrange(nvtot):
-                            toto = 0
-                            for alpha in xrange(self.dim):
-                                toto -= LA * sp.Integer(v[alpha, j]) * drondx[alpha]
-                            dummy[k, p] += M[k,j] * invM[j,l] * J[l,p] * toto**n / sp.factorial(n)
-            dummy.simplify()
-            A = dummy[:N, :N]
-            B = dummy[:N, N:]
-            C = dummy[N:, :N]
-            D = dummy[N:, N:]
-            return A, B, C, D
+        t1 = mpi.Wtime()
+        print "Initialization time: ", t1-t0
 
         matA, matB, matC, matD = [], [], [], []
+        Dn = sp.zeros(nvtot, nvtot)
+        nnn = sp.Symbol('nnn')
+        for k in xrange(nvtot):
+            Dnk = (- sum([LA * sp.Integer(v[alpha, k]) * drondx[alpha] for alpha in xrange(self.dim)]))**nnn / sp.factorial(nnn)
+            Dn[k,k] = Dnk
+        dummyn = M * Dn * invM * J
         for n in xrange(order+1):
-            print "Compute A{0:d}, B{0:d}, C{0:d}, D{0:d}".format(n)
-            result = ABCD(n)
-            matA.append(result[0])
-            matB.append(result[1])
-            matC.append(result[2])
-            matD.append(result[3])
+            dummy = dummyn.subs([(nnn,n)])
+            dummy.simplify()
+            matA.append(dummy[:N, :N])
+            matB.append(dummy[:N, N:])
+            matC.append(dummy[N:, :N])
+            matD.append(dummy[N:, N:])
 
-        def Gamma(k, j):
-            if k<j:
-                self.log.error("index problem in Gamma")
-            if j == 1:
-                res = alpha[k]
-            if j == 2:
-                res = sp.zeros(N, N)
-                for l in xrange(k-j+1):
-                    res = res + alpha[l+1] * alpha[k-j-l+1]
-            if j > 2:
-                self.log.error('Not yet implemented')
-            return res
+        t2 = mpi.Wtime()
+        print "Compute A, B, C, D: ", t2-t1
 
-        def K(k, j):
-            if k < j:
-                self.log.error("index problem in K")
-            res = sp.zeros(nvtot-N, N)
-            for l in xrange(k-j+1):
-                res = res + beta[l] * Gamma(k-l, j)
-            return res
-
-        alpha, beta = [], []
         iS = S[N:,N:].inv()
-        for k in xrange(order+1):
-            print "Compute alpha{0:d} and beta{0:d}".format(k)
-            dummy = matA[k]
+        matC[0] = iS * matC[0]
+        matC[0].simplify()
+        Gamma = []
+        for k in xrange(1,order+1):
+            Gammak = [matA[k].copy()]
             for j in xrange(1,k+1):
-                dummy = dummy + matB[j] * beta[k-j]
+                matA[k] += matB[j] * matC[k-j]
+                Gammakj = sp.zeros(N,N)
+                for l in xrange(1,k-j+1):
+                    Gammakj += matA[l] * Gamma[k-l-1][j-1]
+                Gammakj.simplify()
+                Gammak.append(Gammakj)
+            Gamma.append(Gammak)
             for j in xrange(2, k+1):
-                dummy = dummy - Gamma(k,j)/sp.factorial(j)
-            dummy.simplify()
-            alpha.append(dummy)
-            dummy = matC[k]
+                matA[k] -= Gamma[k-1][j]/sp.factorial(j)
+            matA[k].simplify()
             for j in xrange(1,k+1):
-                dummy = dummy + matD[j] * beta[k-j]
+                matC[k] += matD[j] * matC[k-j]
             for j in xrange(1, k+1):
-                dummy = dummy - K(k,j)/sp.factorial(j)
-            dummy = iS * dummy
-            dummy.simplify()
-            beta.append(dummy)
-        alpha[0] = sp.zeros(N,N)
+                Kkj = sp.zeros(nvtot-N, N)
+                for l in xrange(k-j+1):
+                    Kkj += matC[l] * Gamma[k-l-1][j]
+                matC[k] -= Kkj/sp.factorial(j)
+            matC[k] = iS * matC[k]
+            matC[k].simplify()
+        t3 = mpi.Wtime()
+        print "Compute alpha, beta: ", t3-t2
 
         W = sp.zeros(N, 1)
         dummy = [0]
@@ -959,17 +943,21 @@ class Scheme:
         self.consistency = {}
         for k in xrange(N):
             wk = W[k,0]
-            self.consistency[wk] = {'lhs':[sp.simplify(drondt * W[k,0]), sp.simplify(-(alpha[1]*W)[k,0])]}
-            lhs = sp.simplify(drondt * W[k,0] - (alpha[1]*W)[k,0])
+            self.consistency[wk] = {'lhs':[sp.simplify(drondt * W[k,0]), sp.simplify(-(matA[1]*W)[k,0])]}
+            lhs = sp.simplify(drondt * W[k,0] - (matA[1]*W)[k,0])
             rhs = sp.Integer(0)
             dummy = []
             for n in xrange(1,order):
-                rhs += time_step**n * (alpha[n+1]*W)[k,0]
-                dummy.append(sp.simplify(time_step**n * (alpha[n+1]*W)[k,0]))
+                rhs += time_step**n * (matA[n+1]*W)[k,0]
+                dummy.append(sp.simplify(time_step**n * (matA[n+1]*W)[k,0]))
             self.consistency[wk]['rhs'] = dummy
             rhs = sp.simplify(rhs)
             print lhs, " = ", rhs
         #print self.consistency
+        t4 = mpi.Wtime()
+        print "Compute equations: ", t4-t3
+        print "Total time: ", t4-t0
+
 
 
 def test_1D(opt):
