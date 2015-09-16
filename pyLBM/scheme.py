@@ -910,25 +910,26 @@ class Scheme:
         matC[0].simplify()
         Gamma = []
         for k in xrange(1,order+1):
-            Gammak = [matA[k].copy()]
             for j in xrange(1,k+1):
                 matA[k] += matB[j] * matC[k-j]
+            Gammak = [matA[k].copy()]
+            for j in xrange(k-1):
                 Gammakj = sp.zeros(N,N)
-                for l in xrange(1,k-j+1):
-                    Gammakj += matA[l] * Gamma[k-l-1][j-1]
+                for l in xrange(1,k-j):
+                    Gammakj += matA[l] * Gamma[k-l-1][j]
                 Gammakj.simplify()
                 Gammak.append(Gammakj)
             Gamma.append(Gammak)
-            for j in xrange(2, k+1):
-                matA[k] -= Gamma[k-1][j]/sp.factorial(j)
+            for j in xrange(1, k):
+                matA[k] -= Gamma[k-1][j]/sp.factorial(j+1)
             matA[k].simplify()
             for j in xrange(1,k+1):
                 matC[k] += matD[j] * matC[k-j]
-            for j in xrange(1, k+1):
+            for j in xrange(k):
                 Kkj = sp.zeros(nvtot-N, N)
-                for l in xrange(k-j+1):
+                for l in xrange(k-j):
                     Kkj += matC[l] * Gamma[k-l-1][j]
-                matC[k] -= Kkj/sp.factorial(j)
+                matC[k] -= Kkj/sp.factorial(j+1)
             matC[k] = iS * matC[k]
             matC[k].simplify()
         t3 = mpi.Wtime()
@@ -944,20 +945,21 @@ class Scheme:
         for k in xrange(N):
             wk = W[k,0]
             self.consistency[wk] = {'lhs':[sp.simplify(drondt * W[k,0]), sp.simplify(-(matA[1]*W)[k,0])]}
-            lhs = sp.simplify(drondt * W[k,0] - (matA[1]*W)[k,0])
-            rhs = sp.Integer(0)
+            lhs = sp.simplify(sum(self.consistency[wk]['lhs']))
             dummy = []
             for n in xrange(1,order):
-                rhs += time_step**n * (matA[n+1]*W)[k,0]
                 dummy.append(sp.simplify(time_step**n * (matA[n+1]*W)[k,0]))
             self.consistency[wk]['rhs'] = dummy
-            rhs = sp.simplify(rhs)
-            print lhs, " = ", rhs
+            rhs = sp.simplify(sum(self.consistency[wk]['rhs']))
+            print "*"*50
+            print "Conservation equation of {0} at order {1}".format(wk, order)
+            sp.pprint(lhs)
+            print " "*10, "="
+            sp.pprint(rhs)
         #print self.consistency
         t4 = mpi.Wtime()
         print "Compute equations: ", t4-t3
         print "Total time: ", t4-t0
-
 
 
 def test_1D(opt):
