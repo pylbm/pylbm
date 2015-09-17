@@ -937,6 +937,7 @@ class Scheme:
 
         W = sp.zeros(N, 1)
         dummy = [0]
+        sp.init_printing()
         for n in xrange(ns):
             dummy.append(dummy[-1] + len(self.ind_cons[n]))
         for wk, ik in self.consm.iteritems():
@@ -951,12 +952,14 @@ class Scheme:
                 dummy.append(sp.simplify(time_step**n * (matA[n+1]*W)[k,0]))
             self.consistency[wk]['rhs'] = dummy
             rhs = sp.simplify(sum(self.consistency[wk]['rhs']))
-            print "*"*50
-            print "Conservation equation of {0} at order {1}".format(wk, order)
+            print "\n" + "*"*50
+            print "Conservation equation for {0} at order {1}".format(wk, order)
             sp.pprint(lhs)
             print " "*10, "="
             sp.pprint(rhs)
+            print "*"*50
         #print self.consistency
+
         t4 = mpi.Wtime()
         print "Compute equations: ", t4-t3
         print "Total time: ", t4-t0
