@@ -593,6 +593,18 @@ class Stencil(list):
         self.is_symmetric()
 
     @property
+    def unvtot(self):
+        return self.unique_velocities.size
+
+    @property
+    def vmax(self):
+        return np.max([self.uvx, self.uvy, self.uvz], axis=1)
+
+    @property
+    def vmin(self):
+        return np.min([self.uvx, self.uvy, self.uvz], axis=1)
+
+    @property
     def uvx(self):
         """
         get the x component of the unique velocities
@@ -668,6 +680,24 @@ class Stencil(list):
             vz = self.vz[iv]
             allv[self.nv_ptr[iv]:self.nv_ptr[iv+1], :] = np.asarray([vx, vy, vz][:self.dim]).T
         return allv
+
+    def get_symmetric(self, axis=None):
+        v = np.asarray(self.v).flatten()
+        ksym = np.empty(v.size, dtype=np.int32)
+
+        for k, vk in enumerate(v):
+            num = vk.get_symmetric(axis).num
+            n = self.get_stencil(k)
+            index = self.num2index[self.nv_ptr[n]:self.nv_ptr[n+1]].index(num) + self.nv_ptr[n]
+            ksym[k] = index
+
+        return ksym
+
+    def get_stencil(self, k):
+        n = 0
+        while k >= self.nv_ptr[n+1]:
+            n += 1
+        return n
 
     def __str__(self):
         s = "Stencil informations\n"
