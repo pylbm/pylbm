@@ -11,6 +11,8 @@ import importlib
 
 from ..logs import setLogger
 
+INDENT = ' '*4
+
 class Generator:
     """
     the generic class to generate the code

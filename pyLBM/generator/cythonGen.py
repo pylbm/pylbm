@@ -7,7 +7,7 @@ import numpy as np
 import sympy as sp
 import re
 
-from .base import Generator
+from .base import Generator, INDENT
 from .utils import matMult, load_or_store
 
 class CythonGenerator(Generator):
@@ -108,16 +108,22 @@ from libc.stdlib cimport malloc, free
         """
         self.code += "cdef void m2f_loc({0} *m, {0} *f) nogil:\n".format(dtype)
 
-        self.code += matMult(A, 'm', 'f', '\t')
+        self.code += matMult(A, 'm', 'f', vectorized=False, indent=INDENT)
         self.code += "\n"
 
-        self.code += "def m2f({0}[:, ::1] m, {0}[:, ::1] f):\n".format(dtype)
-        self.code += "\tcdef:\n"
+        self.code += "def m2f({0}[{1}:1] m, {0}[{1}:1] f):\n".format(dtype, ', '.join([':']*len(self.sorder)))
+        self.code += INDENT + "cdef:\n"
 
-        self.code += "\t\tint i, n = m.shape[0] \n"
-        self.code += "\tfor i in xrange(n):\n"
+        sind = np.argsort(self.sorder[1:])
+        for i, x in enumerate(self.sorder[1:]):
+            self.code += 2*INDENT + "int i{0}, n{0} = m.shape[{1}] \n".format(i, x)
 
-        self.code += matMult(A, 'm', 'f', '\t'*2, prefix='i, ')
+        indent = INDENT
+        for i in sind:
+            self.code += indent + "for i{0} in xrange(n{0}):\n".format(i)
+            indent += INDENT
+
+        self.code += matMult(A, 'm', 'f', sorder=self.sorder, vectorized=False, indent=indent)
         self.code += "\n"
 
     def f2m(self, A, k, dim, dtype = 'double'):
@@ -151,17 +157,22 @@ from libc.stdlib cimport malloc, free
         """
         self.code += "cdef void f2m_loc({0} *f, {0} *m) nogil:\n".format(dtype)
 
-        self.code += matMult(A, 'f', 'm', '\t')
+        self.code += matMult(A, 'f', 'm', vectorized=False, indent=INDENT)
         self.code += "\n"
 
-        self.code += "def f2m({0}[:, ::1] f, {0}[:, ::1] m):\n".format(dtype)
-        self.code += "\tcdef:\n"
+        self.code += "def f2m({0}[{1}:1] f, {0}[{1}:1] m):\n".format(dtype, ', '.join([':']*len(self.sorder)))
+        self.code += INDENT + "cdef:\n"
 
-        self.code += "\t\tint i, n = m.shape[0] \n"
-        self.code += "\tfor i in xrange(n):\n"
+        sind = np.argsort(self.sorder[1:])
+        for i, x in enumerate(self.sorder[1:]):
+            self.code += 2*INDENT + "int i{0}, n{0} = m.shape[{1}] \n".format(i, x)
 
-        self.code += matMult(A, 'f', 'm', '\t'*2, prefix='i, ')
-        self.code += "\n"
+        indent = INDENT
+        for i in sind:
+            self.code += indent + "for i{0} in xrange(n{0}):\n".format(i)
+            indent += INDENT
+
+        self.code += matMult(A, 'f', 'm', sorder=self.sorder, vectorized=False, indent=indent)
 
     def transport(self, ns, stencil, dtype = 'double'):
         """
@@ -191,8 +202,8 @@ from libc.stdlib cimport malloc, free
         set_f = "cdef void set_f({0} *floc, {0}[:{1}:1] f{2}) nogil:\n".format(dtype, ', :'*stencil.dim, stmp)
 
         v = stencil.get_all_velocities()
-        get_f += load_or_store('floc', 'f', v, None, vec_form=False, nv_on_beg=False, indent='\t')
-        set_f += load_or_store('f', 'floc', None, np.zeros(v.shape), vec_form=False, nv_on_beg=False, indent='\t')
+        get_f += load_or_store('floc', 'f', v, None, self.sorder, indent=INDENT, vectorized=False, avoid_copy=False)
+        set_f += load_or_store('f', 'floc', None, np.zeros(v.shape), self.sorder, indent=INDENT, vectorized=False, avoid_copy=False)
 
         self.code += get_f + "\n"
         self.code += set_f + "\n"
@@ -219,11 +230,17 @@ from libc.stdlib cimport malloc, free
         code : string
           add the equilibrium function in the attribute ``code``.
         """
-        self.code += "def equilibrium(double[:, ::1] m):\n"
-        self.code += "\tcdef:\n"
+        self.code += "def equilibrium(double[{0}:1] m):\n".format(', '.join([':']*len(self.sorder)))
+        self.code += INDENT + "cdef:\n"
 
-        self.code += "\t\tint i, n = m.shape[0] \n"
-        self.code += "\tfor i in xrange(n):\n"
+        sind = np.argsort(self.sorder[1:])
+        for i, x in enumerate(self.sorder[1:]):
+            self.code += 2*INDENT + "int i{0}, n{0} = m.shape[{1}] \n".format(i, x)
+
+        indent = INDENT
+        for i in sind:
+            self.code += indent + "for i{0} in xrange(n{0}):\n".format(i)
+            indent += INDENT
 
         def subpow(g):
             s = '(' + g.group('m')
@@ -235,21 +252,28 @@ from libc.stdlib cimport malloc, free
         def sub(g):
             i = int(g.group('i'))
             j = int(g.group('j'))
+            slices = ['']*len(self.sorder)
+            for js, s in enumerate(self.sorder[1:]):
+                slices[s] = 'i%d'%js
+            slices[self.sorder[0]] = str(stencil.nv_ptr[i] + j)
+            return '[%s]'%(', '.join(slices))
 
-            return '[i, ' + str(stencil.nv_ptr[i] + j) + ']'
-
+        slices = ['']*len(self.sorder)
+        for js, s in enumerate(self.sorder[1:]):
+            slices[s] = 'i%d'%js
 
         for k in xrange(ns):
             for i in xrange(stencil.nv[k]):
+                slices[self.sorder[0]] = str(stencil.nv_ptr[k] + i)
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
                     if eq[k][i] != 0:
                         str2input = str(eq[k][i])
                         res = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", subpow, str2input)
                         res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub, res)
 
-                        self.code += "\t\tm[i, %d] = %s\n"%(stencil.nv_ptr[k] + i, res)
+                        self.code += indent + "m[%s] = %s\n"%(', '.join(slices), res)
                     else:
-                        self.code += "\t\tm[i, %d] = 0.\n"%(stencil.nv_ptr[k] + i)
+                        self.code += indent + "m[%s] = 0.\n"%(', '.join(slices))
         self.code += "\n"
 
     def relaxation(self, ns, stencil, s, eq, dtype = 'f8'):
@@ -299,9 +323,9 @@ from libc.stdlib cimport malloc, free
                         res = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", subpow, str2input)
                         res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub, res)
 
-                        self.code += "\t\tm[{0:d}] += {1:.16f}*({2} - m[{0:d}])\n".format(stencil.nv_ptr[k] + i, s[k][i], res)
+                        self.code += 2*INDENT + "m[{0:d}] += {1:.16f}*({2} - m[{0:d}])\n".format(stencil.nv_ptr[k] + i, s[k][i], res)
                     else:
-                        self.code += "\t\tm[{0:d}] *= (1. - {1:.16f})\n".format(stencil.nv_ptr[k] + i, s[k][i])
+                        self.code += 2*INDENT + "m[{0:d}] *= (1. - {1:.16f})\n".format(stencil.nv_ptr[k] + i, s[k][i])
         self.code += "\n"
 
     def onetimestep(self, stencil):
@@ -325,34 +349,29 @@ from libc.stdlib cimport malloc, free
 
         self.code += """
 def onetimestep(double[{0}::1] m, double[{0}::1] f, double[{0}::1] fnew, double[{2}]in_or_out, double valin):
-\tcdef:
-\t\tdouble floc[{1}]
-\t\tdouble mloc[{1}]
+    cdef:
+        double floc[{1}]
+        double mloc[{1}]
 """.format(s, stencil.nv_ptr[-1], ext)
 
-        s1 = ''
-        for i in xrange(stencil.dim):
-            s1 += "\t\tint i{0}, n{0} = f.shape[{0}]\n".format(i)
-        self.code += s1
-        self.code += "\t\tint i, nv = f.shape[{0}]\n".format(stencil.dim)
-        self.code += "\t\tint nvsize = {0}\n".format(stencil.nv_ptr[-1])
-        tab = '\t'
-        s1 = ''
-        ext = ''
+        for i, x in enumerate(self.sorder[1:]):
+            self.code += 2*INDENT + "int i{0}, n{0} = f.shape[{1}] \n".format(i, x)
+        self.code += 2*INDENT + "int i, nv = f.shape[{0}]\n".format(self.sorder[0])
+        self.code += 2*INDENT + "int nvsize = {0}\n".format(stencil.nv_ptr[-1])
 
-        for i in xrange(stencil.dim):
-            s1 += tab + 'for i{0} in xrange(n{0}):\n'.format(i)
-            ext += 'i{0},'.format(i)
-            tab += '\t'
-        self.code += s1
-        ext = ext[:-1]
+        sind = np.argsort(self.sorder[1:])
+        indent = INDENT
+        for i in sind:
+            self.code += indent + "for i{0} in xrange(n{0}):\n".format(i)
+            indent += INDENT
 
-        self.code += tab + "if in_or_out[{0}] == valin:\n".format(ext)
-        self.code += tab + "\tget_f(floc, f, {0})\n".format(ext)
-        self.code += tab + "\tf2m_loc(floc, mloc)\n"
-        self.code += tab + "\trelaxation(mloc)\n"
-        self.code += tab + "\tm2f_loc(mloc, floc)\n"
-        self.code += tab + "\tset_f(floc, fnew, {0})\n".format(ext)
+        self.code += indent + "if in_or_out[{0}] == valin:\n".format(', '.join(['i' + str(i) for i in range(stencil.dim)]))
+        indent += INDENT
+        self.code += indent + "get_f(floc, f, {0})\n".format(', '.join(['i' + str(i) for i in range(stencil.dim)]))
+        self.code += indent + "f2m_loc(floc, mloc)\n"
+        self.code += indent + "relaxation(mloc)\n"
+        self.code += indent + "m2f_loc(mloc, floc)\n"
+        self.code += indent + "set_f(floc, fnew, {0})\n".format(', '.join(['i' + str(i) for i in range(stencil.dim)]))
 
         self.code += "\n"
 

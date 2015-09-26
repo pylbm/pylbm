@@ -11,20 +11,18 @@ class Array:
 
     It sets the storage in memory and how to access.
     """
-    def __init__(self, nv, nspace, vmax, inv=None, inspace=None, dtype=np.double, cartcomm = None):
+    def __init__(self, nv, nspace, vmax, sorder=None, dtype=np.double, cartcomm = None):
         self.log = setLogger(__name__)
         self.comm = mpi.COMM_WORLD
         self.cartcomm = cartcomm
+        self.sorder = sorder
 
-        if inv is None:
-            ind = [0]
+        if sorder is None:
+            ind = [i for i in range(len(nspace) + 1)]
         else:
-            ind = [inv]
-
-        if inspace is None:
-            ind += [i + 1 for i in range(len(nspace))]
-        else:
-            ind += inspace
+            if len(sorder) != len(nspace) + 1:
+                self.log.error("storage order must have the same length of the spatial dimension + 1.")
+            ind = copy.deepcopy(sorder)
 
         self.index = copy.copy(ind)
         self.vmax = vmax
@@ -229,9 +227,8 @@ class AOS(Array):
 
     """
     def __init__(self, nv, nspace, vmax, dtype=np.double, cartcomm=None):
-        ls = len(nspace)
-        Array.__init__(self, nv, nspace, vmax, inv=ls,
-                       inspace=[i for i in range(ls)],
+        sorder = [len(nspace)] + [i for i in range(len(nspace))]
+        Array.__init__(self, nv, nspace, vmax, sorder=sorder,
                        dtype=dtype, cartcomm=cartcomm)
 
     def reshape(self):

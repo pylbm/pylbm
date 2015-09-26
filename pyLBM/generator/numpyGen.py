@@ -6,7 +6,7 @@
 import sympy as sp
 import re
 
-from .base import Generator
+from .base import Generator, INDENT
 from .utils import matMult, load_or_store
 
 class NumpyGenerator(Generator):
@@ -76,7 +76,7 @@ class NumpyGenerator(Generator):
         """
         self.code += "def transport(f):\n"
         v = stencil.get_all_velocities()
-        self.code += load_or_store('f', 'f', -v, v, self.inv, self.inspace, indent=' '*4)
+        self.code += load_or_store('f', 'f', -v, v, self.sorder, indent=INDENT)
         self.code += "\n"
 
     def equilibrium(self, ns, stencil, eq, dtype = 'f8'):
@@ -104,24 +104,24 @@ class NumpyGenerator(Generator):
         self.code += "def equilibrium(m):\n"
 
         def sub(g):
-            slices = [':']*(len(self.inspace) + 1)
+            slices = [':']*len(self.sorder)
             i = int(g.group('i'))
             j = int(g.group('j'))
-            slices[self.inv] = str(stencil.nv_ptr[i] + j)
+            slices[self.sorder[0]] = str(stencil.nv_ptr[i] + j)
             return '[%s]'%(', '.join(slices))
 
-        slices = [':']*(len(self.inspace) + 1)
+        slices = [':']*len(self.sorder)
 
         for k in xrange(ns):
             for i in xrange(stencil.nv[k]):
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
-                    slices[self.inv] = str(stencil.nv_ptr[k] + i)
+                    slices[self.sorder[0]] = str(stencil.nv_ptr[k] + i)
                     if eq[k][i] != 0:
                         res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub,
                                    str(eq[k][i]))
-                        self.code += ' '*4 + "m[%s] = %s\n"%(', '.join(slices), res)
+                        self.code += INDENT + "m[%s] = %s\n"%(', '.join(slices), res)
                     else:
-                        self.code += ' '*4 + "m[%s] = 0.\n"%(', '.join(slices))
+                        self.code += INDENT + "m[%s] = 0.\n"%(', '.join(slices))
         self.code += "\n"
 
     def relaxation(self, ns, stencil, s, eq, dtype = 'f8'):
@@ -151,24 +151,24 @@ class NumpyGenerator(Generator):
         self.code += "def relaxation(m):\n"
 
         def sub(g):
-            slices = [':']*(len(self.inspace) + 1)
+            slices = [':']*len(self.sorder)
             i = int(g.group('i'))
             j = int(g.group('j'))
-            slices[self.inv] = str(stencil.nv_ptr[i] + j)
+            slices[self.sorder[0]] = str(stencil.nv_ptr[i] + j)
             return '[%s]'%(', '.join(slices))
 
-        slices = [':']*(len(self.inspace) + 1)
+        slices = [':']*len(self.sorder)
 
         for k in xrange(ns):
             for i in xrange(stencil.nv[k]):
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
-                    slices[self.inv] = str(stencil.nv_ptr[k] + i)
+                    slices[self.sorder[0]] = str(stencil.nv_ptr[k] + i)
                     if eq[k][i] != 0:
                         res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub,
                                    str(eq[k][i]))
-                        self.code += ' '*4 + "m[{0}] += {1:.16f}*({2} - m[{0}])\n".format(', '.join(slices), s[k][i], res)
+                        self.code += INDENT + "m[{0}] += {1:.16f}*({2} - m[{0}])\n".format(', '.join(slices), s[k][i], res)
                     else:
-                        self.code += ' '*4 + "m[{0}] *= (1. - {1:.16f})\n".format(', '.join(slices), s[k][i])
+                        self.code += INDENT + "m[{0}] *= (1. - {1:.16f})\n".format(', '.join(slices), s[k][i])
         self.code += "\n"
 
     def m2f(self, A, dim, dtype = 'f8'):
@@ -200,9 +200,8 @@ class NumpyGenerator(Generator):
         to generate one function per elementary scheme
         because the index corresponding to the stencil is the first index.
         """
-        #self.code += "def m2f_{0:d}(m, f):\n".format(k)
         self.code += "def m2f(m, f):\n"
-        self.code += matMult(A, 'm', 'f', self.inv, self.inspace, indent=' '*4)
+        self.code += matMult(A, 'm', 'f', self.sorder, indent=INDENT)
         self.code += "\n"
 
     def f2m(self, A, dim, dtype = 'f8'):
@@ -236,7 +235,7 @@ class NumpyGenerator(Generator):
         """
         #self.code += "def f2m_{0:d}(f, m):\n".format(k)
         self.code += "def f2m(f, m):\n"
-        self.code += matMult(A, 'f', 'm', self.inv, self.inspace, indent=' '*4)
+        self.code += matMult(A, 'f', 'm', self.sorder, indent=' '*4)
         self.code += "\n"
 
     def onetimestep(self, stencil):

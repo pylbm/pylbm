@@ -6,7 +6,7 @@
 from string import Template
 import numpy as np
 
-def matMult(A, x, y, inv=None, inspace=None, vectorized=True, indent=''):
+def matMult(A, x, y, sorder=None, vectorized=True, indent=''):
     """
     return a string representing the unroll matrix vector operation y = Ax
 
@@ -59,16 +59,16 @@ def matMult(A, x, y, inv=None, inspace=None, vectorized=True, indent=''):
     nvk1, nvk2 = A.shape
     code = ''
 
-    if inspace is not None:
-        tmp = ['']*(len(inspace) + 1)
-        for i, v in enumerate(inspace):
+    if sorder is not None:
+        tmp = ['']*len(sorder)
+        for i, v in enumerate(sorder[1:]):
             tmp[v] = ':' if vectorized else 'i{0}'.format(i)
 
     for i in range(nvk1):
-        if inv is None and inspace is None:
+        if sorder is None:
             tmp = [str(i)]
         else:
-            tmp[inv] = str(i)
+            tmp[sorder[0]] = str(i)
 
         code += indent + "{0}[{1}] = ".format(y, ', '.join(tmp))
 
@@ -77,10 +77,10 @@ def matMult(A, x, y, inv=None, inspace=None, vectorized=True, indent=''):
             scoef = '' if  abs(coef) == 1 else '{0:.16f}*'.format(abs(coef))
             sign = ' + ' if coef > 0 else ' - '
 
-            if inv is None and inspace is None:
+            if sorder is None:
                 tmp = [str(j)]
             else:
-                tmp[inv] = str(j)
+                tmp[sorder[0]] = str(j)
 
             if coef != 0:
                 code += "{0}{1}{2}[{3}]".format(sign, scoef, x, ', '.join(tmp))
@@ -115,17 +115,17 @@ def give_indices(X):
                 res[-1].append('i{0:d}'.format(iv))
     return res
 
-def get_indices(s, ind, inv, inspace):
+def get_indices(s, ind, sorder):
     if s is '':
         res = [str(ind)]
     else:
-        res = ['']*(len(inspace) + 1)
-        for i, v in enumerate(inspace):
+        res = ['']*len(sorder)
+        for i, v in enumerate(sorder[1:]):
             res[v] = s[i]
-        res[inv] = str(ind)
+        res[sorder[0]] = str(ind)
     return res
 
-def load_or_store(x, y, load_list, store_list, inv, inspace, indent='', vectorized = True, avoid_copy=True):
+def load_or_store(x, y, load_list, store_list, sorder, indent='', vectorized = True, avoid_copy=True):
 
     if load_list is not None:
         s1 = give_slice(load_list) if vectorized else give_indices(load_list)
@@ -141,11 +141,11 @@ def load_or_store(x, y, load_list, store_list, inv, inspace, indent='', vectoriz
     code = ''
     ind = 0
     for ss1, ss2 in zip(s1, s2):
-        tmp1 = get_indices(ss1, ind, inv, inspace)
-        tmp2 = get_indices(ss2, ind, inv, inspace)
+        tmp1 = get_indices(ss1, ind, sorder)
+        tmp2 = get_indices(ss2, ind, sorder)
         if not (tmp1 == tmp2 and avoid_copy):
-            code += "{0}{1}[{2}] = {3}[{4}]\n".format(indent, x, ', '.join(tmp1),
-                        y, ', '.join(tmp2))
+            code += "{0}{1}[{2}] = {3}[{4}]\n".format(indent, x, ', '.join(tmp2),
+                        y, ', '.join(tmp1))
         ind += 1
 
     return code

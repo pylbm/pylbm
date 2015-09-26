@@ -411,7 +411,7 @@ class Scheme:
                     sys.exit()
         return init
 
-    def generate(self, inv, inspace):
+    def generate(self, sorder):
         """
         Generate the code by using the appropriated generator
 
@@ -422,8 +422,7 @@ class Scheme:
 
         >>> print S.generator.code
         """
-        self.generator.inv = inv
-        self.generator.inspace = inspace
+        self.generator.sorder = sorder
         self.generator.setup()
         self.generator.m2f(self.invMnumGlob, 0, self.dim)
         self.generator.f2m(self.MnumGlob, 0, self.dim)

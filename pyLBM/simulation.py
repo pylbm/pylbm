@@ -23,7 +23,7 @@ from .stencil import Stencil
 from .boundary import Boundary
 from . import utils
 from .logs import setLogger
-from .storage import AOS, SOA
+from .storage import Array, AOS, SOA
 from .generator import NumpyGenerator
 
 
@@ -122,7 +122,7 @@ class Simulation:
     are just call of the methods of the class
     :py:class:`Scheme<pyLBM.scheme.Scheme>`.
     """
-    def __init__(self, dico, domain=None, scheme=None, dtype='float64'):
+    def __init__(self, dico, domain=None, scheme=None, sorder=None, dtype='float64'):
         self.log = setLogger(__name__)
         self.type = dtype
         self.order = 'C'
@@ -169,22 +169,32 @@ class Simulation:
         nv = self.scheme.stencil.nv_ptr[-1]
         nspace = self.domain.shape
         vmax = self.domain.stencil.vmax
-        if isinstance(self.scheme.generator, NumpyGenerator):
-            self._m = SOA(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
-            self._F = SOA(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
-            self._Fold = self._F
-            inv = 0
-            inspace = np.arange(1, self.dim+1)
+
+        if sorder is None:
+            if isinstance(self.scheme.generator, NumpyGenerator):
+                self._m = SOA(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
+                self._F = SOA(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
+                self._Fold = self._F
+                sorder = [i for i in range(self.dim + 1)]
+            else:
+                self._m = AOS(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
+                self._F = AOS(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
+                self._Fold = AOS(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
+                sorder = [self.dim] + [i for i in range(self.dim)]
         else:
-            self._m = AOS(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
-            self._F = AOS(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
-            self._Fold = AOS(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
-            inv = self.dim
-            inspace = np.arange(self.dim)
-        self.scheme.generate(inv, inspace)
+            self._m = Array(nv, nspace, vmax, sorder=sorder, cartcomm=self.interface.cartcomm)
+            self._F = Array(nv, nspace, vmax, sorder=sorder, cartcomm=self.interface.cartcomm)
+            self._Fold = Array(nv, nspace, vmax, sorder=sorder, cartcomm=self.interface.cartcomm)
+
+        self.scheme.generate(sorder)
 
         self.log.info('Build boundary conditions')
+
         self.bc = Boundary(self.domain, dico)
+        for method in self.bc.methods:
+            method.prepare_rhs(self)
+            method.set_rhs()
+            method.set_iload()
 
         self.log.info('Initialization')
         self.initialization(dico)
