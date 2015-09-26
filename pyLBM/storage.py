@@ -42,7 +42,8 @@ class Array:
                 ind[j] = ind[i]
                 ind[i] = i
 
-        self._set_subarray()
+        if cartcomm is not None:
+            self._set_subarray()
 
     def __getitem__(self, key):
         return self.swaparray[key]
