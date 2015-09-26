@@ -34,43 +34,29 @@ import pyLBM
 X, Y, LA = sp.symbols('X,Y,LA')
 p, ux, uy = sp.symbols('p, ux, uy')
 
-def bc_in(f, m, x, y, scheme):
+def bc_in(f, m, x, y):
     ######### BEGIN OF WARNING #########
     # the order depends on the type of
     # the code generation
     # through the variable nv_on_beg
-    if scheme.nv_on_beg:
-        m[0] = (x-0.5*width) * grad_pressure * cte
-        m[4] = max_velocity * (1. - 4.*y**2/height**2)
-        m[8] = 0.
-    else:
-        m[:, 0] = (x-0.5*width) * grad_pressure * cte
-        m[:, 4] = max_velocity * (1. - 4.*y**2/height**2)
-        m[:, 8] = 0.
-    #########  END OF WARNING  #########
-    scheme.equilibrium(m)
-    scheme.m2f(m, f)
+    m[0] = (x-0.5*width) * grad_pressure * cte
+    m[4] = max_velocity * (1. - 4.*y**2/height**2)
+    m[8] = 0.
 
-def bc_out(f, m, x, y, scheme):
+def bc_out(f, m, x, y):
     ######### BEGIN OF WARNING #########
     # the order depends on the compilater
     # through the variable nv_on_beg
-    if scheme.nv_on_beg:
-        m[0] = (x-0.5*width) * grad_pressure * cte
-        m[4] = 0.
-        m[8] = 0.
-    else:
-        m[:, 0] = (x-0.5*width) * grad_pressure * cte
-        m[:, 4] = 0.
-        m[:, 8] = 0.
-    #########  END OF WARNING  #########
-    scheme.equilibrium(m)
-    scheme.m2f(m, f)
+    print m[0].shape, x.shape
+    m[0] = (x-0.5*width) * grad_pressure * cte
+    m[4] = 0.
+    m[8] = 0.
 
 def run(dico):
     sol = pyLBM.Simulation(dico)
     while sol.t<Tf:
         sol.one_time_step()
+        sol.time_info()
 
     import numpy as np
     print "*"*50
@@ -147,20 +133,20 @@ if __name__ == "__main__":
         ],
         'parameters': {LA: la},
         'boundary_conditions':{
-            0:{'method':{0: pyLBM.bc.bouzidi_bounce_back,
-                         1: pyLBM.bc.bouzidi_anti_bounce_back,
-                         2: pyLBM.bc.bouzidi_anti_bounce_back
+            0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back,
+                         1: pyLBM.bc.Bouzidi_anti_bounce_back,
+                         2: pyLBM.bc.Bouzidi_anti_bounce_back
                          },
             },
-            1:{'method':{0: pyLBM.bc.bouzidi_anti_bounce_back,
-                         1: pyLBM.bc.neumann_vertical,
-                         2: pyLBM.bc.neumann_vertical
+            1:{'method':{0: pyLBM.bc.Bouzidi_anti_bounce_back,
+                         1: pyLBM.bc.Neumann_vertical,
+                         2: pyLBM.bc.Neumann_vertical
                          },
                 'value':bc_out,
             },
-            2:{'method':{0: pyLBM.bc.bouzidi_anti_bounce_back,
-                         1: pyLBM.bc.bouzidi_anti_bounce_back,
-                         2: pyLBM.bc.bouzidi_anti_bounce_back
+            2:{'method':{0: pyLBM.bc.Bouzidi_anti_bounce_back,
+                         1: pyLBM.bc.Bouzidi_anti_bounce_back,
+                         2: pyLBM.bc.Bouzidi_anti_bounce_back
                          },
                 'value':bc_in,
             },
