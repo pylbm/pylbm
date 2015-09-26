@@ -7,6 +7,7 @@
 import numpy as np
 
 from .logs import setLogger
+from .storage import Array
 
 class Boundary_Velocity:
     """
@@ -31,11 +32,187 @@ class Boundary_Velocity:
             self.indices += np.asarray(v.v)[:, np.newaxis]
         self.distance = np.array(domain.distance[(num,) + ind])
 
+class Boundary_method(object):
+    def __init__(self, istore, ilabel, distance, stencil, value_bc):
+        self.istore = istore
+        self.feq = np.zeros((stencil.nv_ptr[-1], istore.shape[1]))
+        self.rhs = np.zeros(istore.shape[1])
+        self.ilabel = ilabel
+        self.distance = distance
+        self.stencil = stencil
+        self.iload = []
+        self.value_bc = {}
+        for k in np.unique(self.ilabel):
+            self.value_bc[k] = value_bc[k]
+        self.func = None
+
+    def add_iload(self, iloadfunc, iloadargs=()):
+        iload = iloadfunc(self.istore, self.stencil, *iloadargs)
+        self.iload.append(iload)
+
+    def prepare_rhs(self, simulation):
+        nv = simulation._m.nv
+        sorder = simulation._m.sorder
+        nspace = [1]*(len(sorder)-1)
+        v = self.stencil.get_all_velocities()
+
+        for key, value in self.value_bc.iteritems():
+            if value is not None:
+                indices = np.where(self.ilabel == key)
+                # TODO: check the index in sorder to be the most contiguous
+                nspace[0] = indices[0].size
+                k = self.istore[0, indices]
+                x = simulation.domain.x[0][self.istore[1, indices]]
+                y = simulation.domain.x[1][self.istore[2, indices]]
+
+                s = 1 - self.distance[indices]
+
+                x += s*v[k, 0]*simulation.domain.dx
+                y += s*v[k, 1]*simulation.domain.dx
+                m = Array(nv, nspace , 0, sorder)
+                f = Array(nv, nspace , 0, sorder)
+
+                value(f, m, x.T, y.T)
+                simulation.scheme.equilibrium(m)
+                simulation.scheme.m2f(m, f)
+
+                self.feq[:, indices[0]] = f.swaparray.reshape((nv, indices[0].size))
+
+class Bounce_back(Boundary_method):
+    def __init__(self, istore, ilabel, distance, stencil, value_bc):
+        super(Bounce_back, self).__init__(istore, ilabel, distance, stencil, value_bc)
+
+    def set_iload(self):
+        k = self.istore[0]
+        ksym = self.stencil.get_symmetric()[k][np.newaxis, :]
+        v = self.stencil.get_all_velocities()
+        indices = self.istore[1:] + v[k].T
+        self.iload.append(np.concatenate([ksym, indices]))
+
+    def set_rhs(self):
+        k = self.istore[0]
+        ksym = self.stencil.get_symmetric()[k]
+        self.rhs[:] = self.feq[k, np.arange(k.size)] - self.feq[ksym, np.arange(k.size)]
+
+    def update(self, f):
+        f[tuple(self.istore)] = f[tuple(self.iload[0])] + self.rhs
+
+class Bouzidi_bounce_back(Boundary_method):
+    def __init__(self, istore, ilabel, distance, stencil, value_bc):
+        super(Bouzidi_bounce_back, self).__init__(istore, ilabel, distance, stencil, value_bc)
+        self.s = np.empty(self.istore.shape[1])
+
+    def set_iload(self):
+        k = self.istore[0]
+        ksym = self.stencil.get_symmetric()[k]
+        v = self.stencil.get_all_velocities()
+
+        iload1 = np.zeros(self.istore.shape, dtype=np.int)
+        iload2 = np.zeros(self.istore.shape, dtype=np.int)
+
+        mask = self.distance < .5
+        iload1[0, mask] = ksym[mask]
+        iload2[0, mask] = ksym[mask]
+        iload1[1:, mask] = self.istore[1:, mask] + v[k[mask]].T
+        iload2[1:, mask] = self.istore[1:, mask] + 2*v[k[mask]].T
+        self.s[mask] = 2.*self.distance[mask]
+
+        mask = np.logical_not(mask)
+        iload1[0, mask] = ksym[mask]
+        iload2[0, mask] = k[mask]
+        iload1[1:, mask] = self.istore[1:, mask] + v[k[mask]].T
+        iload2[1:, mask] = self.istore[1:, mask] + v[k[mask]].T
+        self.s[mask] = .5/self.distance[mask]
+
+        self.iload.append(iload1)
+        self.iload.append(iload2)
+
+    def set_rhs(self):
+        k = self.istore[0]
+        ksym = self.stencil.get_symmetric()[k]
+        self.rhs[:] = self.feq[k, np.arange(k.size)] - self.feq[ksym, np.arange(k.size)]
+
+    def update(self, f):
+        f[tuple(self.istore)] = self.s*f[tuple(self.iload[0])] + (1 - self.s)*f[tuple(self.iload[1])] + self.rhs
+
+class Anti_bounce_back(Boundary_method):
+    def __init__(self, istore, ilabel, distance, stencil, value_bc):
+        super(Anti_bounce_back, self).__init__(istore, ilabel, distance, stencil, value_bc)
+
+    def set_rhs(self):
+        k = self.istore[0]
+        ksym = self.stencil.get_symmetric()[k]
+        self.rhs[:] = self.feq[k, np.arange(k.size)] + self.feq[ksym, np.arange(k.size)]
+
+    def set_iload(self):
+        k = self.istore[0]
+        ksym = self.stencil.get_symmetric()[k][np.newaxis, :]
+        v = self.stencil.get_all_velocities()
+        indices = self.istore[1:] + v[k].T
+        self.iload.append(np.concatenate([ksym, indices]))
+
+    def update(self, f):
+        f[tuple(self.istore)] = -f[tuple(self.iload[0])] + self.rhs
+
+class Bouzidi_anti_bounce_back(Boundary_method):
+    def __init__(self, istore, ilabel, distance, stencil, value_bc):
+        super(Bouzidi_anti_bounce_back, self).__init__(istore, ilabel, distance, stencil, value_bc)
+        self.s = np.empty(self.istore.shape[1])
+
+    def set_iload(self):
+        k = self.istore[0]
+        ksym = self.stencil.get_symmetric()[k]
+        v = self.stencil.get_all_velocities()
+
+        iload1 = np.zeros(self.istore.shape, dtype=np.int)
+        iload2 = np.zeros(self.istore.shape, dtype=np.int)
+
+        mask = self.distance < .5
+        iload1[0, mask] = ksym[mask]
+        iload2[0, mask] = ksym[mask]
+        iload1[1:, mask] = self.istore[1:, mask] + v[k[mask]].T
+        iload2[1:, mask] = self.istore[1:, mask] + 2*v[k[mask]].T
+        self.s[mask] = 2.*self.distance[mask]
+
+        mask = np.logical_not(mask)
+        iload1[0, mask] = ksym[mask]
+        iload2[0, mask] = k[mask]
+        iload1[1:, mask] = self.istore[1:, mask] + v[k[mask]].T
+        iload2[1:, mask] = self.istore[1:, mask] + v[k[mask]].T
+        self.s[mask] = .5/self.distance[mask]
+
+        self.iload.append(iload1)
+        self.iload.append(iload2)
+
+    def set_rhs(self):
+        k = self.istore[0]
+        ksym = self.stencil.get_symmetric()[k]
+        self.rhs[:] = self.feq[k, np.arange(k.size)] + self.feq[ksym, np.arange(k.size)]
+
+    def update(self, f):
+        f[tuple(self.istore)] = -self.s*f[tuple(self.iload[0])] + (self.s - 1)*f[tuple(self.iload[1])] + self.rhs
+
+class Neumann_vertical(Boundary_method):
+    def __init__(self, istore, ilabel, distance, stencil, value_bc):
+        super(Neumann_vertical, self).__init__(istore, ilabel, distance, stencil, value_bc)
+
+    def set_rhs(self):
+        pass
+
+    def set_iload(self):
+        k = self.istore[0]
+        v = self.stencil.get_all_velocities()
+        indices = self.istore[1:].copy()
+        indices[0] += v[k].T[0]
+        self.iload.append(np.concatenate([k[np.newaxis, :], indices]))
+
+    def update(self, f):
+        f[tuple(self.istore)] = f[tuple(self.iload[0])]
+
 class Boundary:
     def __init__(self, domain, dico):
         self.log = setLogger(__name__)
         self.domain = domain
-        self.dico = dico
 
         # build the list of indices for each unique velocity and for each label
         self.bv = {}
@@ -46,11 +223,14 @@ class Boundary:
             self.bv[label] = dummy_bv
 
         # build the list of boundary informations for each stencil and each label
-        self.be = []
-        self.method_bc = []
-        self.value_bc = []
 
         dico_bound = dico.get('boundary_conditions',{})
+        stencil = self.domain.stencil
+
+        istore = {}
+        ilabel = {}
+        distance = {}
+        value_bc = {}
 
         for label in self.domain.geom.list_of_labels():
             if label == -1: # periodic conditions
@@ -58,12 +238,27 @@ class Boundary:
             elif label == -2: # interface conditions
                 pass
             else: # non periodic conditions
-                self.be.append([])
-                self.method_bc.append([])
-                self.value_bc.append(dico_bound[label].get('value', None))
-                for n in xrange(self.domain.stencil.nstencils):
-                    self.method_bc[-1].append(dico_bound[label]['method'][n])
-                    self.be[-1].append([self.bv[label][self.domain.stencil.unum2index[numk]] for numk in self.domain.stencil.num[n]])
+                value_bc[label] = dico_bound[label].get('value', None)
+                methods = dico_bound[label]['method']
+                for k, v in methods.iteritems():
+                    for inumk, numk in enumerate(stencil.num[k]):
+                        if self.bv[label][stencil.unum2index[numk]].indices.size != 0:
+                            indices = self.bv[label][stencil.unum2index[numk]].indices
+                            distance_tmp = self.bv[label][stencil.unum2index[numk]].distance
+                            velocity = (inumk + stencil.nv_ptr[k])*np.ones(indices.shape[1], dtype=np.int32)[np.newaxis, :]
+                            ilabel_tmp = label*np.ones(indices.shape[1], dtype=np.int32)
+                            istore_tmp = np.concatenate([velocity, indices])
+                            if istore.get(v, None) is None:
+                                istore[v] = istore_tmp.copy()
+                                ilabel[v] = ilabel_tmp.copy()
+                                distance[v] = distance_tmp.copy()
+                            else:
+                                istore[v] = np.concatenate([istore[v], istore_tmp], axis=1)
+                                ilabel[v] = np.concatenate([ilabel[v], ilabel_tmp])
+                                distance[v] = np.concatenate([distance[v], distance_tmp])
+        self.methods = []
+        for k in istore.keys():
+            self.methods.append(k(istore[k], ilabel[k], distance[k], stencil, value_bc))
 
 def bounce_back(f, bv, num2index, feq, nv_on_beg):
     v = bv.v
