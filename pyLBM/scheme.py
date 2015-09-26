@@ -442,7 +442,7 @@ class Scheme:
     def m2f(self, m, f):
         """ Compute the distribution functions f from the moments m """
         mod = self.generator.get_module()
-        mod.m2f(m.reshape(), f.reshape())
+        mod.m2f(m.array, f.array)
         # if self.nv_on_beg:
         #     space_size = np.prod(m.shape[1:])
         #     for k in xrange(self.nscheme):
@@ -458,7 +458,7 @@ class Scheme:
     def f2m(self, f, m):
         """ Compute the moments m from the distribution functions f """
         mod = self.generator.get_module()
-        mod.f2m(f.reshape(), m.reshape())
+        mod.f2m(f.array, m.array)
         # if self.nv_on_beg:
         #     space_size = np.prod(m.shape[1:])
         #     for k in xrange(self.nscheme):
@@ -480,7 +480,7 @@ class Scheme:
         """ Compute the equilibrium """
         mod = self.generator.get_module()
         func = getattr(mod, "equilibrium")
-        func(m.reshape())
+        func(m.array)
         # if self.nv_on_beg:
         #     space_size = np.prod(m.shape[1:])
         #     ns = self.stencil.nv_ptr[-1]
@@ -493,7 +493,7 @@ class Scheme:
     def relaxation(self, m):
         """ The relaxation phase on the moments m """
         mod = self.generator.get_module()
-        mod.relaxation(m.reshape())
+        mod.relaxation(m.array)
         # if self.nv_on_beg:
         #     space_size = np.prod(m.shape[1:])
         #     ns = self.stencil.nv_ptr[-1]
