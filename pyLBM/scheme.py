@@ -547,81 +547,9 @@ class Scheme:
 
         """
         f.update()
-        # tmp = np.ascontiguousarray(f.swaparray)
-        # interface.update(tmp)
-        # f.swaparray[:] = tmp
 
-        # non periodic conditions
-        if self.bc_compute:
-            bc.floc = [[[None for  k in xrange(self.stencil[ind_scheme].nv)] for ind_scheme in xrange(self.nscheme)] for l in xrange(len(bc.be))]
-
-        for l in xrange(len(bc.be)): # loop over the labels
-            for n in xrange(self.nscheme): # loop over the stencils
-                for k in xrange(self.stencil[n].nv): # loop over the velocities
-                    bv = bc.be[l][n][k]
-                    if bv.distance.size != 0:
-                        if self.bc_compute:
-                            if (bc.value_bc[l] is not None):
-                                if self.dim == 1:
-                                    ix = bv.indices[0]
-                                    s  = 1.-bv.distance
-                                    if nv_on_beg:
-                                        mloc = np.ascontiguousarray(m[:, ix])
-                                    else:
-                                        mloc = np.ascontiguousarray(m[ix, :])
-                                    floc = np.zeros(mloc.shape)
-                                    bc.value_bc[l](floc, mloc,
-                                                   bc.domain.x[0][ix] + s*bv.v.vx*bc.domain.dx, self)
-                                    if nv_on_beg:
-                                        bc.floc[l][n][k] = floc[self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]]
-                                    else:
-                                        bc.floc[l][n][k] = floc[:, self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]]
-                                elif self.dim == 2:
-                                    ix = bv.indices[0]
-                                    iy = bv.indices[1]
-                                    s  = 1.-bv.distance
-                                    if nv_on_beg:
-                                        mloc = np.ascontiguousarray(m[:, ix, iy])
-                                    else:
-                                        mloc = np.ascontiguousarray(m[ix, iy, :])
-                                    floc = np.zeros(mloc.shape)
-                                    bc.value_bc[l](floc, mloc,
-                                                   bc.domain.x[0][ix] + s*bv.v.vx*bc.domain.dx,
-                                                   bc.domain.x[1][iy] + s*bv.v.vy*bc.domain.dx, self)
-                                    if nv_on_beg:
-                                        bc.floc[l][n][k] = floc[self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]]
-                                    else:
-                                        bc.floc[l][n][k] = floc[:, self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]]
-                                elif self.dim == 3:
-                                    ix = bv.indices[0]
-                                    iy = bv.indices[1]
-                                    iz = bv.indices[2]
-                                    s  = 1.-bv.distance
-                                    if nv_on_beg:
-                                        mloc = np.ascontiguousarray(m[:, ix, iy, iz])
-                                    else:
-                                        mloc = np.ascontiguousarray(m[ix, iy, iz, :])
-                                    floc = np.zeros(mloc.shape)
-                                    bc.value_bc[l](floc, mloc,
-                                                   bc.domain.x[0][ix] + s*bv.v.vx*bc.domain.dx,
-                                                   bc.domain.x[1][iy] + s*bv.v.vy*bc.domain.dx,
-                                                   bc.domain.x[2][iz] + s*bv.v.vz*bc.domain.dx, self)
-                                    if nv_on_beg:
-                                        bc.floc[l][n][k] = floc[self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]]
-                                    else:
-                                        bc.floc[l][n][k] = floc[:, self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]]
-                            else:
-                                bc.floc[l][n][k] = None
-                        if nv_on_beg:
-                            bc.method_bc[l][n](f[self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]], bv, self.stencil[n].num2index, bc.floc[l][n][k], nv_on_beg)
-                        else:
-                            if self.dim == 1:
-                                bc.method_bc[l][n](f[:, self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]], bv, self.stencil[n].num2index, bc.floc[l][n][k], nv_on_beg)
-                            elif self.dim == 2:
-                                bc.method_bc[l][n](f[: ,: , self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]], bv, self.stencil[n].num2index, bc.floc[l][n][k], nv_on_beg)
-                            elif self.dim == 3:
-                                bc.method_bc[l][n](f[: ,:, :, self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]], bv, self.stencil[n].num2index, bc.floc[l][n][k], nv_on_beg)
-        self.bc_compute = False
+        for method in bc.methods:
+            method.update(f)
 
     def compute_amplification_matrix_relaxation(self):
         ns = self.stencil.nstencils # number of stencil
