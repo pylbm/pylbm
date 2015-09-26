@@ -356,10 +356,11 @@ class OneStencil:
     that are called by using decorators.
     """
 
-    def __init__(self, v, nv, num2index):
+    def __init__(self, v, nv, num2index, nv_ptr):
         self.v = v
         self.nv = nv
-        self.num2index = num2index
+        self.num2index = np.asarray(num2index) + nv_ptr
+        self.nv_ptr = nv_ptr
 
     @property
     def num(self):
@@ -554,7 +555,6 @@ class Stencil(list):
         self.unique_velocities = np.asarray([Velocity(dim=self.dim, num=i) for i in unique_indices])
         for v in self.unique_velocities:
             v.set_symmetric()
-        self.unvtot = len(self.unique_velocities)
 
         self.v = []
         self.nv = []
@@ -566,28 +566,28 @@ class Stencil(list):
             lvi = len(vi)
             self.nv.append(lvi)
             self.nv_ptr.append(self.nv_ptr[-1] + lvi)
-
-        # get the box where all the schemes are included
-        self.vmax = np.max([self.uvx, self.uvy, self.uvz], axis=1)
-        self.vmin = np.min([self.uvx, self.uvy, self.uvz], axis=1)
+        self.nv_ptr = np.asarray(self.nv_ptr)
 
         # get the index in the v[k] of the num velocity
         self.num2index = []
         for k in xrange(self.nstencils):
             num = self.num[k]
             nmax = np.max(num)
-            #tmp = np.nan*np.zeros(nmax + 1, dtype=np.int32)
-            tmp = 1000 + np.zeros(nmax + 1, dtype=np.int32)
-            tmp[num] = xrange(num.size)
-            self.num2index.append(tmp)
+            tmp = -1000 + np.zeros(nmax + 1, dtype=np.int32)
+            tmp[num] = np.arange(num.size)
+            #self.num2index.extend(tmp[tmp>=0])
+            self.num2index.extend(num)
+        print self.num2index
 
         # get the index in the v[k] of the num velocity (unique)
         unum = self.unum
-        self.unum2index = 1000 + np.zeros(np.max(unum) + 1, dtype=np.int32)
-        self.unum2index[unum] = range(unum.size)
+        self.unum2index = -1000 + np.zeros(np.max(unum) + 1, dtype=np.int32)
+        self.unum2index[unum] = np.arange(unum.size)
 
         for k in xrange(self.nstencils):
-            self.append(OneStencil(self.v[k], self.nv[k], self.num2index[k]))
+            self.append(OneStencil(self.v[k], self.nv[k], self.num2index[k], self.nv_ptr[k]))
+
+        #self.num2index = np.asarray(self.num2index
 
         self.log.debug(self.__str__())
         self.is_symmetric()
