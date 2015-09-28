@@ -553,8 +553,6 @@ class Stencil(list):
             unique_indices = np.union1d(unique_indices, vi)
 
         self.unique_velocities = np.asarray([Velocity(dim=self.dim, num=i) for i in unique_indices])
-        for v in self.unique_velocities:
-            v.set_symmetric()
 
         self.v = []
         self.nv = []
@@ -577,7 +575,6 @@ class Stencil(list):
             tmp[num] = np.arange(num.size)
             #self.num2index.extend(tmp[tmp>=0])
             self.num2index.extend(num)
-        print self.num2index
 
         # get the index in the v[k] of the num velocity (unique)
         unum = self.unum
@@ -586,8 +583,6 @@ class Stencil(list):
 
         for k in xrange(self.nstencils):
             self.append(OneStencil(self.v[k], self.nv[k], self.num2index[k], self.nv_ptr[k]))
-
-        #self.num2index = np.asarray(self.num2index
 
         self.log.debug(self.__str__())
         self.is_symmetric()
