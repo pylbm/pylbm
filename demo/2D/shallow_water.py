@@ -63,7 +63,7 @@ if __name__ == "__main__":
                 'init':{rho:(initialization_rho,)},
             },
             {
-                'velocities':vitesse,
+                'velocities':[2, 4, 1, 3],
                 'conserved_moments':qx,
                 'polynomials':polynomes,
                 'relaxation_parameters':s1,
@@ -82,14 +82,29 @@ if __name__ == "__main__":
         'generator': pyLBM.generator.CythonGenerator,
         }
 
-    sol = pyLBM.Simulation(dico)
+    sol = pyLBM.Simulation(dico, sorder=[1,2,0])
 
-    viewer = pyLBM.viewer.matplotlibViewer
-    fig = viewer.Fig()
-    ax = fig[0]
+    k = np.arange(12)
+    print k
+    # v = np.asarray(sol.domain.stencil.v).flatten()
+    # def newk(k):
+    #     num = v[k].numsym[0]
+    #     n = 0
+    #     while k>=sol.domain.stencil.nv_ptr[n+1]:
+    #         n += 1
+    #     return sol.domain.stencil.num2index[sol.domain.stencil.nv_ptr[n]:sol.domain.stencil.nv_ptr[n+1]].index(num) + sol.domain.stencil.nv_ptr[n]
+    #
+    # print [newk(kk) for kk in k]
+    print sol.domain.stencil.get_symmetric()
+    #k = stencil.num2index[v.num]
+    #print k
 
-    im = ax.image(sol.m[0][0].transpose(), clim=[rhoo-.5*deltarho, rhoo+1.5*deltarho])
-    ax.title = 'solution at t = {0:f}'.format(sol.t)
-
-    fig.animate(update, interval=1)
-    fig.show()
+    # viewer = pyLBM.viewer.matplotlibViewer
+    # fig = viewer.Fig()
+    # ax = fig[0]
+    #
+    # im = ax.image(sol.m[0][0].transpose(), clim=[rhoo-.5*deltarho, rhoo+1.5*deltarho])
+    # ax.title = 'solution at t = {0:f}'.format(sol.t)
+    #
+    # fig.animate(update, interval=1)
+    # fig.show()

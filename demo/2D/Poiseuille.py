@@ -38,7 +38,7 @@ def update(iframe):
 
 # parameters
 dim = 2 # spatial dimension
-dx = 1./128 # spatial step
+dx = 1./4 # spatial step
 la = 1. # velocity of the scheme
 Tf = 20
 width = 2

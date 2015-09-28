@@ -5,17 +5,10 @@ import math
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 mass, qx, qy, qz = sp.symbols('mass,qx,qy,qz')
 
-def bc_up(f, m, x, y, z, scheme):
-    if scheme.nv_on_beg:
-        m[3] = -math.sqrt(2)/20.
-        m[5] = -math.sqrt(2)/20.
-        m[7] = 0.
-    else:
-        m[:, 3] = -math.sqrt(2)/20.
-        m[:, 5] = -math.sqrt(2)/20.
-        m[:, 7] = 0.
-    scheme.equilibrium(m)
-    scheme.m2f(m, f)
+def bc_up(f, m, x, y, z):
+    m[3] = -math.sqrt(2)/20.
+    m[5] = -math.sqrt(2)/20.
+    m[7] = 0.
 
 def save(x, y, z, m, im):
     vtk = pyLBM.VTKFile('lid_cavity_{0}'.format(im), './data')
@@ -83,8 +76,8 @@ dico = {
         },
     }],
     'boundary_conditions':{
-        0:{'method':{0: pyLBM.bc.bouzidi_bounce_back}},
-        1:{'method':{0: pyLBM.bc.bouzidi_bounce_back}, 'value':bc_up},
+        0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}},
+        1:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}, 'value':bc_up},
     },
     'parameters': {LA: la},
     'generator': pyLBM.generator.CythonGenerator,

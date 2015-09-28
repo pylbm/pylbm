@@ -21,12 +21,12 @@ u, X, Y, LA = sp.symbols('u,X,Y,LA')
 
 def u0(x,y):
     return np.ones((x.shape[0], y.shape[0]), dtype='float64') \
-           + .5 * ((x-0.5*(xmin+xmax))**2+(y-0.5*(ymin+ymax))**2 < 0.01)
+           + .5 * ((x-0.25*(xmin+xmax))**2+(y-0.5*(ymin+ymax))**2 < 0.01)
 
 # parameters
 xmin, xmax, ymin, ymax = 0., 1., 0., 1. # bounds of the domain
 cx, cy = 0.2, 0.5                       # velocity of the advection
-dx = 1./256                             # spatial step
+dx = 1./128                             # spatial step
 la = 2.                                 # scheme velocity
 Tf = 10                                 # final time
 sigma_qx = 1./np.sqrt(12)
@@ -53,7 +53,9 @@ dico = {
     'parameters':{LA:la},
     }
 
-sol = pyLBM.Simulation(dico)
+sol = pyLBM.Simulation(dico, sorder=[1, 2, 0])
+
+print sol.scheme.generator.code
 
 # create the viewer to plot the solution
 viewer = pyLBM.viewer.matplotlibViewer
@@ -72,7 +74,6 @@ def update(iframe):
         compt += 1
         if compt == 128:
             compt = 0
-            sol.f2m()
             im.set_data(sol.m[0][0].transpose())
             ax.title = 'solution at t = {0:f}'.format(sol.t)
 
