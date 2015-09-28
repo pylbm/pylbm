@@ -1,6 +1,7 @@
 import pyLBM
 import sympy as sp
 import math
+import mpi4py.MPI as mpi
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 mass, qx, qy, qz = sp.symbols('mass,qx,qy,qz')
@@ -98,7 +99,9 @@ compt = 0
 while sol.t < 200.:
     sol.one_time_step()
     compt += 1
-    if compt == 16:
+    if compt == 100:
+        if mpi.COMM_WORLD.Get_rank() == 0:
+            print sol.time_info()
         im += 1
         save(x, y, z, sol.m, im)
         compt = 0
