@@ -5,14 +5,31 @@
 # License: BSD 3 clause
 
 import numpy as np
+import sympy as sp
 import sys
 import copy
 
 from .elements import *
 from .geometry import Geometry
 from .stencil import Stencil
+from .validate_dictionary import *
 from .logs import setLogger
 from . import viewer
+
+proto_domain = {
+    'box':(is_dico_box,),
+    'elements':(types.NoneType, is_list_elem),
+    'dim':(types.NoneType, types.IntType),
+    'space_step':(types.FloatType,),
+    'scheme_velocity':(types.IntType, types.FloatType, sp.Symbol),
+    'parameters':(types.NoneType, is_dico_sp_float),
+    'schemes':(is_list_sch,),
+    'boundary_conditions':(types.NoneType, is_dico_bc),
+    'generator':(types.NoneType, is_generator),
+    'stability':(types.NoneType, is_dico_stab),
+    'consistency':(types.NoneType, is_dico_cons),
+    'inittype':(types.NoneType, types.StringType),
+}
 
 class Domain:
     """
@@ -57,22 +74,25 @@ class Domain:
     In that case, dico does not need to contain the informations for generate
     the geometry and/or the stencil
 
-    In 1D, distance[k, i] is the distance between the point x[0][i]
-    and the border in the direction of the kth velocity.
+    In 1D, distance[q, i] is the distance between the point x[0][i]
+    and the border in the direction of the qth velocity.
 
-    In 2D, distance[k, j, i] is the distance between the point
-    (x[0][i], x[1][j]) and the border in the direction of kth
+    In 2D, distance[q, j, i] is the distance between the point
+    (x[0][i], x[1][j]) and the border in the direction of qth
     velocity
 
-    In 3D, TODO
+    In 3D, distance[q, k, j, i] is the distance between the point
+    (x[0][i], x[1][j], x[2][k]) and the border in the direction of qth
+    velocity
 
-    In 1D, flag[k, i] is the flag of the border reached by the point
-    x[0][i] in the direction of the kth velocity
+    In 1D, flag[q, i] is the flag of the border reached by the point
+    x[0][i] in the direction of the qth velocity
 
-    In 2D, flag[k, j, i] is the flag of the border reached by the point
-    (x[0][i], x[1][j]) in the direction of kth velocity
+    In 2D, flag[q, j, i] is the flag of the border reached by the point
+    (x[0][i], x[1][j]) in the direction of qth velocity
 
-    In 3D, TODO
+    In 2D, flag[q, k, j, i] is the flag of the border reached by the point
+    (x[0][i], x[1][j], x[2][k]) in the direction of qth velocity
 
     Warnings
     --------
@@ -126,8 +146,16 @@ class Domain:
 
 
     """
-    def __init__(self, dico=None, geometry=None, stencil=None, space_step=None):
+    def __init__(self, dico=None, geometry=None, stencil=None, space_step=None, verif=True):
         self.log = setLogger(__name__)
+
+        self.log.info('Check the dictionary')
+        test, aff = validate(dico, proto_domain)
+        if test:
+            self.log.info(aff)
+        else:
+            self.log.error(aff)
+            sys.exit()
 
         self.geom = Geometry(dico) if geometry is None else geometry
         self.stencil = Stencil(dico) if stencil is None else stencil

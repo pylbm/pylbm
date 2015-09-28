@@ -8,6 +8,12 @@ import numpy as np
 
 from .logs import setLogger
 from .storage import Array
+from .validate_dictionary import *
+
+proto_bc = {
+    'method':(is_dico_int_func, ),
+    'value':(types.NoneType, types.FunctionType),
+}
 
 class Boundary_Velocity:
     """

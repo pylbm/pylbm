@@ -11,7 +11,7 @@ def bc_up(f, m, x, y, z):
     m[7] = 0.
 
 def save(x, y, z, m, im):
-    vtk = pyLBM.VTKFile('lid_cavity_{0}'.format(im), './data')
+    vtk = pyLBM.VTKFile('lid_cavity', './data', im)
     vtk.set_grid(x, y, z)
     vtk.add_scalar('mass', m[0][0])
     qx, qy, qz = m[0][3], m[0][5], m[0][7]

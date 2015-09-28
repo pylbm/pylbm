@@ -5,6 +5,7 @@
 # License: BSD 3 clause
 
 import sys
+import types
 
 import numpy as np
 import sympy as sp
@@ -14,8 +15,31 @@ from textwrap import dedent
 
 from .stencil import Stencil
 from .generator import *
+from .validate_dictionary import *
 
 from .logs import setLogger
+import mpi4py.MPI as mpi
+
+
+proto_sch = {
+    'velocities': (is_list_int,),
+    'conserved_moments': (sp.Symbol, types.StringType, is_list_symb),
+    'polynomials': (is_list_sp_or_nb,),
+    'equilibrium': (is_list_sp_or_nb,),
+    'relaxation_parameters': (is_list_sp_or_nb,),
+    'init':(types.NoneType, is_dico_init),
+}
+
+proto_stab = {
+    'linearization':(types.NoneType, is_dico_sp_float),
+    'test_maximum_principle':(types.NoneType, types.BooleanType),
+    'test_L2_stability':(types.NoneType, types.BooleanType),
+}
+
+proto_cons = {
+    'order': (types.IntType,),
+    'linearization':(types.NoneType, is_dico_sp_sporfloat),
+}
 
 def param_to_tuple(param):
     if param is not None:
@@ -46,8 +70,9 @@ class Scheme:
     Each dictionary of the list `schemes` should contains the following `key:value`
 
     - velocities : list of the velocities number
-    - polynomials : sympy matrix of the polynomial functions that define the moments
-    - equilibrium : sympy matrix of the values that define the equilibrium
+    - conserved moments : list of the moments conserved by each scheme
+    - polynomials : list of the polynomial functions that define the moments
+    - equilibrium : list of the values that define the equilibrium
     - relaxation_parameters : list of the value of the relaxation parameters
     - init : a dictionary to define the initial conditions (see examples)
 
@@ -126,13 +151,24 @@ class Scheme:
     """
     def __init__(self, dico, stencil=None):
         self.log = setLogger(__name__)
+        # symbolic parameters
+        self.param = dico.get('parameters', None)
+        pk, pv = param_to_tuple(self.param)
 
         if stencil is not None:
             self.stencil = stencil
         else:
             self.stencil = Stencil(dico)
         self.dim = self.stencil.dim
-        self.la = dico['scheme_velocity']
+        la = dico.get('scheme_velocity', None)
+        if isinstance(la, (int, float)):
+            self.la = la
+            self.la_symb = None
+        elif isinstance(la, sp.Symbol):
+            self.la_symb = la
+            self.la = sp.N(la.subs(zip(pk, pv)))
+        else:
+            self.log.error("The entry 'scheme_velocity' is wrong.")
         self.nscheme = self.stencil.nstencils
         scheme = dico['schemes']
         if not isinstance(scheme, list):
@@ -179,6 +215,7 @@ class Scheme:
         self.EQ = [create_matrix(s['equilibrium']) for s in scheme]
 
         self.consm = self._get_conserved_moments(scheme)
+        self.ind_cons, self.ind_noncons = self._get_indices_cons_noncons()
 
         # rename conserved moments with the notation m[x][y]
         # needed to generate the code
@@ -193,8 +230,15 @@ class Scheme:
                     self._EQ[i][j] = e.replace(cm, m[icm[0]][icm[1]])
 
         self._check_entry_size(scheme, 'relaxation_parameters')
-        self.s = [s['relaxation_parameters'] for s in scheme]
-        self.param = dico.get('parameters', None)
+        self.s_symb = [s['relaxation_parameters'] for s in scheme]
+        self.s = [copy.deepcopy(s['relaxation_parameters']) for s in scheme]
+        for k in xrange(len(self.s)):
+            for l in xrange(len(self.s[k])):
+                if not isinstance(self.s[k][l], (int, float)):
+                    try:
+                        self.s[k][l] = sp.N(self.s[k][l].subs(zip(pk, pv)))
+                    except:
+                        self.log.error('cannot evaluate relaxation parameter')
 
         self.init = self.set_initialization(scheme)
 
@@ -240,6 +284,11 @@ class Scheme:
                     print "The scheme is stable for the norm L2"
                 else:
                     print "The scheme is not stable for the norm L2"
+
+        dicocons = dico.get('consistency', None)
+        if dicocons is not None:
+            self.compute_consistency(dicocons)
+
 
     def _check_entry_size(self, schemes, key):
         for i, s in enumerate(schemes):
@@ -357,6 +406,30 @@ class Scheme:
                         ic, cm = find_indices(ieq, leq, c)
                         consm[cm] = ic
         return consm
+
+    def _get_indices_cons_noncons(self):
+        """
+        return the list of the conserved moments and the list of the non conserved moments
+
+        Output
+        ------
+
+        l_cons : the list of the indices of the conserved moments
+        l_noncons : the list of the indices of the non conserver moments
+        """
+
+        ns = self.stencil.nstencils # number of stencil
+        nv = self.stencil.nv # number of velocities for each stencil
+        l_cons = [[] for n in nv]
+        l_noncons = [range(n) for n in nv]
+        for vk in self.consm.values():
+            l_cons[vk[0]].append(vk[1])
+            l_noncons[vk[0]].remove(vk[1])
+        for n in xrange(ns):
+            l_cons[n].sort()
+            l_noncons[n].sort()
+        return l_cons, l_noncons
+
 
     def set_initialization(self, scheme):
         """
@@ -648,6 +721,178 @@ class Scheme:
             return False
         else:
             return True
+
+    def compute_consistency(self, dicocons):
+        t0 = mpi.Wtime()
+        ns = self.stencil.nstencils # number of stencil
+        nv = self.stencil.nv # number of velocities for each stencil
+        nvtot = self.stencil.nv_ptr[-1] # total number of velocities (with repetition)
+        N = len(self.consm) # number of conserved moments
+        time_step = sp.Symbol('h')
+        drondt = sp.Symbol("dt") # time derivative
+        drondx = [sp.Symbol("dx"), sp.Symbol("dy"), sp.Symbol("dz")] # spatial derivatives
+        if self.la_symb is not None:
+            LA = self.la_symb
+        else:
+            LA = self.la
+
+        m = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(nvtot)] for i in xrange(ns)]
+        order = dicocons['order']
+        if order<1:
+            order = 1
+        dico_linearization = dicocons.get('linearization', None)
+        if dico_linearization is not None:
+            self.list_linearization = []
+            for cm, cv in dico_linearization.iteritems():
+                icm = self.consm[cm]
+                self.list_linearization.append((m[icm[0]][icm[1]], cv))
+        else:
+            self.list_linearization = None
+
+        M = sp.zeros(nvtot, nvtot)
+        invM = sp.zeros(nvtot, nvtot)
+        il = 0
+        for n in xrange(ns):
+            for k in self.ind_cons[n]:
+                M[il,self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]] = self.M[n][k,:]
+                invM[self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1],il] = self.invM[n][:,k]
+                il += 1
+        for n in xrange(ns):
+            for k in self.ind_noncons[n]:
+                M[il,self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]] = self.M[n][k,:]
+                invM[self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1],il] = self.invM[n][:,k]
+                il += 1
+        v = self.stencil.get_all_velocities().transpose()
+
+        # build the matrix of equilibrium
+        Eeq = sp.zeros(nvtot, nvtot)
+        il = 0
+        for n_i in xrange(ns):
+            for k_i in self.ind_cons[n_i]:
+                Eeq[il, il] = 1
+                ## the equilibrium value of the conserved moments is itself
+                #eqk = self._EQ[n_i][k_i]
+                #ic = 0
+                #for n_j in xrange(len(self.ind_cons)):
+                #    for k_j in self.ind_cons[n_j]:
+                #        Eeq[il, ic] = sp.diff(eqk, m[n_j][k_j])
+                #        ic += 1
+                #for n_j in xrange(len(self.ind_noncons)):
+                #    for k_j in self.ind_noncons[n_j]:
+                #        Eeq[il, ic] = sp.diff(eqk, m[n_j][k_j])
+                #        ic += 1
+                il += 1
+        for n_i in xrange(ns):
+            for k_i in self.ind_noncons[n_i]:
+                eqk = self._EQ[n_i][k_i]
+                ic = 0
+                for n_j in xrange(ns):
+                    for k_j in self.ind_cons[n_j]:
+                        dummy = sp.diff(eqk, m[n_j][k_j])
+                        if self.list_linearization is not None:
+                            dummy = dummy.subs(self.list_linearization)
+                        Eeq[il, ic] = dummy
+                        ic += 1
+                ## the equilibrium value of the non conserved moments
+                ## does not depend on the non conserved moments
+                #for n_j in xrange(len(self.ind_noncons)):
+                #    for k_j in self.ind_noncons[n_j]:
+                #        Eeq[il, ic] = sp.diff(eqk, m[n_j][k_j])
+                #        ic += 1
+                il += 1
+
+        S = sp.zeros(nvtot, nvtot)
+        il = 0
+        for n_i in xrange(ns):
+            for k_i in self.ind_cons[n_i]:
+                S[il, il] = self.s_symb[n_i][k_i]
+                il += 1
+        for n_i in xrange(ns):
+            for k_i in self.ind_noncons[n_i]:
+                S[il, il] = self.s_symb[n_i][k_i]
+                il += 1
+
+        J = sp.eye(nvtot) - S + S * Eeq
+
+        t1 = mpi.Wtime()
+        print "Initialization time: ", t1-t0
+
+        matA, matB, matC, matD = [], [], [], []
+        Dn = sp.zeros(nvtot, nvtot)
+        nnn = sp.Symbol('nnn')
+        for k in xrange(nvtot):
+            Dnk = (- sum([LA * sp.Integer(v[alpha, k]) * drondx[alpha] for alpha in xrange(self.dim)]))**nnn / sp.factorial(nnn)
+            Dn[k,k] = Dnk
+        dummyn = M * Dn * invM * J
+        for n in xrange(order+1):
+            dummy = dummyn.subs([(nnn,n)])
+            dummy.simplify()
+            matA.append(dummy[:N, :N])
+            matB.append(dummy[:N, N:])
+            matC.append(dummy[N:, :N])
+            matD.append(dummy[N:, N:])
+
+        t2 = mpi.Wtime()
+        print "Compute A, B, C, D: ", t2-t1
+
+        iS = S[N:,N:].inv()
+        matC[0] = iS * matC[0]
+        matC[0].simplify()
+        Gamma = []
+        for k in xrange(1,order+1):
+            for j in xrange(1,k+1):
+                matA[k] += matB[j] * matC[k-j]
+            Gammak = [matA[k].copy()]
+            for j in xrange(k-1):
+                Gammakj = sp.zeros(N,N)
+                for l in xrange(1,k-j):
+                    Gammakj += matA[l] * Gamma[k-l-1][j]
+                Gammakj.simplify()
+                Gammak.append(Gammakj)
+            Gamma.append(Gammak)
+            for j in xrange(1, k):
+                matA[k] -= Gamma[k-1][j]/sp.factorial(j+1)
+            matA[k].simplify()
+            for j in xrange(1,k+1):
+                matC[k] += matD[j] * matC[k-j]
+            for j in xrange(k):
+                Kkj = sp.zeros(nvtot-N, N)
+                for l in xrange(k-j):
+                    Kkj += matC[l] * Gamma[k-l-1][j]
+                matC[k] -= Kkj/sp.factorial(j+1)
+            matC[k] = iS * matC[k]
+            matC[k].simplify()
+        t3 = mpi.Wtime()
+        print "Compute alpha, beta: ", t3-t2
+
+        W = sp.zeros(N, 1)
+        dummy = [0]
+        sp.init_printing()
+        for n in xrange(ns):
+            dummy.append(dummy[-1] + len(self.ind_cons[n]))
+        for wk, ik in self.consm.iteritems():
+            W[dummy[ik[0]] + self.ind_cons[ik[0]].index(ik[1]),0] = wk
+        self.consistency = {}
+        for k in xrange(N):
+            wk = W[k,0]
+            self.consistency[wk] = {'lhs':[sp.simplify(drondt * W[k,0]), sp.simplify(-(matA[1]*W)[k,0])]}
+            lhs = sp.simplify(sum(self.consistency[wk]['lhs']))
+            dummy = []
+            for n in xrange(1,order):
+                dummy.append(sp.simplify(time_step**n * (matA[n+1]*W)[k,0]))
+            self.consistency[wk]['rhs'] = dummy
+            rhs = sp.simplify(sum(self.consistency[wk]['rhs']))
+            print "\n" + "*"*50
+            print "Conservation equation for {0} at order {1}".format(wk, order)
+            sp.pprint(lhs)
+            print " "*10, "="
+            sp.pprint(rhs)
+            print "*"*50
+        #print self.consistency
+
+        t4 = mpi.Wtime()
+        print "Compute equations: ", t4-t3
+        print "Total time: ", t4-t0
 
 
 def test_1D(opt):
