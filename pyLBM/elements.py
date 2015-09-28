@@ -663,8 +663,8 @@ class Sphere(Element):
         d2[d2<0] = 1e16
         d[ind] = np.minimum(d1[ind], d2[ind])
         d[d==1e16] = -1
-        alpha = -np.ones((x.size, y.size))
-        border = -np.ones((x.size, y.size))
+        alpha = -np.ones((x.size, y.size, z.size))
+        border = -np.ones((x.size, y.size, z.size))
 
         if dmax is None:
             ind = d>0

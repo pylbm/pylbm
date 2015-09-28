@@ -267,7 +267,10 @@ class Domain:
         indbe = np.asarray([(self.stencil.vmax[k],
                              self.stencil.vmax[k] + self.N[k]) for k in xrange(self.dim)])
         bmin, bmax = elem.get_bounds()
+
         xbeg = np.asarray([self.x[0][0], self.x[1][0]])
+        if self.dim == 3:
+            xbeg = np.asarray([self.x[0][0], self.x[1][0], self.x[2][0]])
 
         tmp = np.array((bmin - xbeg)/self.dx - self.stencil.vmax[:self.dim], np.int)
         nmin = np.maximum(indbe[:, 0], tmp)
@@ -277,51 +280,102 @@ class Domain:
         # set the grid
         x = self.x[0][nmin[0]:nmax[0]]
         y = self.x[1][nmin[1]:nmax[1]]
-        gridx = x[:, np.newaxis]
-        gridy = y[np.newaxis, :]
+        if self.dim == 3:
+            z = self.x[2][nmin[2]:nmax[2]]
 
-        # local view of the arrays
-        ioo_view = self.in_or_out[nmin[0]:nmax[0], nmin[1]:nmax[1]]
-        dist_view = self.distance[:, nmin[0]:nmax[0], nmin[1]:nmax[1]]
-        flag_view = self.flag[:, nmin[0]:nmax[0], nmin[1]:nmax[1]]
+        if self.dim == 2:
+            gridx = x[:, np.newaxis]
+            gridy = y[np.newaxis, :]
+
+            # local view of the arrays
+            ioo_view = self.in_or_out[nmin[0]:nmax[0], nmin[1]:nmax[1]]
+            dist_view = self.distance[:, nmin[0]:nmax[0], nmin[1]:nmax[1]]
+            flag_view = self.flag[:, nmin[0]:nmax[0], nmin[1]:nmax[1]]
+        else:
+            gridx = x[:, np.newaxis, np.newaxis]
+            gridy = y[np.newaxis, :, np.newaxis]
+            gridz = z[np.newaxis, np.newaxis, :]
+
+            # local view of the arrays
+            ioo_view = self.in_or_out[nmin[0]:nmax[0], nmin[1]:nmax[1], nmin[2]:nmax[2]]
+            dist_view = self.distance[:, nmin[0]:nmax[0], nmin[1]:nmax[1], nmin[2]:nmax[2]]
+            flag_view = self.flag[:, nmin[0]:nmax[0], nmin[1]:nmax[1], nmin[2]:nmax[2]]
 
         if not elem.isfluid: # add a solid part
-            ind_solid = elem.point_inside(gridx, gridy)
+            if self.dim == 2:
+                ind_solid = elem.point_inside(gridx, gridy)
+            else:
+                ind_solid = elem.point_inside(gridx, gridy, gridz)
             ind_fluid = np.logical_not(ind_solid)
             ioo_view[ind_solid] = self.valout
         else: # add a fluid part
-            ind_fluid = elem.point_inside(gridx, gridy)
+            if self.dim == 2:
+                ind_fluid = elem.point_inside(gridx, gridy)
+            else:
+                ind_fluid = elem.point_inside(gridx, gridy, gridz)
             ind_solid = np.logical_not(ind_fluid)
             ioo_view[ind_fluid] = self.valin
 
-        for k in xrange(self.stencil.unvtot):
-            vxk = self.stencil.unique_velocities[k].vx
-            vyk = self.stencil.unique_velocities[k].vy
-            if (vxk != 0 or vyk != 0):
-                condx = self.in_or_out[nmin[0] + vxk:nmax[0] + vxk, nmin[1] + vyk:nmax[1] + vyk] == self.valout
-                alpha, border = elem.distance(gridx, gridy, (self.dx*vxk, self.dx*vyk), 1.)
-                indx = np.logical_and(np.logical_and(alpha > 0, ind_fluid), condx)
+        if self.dim == 2:
+            for k in xrange(self.stencil.unvtot):
+                vxk = self.stencil.unique_velocities[k].vx
+                vyk = self.stencil.unique_velocities[k].vy
+                if (vxk != 0 or vyk != 0):
+                    condx = self.in_or_out[nmin[0] + vxk:nmax[0] + vxk, nmin[1] + vyk:nmax[1] + vyk] == self.valout
+                    alpha, border = elem.distance(gridx, gridy, (self.dx*vxk, self.dx*vyk), 1.)
+                    indx = np.logical_and(np.logical_and(alpha > 0, ind_fluid), condx)
 
-                if elem.isfluid:
-                    # take all points in the fluid in the ioo_view
-                    indfluidinbox = ioo_view == self.valin
-                    # take only points which
-                    borderToInt = np.logical_and(np.logical_not(condx), indfluidinbox)
-                    dist_view[k][borderToInt] = self.valin
-                    flag_view[k][borderToInt] = self.valin
-                else:
-                    dist_view[k][ind_solid] = self.valin
-                    flag_view[k][ind_solid] = self.valin
+                    if elem.isfluid:
+                        # take all points in the fluid in the ioo_view
+                        indfluidinbox = ioo_view == self.valin
+                        # take only points which
+                        borderToInt = np.logical_and(np.logical_not(condx), indfluidinbox)
+                        dist_view[k][borderToInt] = self.valin
+                        flag_view[k][borderToInt] = self.valin
+                    else:
+                        dist_view[k][ind_solid] = self.valin
+                        flag_view[k][ind_solid] = self.valin
 
-                #set distance
-                ind4 = np.where(indx)
-                if not elem.isfluid:
-                    ind3 = np.where(alpha[ind4] < dist_view[k][ind4])
-                else:
-                    ind3 = np.where(np.logical_or(alpha[ind4] > dist_view[k][ind4], dist_view[k][ind4] == self.valin))
+                    #set distance
+                    ind4 = np.where(indx)
+                    if not elem.isfluid:
+                        ind3 = np.where(alpha[ind4] < dist_view[k][ind4])
+                    else:
+                        ind3 = np.where(np.logical_or(alpha[ind4] > dist_view[k][ind4], dist_view[k][ind4] == self.valin))
 
-                dist_view[k][ind4[0][ind3[0]], ind4[1][ind3[0]]] = alpha[ind4[0][ind3[0]], ind4[1][ind3[0]]]
-                flag_view[k][ind4[0][ind3[0]], ind4[1][ind3[0]]] = border[ind4[0][ind3[0]], ind4[1][ind3[0]]]
+                    dist_view[k][ind4[0][ind3[0]], ind4[1][ind3[0]]] = alpha[ind4[0][ind3[0]], ind4[1][ind3[0]]]
+                    flag_view[k][ind4[0][ind3[0]], ind4[1][ind3[0]]] = border[ind4[0][ind3[0]], ind4[1][ind3[0]]]
+        else:
+            for k in xrange(self.stencil.unvtot):
+                vxk = self.stencil.unique_velocities[k].vx
+                vyk = self.stencil.unique_velocities[k].vy
+                vzk = self.stencil.unique_velocities[k].vz
+
+                if (vxk != 0 or vyk != 0 or vzk != 0):
+                    condx = self.in_or_out[nmin[0] + vxk:nmax[0] + vxk, nmin[1] + vyk:nmax[1] + vyk, nmin[2] + vzk:nmax[2] + vzk] == self.valout
+                    alpha, border = elem.distance(gridx, gridy, gridz, (self.dx*vxk, self.dx*vyk, self.dx*vzk), 1.)
+                    indx = np.logical_and(np.logical_and(alpha > 0, ind_fluid), condx)
+
+                    if elem.isfluid:
+                        # take all points in the fluid in the ioo_view
+                        indfluidinbox = ioo_view == self.valin
+                        # take only points which
+                        borderToInt = np.logical_and(np.logical_not(condx), indfluidinbox)
+                        dist_view[k][borderToInt] = self.valin
+                        flag_view[k][borderToInt] = self.valin
+                    else:
+                        dist_view[k][ind_solid] = self.valin
+                        flag_view[k][ind_solid] = self.valin
+
+                    #set distance
+                    ind4 = np.where(indx)
+                    if not elem.isfluid:
+                        ind3 = np.where(alpha[ind4] < dist_view[k][ind4])
+                    else:
+                        ind3 = np.where(np.logical_or(alpha[ind4] > dist_view[k][ind4], dist_view[k][ind4] == self.valin))
+
+                    dist_view[k][ind4[0][ind3[0]], ind4[1][ind3[0]], ind4[2][ind3[0]]] = alpha[ind4[0][ind3[0]], ind4[1][ind3[0]], ind4[2][ind3[0]]]
+                    flag_view[k][ind4[0][ind3[0]], ind4[1][ind3[0]], ind4[2][ind3[0]]] = border[ind4[0][ind3[0]], ind4[1][ind3[0]], ind4[2][ind3[0]]]
 
     def visualize(self, viewer_app=viewer.matplotlibViewer, view_distance=False):
         """
