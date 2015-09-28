@@ -6,7 +6,7 @@ import os
 from .logs import setLogger
 
 class VTKFile:
-    def __init__(self, filename, path='', timestep=0, npx=1, npy=1, npz=1, init_pvd=True):
+    def __init__(self, filename, path='', timestep=0, npx=1, npy=1, npz=1, init_pvd=False):
         self.timestep = timestep
         prefix = '_{0}_{1}'.format(timestep, mpi.COMM_WORLD.Get_rank())
 
@@ -161,7 +161,7 @@ class VTKFile:
             f.write(pvd)
             f.close()
         else:
-            oldlines = open(self.path + '/' + self.filename + '.pvd', 'r').readlines()
+            oldlines = open(self.path + '/' + self.filename + '.pvd').readlines()
 
             pvd = ''
             for i in xrange(size):
@@ -170,7 +170,7 @@ class VTKFile:
 </VTKFile>
 """
             f = open(self.path + '/' + self.filename + '.pvd', 'w')
-            print oldlines
+
             f.writelines(oldlines[:-2])
             f.write(pvd)
             f.close()
