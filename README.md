@@ -32,8 +32,8 @@ Getting started
 
 To understand how to use pyLBM, you have a lot of Python notebooks on our website
 
-http://www.math.u-psud.fr/pyLBM/tutorial.htmlhttp://www.math.u-psud.fr/pyLBM/tutorial.html
+http://www.math.u-psud.fr/pyLBM/tutorial.html
 
 For more information, take a look at the documentation
 
-http://www.math.u-psud.fr/pyLBMhttp://www.math.u-psud.fr/pyLBM
+http://www.math.u-psud.fr/pyLBM
