@@ -11,19 +11,21 @@ Installation
 
 To install pyLBM, you have several ways. You can clone the project
 
-.. code:: bash
-
-  git clone https://gitlab.com/gouarin/pylbm
+```
+git clone https://gitlab.com/gouarin/pylbm
+```
 
 and then use the command
 
-.. code:: bash
-
-  python setup.py install
+```
+python setup.py install
+```
 
 You can also install the last version on Pypi
 
+```
 pip install pyLBM
+```
 
 Getting started
 ================
