@@ -4,13 +4,28 @@
 #
 # License: BSD 3 clause
 
-from vispy import scene, app
-from vispy.geometry import Rect
-import vispy.plot as vp
-
+import sys
 import mpi4py.MPI as mpi
 import numpy as np
-import sys
+
+try:
+    import vispy
+    minor = int(vispy.__version__.split('.')[1])
+    if  minor < 5:
+        raise ImportError
+
+    from vispy import scene, app
+    from vispy.geometry import Rect
+    import vispy.plot as vp
+except ImportError:
+    print """
+Vispy import error
+
+To use vispy backend please install the development version
+
+https://github.com/vispy/vispy
+"""
+    sys.exit()
 
 from .base import Viewer
 
