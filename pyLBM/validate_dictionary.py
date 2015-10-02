@@ -153,6 +153,23 @@ def is_list_sch(l, ntab=0):
             test = test and test_l
     return test, ligne
 
+def is_list_sch_dom(l, ntab=0):
+    test = isinstance(l, (types.ListType, types.TupleType))
+    ligne = ''
+    if test:
+        compt = 0
+        for sch in l:
+            if isinstance(sch, types.DictionaryType):
+                test_l, ligne_l = test_dico_prototype(sch, pyLBM.scheme.proto_sch_dom, ntab=ntab+1)
+            else:
+                test_l = False
+                ligne_l = PrintInColor.error(sch)
+            ligne += debut(test_l)
+            ligne += space(ntab) + '{0}:'.format(compt) + ligne_l
+            compt += 1
+            test = test and test_l
+    return test, ligne
+
 def is_list_int(l, ntab=None):
     return is_list_generic(l, types.IntType)
 
@@ -322,13 +339,13 @@ def test_compatibility_bc(dico):
                         aff += PrintInColor.error("The label {0} has no corresponding boundary condition.\n".format(l))
     return test, aff
 
-def validate(dico, proto):
+def validate(dico, proto, test_comp = True):
     aff = "\n" + "*"*75
     aff += "\nTest of the dictionary\n"
     aff += "*"*75
     test, aff_d = test_dico_prototype(dico, proto)
     aff += aff_d
-    if test:
+    if test and test_comp:
         test_c1, aff_c1 = test_compatibility_dim(dico)
         test_c2, aff_c2 = test_compatibility_schemes(dico)
         test_c3, aff_c3 = test_compatibility_bc(dico)

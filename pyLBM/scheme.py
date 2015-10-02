@@ -30,6 +30,10 @@ proto_sch = {
     'init':(types.NoneType, is_dico_init),
 }
 
+proto_sch_dom = {
+    'velocities': (is_list_int,),
+}
+
 proto_stab = {
     'linearization':(types.NoneType, is_dico_sp_float),
     'test_maximum_principle':(types.NoneType, types.BooleanType),

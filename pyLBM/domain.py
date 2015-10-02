@@ -20,10 +20,10 @@ proto_domain = {
     'box':(is_dico_box,),
     'elements':(types.NoneType, is_list_elem),
     'dim':(types.NoneType, types.IntType),
-    'space_step':(types.FloatType,),
-    'scheme_velocity':(types.IntType, types.FloatType, sp.Symbol),
+    'space_step':(types.IntType, types.FloatType,),
+    #'scheme_velocity':(types.IntType, types.FloatType, sp.Symbol),
     'parameters':(types.NoneType, is_dico_sp_float),
-    'schemes':(is_list_sch,),
+    'schemes':(is_list_sch_dom,),
     'boundary_conditions':(types.NoneType, is_dico_bc),
     'generator':(types.NoneType, is_generator),
     'stability':(types.NoneType, is_dico_stab),
@@ -150,7 +150,7 @@ class Domain:
         self.log = setLogger(__name__)
 
         self.log.info('Check the dictionary')
-        test, aff = validate(dico, proto_domain)
+        test, aff = validate(dico, proto_domain, test_comp = False)
         if test:
             self.log.info(aff)
         else:

@@ -87,6 +87,16 @@ class PlotWidget(object):
     def polygon(self, pos, color):
         return self.ax.add_patch(Polygon(pos, closed=True, fill=True, color=color))
 
+    def ellipse_3D(self, pos, radius, color):
+        u = np.linspace(0, 2.*np.pi, 100)
+        v = np.linspace(0, np.pi, 100)
+        x = pos[0] + radius*np.outer(np.cos(u), np.sin(v))
+        y = pos[1] + radius*np.outer(np.sin(u), np.sin(v))
+        z = pos[2] + radius*np.outer(np.ones(np.size(u)), np.cos(v))
+        return self.plot_surface(x, y, z, rstride=4, cstride=4, color=color)
+
+        #return self.ax.add_patch(Ellipse(pos, 2*radius[0], 2*radius[1], fill=True, color=color))
+
     def markers(self, pos, size, color='k', symbol='o'):
         return self.ax.scatter(pos[:, 0], pos[:, 1], size, c=color, marker=symbol)
 

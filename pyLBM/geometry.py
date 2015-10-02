@@ -272,7 +272,7 @@ class Geometry:
 
             for elem in self.list_elem:
                 if elem.isfluid:
-                    coul = plein
+                    coul = fluid
                 else:
                     coul = 'white'
                     elem._visualize(ax, coul, viewlabel)
