@@ -251,13 +251,6 @@ class Scheme:
         self.generator = dico.get('generator', NumpyGenerator)()
         self.log.info("Generator used for the scheme functions:\n{0}\n".format(self.generator))
 
-        self.nv_on_beg = True
-        # if isinstance(self.generator, NumpyGenerator):
-        #      self.nv_on_beg = True
-        # else:
-        #      self.nv_on_beg = False
-        self.log.debug("nv_on_beg = {0}".format(self.nv_on_beg))
-
         self.bc_compute = True
 
         # stability
@@ -516,33 +509,11 @@ class Scheme:
         """ Compute the distribution functions f from the moments m """
         mod = self.generator.get_module()
         mod.m2f(m.array, f.array)
-        # if self.nv_on_beg:
-        #     space_size = np.prod(m.shape[1:])
-        #     for k in xrange(self.nscheme):
-        #         s = slice(self.stencil.nv_ptr[k], self.stencil.nv_ptr[k + 1])
-        #         nv = self.stencil.nv[k]
-        #         m2f_i = getattr(mod, 'm2f_%d'%k)
-        #         m2f_i(m[s].reshape((nv, space_size)), f[s].reshape((nv, space_size)))
-        # else:
-        #     space_size = np.prod(m.shape[:-1])
-        #     ns = self.stencil.nv_ptr[-1]
-        #     mod.m2f(m.reshape((space_size, ns)), f.reshape((space_size, ns)))
 
     def f2m(self, f, m):
         """ Compute the moments m from the distribution functions f """
         mod = self.generator.get_module()
         mod.f2m(f.array, m.array)
-        # if self.nv_on_beg:
-        #     space_size = np.prod(m.shape[1:])
-        #     for k in xrange(self.nscheme):
-        #         s = slice(self.stencil.nv_ptr[k], self.stencil.nv_ptr[k + 1])
-        #         nv = self.stencil.nv[k]
-        #         f2m_i = getattr(mod, 'f2m_%d'%k)
-        #         f2m_i(f[s].reshape((nv, space_size)), m[s].reshape((nv, space_size)))
-        # else:
-        #     space_size = np.prod(m.shape[:-1])
-        #     ns = self.stencil.nv_ptr[-1]
-        #     mod.f2m(f.reshape((space_size, ns)), m.reshape((space_size, ns)))
 
     def transport(self, f):
         """ The transport phase on the distribution functions f """
@@ -554,34 +525,18 @@ class Scheme:
         mod = self.generator.get_module()
         func = getattr(mod, "equilibrium")
         func(m.array)
-        # if self.nv_on_beg:
-        #     space_size = np.prod(m.shape[1:])
-        #     ns = self.stencil.nv_ptr[-1]
-        #     func(m.reshape((ns, space_size)))
-        # else:
-        #     space_size = np.prod(m.shape[:-1])
-        #     ns = self.stencil.nv_ptr[-1]
-        #     func(m.reshape((space_size, ns)))
 
     def relaxation(self, m):
         """ The relaxation phase on the moments m """
         mod = self.generator.get_module()
         mod.relaxation(m.array)
-        # if self.nv_on_beg:
-        #     space_size = np.prod(m.shape[1:])
-        #     ns = self.stencil.nv_ptr[-1]
-        #     mod.relaxation(m.reshape(((ns, space_size))))
-        # else:
-        #     space_size = np.prod(m.shape[:-1])
-        #     ns = self.stencil.nv_ptr[-1]
-        #     mod.relaxation(m.reshape(((space_size, ns))))
 
     def onetimestep(self, m, fold, fnew, in_or_out, valin):
         """ Compute one time step of the Lattice Boltzmann method """
         mod = self.generator.get_module()
         mod.onetimestep(m.array, fold.array, fnew.array, in_or_out, valin)
 
-    def set_boundary_conditions(self, f, m, bc, interface, nv_on_beg):
+    def set_boundary_conditions(self, f, m, bc, interface):
         """
         Compute the boundary conditions
 

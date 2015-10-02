@@ -184,8 +184,6 @@ class Simulation:
 
 
         self.log.info('Build arrays')
-        #self.nv_on_beg = nv_on_beg
-        self.nv_on_beg = self.scheme.nv_on_beg
 
         self.interface = self.domain.geom.interface
 
@@ -251,9 +249,6 @@ class Simulation:
 
     @m.setter
     def m(self, i, j, value):
-        """
-        TODO: fix dimension
-        """
         self._update_m = False
         self._m[self.scheme.stencil.nv_ptr[i] + j] = value
 
@@ -261,19 +256,10 @@ class Simulation:
     def F(self, i, j):
         return self._F[self.scheme.stencil.nv_ptr[i] + j]
 
-    @property
-    def mglobal(self):
-        return self.interface.get_full(self._m, self.domain, self.nv_on_beg)
-
     @F.setter
     def F(self, i, j, value):
-        """
-        TODO: fix dimension
-        """
-        if self.nv_on_beg:
-            self._F[self.scheme.stencil.nv_ptr[i] + j] = value
-        else:
-            self._F[:, :, self.scheme.stencil.nv_ptr[i] + j] = value
+        self._update_m = True
+        self._F[self.scheme.stencil.nv_ptr[i] + j] = value
 
     def __str__(self):
         s = "Simulation informations\n"
@@ -461,7 +447,7 @@ class Simulation:
         according to the specified boundary conditions.
         """
         t = mpi.Wtime()
-        self.scheme.set_boundary_conditions(self._F, self._m, self.bc, self.interface, self.nv_on_beg)
+        self.scheme.set_boundary_conditions(self._F, self._m, self.bc, self.interface)
         self.cpu_time['boundary_conditions'] += mpi.Wtime() - t
 
     def one_time_step(self):
