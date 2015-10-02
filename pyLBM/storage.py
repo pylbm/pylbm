@@ -192,7 +192,8 @@ class SOA(Array):
 
     """
     def __init__(self, nv, nspace, vmax, dtype=np.double, cartcomm=None):
-        Array.__init__(self, nv, nspace, vmax, dtype=dtype, cartcomm=cartcomm)
+        sorder = [i for i in range(len(nspace) + 1)]
+        Array.__init__(self, nv, nspace, vmax, sorder=sorder, dtype=dtype, cartcomm=cartcomm)
 
     def reshape(self):
         return self.array
