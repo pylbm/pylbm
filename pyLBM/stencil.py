@@ -672,14 +672,16 @@ class Stencil(list):
         return allv
 
     def get_symmetric(self, axis=None):
-        v = np.asarray(self.v).flatten()
-        ksym = np.empty(v.size, dtype=np.int32)
+        ksym = np.empty(self.nv_ptr[-1], dtype=np.int32)
 
-        for k, vk in enumerate(v):
-            num = vk.get_symmetric(axis).num
-            n = self.get_stencil(k)
-            index = self.num2index[self.nv_ptr[n]:self.nv_ptr[n+1]].index(num) + self.nv_ptr[n]
-            ksym[k] = index
+        k = 0
+        for v in self.v:
+            for vk in v:
+                num = vk.get_symmetric(axis).num
+                n = self.get_stencil(k)
+                index = self.num2index[self.nv_ptr[n]:self.nv_ptr[n+1]].index(num) + self.nv_ptr[n]
+                ksym[k] = index
+                k += 1
 
         return ksym
 
