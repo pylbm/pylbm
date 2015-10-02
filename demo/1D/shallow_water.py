@@ -55,7 +55,7 @@ dico = {
         },
     ],
     'boundary_conditions':{
-        0:{'method':{0: pyLBM.bc.neumann, 1: pyLBM.bc.neumann}, 'value':None},
+        0:{'method':{0: pyLBM.bc.Neumann, 1: pyLBM.bc.Neumann}},
     },
     'parameters':{LA:la, g:1.},
 }

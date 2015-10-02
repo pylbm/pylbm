@@ -72,7 +72,7 @@ dico1 = {
         },
     ],
     'boundary_conditions':{
-        0:{'method':{0: pyLBM.bc.neumann}, 'value':None},
+        0:{'method':{0: pyLBM.bc.Neumann}},
     },
     'parameters': {LA: la},
 }
@@ -92,7 +92,7 @@ dico2 = {
         },
     ],
     'boundary_conditions':{
-        0:{'method':{0: pyLBM.bc.neumann}, 'value':None},
+        0:{'method':{0: pyLBM.bc.Neumann}},
     },
     'parameters': {LA: la},
 }

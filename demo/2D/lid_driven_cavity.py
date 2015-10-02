@@ -7,18 +7,10 @@ import pyLBM
 X, Y = sp.symbols('X, Y')
 rho, qx, qy = sp.symbols('rho, qx, qy')
 
-def bc_up(f, m, x, y, scheme):
-    if scheme.nv_on_beg:
-        m[0] = 0.
-        m[1] = driven_velocity
-        m[2] = 0.
-    else:
-        m[:, 0] = 0.
-        m[:, 1] = driven_velocity
-        m[:, 2] = 0.
-
-    scheme.equilibrium(m)
-    scheme.m2f(m, f)
+def bc_up(f, m, x, y):
+    m[0] = 0.
+    m[1] = driven_velocity
+    m[2] = 0.
 
 def vorticity(sol):
     sol.f2m()
@@ -66,8 +58,8 @@ lid_cavity = {'box':{'x':[0., 1.], 'y':[0., 1.], 'label':[0, 0, 0, 1]},
                           'init': {rho: 1., qx: 0., qy: 0.},
               }],
               'boundary_conditions':{
-                 0:{'method':{0: pyLBM.bc.bouzidi_bounce_back}, 'value':None},
-                 1:{'method':{0: pyLBM.bc.bouzidi_bounce_back}, 'value':bc_up}
+                 0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}},
+                 1:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}, 'value':bc_up}
               },
               'generator': pyLBM.CythonGenerator,
               }

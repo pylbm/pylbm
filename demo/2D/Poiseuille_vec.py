@@ -47,7 +47,6 @@ def bc_out(f, m, x, y):
     ######### BEGIN OF WARNING #########
     # the order depends on the compilater
     # through the variable nv_on_beg
-    print m[0].shape, x.shape
     m[0] = (x-0.5*width) * grad_pressure * cte
     m[4] = 0.
     m[8] = 0.
@@ -56,7 +55,6 @@ def run(dico):
     sol = pyLBM.Simulation(dico)
     while sol.t<Tf:
         sol.one_time_step()
-        sol.time_info()
 
     import numpy as np
     print "*"*50
@@ -89,7 +87,7 @@ if __name__ == "__main__":
     width = 1.
     height = .5
     xmin, xmax, ymin, ymax = 0., width, -.5*height, .5*height
-    dx = 1./64 # spatial step
+    dx = 1./128 # spatial step
     la = 1. # velocity of the scheme
     max_velocity = 0.1
     mu   = 0.00185

@@ -79,11 +79,10 @@ dico = {
     'boundary_conditions':{
         0:{
             'method':{
-                0: pyLBM.bc.neumann,
-                1: pyLBM.bc.neumann,
-                2: pyLBM.bc.neumann
+                0: pyLBM.bc.Neumann,
+                1: pyLBM.bc.Neumann,
+                2: pyLBM.bc.Neumann
             },
-            'value':None
         },
     },
     'parameters':{LA:la},

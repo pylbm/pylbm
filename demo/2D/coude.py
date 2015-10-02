@@ -5,17 +5,10 @@ import pyLBM
 X, Y, LA = sp.symbols('X, Y, LA')
 rho, qx, qy = sp.symbols('rho, qx, qy')
 
-def bc_in(f, m, x, y, scheme):
-    if scheme.nv_on_beg:
-        m[0] = rhoo
-        m[1] = rhoo*uo * (ymax-y)*(y-0.75*(ymax-ymin))*8**2
-        m[2] = 0.
-    else:
-        m[:, 0] = rhoo
-        m[:, 1] = rhoo*uo * (ymax-y)*(y-0.75*(ymax-ymin))*8**2
-        m[:, 2] = 0.
-    scheme.equilibrium(m)
-    scheme.m2f(m, f)
+def bc_in(f, m, x, y):
+    m[0] = rhoo
+    m[1] = rhoo*uo * (ymax-y)*(y-0.75*(ymax-ymin))*8**2
+    m[2] = 0.
 
 def vorticity(sol):
     sol.f2m()
@@ -82,9 +75,9 @@ dico = {
                 'init': {rho: rhoo, qx: rhoo*uo, qy: 0.},
     }],
     'boundary_conditions':{
-       0:{'method':{0: pyLBM.bc.bouzidi_bounce_back}},
-       1:{'method':{0: pyLBM.bc.neumann_horizontal}},
-       2:{'method':{0: pyLBM.bc.bouzidi_bounce_back}, 'value':bc_in}
+       0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}},
+       1:{'method':{0: pyLBM.bc.Neumann_horizontal}},
+       2:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}, 'value':bc_in}
     },
     'generator': pyLBM.CythonGenerator,
   }

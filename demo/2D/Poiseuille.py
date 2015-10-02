@@ -7,29 +7,15 @@ X, Y, LA = sp.symbols('X, Y, LA')
 
 rho, qx, qy = sp.symbols('rho, qx, qy')
 
-def bc_in(f, m, x, y, scheme):
-    if scheme.nv_on_beg:
-        m[0] = (x-0.5*width) * grad_pressure
-        m[1] = max_velocity * (1. - 4.*y**2/height**2)
-        m[2] = 0.
-    else:
-        m[:, 0] = (x-0.5*width) * grad_pressure
-        m[:, 1] = max_velocity * (1. - 4.*y**2/height**2)
-        m[:, 2] = 0.
-    scheme.equilibrium(m)
-    scheme.m2f(m, f)
+def bc_in(f, m, x, y):
+    m[0] = (x-0.5*width) * grad_pressure
+    m[1] = max_velocity * (1. - 4.*y**2/height**2)
+    m[2] = 0.
 
-def bc_out(f, m, x, y, scheme):
-    if scheme.nv_on_beg:
-        m[0] = (x-0.5*width) * grad_pressure
-        m[1] = 0.
-        m[2] = 0.
-    else:
-        m[:, 0] = (x-0.5*width) * grad_pressure
-        m[:, 1] = 0.
-        m[:, 2] = 0.
-    scheme.equilibrium(m)
-    scheme.m2f(m, f)
+def bc_out(f, m, x, y):
+    m[0] = (x-0.5*width) * grad_pressure
+    m[1] = 0.
+    m[2] = 0.
 
 def update(iframe):
     sol.one_time_step()
@@ -38,7 +24,7 @@ def update(iframe):
 
 # parameters
 dim = 2 # spatial dimension
-dx = 1./4 # spatial step
+dx = 1./128 # spatial step
 la = 1. # velocity of the scheme
 Tf = 20
 width = 2
@@ -86,9 +72,9 @@ dico = {
                 }],
     'parameters':{'LA':la},
     'boundary_conditions':{
-        0:{'method':{0: pyLBM.bc.bouzidi_bounce_back}},
-        1:{'method':{0: pyLBM.bc.neumann_vertical}},
-        2:{'method':{0: pyLBM.bc.bouzidi_bounce_back}, 'value':bc_in}
+        0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}},
+        1:{'method':{0: pyLBM.bc.Neumann_vertical}},
+        2:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}, 'value':bc_in}
     },
     'generator': pyLBM.generator.CythonGenerator,
 }
