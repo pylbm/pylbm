@@ -52,27 +52,34 @@ dico = {
     'elements':[pyLBM.Circle([.3, 0.5*(ymin+ymax)+2*dx], radius, label=2)],
     'space_step':dx,
     'scheme_velocity':la,
-    'schemes':[{'velocities':range(9),
-               'polynomials':[1,
-                             LA*X, LA*Y,
-                             3*(X**2+Y**2)-4,
-                             0.5*(9*(X**2+Y**2)**2-21*(X**2+Y**2)+8),
-                             3*X*(X**2+Y**2)-5*X, 3*Y*(X**2+Y**2)-5*Y,
-                             X**2-Y**2, X*Y],
-                'relaxation_parameters':s,
-                'equilibrium':[rho,
-                              qx, qy,
-                              -2*rho + 3*q2,
-                              #rho + 1.5*q2,
-                              rho - 3*q2,
-                              -qx/LA, -qy/LA,
-                              qx2 - qy2, qxy],
-                'conserved_moments': [rho, qx, qy],
-                'init':{rho: rhoo,
-                        qx: uo,
-                        qy: 0.
-                        },
-    },
+    'schemes':[
+        {
+            'velocities':range(9),
+            'polynomials':[
+                1,
+                LA*X, LA*Y,
+                3*(X**2+Y**2)-4,
+                0.5*(9*(X**2+Y**2)**2-21*(X**2+Y**2)+8),
+                3*X*(X**2+Y**2)-5*X, 3*Y*(X**2+Y**2)-5*Y,
+                X**2-Y**2, X*Y
+            ],
+            'relaxation_parameters':s,
+            'equilibrium':[
+                rho,
+                qx, qy,
+                -2*rho + 3*q2,
+                #rho + 1.5*q2,
+                rho - 3*q2,
+                -qx/LA, -qy/LA,
+                qx2 - qy2, qxy
+            ],
+            'conserved_moments': [rho, qx, qy],
+            'init':{
+                rho: rhoo,
+                qx: uo,
+                qy: 0.
+            },
+        },
     ],
     'parameters':{'LA':la},
     'boundary_conditions':{

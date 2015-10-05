@@ -136,6 +136,33 @@ def is_dico_stab(d, ntab=0):
 def is_dico_cons(d, ntab=0):
     return test_dico_prototype(d, pyLBM.scheme.proto_cons, ntab=ntab)
 
+def is_dico_bcmethod(d, ntab=0):
+    test = isinstance(d, types.DictionaryType)
+    ligne = ''
+    if test:
+        for label, value in d.items():
+            if not isinstance(label, types.IntType):
+                test_l = False
+                debut_l = debut(False) + space(ntab)
+                ligne_l = PrintInColor.error(label) + ": "
+            else:
+                test_l = True
+                debut_l = debut(True) + space(ntab)
+                ligne_l = PrintInColor.correct(label) + ": "
+                try:
+                    if issubclass(value, pyLBM.boundary.Boundary_method):
+                        test_l = True
+                        ligne_l = PrintInColor.correct(value)
+                    else:
+                        test_l = False
+                        ligne_l = PrintInColor.error(value)
+                except:
+                    test_l = False
+                    ligne_l = PrintInColor.error(value)                    
+            test = test and test_l
+            ligne += debut_l + ligne_l + "\n"
+    return test, ligne
+
 def is_list_sch(l, ntab=0):
     test = isinstance(l, (types.ListType, types.TupleType))
     ligne = ''

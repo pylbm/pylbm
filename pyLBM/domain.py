@@ -21,7 +21,7 @@ proto_domain = {
     'elements':(types.NoneType, is_list_elem),
     'dim':(types.NoneType, types.IntType),
     'space_step':(types.IntType, types.FloatType,),
-    #'scheme_velocity':(types.IntType, types.FloatType, sp.Symbol),
+    'scheme_velocity':(types.NoneType, types.IntType, types.FloatType, sp.Symbol),
     'parameters':(types.NoneType, is_dico_sp_float),
     'schemes':(is_list_sch_dom,),
     'boundary_conditions':(types.NoneType, is_dico_bc),

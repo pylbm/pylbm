@@ -32,6 +32,11 @@ proto_sch = {
 
 proto_sch_dom = {
     'velocities': (is_list_int,),
+    'conserved_moments': (types.NoneType, sp.Symbol, types.StringType, is_list_symb),
+    'polynomials': (types.NoneType, is_list_sp_or_nb,),
+    'equilibrium': (types.NoneType, is_list_sp_or_nb,),
+    'relaxation_parameters': (types.NoneType, is_list_sp_or_nb,),
+    'init':(types.NoneType, is_dico_init),
 }
 
 proto_stab = {

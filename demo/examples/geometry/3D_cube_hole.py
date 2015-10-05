@@ -14,4 +14,4 @@ dico = {
 }
 geom = pyLBM.Geometry(dico)
 print geom
-geom.visualize(viewlabel=False)
+geom.visualize()
