@@ -81,8 +81,8 @@ class PlotWidget(object):
     def axis(self, xmin, xmax, ymin, ymax, zmin=0, zmax=0):
         self.ax.axis([xmin, xmax, ymin, ymax])
 
-    def ellipse(self, pos, radius, color):
-        return self.ax.add_patch(Ellipse(pos, 2*radius[0], 2*radius[1], fill=True, color=color))
+    def ellipse(self, pos, radius, color, angle=0.):
+        return self.ax.add_patch(Ellipse(xy = pos, width = 2*radius[0], height = 2*radius[1], angle=angle*180/np.pi, fill=True, color=color))
 
     def polygon(self, pos, color):
         return self.ax.add_patch(Polygon(pos, closed=True, fill=True, color=color))

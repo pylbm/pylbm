@@ -6,13 +6,6 @@
 
 import numpy as np
 
-from math import sin, cos
-
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-import matplotlib.cm as cm
-
 from .logs import setLogger
 
 class Element:
@@ -208,7 +201,7 @@ class Circle(Element):
         viewer.ellipse(self.center*scale, tuple(self.radius*scale), color)
         if viewlabel:
             theta = self.center[0] + 2*self.center[1]+10*self.radius
-            x, y = self.center[0] + self.radius*cos(theta), self.center[1] + self.radius*sin(theta)
+            x, y = self.center[0] + self.radius*np.cos(theta), self.center[1] + self.radius*np.sin(theta)
             viewer.text(str(self.label[0]), [x, y])
 
 class Parallelogram(Element):
@@ -716,7 +709,7 @@ class Sphere(Element):
         viewer.plot_surface(x, y, z, rstride=4, cstride=4, color=color)
         #if viewlabel:
         #    theta = self.center[0] + 2*self.center[1]+10*self.radius
-        #    x, y = self.center[0] + self.radius*cos(theta), self.center[1] + self.radius*sin(theta)
+        #    x, y = self.center[0] + self.radius*np.cos(theta), self.center[1] + self.radius*np.sin(theta)
         #    viewer.text(str(self.label[0]), [x, y])
 
 
@@ -914,7 +907,7 @@ class Cylinder(Element):
         viewer.ellipse_3D(self.center*scale, tuple(self.radius*scale), color)
         #if viewlabel:
         #    theta = self.center[0] + 2*self.center[1]+10*self.radius
-        #    x, y = self.center[0] + self.radius*cos(theta), self.center[1] + self.radius*sin(theta)
+        #    x, y = self.center[0] + self.radius*np.cos(theta), self.center[1] + self.radius*np.sin(theta)
         #    viewer.text(str(self.label[0]), [x, y])
 
 

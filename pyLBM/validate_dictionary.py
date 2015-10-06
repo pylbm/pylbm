@@ -9,6 +9,7 @@ import sympy as sp
 import numpy as np
 import pyLBM
 
+
 class PrintInColor:
     RED = '\033[91m'
     GREEN = '\033[92m'
@@ -158,7 +159,7 @@ def is_dico_bcmethod(d, ntab=0):
                         ligne_l = PrintInColor.error(value)
                 except:
                     test_l = False
-                    ligne_l = PrintInColor.error(value)                    
+                    ligne_l = PrintInColor.error(value)
             test = test and test_l
             ligne += debut_l + ligne_l + "\n"
     return test, ligne
@@ -217,7 +218,7 @@ def is_generator(d, ntab=None):
     return test, PrintInColor.unknown(d, test)
 
 def is_list_elem(l, ntab=None):
-    return is_list_generic(l, pyLBM.elements.Element)
+    return is_list_generic(l, pyLBM.elements.base.Element)
 
 def is_list_sp(l, ntab=None):
     return is_list_generic(l, (sp.Expr, types.StringType))
