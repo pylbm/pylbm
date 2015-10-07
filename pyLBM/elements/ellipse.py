@@ -65,7 +65,7 @@ class Ellipse(Element):
         self.log = setLogger(__name__)
         self.center = np.asarray(center)
         if abs(v1[0]*v2[0] + v1[1]*v2[1]) > 1.e-14:
-            self.log.error('The vector of the ellipse are colinear')
+            self.log.error('The vectors of the ellipse are not orthogonal')
         else:
             self.v1 = np.asarray(v1)
             self.v2 = np.asarray(v2)

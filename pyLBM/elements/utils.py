@@ -81,3 +81,58 @@ def distance_ellipse(x, y, v, c, v1, v2, dmax, label):
     alpha[ind] = d[ind]
     border[ind] = label[0]
     return alpha, border
+
+def distance_ellipsoid(x, y, z, v, c, v1, v2, v3, dmax, label):
+    """
+    return the distance according
+    a line defined by a point x, y, z and a vector v
+    to an ellipsoid defined by a point c and three vectors v1, v2, and v3
+    """
+    # build the equation of the ellipsoid
+    # then write the second order equation in d
+    # a d**2 + b d + c = 0
+    # delta = b**2-4ac
+    X = x - c[0]
+    Y = y - c[1]
+    Z = z - c[2]
+    v12 = np.cross(v1, v2)
+    v23 = np.cross(v2, v3)
+    v31 = np.cross(v3, v1)
+    d = np.inner(v1, v23)**2
+    # equation of the ellipsoid:
+    # cxx XX + cyy YY + czz ZZ + cxy XY + cyz YZ + czx ZX = d
+    cxx = v12[0]**2 + v23[0]**2 + v31[0]**2
+    cyy = v12[1]**2 + v23[1]**2 + v31[1]**2
+    czz = v12[2]**2 + v23[2]**2 + v31[2]**2
+    cxy = 2 * (v12[0]*v12[1] + v23[0]*v23[1] + v31[0]*v31[1])
+    cyz = 2 * (v12[1]*v12[2] + v23[1]*v23[2] + v31[1]*v31[2])
+    czx = 2 * (v12[2]*v12[0] + v23[2]*v23[0] + v31[2]*v31[0])
+    a = cxx*v[0]**2 + cyy*v[1]**2 + czz*v[2]**2 \
+        + cxy*v[0]*v[1] + cyz*v[1]*v[2] + czx*v[2]*v[0]
+    b = (2*cxx*v[0]+cxy*v[1]+czx*v[2])*X \
+        + (2*cyy*v[1]+cyz*v[2]+cxy*v[0])*Y \
+        + (2*czz*v[2]+czx*v[0]+cyz*v[1])*Z
+    c = cxx*X**2 + cyy*Y**2 + czz*Z**2 \
+        + cxy*X*Y + cyz*Y*Z + czx*Z*X - d
+    delta = b**2 - 4*a*c
+    ind = delta>=0
+    delta[ind] = np.sqrt(delta[ind])
+    d1 = 1e16*np.ones(delta.shape)
+    d2 = 1e16*np.ones(delta.shape)
+    d1[ind] = (-b[ind]-delta[ind]) / (2*a)
+    d2[ind] = (-b[ind]+delta[ind]) / (2*a)
+    d1[d1<0] = 1e16
+    d2[d2<0] = 1e16
+    d = -np.ones(d1.shape)
+    d[ind] = np.minimum(d1[ind], d2[ind])
+    d[d==1e16] = -1
+
+    alpha = -np.ones((x.size, y.size, z.size))
+    border = -np.ones((x.size, y.size, z.size))
+    if dmax is None:
+        ind = d>0
+    else:
+        ind = np.logical_and(d>0, d<=dmax)
+    alpha[ind] = d[ind]
+    border[ind] = label[0]
+    return alpha, border

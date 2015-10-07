@@ -41,7 +41,7 @@ class Sphere(Element):
 
     the sphere centered in (0, 0, 0) with radius 1
 
-    >>> center = [0., 0., 0]
+    >>> center = [0., 0., 0.]
     >>> radius = 1.
     >>> Sphere(center, radius)
         Sphere([0 0 0],1) (solid)
@@ -123,39 +123,12 @@ class Sphere(Element):
         -------
 
         array of distances
-
         """
-        p = np.asarray([x - self.center[0], y - self.center[1], z - self.center[2]])
-        v2 = v[0]**2 + v[1]**2 + v[2]**2
-        delta = - (p[0]*v[1] - p[1]*v[0])**2 \
-                - (p[0]*v[2] - p[2]*v[0])**2 \
-                - (p[2]*v[1] - p[1]*v[2])**2 \
-                + self.radius**2*v2
-        ind = delta>=0
+        v1 = self.radius*np.array([1,0,0])
+        v2 = self.radius*np.array([0,1,0])
+        v3 = self.radius*np.array([0,0,1])
+        return distance_ellipsoid(x, y, z, v, self.center, v1, v2, v3, dmax, self.label)
 
-        delta[ind] = np.sqrt(delta[ind])/v2
-
-        d = -np.ones(delta.shape)
-        d1 = 1e16*np.ones(delta.shape)
-        d2 = 1e16*np.ones(delta.shape)
-
-        d1 = -v[0]/v2*p[0] - v[1]/v2*p[1] - v[2]/v2*p[2] - delta
-        d2 = -v[0]/v2*p[0] - v[1]/v2*p[1] - v[2]/v2*p[2] + delta
-
-        d1[d1<0] = 1e16
-        d2[d2<0] = 1e16
-        d[ind] = np.minimum(d1[ind], d2[ind])
-        d[d==1e16] = -1
-        alpha = -np.ones((x.size, y.size, z.size))
-        border = -np.ones((x.size, y.size, z.size))
-
-        if dmax is None:
-            ind = d>0
-        else:
-            ind = np.logical_and(d>0, d<=dmax)
-        alpha[ind] = d[ind]
-        border[ind] = self.label[0]
-        return alpha, border
 
     def __str__(self):
         s = 'Sphere(' + self.center.__str__() + ',' + str(self.radius) + ') '
@@ -166,14 +139,10 @@ class Sphere(Element):
         return s
 
     def _visualize(self, viewer, color, viewlabel=False, scale=np.ones(3)):
-        #viewer.ellipse_3D(self.center*scale, tuple(self.radius*scale), color)
-        u = np.linspace(0, 2.*np.pi, 100)
-        v = np.linspace(0, np.pi, 100)
-        x = self.center[0]*scale[0] + self.radius*scale[0]*np.outer(np.cos(u), np.sin(v))
-        y = self.center[1]*scale[1] + self.radius*scale[1]*np.outer(np.sin(u), np.sin(v))
-        z = self.center[2]*scale[2] + self.radius*scale[2]*np.outer(np.ones(np.size(u)), np.cos(v))
-        viewer.plot_surface(x, y, z, rstride=4, cstride=4, color=color)
-        #if viewlabel:
-        #    theta = self.center[0] + 2*self.center[1]+10*self.radius
-        #    x, y = self.center[0] + self.radius*np.cos(theta), self.center[1] + self.radius*np.sin(theta)
-        #    viewer.text(str(self.label[0]), [x, y])
+        v1 = self.radius*np.array([1,0,0])*scale
+        v2 = self.radius*np.array([0,1,0])*scale
+        v3 = self.radius*np.array([0,0,1])*scale
+        viewer.ellipse_3D(self.center*scale, v1, v2, v3, color)
+        if viewlabel:
+            x, y, z = self.center[0], self.center[1], self.center[2]
+            viewer.text(str(self.label[0]), [x, y, z])

@@ -187,9 +187,8 @@ class Geometry:
 
         viewlabel : boolean to activate the labels mark (optional)
         """
-        if self.dim in [1, 2]:
-            view = viewer_app.Fig()
-            ax = view[0]
+        view = viewer_app.Fig(dim = self.dim)
+        ax = view[0]
 
         if self.dim == 1:
             xmin, xmax = self.bounds[0][:]
@@ -238,9 +237,7 @@ class Geometry:
             ypercent = 0.05*(ymax-ymin)
             ax.axis(xmin-xpercent, xmax+xpercent, ymin-ypercent, ymax+ypercent)
         elif self.dim == 3:
-            fig = plt.figure()
             couleurs = [(1./k, 0., 1.-1./k) for k in range(1,11)]
-            ax = fig.add_subplot(111, projection='3d')
             Pmin = [(float)(self.bounds[k][0]) for k in range(3)]
             Pmax = [(float)(self.bounds[k][1]) for k in range(3)]
             xmin, xm, xmax = Pmin[0], .5*(Pmin[0]+Pmax[0]), Pmax[0]
@@ -253,22 +250,16 @@ class Geometry:
                                          [Pmin[(k+2)%3], Pmax[(k+2)%3]])
                     ZS = x0 + np.zeros(XS.shape)
                     C = [XS, YS, ZS]
-                    ax.plot_surface(C[(2-k)%3], C[(3-k)%3], C[(1-k)%3],
-                        rstride=1, cstride=1, color=couleurs[self.box_label[ct_lab]%10],
-                        shade=False, alpha=0.5,
-                        antialiased=False, linewidth=1)
+                    ax.surface(C[(2-k)%3], C[(3-k)%3], C[(1-k)%3],
+                         color=couleurs[self.box_label[ct_lab]%10])
                     if viewlabel:
                         x = .25*np.sum(C[(2-k)%3])
                         y = .25*np.sum(C[(3-k)%3])
                         z = .25*np.sum(C[(1-k)%3])
-                        ax.text(x, y, z, self.box_label[ct_lab], fontsize=18)
+                        ax.text(str(self.box_label[ct_lab]), [x, y, z], fontsize=18)
                         ct_lab += 1
-            ax.set_xlim3d(xmin, xmax)
-            ax.set_ylim3d(ymin, ymax)
-            ax.set_zlim3d(zmin, zmax)
-            ax.set_xlabel("X")
-            ax.set_ylabel("Y")
-            ax.set_zlabel("Z")
+            ax.axis(xmin,xmax,ymin,ymax,zmin,zmax)
+            ax.set_label("X", "Y", "Z")
 
             for elem in self.list_elem:
                 if elem.isfluid:
@@ -279,11 +270,8 @@ class Geometry:
         else:
             self.log.error('Error in geometry.visualize(): the dimension {0} is not allowed'.format(self.dim))
 
-        if self.dim in [1, 2]:
-            view.title = "Geometry"
-            view.show()
-        else:
-            plt.show()
+        ax.title = "Geometry"
+        view.show()
 
     def list_of_labels(self):
         """
