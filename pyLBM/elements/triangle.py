@@ -78,11 +78,6 @@ class Triangle(Element):
         a = self.point
         b = self.point + self.v0
         c = self.point + self.v1
-        # self.description = [
-        #     'edge 0: ({0:f},{1:f})->({2:f},{3:f})'.format(a[0], a[1], b[0], b[1]),
-        #     'edge 1: ({0:f},{1:f})->({2:f},{3:f})'.format(b[0], b[1], c[0], c[1]),
-        #     'edge 2: ({0:f},{1:f})->({2:f},{3:f})'.format(c[0], c[1], a[0], a[1])
-        #     ]
         self.log.info(self.__str__())
 
     def get_bounds(self):

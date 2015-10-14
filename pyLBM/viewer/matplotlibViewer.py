@@ -117,7 +117,7 @@ class PlotWidget(object):
         return self.ax.plot_surface(X, Y, Z,
             rstride=1, cstride=1, color=color,
             shade=False, alpha=0.5,
-            antialiased=False, linewidth=1)
+            antialiased=False, linewidth=.5)
 
     def ellipse_3D(self, pos, a, b, c, color):
         u = np.linspace(0, 2.*np.pi, 100)
@@ -130,15 +130,12 @@ class PlotWidget(object):
         z = pos[2] + a[2]*CS + b[2]*SS + c[2]*C
         return self.ax.plot_surface(x, y, z, rstride=4, cstride=4, color=color)
 
-        #return self.ax.add_patch(Ellipse(pos, 2*radius[0], 2*radius[1], fill=True, color=color))
-
     def markers(self, pos, size, color='k', symbol='o'):
         if pos.shape[1] == 2:
             return self.ax.scatter(pos[:, 0], pos[:, 1], size, c=color, marker=symbol)
         else:
             posx, posy, posz = pos[:,0], pos[:,1], pos[:,2]
             return self.ax.scatter(posx, posy, posz, s=size, c=color, marker=symbol)
-
 
     def image(self, f, fargs=(), cmap='gist_gray', clim=[None, None]):
         if isinstance(f, np.ndarray):

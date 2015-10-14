@@ -265,8 +265,8 @@ class Geometry:
                 if elem.isfluid:
                     coul = fluid
                 else:
-                    coul = 'white'
-                    elem._visualize(ax, coul, viewlabel)
+                    coul = [couleurs[elem.label[k]] for k in xrange(elem.number_of_bounds)]
+                elem._visualize(ax, coul, viewlabel)
         else:
             self.log.error('Error in geometry.visualize(): the dimension {0} is not allowed'.format(self.dim))
 

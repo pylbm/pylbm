@@ -41,7 +41,7 @@ def distance_lines(x, y, v, p, vt, dmax, label):
     alpha[alpha == 1e16] = -1.
     return alpha, border
 
-def distance_ellipse(x, y, v, c, v1, v2, dmax, label):
+def distance_ellipse(x, y, v, center, v1, v2, dmax, label):
     """
     return the distance according
     a line defined by a point x, y and a vector v
@@ -51,8 +51,8 @@ def distance_ellipse(x, y, v, c, v1, v2, dmax, label):
     # then write the second order equation in d
     # a d**2 + b d + c = 0
     # delta = b**2-4ac
-    X = x - c[0]
-    Y = y - c[1]
+    X = x - center[0]
+    Y = y - center[1]
     vx2 = v1[0]**2 + v2[0]**2
     vy2 = v1[1]**2 + v2[1]**2
     vxy = v1[0]*v1[1] + v2[0]*v2[1]
@@ -60,20 +60,21 @@ def distance_ellipse(x, y, v, c, v1, v2, dmax, label):
     b = 2*X*v[0]*vy2 + 2*Y*v[1]*vx2 - 2*(X*v[1]+Y*v[0])*vxy
     c = X**2*vy2 + Y**2*vx2 - 2*X*Y*vxy - (v1[0]*v2[1]-v1[1]*v2[0])**2
     delta = b**2 - 4*a*c
-    ind = delta>=0
+    ind = delta>=0 # wird but it works
     delta[ind] = np.sqrt(delta[ind])
     d1 = 1e16*np.ones(delta.shape)
     d2 = 1e16*np.ones(delta.shape)
-    d1[ind] = (-b[ind]-delta[ind]) / (2*a)
-    d2[ind] = (-b[ind]+delta[ind]) / (2*a)
+    if a != 0:
+        d1[ind] = (-b[ind]-delta[ind]) / (2*a)
+        d2[ind] = (-b[ind]+delta[ind]) / (2*a)
     d1[d1<0] = 1e16
     d2[d2<0] = 1e16
     d = -np.ones(d1.shape)
     d[ind] = np.minimum(d1[ind], d2[ind])
     d[d==1e16] = -1
 
-    alpha = -np.ones((x.size, y.size))
-    border = -np.ones((x.size, y.size))
+    alpha = -np.ones(delta.shape)
+    border = -np.ones(delta.shape)
     if dmax is None:
         ind = d>0
     else:
@@ -82,7 +83,7 @@ def distance_ellipse(x, y, v, c, v1, v2, dmax, label):
     border[ind] = label[0]
     return alpha, border
 
-def distance_ellipsoid(x, y, z, v, c, v1, v2, v3, dmax, label):
+def distance_ellipsoid(x, y, z, v, center, v1, v2, v3, dmax, label):
     """
     return the distance according
     a line defined by a point x, y, z and a vector v
@@ -92,9 +93,9 @@ def distance_ellipsoid(x, y, z, v, c, v1, v2, v3, dmax, label):
     # then write the second order equation in d
     # a d**2 + b d + c = 0
     # delta = b**2-4ac
-    X = x - c[0]
-    Y = y - c[1]
-    Z = z - c[2]
+    X = x - center[0]
+    Y = y - center[1]
+    Z = z - center[2]
     v12 = np.cross(v1, v2)
     v23 = np.cross(v2, v3)
     v31 = np.cross(v3, v1)
@@ -115,7 +116,7 @@ def distance_ellipsoid(x, y, z, v, c, v1, v2, v3, dmax, label):
     c = cxx*X**2 + cyy*Y**2 + czz*Z**2 \
         + cxy*X*Y + cyz*Y*Z + czx*Z*X - d
     delta = b**2 - 4*a*c
-    ind = delta>=0
+    ind = delta>=0 # wird but ir works
     delta[ind] = np.sqrt(delta[ind])
     d1 = 1e16*np.ones(delta.shape)
     d2 = 1e16*np.ones(delta.shape)
