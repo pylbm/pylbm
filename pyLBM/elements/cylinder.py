@@ -397,3 +397,79 @@ class Cylinder_Triangle(Cylinder):
         else:
             s += '(solid)'
         return s
+
+class Cylinder_Parallelogram(Cylinder):
+    """
+    Class Cylinder_Parallelogram
+
+    Parameters
+    ----------
+    center : a list that contains the three coordinates of the center
+    v0 : a list of the three coordinates of the first vector that defines the section
+    v1 : a list of the three coordinates of the second vector that defines the section
+    w : a list of the three coordinates of the vector that defines the direction of the side
+    label : list of three integers (default [0,0,0] for the bottom, the top and the side)
+    isfluid : boolean
+             - True if the cylinder is added
+             - False if the cylinder is deleted
+
+    Attributes
+    ----------
+    number_of_bounds : int
+      6
+    center : numpy array
+      the coordinates of the center of the cylinder
+    v0 : list of doubles
+      the three coordinates of the first vector that defines the base section
+    v1 : list of doubles
+      the three coordinates of the second vector that defines the base section
+    w : list of doubles
+      the three coordinates of the vector that defines the direction of the side
+    label : list of integers
+      the list of the label of the edge
+    isfluid : boolean
+      True if the cylinder is added
+      and False if the cylinder is deleted
+
+    Examples
+    --------
+
+    the vertical canonical cylinder centered in (0, 0, 1/2)
+
+    >>> center = [0., 0., 0.5]
+    >>> v0, v1 = [1., 0., 0.], [0., 1., 0.]
+    >>> w = [0., 0., 1.]
+    >>> Cylinder_Parallelogram(center, v0, v1, w)
+        Cylinder_Parallelogram([0 0 0.5], [1 0 0], [0 1 0], [0 0 1]) (solid)
+
+    Methods
+    -------
+    get_bounds :
+      return the bounds of the cylinder
+    point_inside :
+      return True or False if the points are in or out the cylinder
+    distance :
+      get the distance of a point to the cylinder
+    """
+    number_of_bounds = 6 # number of edges
+
+    def __init__(self, center, v1, v2, w, label = 0, isfluid = False):
+        self.log = setLogger(__name__)
+        self.center = np.asarray(center)
+        self.v1 = np.asarray(v1)
+        self.v2 = np.asarray(v2)
+        self.w = np.asarray(w)
+        self.change_of_variables()
+        self.base = Base_Parallelogram(self.center, self.v1, self.v2)
+        self.isfluid = isfluid
+        Cylinder.__init__(self, self.base, label=label, isfluid=isfluid)
+
+    def __str__(self):
+        s = 'Cylinder_Parallelogram(' + self.center.__str__() + ', '
+        s += self.v1.__str__() + ', ' + self.v2.__str__() + ', '
+        s += self.w.__str__() +  ') '
+        if self.isfluid:
+            s += '(fluid)'
+        else:
+            s += '(solid)'
+        return s

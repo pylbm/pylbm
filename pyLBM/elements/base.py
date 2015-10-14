@@ -180,12 +180,6 @@ class Base_Triangle(Base2D):
     center : a list that contains the three coordinates of the center
     v1 : a list of the three coordinates of the first vector that defines the triangular base
     v2 : a list of the three coordinates of the second vector that defines the triangular base
-
-    Warning
-    -------
-
-    The vectors v1 and v2 have to be orthogonal.
-
     """
 
     def __init__(self, center, v1, v2):
@@ -211,8 +205,8 @@ class Base_Triangle(Base2D):
         return np.logical_and(np.logical_and(x>=0, y>=0), x+y<=1)
 
     def distance(self, x, y, v, dmax, label):
-        p = [[0, 0], [0, 0], [1,0]]
-        vt = [[1,0], [0,1], [-1,1]]
+        p = [[0, 0], [0, 0], [1, 0]]
+        vt = [[1, 0], [0, 1], [-1, 1]]
         return distance_lines(x, y, v, p, vt, dmax, label)
 
     def _visualize(self):
@@ -230,5 +224,63 @@ class Base_Triangle(Base2D):
 
     def __str__(self):
         s = 'Triangular base centerd in '+ str(self.center) + '\n'
+        s += '     in the plane spanned by ' + str(self.v1) + ' and ' + str(self.v2) + '\n'
+        return s
+
+
+class Base_Parallelogram(Base2D):
+    """
+    Class Base_Parallelogram
+
+    Parameters
+    ----------
+    center : a list that contains the three coordinates of the center
+    v1 : a list of the three coordinates of the first vector that defines the base
+    v2 : a list of the three coordinates of the second vector that defines the base
+    """
+
+    def __init__(self, center, v1, v2):
+        self.log = setLogger(__name__)
+        self.center = np.asarray(center)
+        self.v1 = np.asarray(v1)
+        self.v2 = np.asarray(v2)
+        nv1 = np.linalg.norm(self.v1)
+        nv2 = np.linalg.norm(self.v2)
+        if np.allclose(nv1*self.v2, nv2*self.v1):
+            self.log.error('Error in the definition of the cylinder: the vectors are not free')
+        self.log.info(self.__str__())
+
+    def get_bounds(self):
+        """
+        Get the bounds of the base
+        """
+        box = np.asarray([self.center, self.center + self.v1,
+                          self.center + self.v1 + self.v2, self.center + self.v2])
+        return np.min(box, axis=0), np.max(box, axis=0)
+
+    def point_inside(self, x, y):
+        return np.logical_and(np.logical_and(x>=0, y>=0),
+                              np.logical_and(x<=1, y<=1))
+
+    def distance(self, x, y, v, dmax, label):
+        p = [[0, 0], [0, 0], [1, 0], [0, 1]]
+        vt = [[1, 0], [0, 1], [0, 1], [1, 0]]
+        return distance_lines(x, y, v, p, vt, dmax, label)
+
+    def _visualize(self):
+        p = np.asarray([[0,0], [1,0], [1,1], [0,1], [0,0], [1,0]]).T
+        lx_b = []
+        ly_b = []
+        for k in xrange(4):
+            lx_b.append(p[0,k:k+2])
+            ly_b.append(p[1,k:k+2])
+        lx_b.append(p[0,:5])
+        ly_b.append(p[1,:5])
+        lx_b.append(p[0,4::-1])
+        ly_b.append(p[1,4::-1])
+        return lx_b, ly_b
+
+    def __str__(self):
+        s = 'Parallelogram base centerd in '+ str(self.center) + '\n'
         s += '     in the plane spanned by ' + str(self.v1) + ' and ' + str(self.v2) + '\n'
         return s
