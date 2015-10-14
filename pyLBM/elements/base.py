@@ -216,13 +216,16 @@ class Base_Triangle(Base2D):
         return distance_lines(x, y, v, p, vt, dmax, label)
 
     def _visualize(self):
-        p = np.asarray([[0,0], [1,0], [0,1], [0,0], [1,0]])
+        p = np.asarray([[0,0], [1,0], [0,1], [0,0], [1,0]]).T
         lx_b = []
+        ly_b = []
         for k in xrange(3):
             lx_b.append(p[0,k:k+2])
             ly_b.append(p[1,k:k+2])
-        
-        ly_b = [np.sin(t),np.sin(t), np.sin(t[::-1])]
+        lx_b.append(p[0,:4])
+        ly_b.append(p[1,:4])
+        lx_b.append(p[0,3::-1])
+        ly_b.append(p[1,3::-1])
         return lx_b, ly_b
 
     def __str__(self):

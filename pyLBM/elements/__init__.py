@@ -5,4 +5,4 @@ from triangle import Triangle
 
 from sphere import Sphere
 from ellipsoid import Ellipsoid
-from cylinder import Cylinder_Circle, Cylinder_Ellipse
+from cylinder import Cylinder_Circle, Cylinder_Ellipse, Cylinder_Triangle
