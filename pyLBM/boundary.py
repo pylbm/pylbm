@@ -176,7 +176,10 @@ class Boundary_method(object):
                     coords += (x.T,)
 
                 m = Array(nv, nspace , 0, sorder)
+                m.set_conserved_moments(simulation.scheme.consm, self.stencil.nv_ptr)
+
                 f = Array(nv, nspace , 0, sorder)
+                f.set_conserved_moments(simulation.scheme.consm, self.stencil.nv_ptr)
 
                 value(f, m, *coords)
                 simulation.scheme.equilibrium(m)

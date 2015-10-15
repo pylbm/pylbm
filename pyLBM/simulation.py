@@ -207,6 +207,9 @@ class Simulation:
             self._F = Array(nv, nspace, vmax, sorder=sorder, cartcomm=self.interface.cartcomm)
             self._Fold = Array(nv, nspace, vmax, sorder=sorder, cartcomm=self.interface.cartcomm)
 
+        self._m.set_conserved_moments(self.scheme.consm, self.domain.stencil.nv_ptr)
+        self._F.set_conserved_moments(self.scheme.consm, self.domain.stencil.nv_ptr)
+
         self.scheme.generate(sorder)
 
         self.log.info('Build boundary conditions')
@@ -230,36 +233,26 @@ class Simulation:
                          'MLUPS':0.,
                          }
 
-    @utils.item2property
-    def m(self, i, j):
+    @utils.itemproperty
+    def m(self, i):
         if self._update_m:
             self._update_m = False
             self.f2m()
-        if type(j) is slice:
-            jstart, jstop = j.start, j.stop
-            if j.start is None:
-                jstart = 0
-            if j.stop is None:
-                jstop = self.scheme.stencil.nv[i] - 1
-            jj = slice(self.scheme.stencil.nv_ptr[i] + jstart,
-                       self.scheme.stencil.nv_ptr[i] + jstop)
-            return self._m[jj]
-
-        return self._m[self.scheme.stencil.nv_ptr[i] + j]
+        return self._m[i]
 
     @m.setter
-    def m(self, i, j, value):
+    def m(self, i, value):
         self._update_m = False
-        self._m[self.scheme.stencil.nv_ptr[i] + j] = value
+        self._m[i] = value
 
-    @utils.item2property
-    def F(self, i, j):
-        return self._F[self.scheme.stencil.nv_ptr[i] + j]
+    @utils.itemproperty
+    def F(self, i):
+        return self._F[i]
 
     @F.setter
-    def F(self, i, j, value):
+    def F(self, i, value):
         self._update_m = True
-        self._F[self.scheme.stencil.nv_ptr[i] + j] = value
+        self._F[i] = value
 
     def __str__(self):
         s = "Simulation informations\n"

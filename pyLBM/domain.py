@@ -154,19 +154,21 @@ class Domain:
     def __init__(self, dico=None, geometry=None, stencil=None, space_step=None, verif=True):
         self.log = setLogger(__name__)
 
-        self.log.info('Check the dictionary')
-        test, aff = validate(dico, proto_domain, test_comp = False)
-        if test:
-            self.log.info(aff)
-        else:
-            self.log.error(aff)
-            sys.exit()
+        if dico is not None:
+            self.log.info('Check the dictionary')
+            test, aff = validate(dico, proto_domain, test_comp = False)
+            if test:
+                self.log.info(aff)
+            else:
+                selflog.error(aff)
+                sys.exit()
 
         self.geom = Geometry(dico) if geometry is None else geometry
         self.stencil = Stencil(dico) if stencil is None else stencil
         self.dx = dico['space_step'] if space_step is None else space_step
-        self.dim = self.geom.dim
 
+        self.dim = self.geom.dim
+        
         self.globalbounds = self.geom.globalbounds # the box where the domain lies
         self.bounds = self.geom.bounds # the local box of the process
 

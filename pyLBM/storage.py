@@ -1,4 +1,5 @@
 import numpy as np
+import sympy as sp
 import copy
 import mpi4py.MPI as mpi
 
@@ -46,10 +47,20 @@ class Array:
             self._set_subarray()
 
     def __getitem__(self, key):
+        if isinstance(key , sp.Symbol):
+            return self.swaparray[self.consm[key]]
         return self.swaparray[key]
 
     def __setitem__(self, key, values):
-        self.swaparray[key] = values
+        if isinstance(key , sp.Symbol):
+            self.swaparray[self.consm[key]] = values
+        else:
+            self.swaparray[key] = values
+
+    def set_conserved_moments(self, consm, nv_ptr):
+        self.consm = {}
+        for k, v in consm.iteritems():
+            self.consm[k] = nv_ptr[v[0]] + v[1]
 
     @property
     def nspace(self):

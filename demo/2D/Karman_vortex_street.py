@@ -7,23 +7,22 @@ X, Y, LA = sp.symbols('X, Y, LA')
 rho, qx, qy = sp.symbols('rho, qx, qy')
 
 def bc_rect(f, m, x, y):
-    m[0] = 0.
-    m[1] = rhoo*uo
-    m[2] = 0.
+    m[rho] = 0.
+    m[qx] = rhoo*uo
+    m[qy] = 0.
 
 def vorticity(sol):
-    sol.f2m()
-    qx = sol.m[0][1]
-    qy = sol.m[0][2]
-    vort = np.abs(qx[1:-1, 2:] - qx[1:-1, :-2]
-                  - qy[2:, 1:-1] + qy[:-2, 1:-1])
+    qx_n = sol.m[qx]
+    qy_n = sol.m[qy]
+    vort = np.abs(qx_n[1:-1, 2:] - qx_n[1:-1, :-2]
+                  - qy_n[2:, 1:-1] + qy_n[:-2, 1:-1])
     return vort.T
 
 def update(iframe):
     nrep = 100
     for i in xrange(nrep):
          sol.one_time_step()
-
+    #print sol.time_info()
     image.set_data(vorticity(sol))
     ax.title = "Solution t={0:f}".format(sol.t)
 
@@ -98,10 +97,12 @@ print "Reynolds number {0:10.3e}".format(Re)
 # init viewer
 viewer = pyLBM.viewer.matplotlibViewer
 fig = viewer.Fig()
-ax = fig[0]
-image = ax.image(vorticity, (sol,), cmap='cubehelix', clim=[0,.05])
-ax.ellipse([.3/dx, 0.5*(ymin+ymax)/dx+2], [radius/dx, radius/dx], 'r')
 
+ax = fig[0]
+ax.ellipse([.3/dx, 0.5*(ymin+ymax)/dx+2], [radius/dx, radius/dx], 'r')
+image = ax.image(vorticity(sol), cmap='cubehelix', clim=[0, .05])
+
+update(1)
 # run the simulation
 fig.animate(update, interval=1)
 fig.show()
