@@ -774,7 +774,10 @@ class Stencil(list):
             ymin, ymax = np.min(vy) - 1, np.max(vy) + 1
             zmin, zmax = np.min(vz) - 1, np.max(vz) + 1
             ax.title = "Stencil of the unique velocities"
-            ax.axis(xmin, xmax, ymin, ymax, zmin, zmax)
+            if self.dim < 3:
+                ax.axis(xmin, xmax, ymin, ymax, zmin, zmax)
+            else:
+                ax.axis(xmin, xmax, ymin, ymax)
         else:
             if k is None:
                 lv = range(self.nstencils)
@@ -806,10 +809,11 @@ class Stencil(list):
                 xmin, xmax = np.min(vx) - 1, np.max(vx) + 1
                 ymin, ymax = np.min(vy) - 1, np.max(vy) + 1
                 zmin, zmax = np.min(vz) - 1, np.max(vz) + 1
-                # TODO: fix this for the 3D
-                if self.dim in [1, 2]:
-                    ax.title = "Stencil {0:d}".format(ii)
+                ax.title = "Stencil {0:d}".format(ii)
+                if self.dim < 3:
                     ax.axis(xmin, xmax, ymin, ymax, zmin, zmax)
+                else:
+                    ax.axis(xmin, xmax, ymin, ymax)
 
 
         view.show()

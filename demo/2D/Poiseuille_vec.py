@@ -1,5 +1,5 @@
 ##############################################################################
-# Solver D2Q4^3 for a Poiseuille flow
+# Solver D2Q(4,4,4) for a Poiseuille flow
 #
 # d_t(p) + d_x(ux) + d_y(uy) = 0
 # d_t(ux) + d_x(ux^2) + d_y(ux*uy) + d_x(p) = mu (d_xx+d_yy)(ux)
@@ -37,9 +37,18 @@ p, ux, uy = sp.symbols('p, ux, uy')
 def bc_in(f, m, x, y):
     m[p] = (x-0.5*width) * grad_pressure * cte
     m[ux] = max_velocity * (1. - 4.*y**2/height**2)
+<<<<<<< Updated upstream
 
 def bc_out(f, m, x, y):
     m[p] = (x-0.5*width) * grad_pressure * cte
+=======
+    m[uy] = 0.
+
+def bc_out(f, m, x, y):
+    m[p] = (x-0.5*width) * grad_pressure * cte
+    m[ux] = 0.
+    m[uy] = 0.
+>>>>>>> Stashed changes
 
 def run(dico):
     sol = pyLBM.Simulation(dico)
@@ -48,27 +57,47 @@ def run(dico):
 
     import numpy as np
     print "*"*50
+<<<<<<< Updated upstream
     rho = sol.m[p][1:-1, 1:-1]
     qx_n = sol.m[ux][1:-1, 1:-1]
     qy_n = sol.m[uy][1:-1, 1:-1]
+=======
+    p_n = sol.m[p][1:-1, 1:-1]
+    ux_n = sol.m[ux][1:-1, 1:-1]
+    uy_n = sol.m[uy][1:-1, 1:-1]
+>>>>>>> Stashed changes
     x = sol.domain.x[0][1:-1]
     y = sol.domain.x[1][1:-1]
     x = x[:, np.newaxis]
     y = y[np.newaxis, :]
     coeff = sol.domain.dx / np.sqrt(width*height)
+<<<<<<< Updated upstream
     Err_rho = coeff * np.linalg.norm(rho - (x-0.5*width) * grad_pressure)
     Err_qx = coeff * np.linalg.norm(qx_n - max_velocity * (1 - 4 * y**2 / height**2))
     Err_qy = coeff * np.linalg.norm(qy_n)
     print "Norm of the error on rho: {0:10.3e}".format(Err_rho)
     print "Norm of the error on qx:  {0:10.3e}".format(Err_qx)
     print "Norm of the error on qy:  {0:10.3e}".format(Err_qy)
+=======
+    Err_p = coeff * np.linalg.norm(p_n - (x-0.5*width) * grad_pressure)
+    Err_ux = coeff * np.linalg.norm(ux_n - max_velocity * (1 - 4 * y**2 / height**2))
+    Err_uy = coeff * np.linalg.norm(uy_n)
+    print "Norm of the error on rho: {0:10.3e}".format(Err_p)
+    print "Norm of the error on qx:  {0:10.3e}".format(Err_ux)
+    print "Norm of the error on qy:  {0:10.3e}".format(Err_uy)
+>>>>>>> Stashed changes
 
     # init viewer
     viewer = pyLBM.viewer.matplotlibViewer
     fig = viewer.Fig()
     ax = fig[0]
 
+<<<<<<< Updated upstream
     ax.image(qx_n - max_velocity * (1 - 4 * y**2 / height**2))
+=======
+    ax.image(ux_n - max_velocity * (1 - 4 * y**2 / height**2))
+    ax.title = "Error on ux"
+>>>>>>> Stashed changes
     fig.show()
 
 if __name__ == "__main__":

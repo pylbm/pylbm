@@ -41,7 +41,7 @@ proto_sch_dom = {
 
 proto_stab = {
     'linearization':(types.NoneType, is_dico_sp_float),
-    'test_maximum_principle':(types.NoneType, types.BooleanType),
+    'test_monotonic_stability':(types.NoneType, types.BooleanType),
     'test_L2_stability':(types.NoneType, types.BooleanType),
 }
 

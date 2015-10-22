@@ -56,7 +56,7 @@ def stability_array_in_s_recur(vs_q, vs_E, ux, mR, l, nb_calcul):
             if mR[i, j] == 0:
                 S = scheme_constructor(ux, vs_q[i], vs_E[j])
                 nb_calcul += 1
-                if S.is_stable_L2(Nk = 51):
+                if S.is_L2_stable(Nk = 51):
                     plt.scatter(vs_q[i], vs_E[j], c = 'b', marker = 'o')
                     mR[i, j] = 1
                 else:

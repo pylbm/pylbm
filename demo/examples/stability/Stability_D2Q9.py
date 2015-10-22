@@ -113,7 +113,7 @@ def stability_array_in_u_recur(s_mu, s_eta, vux, vuy, mR, l, nb_calcul):
             if (mR[i, j] == 0) & (mR[j, i] == 0):
                 S = scheme_constructor(vux[i], vuy[j], s_mu, s_eta)
                 nb_calcul += 1
-                if S.is_stable_L2(Nk = 51):
+                if S.is_L2_stable(Nk = 51):
                     plt.scatter([vux[i], vux[i], -vux[i], -vux[i]],
                                 [vuy[j], -vuy[j], vuy[j], -vuy[j]],
                                 c = 'b', marker = 'o')
@@ -166,7 +166,7 @@ def stability_array_in_s_recur(vs_mu, vs_eta, ux, uy, mR, l, nb_calcul):
             if mR[i, j] == 0:
                 S = scheme_constructor(ux, uy, vs_mu[i], vs_eta[j])
                 nb_calcul += 1
-                if S.is_stable_L2(Nk = 51):
+                if S.is_L2_stable(Nk = 51):
                     plt.scatter(vs_mu[i], vs_eta[j], c = 'b', marker = 'o')
                     mR[i, j] = 1
                 else:
