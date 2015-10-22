@@ -55,14 +55,12 @@ dico = {
 
 sol = pyLBM.Simulation(dico, sorder=[1, 2, 0])
 
-print sol.scheme.generator.code
-
 # create the viewer to plot the solution
 viewer = pyLBM.viewer.matplotlibViewer
 fig = viewer.Fig()
 ax = fig[0]
 
-im = ax.image(sol.m[0][0].transpose())
+im = ax.image(sol.m[u].transpose())
 ax.title = 'solution at t = {0:f}'.format(sol.t)
 
 compt = 0
@@ -74,7 +72,7 @@ def update(iframe):
         compt += 1
         if compt == 128:
             compt = 0
-            im.set_data(sol.m[0][0].transpose())
+            im.set_data(sol.m[u].transpose())
             ax.title = 'solution at t = {0:f}'.format(sol.t)
 
 fig.animate(update, interval=1)

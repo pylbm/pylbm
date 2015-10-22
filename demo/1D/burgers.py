@@ -108,9 +108,9 @@ ymin, ymax = min([uL,uR])-.1*abs(uL-uR), max([uL,uR])+.1*abs(uL-uR)
 ax.axis(xmin, xmax, ymin, ymax)
 
 x1 = sol1.domain.x[0][1:-1]
-l1 = ax.plot(x1, sol1.m[0][0][1:-1], width=1, color='b', label='D1Q2')[0]
+l1 = ax.plot(x1, sol1.m[u][1:-1], width=1, color='b', label='D1Q2')[0]
 x2 = sol2.domain.x[0][1:-1]
-l2 = ax.plot(x2, sol2.m[0][0][1:-1], width=1, color='r', label='D1Q3')[0]
+l2 = ax.plot(x2, sol2.m[u][1:-1], width=1, color='r', label='D1Q3')[0]
 le = ax.plot(x1, solution(sol1.t, x1), width=1, color='k', label='exact')[0]
 
 def update(iframe):
@@ -119,8 +119,8 @@ def update(iframe):
         sol1.f2m()
         sol2.one_time_step()
         sol2.f2m()
-        l1.set_data(x1, sol1.m[0][0][1:-1])
-        l2.set_data(x2, sol2.m[0][0][1:-1])
+        l1.set_data(x1, sol1.m[u][1:-1])
+        l2.set_data(x2, sol2.m[u][1:-1])
         le.set_data(x1, solution(sol1.t, x1))
         ax.title = 'solution at t = {0:f}'.format(sol1.t)
         ax.legend()

@@ -3,7 +3,7 @@ import copy
 import pyLBM
 
 class test_domain1D:
-    dom1d = {'box':{'x': [0, 1]},
+    dom1d = {'box':{'x': [0, 1], 'label': 0},
              'space_step':0.25,
              'schemes': [{'velocities':range(3)}],
              }
@@ -36,6 +36,7 @@ class test_domain1D:
 
         desired_distance = self.valin*np.ones((3, 6))
         desired_distance[[(1, 2), (-2, 1)]] = .5
+        print dom.distance
         assert(np.all(dom.distance == desired_distance))
 
         desired_flag = self.valin*np.ones((3, 6), dtype=int)

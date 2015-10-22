@@ -6,16 +6,15 @@ X, Y, LA = sp.symbols('X, Y, LA')
 rho, qx, qy = sp.symbols('rho, qx, qy')
 
 def bc_in(f, m, x, y):
-    m[0] = rhoo
-    m[1] = rhoo*uo * (ymax-y)*(y-0.75*(ymax-ymin))*8**2
-    m[2] = 0.
+    m[rho] = rhoo
+    m[qx] = rhoo*uo * (ymax-y)*(y-0.75*(ymax-ymin))*8**2
 
 def vorticity(sol):
     sol.f2m()
-    qx = sol.m[0][1]
-    qy = sol.m[0][2]
-    vort = np.abs(qx[1:-1, 2:] - qx[1:-1, :-2]
-                  - qy[2:, 1:-1] + qy[:-2, 1:-1])
+    qx_n = sol.m[qx]
+    qy_n = sol.m[qy]
+    vort = np.abs(qx_n[1:-1, 2:] - qx_n[1:-1, :-2]
+                  - qy_n[2:, 1:-1] + qy_n[:-2, 1:-1])
     return vort.T
 
 def update(iframe):

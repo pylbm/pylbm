@@ -8,16 +8,14 @@ X, Y = sp.symbols('X, Y')
 rho, qx, qy = sp.symbols('rho, qx, qy')
 
 def bc_up(f, m, x, y):
-    m[0] = 0.
-    m[1] = driven_velocity
-    m[2] = 0.
+    m[qx] = driven_velocity
 
 def vorticity(sol):
     sol.f2m()
-    qx = sol.m[0][1]
-    qy = sol.m[0][2]
-    vort = np.abs(qx[1:-1, 2:] - qx[1:-1, :-2]
-                  - qy[2:, 1:-1] + qy[:-2, 1:-1])
+    qx_n = sol.m[qx]
+    qy_n = sol.m[qy]
+    vort = np.abs(qx_n[1:-1, 2:] - qx_n[1:-1, :-2]
+                  - qy_n[2:, 1:-1] + qy_n[:-2, 1:-1])
     return vort.T
 
 def update(iframe):

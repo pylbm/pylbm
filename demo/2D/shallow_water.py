@@ -25,7 +25,7 @@ def plot_init(num = 0):
 def update(iframe):
     for k in xrange(32):
         sol.one_time_step()      # increment the solution of one time step
-    im.set_data(sol.m[0][0].transpose())
+    im.set_data(sol.m[rho].transpose())
     ax.title = 'solution at t = {0:f}'.format(sol.t)
 
 if __name__ == "__main__":
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     fig = viewer.Fig()
     ax = fig[0]
 
-    im = ax.image(sol.m[0][0].transpose(), clim=[rhoo-.5*deltarho, rhoo+1.5*deltarho])
+    im = ax.image(sol.m[rho].transpose(), clim=[rhoo-.5*deltarho, rhoo+1.5*deltarho])
     ax.title = 'solution at t = {0:f}'.format(sol.t)
 
     fig.animate(update, interval=1)

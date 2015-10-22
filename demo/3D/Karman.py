@@ -7,9 +7,7 @@ X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 mass, qx, qy, qz = sp.symbols('mass,qx,qy,qz')
 
 def bc_up(f, m, x, y, z):
-    m[3] = .01
-    m[5] = 0.
-    m[7] = 0.
+    m[qx] = .01
 
 def save(x, y, z, m, im):
     init_pvd = False
@@ -18,9 +16,9 @@ def save(x, y, z, m, im):
 
     vtk = pyLBM.VTKFile('karman', './data', im, init_pvd=init_pvd)
     vtk.set_grid(x, y, z)
-    vtk.add_scalar('mass', m[0][0])
-    qx, qy, qz = m[0][3], m[0][5], m[0][7]
-    vtk.add_vector('velocity', [qx, qy, qz])
+    vtk.add_scalar('mass', m[mass])
+    qx_n, qy_n, qz_n = m[qx], m[qy], m[qz]
+    vtk.add_vector('velocity', [qx_n, qy_n, qz_n])
     vtk.save()
 
 dx = 1./128

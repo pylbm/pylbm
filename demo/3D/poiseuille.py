@@ -39,23 +39,22 @@ X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 p, ux, uy, uz = sp.symbols('p,ux,uy,uz')
 
 def bc_in(f, m, x, y, z):
-    m[0] = (x-0.5*width) * grad_pressure *cte
-    m[4] = max_velocity * (1. - 4.*y**2/height**2)
-    m[8] = 0.
-    m[12] = 0.
+    m[p] = (x-0.5*width) * grad_pressure *cte
+    m[ux] = max_velocity * (1. - 4.*y**2/height**2)
 
 def bc_out(f, m, x, y, z):
-    m[0] = (x-0.5*width) * grad_pressure *cte
-    m[4] = 0.
-    m[8] = 0.
-    m[12] = 0.
+    m[p] = (x-0.5*width) * grad_pressure *cte
 
 def plot(x, y, z, m, num):
-    vtk = pyLBM.VTKFile('poiseuille_{0}'.format(im), './data')
+    init_pvd = False
+    if im == 1:
+        init_pvd = True
+
+    vtk = pyLBM.VTKFile('poiseuille', './data', im, init_pvd=init_pvd)
     vtk.set_grid(x, y, z)
-    vtk.add_scalar('pressure', m[0][0])
-    qx, qy, qz = m[1][0], m[2][0], m[3][0]
-    vtk.add_vector('velocity', [qx, qy, qz])
+    vtk.add_scalar('pressure', m[p])
+    qx_n, qy_n, qz_n = m[ux], m[uy], m[uz]
+    vtk.add_vector('velocity', [qx_n, qy_n, qz_n])
     vtk.save()
 
 # parameters

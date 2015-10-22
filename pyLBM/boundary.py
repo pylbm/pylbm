@@ -173,7 +173,10 @@ class Boundary_method(object):
                 for i in range(simulation.domain.dim):
                     x = simulation.domain.x[i][self.istore[i + 1, indices]]
                     x += s*v[k, i]*simulation.domain.dx
-                    coords += (x.T,)
+                    x = x.ravel()
+                    for i in range(1, simulation.domain.dim):
+                        x = x[:, np.newaxis]
+                    coords += (x,)
 
                 m = Array(nv, nspace , 0, sorder)
                 m.set_conserved_moments(simulation.scheme.consm, self.stencil.nv_ptr)

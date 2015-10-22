@@ -71,15 +71,15 @@ ax2 = fig[1]
 ax2.axis(xmin, xmax, .9*yminb, 1.1*ymaxb)
 
 x = sol.domain.x[0][1:-1]
-l1 = ax1.plot(x, sol.m[0][0][1:-1], color='b')[0]
-l2 = ax2.plot(x, sol.m[1][0][1:-1], color='r')[0]
+l1 = ax1.plot(x, sol.m[h][1:-1], color='b')[0]
+l2 = ax2.plot(x, sol.m[q][1:-1], color='r')[0]
 
 def update(iframe):
     if sol.t<Tf:
         sol.one_time_step()
         sol.f2m()
-        l1.set_data(x, sol.m[0][0][1:-1])
-        l2.set_data(x, sol.m[1][0][1:-1])
+        l1.set_data(x, sol.m[h][1:-1])
+        l2.set_data(x, sol.m[q][1:-1])
         ax1.title = r'$h$ at $t = {0:f}$'.format(sol.t)
         ax2.title = r'$q$ at $t = {0:f}$'.format(sol.t)
 

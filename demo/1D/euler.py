@@ -98,25 +98,25 @@ sol.f2m()
 sol.time_info()
 
 x = sol.domain.x[0][1:-1]
-rho = sol.m[0][0][1:-1]
-q = sol.m[1][0][1:-1]
-E = sol.m[2][0][1:-1]
-u = q/rho
-p = (gamma-1.)*(E - .5*rho*u**2)
-e = E/rho - .5*u**2
+rho_n = sol.m[rho][1:-1]
+q_n = sol.m[q][1:-1]
+E_n = sol.m[E][1:-1]
+u = q_n/rho_n
+p = (gamma-1.)*(E_n - .5*rho_n*u**2)
+e = E_n/rho_n - .5*u**2
 
 viewer= pyLBM.viewer.matplotlibViewer
 fig = viewer.Fig(2, 3)
 
-fig[0,0].plot(x, rho)
+fig[0,0].plot(x, rho_n)
 fig[0,0].title = 'mass'
 fig[0,1].plot(x, u)
 fig[0,1].title = 'velocity'
 fig[0,2].plot(x, p)
 fig[0,2].title = 'pressure'
-fig[1,0].plot(x, E)
+fig[1,0].plot(x, E_n)
 fig[1,0].title = 'energy'
-fig[1,1].plot(x, q)
+fig[1,1].plot(x, q_n)
 fig[1,1].title = 'momentum'
 fig[1,2].plot(x, e)
 fig[1,2].title = 'internal energy'

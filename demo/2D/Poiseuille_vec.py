@@ -35,14 +35,11 @@ X, Y, LA = sp.symbols('X,Y,LA')
 p, ux, uy = sp.symbols('p, ux, uy')
 
 def bc_in(f, m, x, y):
-    m[0] = (x-0.5*width) * grad_pressure * cte
-    m[4] = max_velocity * (1. - 4.*y**2/height**2)
-    m[8] = 0.
+    m[p] = (x-0.5*width) * grad_pressure * cte
+    m[ux] = max_velocity * (1. - 4.*y**2/height**2)
 
 def bc_out(f, m, x, y):
-    m[0] = (x-0.5*width) * grad_pressure * cte
-    m[4] = 0.
-    m[8] = 0.
+    m[p] = (x-0.5*width) * grad_pressure * cte
 
 def run(dico):
     sol = pyLBM.Simulation(dico)
@@ -51,17 +48,17 @@ def run(dico):
 
     import numpy as np
     print "*"*50
-    rho = sol.m[0][0][1:-1, 1:-1]
-    qx = sol.m[1][0][1:-1, 1:-1]
-    qy = sol.m[2][0][1:-1, 1:-1]
+    rho = sol.m[p][1:-1, 1:-1]
+    qx_n = sol.m[ux][1:-1, 1:-1]
+    qy_n = sol.m[uy][1:-1, 1:-1]
     x = sol.domain.x[0][1:-1]
     y = sol.domain.x[1][1:-1]
     x = x[:, np.newaxis]
     y = y[np.newaxis, :]
     coeff = sol.domain.dx / np.sqrt(width*height)
     Err_rho = coeff * np.linalg.norm(rho - (x-0.5*width) * grad_pressure)
-    Err_qx = coeff * np.linalg.norm(qx - max_velocity * (1 - 4 * y**2 / height**2))
-    Err_qy = coeff * np.linalg.norm(qy)
+    Err_qx = coeff * np.linalg.norm(qx_n - max_velocity * (1 - 4 * y**2 / height**2))
+    Err_qy = coeff * np.linalg.norm(qy_n)
     print "Norm of the error on rho: {0:10.3e}".format(Err_rho)
     print "Norm of the error on qx:  {0:10.3e}".format(Err_qx)
     print "Norm of the error on qy:  {0:10.3e}".format(Err_qy)
@@ -71,7 +68,7 @@ def run(dico):
     fig = viewer.Fig()
     ax = fig[0]
 
-    ax.image(qx - max_velocity * (1 - 4 * y**2 / height**2))
+    ax.image(qx_n - max_velocity * (1 - 4 * y**2 / height**2))
     fig.show()
 
 if __name__ == "__main__":

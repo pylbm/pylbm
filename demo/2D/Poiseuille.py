@@ -8,18 +8,15 @@ X, Y, LA = sp.symbols('X, Y, LA')
 rho, qx, qy = sp.symbols('rho, qx, qy')
 
 def bc_in(f, m, x, y):
-    m[0] = (x-0.5*width) * grad_pressure
-    m[1] = max_velocity * (1. - 4.*y**2/height**2)
-    m[2] = 0.
+    m[rho] = (x-0.5*width) * grad_pressure
+    m[qx] = max_velocity * (1. - 4.*y**2/height**2)
 
 def bc_out(f, m, x, y):
-    m[0] = (x-0.5*width) * grad_pressure
-    m[1] = 0.
-    m[2] = 0.
+    m[rho] = (x-0.5*width) * grad_pressure
 
 def update(iframe):
     sol.one_time_step()
-    l1.set_data(y, sol.m[0][1][nt, 1:-1])
+    l1.set_data(y, sol.m[qx][nt, 1:-1])
     ax.title = 'Velocity at t = {0:f}'.format(sol.t)
 
 # parameters
@@ -88,7 +85,7 @@ ax = fig[0]
 
 nt = int(sol.domain.N[0]/2)
 y = sol.domain.x[1][1:-1]
-l1 = ax.plot(y, sol.m[0][1][nt, 1:-1], color='r', marker='+')[0]
+l1 = ax.plot(y, sol.m[qx][nt, 1:-1], color='r', marker='+')[0]
 l2 = ax.plot(y, rhoo*max_velocity * (1.-4.*y**2/height**2), color='k')
 ax.title = 'Velocity at t = {0:f}'.format(sol.t)
 #ax.axis(ymin, ymax, 0., 1.2*max_velocity)

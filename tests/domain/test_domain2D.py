@@ -19,7 +19,7 @@ def check_from_file(dom, fname):
                  flag = dom.flag)
 
 class test_domain2D:
-    dom2d = {'box':{'x': [0, 1], 'y': [0, 2]},
+    dom2d = {'box':{'x': [0, 1], 'y': [0, 2], 'label': 0},
              'space_step':0.25,
              'schemes': [{'velocities':range(5)}],
              }
