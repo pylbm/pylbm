@@ -5,7 +5,7 @@
 # License: BSD 3 clause
 
 """
-Example of a 3D geometry: the cube [0,1] x [0,1] x [0,1] with a spherical hole
+Example of a 3D geometry: the cube [0,1] x [0,1] x [0,1] with a ellipsoidal hole
 """
 import pyLBM
 

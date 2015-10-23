@@ -82,7 +82,7 @@ def stability_array_recur(vs, vux, mR, l, nb_calcul):
             if (mR[i, j] == 0):
                 S = scheme_constructor(vux[i], vs[j])
                 nb_calcul += 1
-                if S.is_stable_Linfinity():
+                if S.is_monotonically_stable():
                     plt.scatter([vux[i], -vux[i]], [vs[j], vs[j]], c = 'b', marker = 'o')
                     mR[i, j] = 1
                 else:

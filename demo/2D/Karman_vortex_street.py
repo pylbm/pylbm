@@ -67,7 +67,6 @@ dico = {
                 rho,
                 qx, qy,
                 -2*rho + 3*q2,
-                #rho + 1.5*q2,
                 rho - 3*q2,
                 -qx/LA, -qy/LA,
                 qx2 - qy2, qxy

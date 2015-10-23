@@ -67,7 +67,7 @@ class PlotWidget(object):
             text = (text,)
             pos = (pos,)
         for t, p in zip(text, pos):
-            if len(p) == 2:
+            if dim < 3:
                 allt.append(self.ax.text(p[0], p[1], t,
                     fontsize=fontsize, color=color,
                     horizontalalignment=horizontalalignment,
@@ -96,8 +96,8 @@ class PlotWidget(object):
     def clear(self):
         self.ax.clf()
 
-    def axis(self, xmin, xmax, ymin, ymax, zmin=0, zmax=0):
-        if zmin == 0 and zmax == 0:
+    def axis(self, xmin, xmax, ymin, ymax, zmin=0, zmax=0, dim=2):
+        if (zmin == 0 and zmax == 0) or dim == 2:
             self.ax.set_xlim(xmin, xmax)
             self.ax.set_ylim(ymin, ymax)
         else:
@@ -132,7 +132,7 @@ class PlotWidget(object):
         x = pos[0] + a[0]*CS + b[0]*SS + c[0]*C
         y = pos[1] + a[1]*CS + b[1]*SS + c[1]*C
         z = pos[2] + a[2]*CS + b[2]*SS + c[2]*C
-        return self.ax.plot_surface(x, y, z, rstride=4, cstride=4, color=color)
+        return self.ax.plot_surface(x, y, z, rstride=4, cstride=4, color=color[0])
 
     def markers(self, pos, size, color='k', symbol='o'):
         if pos.shape[1] == 2:
@@ -146,9 +146,7 @@ class PlotWidget(object):
             data = f
         else:
             data = f(*fargs)
-
         image = self.ax.imshow(data, origin='lower', vmin=clim[0], vmax=clim[1], cmap=cmap, interpolation='nearest')
-
         return image
 
     def draw(self):
