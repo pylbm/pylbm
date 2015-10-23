@@ -214,7 +214,7 @@ class Velocity(with_metaclass(Singleton, object)):
         The symmetric of the velocity
 
         """
-        if axis >= self.dim:
+        if axis is not None and axis >= self.dim:
             self.log.error("axis must be less than the dimension of the velocity (axis:{0}, dim:{1})".format(axis, self.dim))
             raise ValueError
 
@@ -592,11 +592,13 @@ class Stencil(list):
 
     @property
     def vmax(self):
-        return np.max([self.uvx, self.uvy, self.uvz], axis=1)
+        tmp = np.asarray([self.uvx, self.uvy, self.uvz])
+        return np.max(tmp[:self.dim], axis=1)
 
     @property
     def vmin(self):
-        return np.min([self.uvx, self.uvy, self.uvz], axis=1)
+        tmp = np.asarray([self.uvx, self.uvy, self.uvz])
+        return np.min(tmp[:self.dim], axis=1)
 
     @property
     def uvx(self):
