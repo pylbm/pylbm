@@ -1,3 +1,4 @@
+from __future__ import division
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -5,6 +6,7 @@
 # License: BSD 3 clause
 
 import numpy as np
+from six.moves import range
 
 def intersection_two_lines(p1, v1, p2, v2):
     """
@@ -27,7 +29,7 @@ def distance_lines(x, y, v, p, vt, dmax, label):
     v2 = np.asarray([x, y])
     alpha = 1e16*np.ones((x.size, y.size))
     border = -np.ones((x.size, y.size))
-    for i in xrange(len(vt)):
+    for i in range(len(vt)):
         tmp1, tmp2 = intersection_two_lines(v2, v, p[i], vt[i])
         if tmp1 is not None:
             if dmax is None:
@@ -65,8 +67,8 @@ def distance_ellipse(x, y, v, center, v1, v2, dmax, label):
     d1 = 1e16*np.ones(delta.shape)
     d2 = 1e16*np.ones(delta.shape)
     if a != 0:
-        d1[ind] = (-b[ind]-delta[ind]) / (2*a)
-        d2[ind] = (-b[ind]+delta[ind]) / (2*a)
+        d1[ind] = (-b[ind]-delta[ind])/(2*a)
+        d2[ind] = (-b[ind]+delta[ind])/(2*a)
     d1[d1<0] = 1e16
     d2[d2<0] = 1e16
     d = -np.ones(d1.shape)
@@ -120,8 +122,8 @@ def distance_ellipsoid(x, y, z, v, center, v1, v2, v3, dmax, label):
     delta[ind] = np.sqrt(delta[ind])
     d1 = 1e16*np.ones(delta.shape)
     d2 = 1e16*np.ones(delta.shape)
-    d1[ind] = (-b[ind]-delta[ind]) / (2*a)
-    d2[ind] = (-b[ind]+delta[ind]) / (2*a)
+    d1[ind] = (-b[ind]-delta[ind])/(2*a)
+    d2[ind] = (-b[ind]+delta[ind])/(2*a)
     d1[d1<0] = 1e16
     d2[d2<0] = 1e16
     d = -np.ones(d1.shape)

@@ -1,3 +1,4 @@
+from __future__ import division
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -5,6 +6,8 @@
 # License: BSD 3 clause
 
 import numpy as np
+from six.moves import range
+
 from .base import *
 from ..logs import setLogger
 from .utils import *
@@ -117,10 +120,10 @@ class Cylinder(Element):
             decal = 1.e-16
         else:
             decal = 0.
-        alpha_top = (1.-z_cyl) / (v_cyl[2] + decal)
+        alpha_top = (1.-z_cyl)/(v_cyl[2] + decal)
         ind = np.logical_or(alpha_top<0, np.logical_not(self.base.point_inside(x_cyl + alpha_top*v_cyl[0], y_cyl + alpha_top*v_cyl[1])))
         alpha_top[ind] = 1.e16
-        alpha_bot = -(1.+z_cyl) / (v_cyl[2] + decal)
+        alpha_bot = -(1.+z_cyl)/(v_cyl[2] + decal)
         ind = np.logical_or(alpha_bot<0, np.logical_not(self.base.point_inside(x_cyl + alpha_bot*v_cyl[0], y_cyl + alpha_bot*v_cyl[1])))
         alpha_bot[ind] = 1.e16
 
@@ -141,7 +144,7 @@ class Cylinder(Element):
             color = [color]*self.number_of_bounds
         lx_b, ly_b = self.base._visualize()
         c = self.center
-        for k in xrange(len(lx_b)-2): # loop over the faces of the side
+        for k in range(len(lx_b)-2): # loop over the faces of the side
             x_b, y_b = lx_b[k], ly_b[k]
             z_b = [-1., 1.]
             X_cyl, Z_cyl = np.meshgrid(x_b, z_b)

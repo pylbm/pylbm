@@ -5,13 +5,14 @@ from __future__ import print_function
 #
 # License: BSD 3 clause
 
+from six.moves import range
 import types
 import sympy as sp
 import numpy as np
 import pyLBM
 
 
-class PrintInColor:
+class PrintInColor(object):
     RED = '\033[91m'
     GREEN = '\033[92m'
     YELLOW = '\033[93m'
@@ -51,7 +52,7 @@ def is_dico_generic(d, ltk, ltv, ntab=0):
     test = isinstance(d, dict)
     if test:
         ligne = ''
-        for k, v in d.items():
+        for k, v in list(d.items()):
             test_k = True
             if isinstance(k, ltk):
                 ligne_k = PrintInColor.correct(k)
@@ -108,7 +109,7 @@ def is_dico_bc(d, ntab=0):
     test = isinstance(d, dict)
     ligne = ''
     if test:
-        for label, dico_bc_label in d.items():
+        for label, dico_bc_label in list(d.items()):
             if not isinstance(label, (int, bytes)):
                 test = False
                 debut_l = debut(False) + space(ntab)
@@ -142,7 +143,7 @@ def is_dico_bcmethod(d, ntab=0):
     test = isinstance(d, dict)
     ligne = ''
     if test:
-        for label, value in d.items():
+        for label, value in list(d.items()):
             if not isinstance(label, int):
                 test_l = False
                 debut_l = debut(False) + space(ntab)
@@ -233,7 +234,7 @@ def is_list_symb(l, ntab=None):
 def test_dico_prototype(dico, proto, ntab=0):
     test_g = True
     aff = ''
-    for key, value in dico.items():
+    for key, value in list(dico.items()):
         value_p = proto.get(key, None)
         test_loc = False
         if value_p is None:
@@ -256,7 +257,7 @@ def test_dico_prototype(dico, proto, ntab=0):
                     print("\n\n" + "*"*50 + "\nUnknown type\n" + "*"*50)
         aff += debut(test_loc) + space(ntab) + aff_k
         test_g = test_g and test_loc
-    for key_p, value_p in proto.items():
+    for key_p, value_p in list(proto.items()):
         value = dico.get(key_p, None)
         if value is None:
             if value_p[0] == type(None):
@@ -326,7 +327,7 @@ def test_compatibility_schemes(dico):
             if (inittype == 'moments') and (dsi is not None):
                 for cmk in cm:
                     test_init = False
-                    for ki, vi in dsi.items():
+                    for ki, vi in list(dsi.items()):
                         if cmk == ki:
                             test_init = True
                             if not isinstance(vi, (float, int, tuple)):
@@ -336,7 +337,7 @@ def test_compatibility_schemes(dico):
             # test if the conserved moments are initialized
             dsi = ds.get('init', None)
             if (inittype == 'moments') and (dsi is not None):
-                for ki in dsi.keys():
+                for ki in list(dsi.keys()):
                     test_init = False
                     for cmk in cm:
                         if cmk == ki:
@@ -362,7 +363,7 @@ def test_compatibility_bc(dico):
                     aff += PrintInColor.error("No boundary condition given in the dictionary.\n")
                     test = False
                 for l in labels:
-                    test_l = (l==-1) or any(k==l for k in dbc.keys())
+                    test_l = (l==-1) or any(k==l for k in list(dbc.keys()))
                     if not test_l:
                         test = False
                         aff += PrintInColor.error("The label {0} has no corresponding boundary condition.\n".format(l))
@@ -406,7 +407,7 @@ if __name__ == "__main__":
         'generator':pyLBM.generator.CythonGenerator,
         'scheme_velocity':1.,
         'schemes':[{
-            'velocities':range(1,5),
+            'velocities':list(range(1,5)),
             'conserved_moments':rho,
             'polynomials':[1, X, Y, X**2-Y**2, 2],
             'equilibrium':[rho, ux*rho, uy*rho, 0.],

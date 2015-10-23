@@ -1,3 +1,4 @@
+from __future__ import division
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -5,6 +6,7 @@
 # License: BSD 3 clause
 
 import numpy as np
+
 from .base import Element
 from ..logs import setLogger
 from .utils import *
@@ -153,7 +155,7 @@ class Ellipse(Element):
         if v[0] == 0:
             theta = .5*np.pi
         else:
-            theta = np.arctan(v[1] / v[0])
+            theta = np.arctan(v[1]/v[0])
 
         viewer.ellipse(self.center*scale, (r1*scale[0], r2*scale[1]), color, angle = theta)
         if viewlabel:

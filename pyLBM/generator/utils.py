@@ -6,6 +6,7 @@ from __future__ import print_function
 # License: BSD 3 clause
 from string import Template
 import numpy as np
+from six.moves import range
 
 def matMult(A, x, y, sorder=None, vectorized=True, indent=''):
     """

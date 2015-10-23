@@ -5,10 +5,9 @@
 # License: BSD 3 clause
 
 import abc
+from future.utils import with_metaclass
 
-class Viewer(object):
-    __metaclass__ = abc.ABCMeta
-
+class Viewer(with_metaclass(abc.ABCMeta, object)):
     @abc.abstractmethod
     def text(self, t, pos, fontsize, color, **kwargs):
         """

@@ -1,10 +1,12 @@
-from __future__ import print_function
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
 
+from __future__ import print_function
+from __future__ import division
+from six.moves import range
 import types
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
@@ -61,7 +63,7 @@ def get_box(dico):
         log.error("'box' key not found in the geometry definition. Check the input dictionnary.")
     return dim, np.asarray(bounds, dtype='f8')
 
-class Geometry:
+class Geometry(object):
     """
     Create a geometry that defines the fluid part and the solid part.
 
@@ -126,7 +128,7 @@ class Geometry:
             self.log.error("The labels of the box must be an integer or a list")
 
         period = [False]*self.dim
-        for i in xrange(self.dim):
+        for i in range(self.dim):
             if self.box_label[2*i] == self.box_label[2*i+1] == -1: # work only for dim = 2
                 period[i] = True
 
@@ -141,7 +143,7 @@ class Geometry:
         self.bounds[:, 0] = self.bounds[:, 0] + t*coords
 
         # Modify box_label if the border becomes an interface
-        for i in xrange(self.dim):
+        for i in range(self.dim):
             voisins = self.interface.cartcomm.Shift(i, 1)
             if voisins[0] != mpi.PROC_NULL:
                 self.box_label[2*i] = -2
@@ -164,7 +166,7 @@ class Geometry:
         s += "\t bounds of the box: \n" + self.bounds.__str__() + "\n"
         if (len(self.list_elem) != 0):
             s += "\t List of elements added or deleted in the box\n"
-            for k in xrange(len(self.list_elem)):
+            for k in range(len(self.list_elem)):
                 s += "\t\t Element number {0:d}: ".format(k) + self.list_elem[k].__str__() + "\n"
         return s
 
@@ -245,7 +247,7 @@ class Geometry:
             ymin, ym, ymax = Pmin[1], .5*(Pmin[1]+Pmax[1]), Pmax[1]
             zmin, zm, zmax = Pmin[2], .5*(Pmin[2]+Pmax[2]), Pmax[2]
             ct_lab = 0
-            for k in xrange(3):
+            for k in range(3):
                 for x0 in [Pmin[k], Pmax[k]]:
                     XS, YS = np.meshgrid([Pmin[(k+1)%3], Pmax[(k+1)%3]],
                                          [Pmin[(k+2)%3], Pmax[(k+2)%3]])
@@ -266,7 +268,7 @@ class Geometry:
                 if elem.isfluid:
                     coul = fluid
                 else:
-                    coul = [couleurs[elem.label[k]] for k in xrange(elem.number_of_bounds)]
+                    coul = [couleurs[elem.label[k]] for k in range(elem.number_of_bounds)]
                 elem._visualize(ax, coul, viewlabel)
         else:
             self.log.error('Error in geometry.visualize(): the dimension {0} is not allowed'.format(self.dim))

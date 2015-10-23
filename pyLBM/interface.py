@@ -11,7 +11,7 @@ from argparse import ArgumentParser
 from .options import options
 from .logs import setLogger
 
-class Interface:
+class Interface(object):
     """
     Interface construction using a MPI topology.
 

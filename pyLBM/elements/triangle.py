@@ -1,3 +1,4 @@
+from __future__ import division
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -5,6 +6,8 @@
 # License: BSD 3 clause
 
 import numpy as np
+from six.moves import range
+
 from .base import Element
 from ..logs import setLogger
 from .utils import *
@@ -159,9 +162,9 @@ class Triangle(Element):
         return s
 
     def _visualize(self, viewer, color, viewlabel):
-        A = [self.point[k] for k in xrange(2)]
-        B = [A[k] + self.v0[k] for k in xrange(2)]
-        D = [A[k] + self.v1[k] for k in xrange(2)]
+        A = [self.point[k] for k in range(2)]
+        B = [A[k] + self.v0[k] for k in range(2)]
+        D = [A[k] + self.v1[k] for k in range(2)]
         viewer.polygon([A,B,D], color)
         if viewlabel:
             viewer.text(str(self.label[0]), [0.5*(A[0]+B[0]), 0.5*(A[1]+B[1])])

@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import division
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -6,6 +7,7 @@ from __future__ import print_function
 # License: BSD 3 clause
 
 import numpy as np
+from six.moves import range
 
 from .logs import setLogger
 from .storage import Array
@@ -16,7 +18,7 @@ proto_bc = {
     'value':(type(None), types.FunctionType),
 }
 
-class Boundary_Velocity:
+class Boundary_Velocity(object):
     """
     Indices and distances for the label and the velocity ksym
     """
@@ -39,7 +41,7 @@ class Boundary_Velocity:
             self.indices += np.asarray(v.v)[:, np.newaxis]
         self.distance = np.array(domain.distance[(num,) + ind])
 
-class Boundary:
+class Boundary(object):
     """
     Construct the boundary problem by defining the list of indeices on the border and the methods used on each label.
 
@@ -72,7 +74,7 @@ class Boundary:
         self.bv = {}
         for label in self.domain.geom.list_of_labels():
             dummy_bv = []
-            for k in xrange(self.domain.stencil.unvtot):
+            for k in range(self.domain.stencil.unvtot):
                 dummy_bv.append(Boundary_Velocity(self.domain, label, k))
             self.bv[label] = dummy_bv
 
@@ -95,7 +97,7 @@ class Boundary:
                 methods = dico_bound[label]['method']
                 # for each method get the list of points, the labels and the distances
                 # where the distribution function must be updated on the boundary
-                for k, v in methods.iteritems():
+                for k, v in methods.items():
                     for inumk, numk in enumerate(stencil.num[k]):
                         if self.bv[label][stencil.unum2index[numk]].indices.size != 0:
                             indices = self.bv[label][stencil.unum2index[numk]].indices
@@ -114,7 +116,7 @@ class Boundary:
 
         # for each method create the instance associated
         self.methods = []
-        for k in istore.keys():
+        for k in list(istore.keys()):
             self.methods.append(k(istore[k], ilabel[k], distance[k], stencil, value_bc))
 
 class Boundary_method(object):
@@ -162,7 +164,7 @@ class Boundary_method(object):
         nspace = [1]*(len(sorder)-1)
         v = self.stencil.get_all_velocities()
 
-        for key, value in self.value_bc.iteritems():
+        for key, value in self.value_bc.items():
             if value is not None:
                 indices = np.where(self.ilabel == key)
                 # TODO: check the index in sorder to be the most contiguous

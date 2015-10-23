@@ -1,4 +1,5 @@
 from __future__ import print_function
+from six.moves import range
 import numpy as np
 import sympy as sp
 import copy
@@ -6,7 +7,7 @@ import mpi4py.MPI as mpi
 
 from .logs import setLogger
 
-class Array:
+class Array(object):
     """
     This class defines the storage of the moments and
     distribution functions in pyLBM.
@@ -60,7 +61,7 @@ class Array:
 
     def set_conserved_moments(self, consm, nv_ptr):
         self.consm = {}
-        for k, v in consm.iteritems():
+        for k, v in consm.items():
             self.consm[k] = nv_ptr[v[0]] + v[1]
 
     @property
@@ -112,7 +113,7 @@ class Array:
         start_recv = []
         msize = []
         stag, rtag = get_tags(dim)
-        for i in xrange(dim):
+        for i in range(dim):
             start_send.append([vmax[i], vmax[i], nspace[i]-2*vmax[i]])
             start_recv.append([0, vmax[i], nspace[i]-vmax[i]])
             msize.append([vmax[i], nloc[i], vmax[i]])
@@ -165,10 +166,10 @@ class Array:
         update ghost points on the interface with the datas of the neighbors.
         """
         req = []
-        for i in xrange(len(self.recvType)):
+        for i in range(len(self.recvType)):
             req.append(self.comm.Irecv([self.array, self.recvType[i]], source = self.neighbors[i], tag=self.recvTag[i]))
 
-        for i in xrange(len(self.sendType)):
+        for i in range(len(self.sendType)):
             req.append(self.comm.Isend([self.array, self.sendType[i]], dest = self.neighbors[i], tag=self.sendTag[i]))
 
         mpi.Request.Waitall(req)

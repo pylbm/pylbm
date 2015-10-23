@@ -13,7 +13,7 @@ from ..logs import setLogger
 
 INDENT = ' '*4
 
-class Generator:
+class Generator(object):
     """
     the generic class to generate the code
 

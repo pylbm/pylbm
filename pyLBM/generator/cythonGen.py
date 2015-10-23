@@ -6,6 +6,7 @@
 import numpy as np
 import sympy as sp
 import re
+from six.moves import range
 
 from .base import Generator, INDENT
 from .utils import matMult, load_or_store
@@ -195,7 +196,7 @@ from libc.stdlib cimport malloc, free
           add the transport phase in the attribute ``code``.
         """
         stmp = ''
-        for i in xrange(stencil.dim):
+        for i in range(stencil.dim):
             stmp += ', int i{0}'.format(i)
 
         get_f = "cdef void get_f({0} *floc, {0}[:{1}:1] f{2}) nogil:\n".format(dtype, ', :'*stencil.dim, stmp)
@@ -244,7 +245,7 @@ from libc.stdlib cimport malloc, free
 
         def subpow(g):
             s = '(' + g.group('m')
-            for i in xrange(int(g.group('pow')) - 1):
+            for i in range(int(g.group('pow')) - 1):
                 s += '*' + g.group('m')
             s += ')'
             return s
@@ -262,8 +263,8 @@ from libc.stdlib cimport malloc, free
         for js, s in enumerate(self.sorder[1:]):
             slices[s] = 'i%d'%js
 
-        for k in xrange(ns):
-            for i in xrange(stencil.nv[k]):
+        for k in range(ns):
+            for i in range(stencil.nv[k]):
                 slices[self.sorder[0]] = str(stencil.nv_ptr[k] + i)
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
                     if eq[k][i] != 0:
@@ -304,7 +305,7 @@ from libc.stdlib cimport malloc, free
 
         def subpow(g):
             s = '(' + g.group('m')
-            for i in xrange(int(g.group('pow')) - 1):
+            for i in range(int(g.group('pow')) - 1):
                 s += '*' + g.group('m')
             s += ')'
             return s
@@ -315,8 +316,8 @@ from libc.stdlib cimport malloc, free
 
             return '[' + str(stencil.nv_ptr[i] + j) + ']'
 
-        for k in xrange(ns):
-            for i in xrange(stencil.nv[k]):
+        for k in range(ns):
+            for i in range(stencil.nv[k]):
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
                     if eq[k][i] != 0:
                         str2input = str(eq[k][i])

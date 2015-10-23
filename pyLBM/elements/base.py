@@ -5,11 +5,12 @@
 # License: BSD 3 clause
 
 import numpy as np
+from six.moves import range
 
 from ..logs import setLogger
 from .utils import *
 
-class Element:
+class Element(object):
     """
     Class Element
 
@@ -44,7 +45,7 @@ class Element:
         return len(self.label) == self.number_of_bounds
 
 
-class Base2D():
+class Base2D(object):
     """
     Class Base2D
 
@@ -213,7 +214,7 @@ class Base_Triangle(Base2D):
         p = np.asarray([[0,0], [1,0], [0,1], [0,0], [1,0]]).T
         lx_b = []
         ly_b = []
-        for k in xrange(3):
+        for k in range(3):
             lx_b.append(p[0,k:k+2])
             ly_b.append(p[1,k:k+2])
         lx_b.append(p[0,:4])
@@ -271,7 +272,7 @@ class Base_Parallelogram(Base2D):
         p = np.asarray([[0,0], [1,0], [1,1], [0,1], [0,0], [1,0]]).T
         lx_b = []
         ly_b = []
-        for k in xrange(4):
+        for k in range(4):
             lx_b.append(p[0,k:k+2])
             ly_b.append(p[1,k:k+2])
         lx_b.append(p[0,:5])

@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import division
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -9,6 +10,7 @@ import numpy as np
 import sympy as sp
 import sys
 import copy
+from six.moves import range
 
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
@@ -37,7 +39,7 @@ proto_domain = {
     'inittype':(type(None), bytes),
 }
 
-class Domain:
+class Domain(object):
     """
     Create a domain that defines the fluid part and the solid part
     and computes the distances between these two states.
@@ -169,13 +171,13 @@ class Domain:
         self.dx = dico['space_step'] if space_step is None else space_step
 
         self.dim = self.geom.dim
-        
+
         self.globalbounds = self.geom.globalbounds # the box where the domain lies
         self.bounds = self.geom.bounds # the local box of the process
 
         get_shape = lambda x: int((x[1] - x[0] + .5*self.dx)/self.dx)
-        self.Ng = map(get_shape, self.globalbounds[:self.dim])
-        self.N = map(get_shape, self.bounds[:self.dim])
+        self.Ng = list(map(get_shape, self.globalbounds[:self.dim]))
+        self.N = list(map(get_shape, self.bounds[:self.dim]))
 
         # spatial mesh
         self.extent = np.asarray(self.stencil.vmax[:self.dim])
@@ -183,9 +185,9 @@ class Domain:
         Na = np.asarray(self.N) + 2*self.extent
         self.x = np.asarray([np.linspace(self.bounds[k][0] - debord[k],
                                          self.bounds[k][1] + debord[k],
-                                         Na[k]) for k in xrange(self.dim)])
+                                         Na[k]) for k in range(self.dim)])
 
-        for k in xrange(self.dim):
+        for k in range(self.dim):
             extra_points = (self.globalbounds[k][1] - self.globalbounds[k][0])/self.dx
             if not extra_points.is_integer():
                 self.log.error('The length of the box in the direction {0} must be a multiple of the space step'.format(k))
@@ -233,7 +235,7 @@ class Domain:
             new_ind = copy.deepcopy(indices)
             ind = np.where(dist_view[indices] > dvik)
             ii = 1
-            for j in xrange(self.dim):
+            for j in range(self.dim):
                 if j != iuv:
                     new_ind[j + 1] = ind[ii]
                     ii += 1
@@ -241,19 +243,19 @@ class Domain:
 
         s = self.stencil
         uvel = [s.uvx, s.uvy, s.uvz]
-
+        
         for iuv, uv in enumerate(uvel[:self.dim]):
             for k, vk in np.ndenumerate(uv):
                 indices = [k] + [slice(None)]*self.dim
                 if vk < 0 and label[2*iuv] != -2:
-                    for i in xrange(-vk):
+                    for i in range(-vk):
                         indices[iuv + 1] = i
                         dvik = -(i + .5)/vk
                         nind = new_indices(dvik, iuv, indices, dist_view)
                         dist_view[nind] = dvik
                         flag_view[nind] = label[2*iuv]
                 elif vk > 0 and label[2*iuv + 1] != -2:
-                    for i in xrange(vk):
+                    for i in range(vk):
                         indices[iuv + 1] = -i -1
                         dvik = (i + .5)/vk
                         nind = new_indices(dvik, iuv, indices, dist_view)
@@ -273,7 +275,7 @@ class Domain:
         """
         # compute the box around the element adding vmax safety points
         indbe = np.asarray([(self.stencil.vmax[k],
-                             self.stencil.vmax[k] + self.N[k]) for k in xrange(self.dim)])
+                             self.stencil.vmax[k] + self.N[k]) for k in range(self.dim)])
         bmin, bmax = elem.get_bounds()
 
         #if self.dim < 3:
@@ -327,7 +329,7 @@ class Domain:
             ioo_view[ind_fluid] = self.valin
 
         if self.dim == 2:
-            for k in xrange(self.stencil.unvtot):
+            for k in range(self.stencil.unvtot):
                 vxk = self.stencil.unique_velocities[k].vx
                 vyk = self.stencil.unique_velocities[k].vy
                 if (vxk != 0 or vyk != 0):
@@ -357,7 +359,7 @@ class Domain:
                     dist_view[k][ind4[0][ind3[0]], ind4[1][ind3[0]]] = alpha[ind4[0][ind3[0]], ind4[1][ind3[0]]]
                     flag_view[k][ind4[0][ind3[0]], ind4[1][ind3[0]]] = border[ind4[0][ind3[0]], ind4[1][ind3[0]]]
         else:
-            for k in xrange(self.stencil.unvtot):
+            for k in range(self.stencil.unvtot):
                 vxk = self.stencil.unique_velocities[k].vx
                 vyk = self.stencil.unique_velocities[k].vy
                 vzk = self.stencil.unique_velocities[k].vz
@@ -412,7 +414,7 @@ class Domain:
 
         if isinstance(view_distance, bool):
             view_seg = view_distance
-            view_distance = range(self.stencil.unvtot)
+            view_distance = list(range(self.stencil.unvtot))
         elif isinstance(view_distance, int):
             view_seg = True
             view_distance = (view_distance,)
@@ -428,7 +430,7 @@ class Domain:
             x = self.x[0]
             y = np.zeros(x.shape)
             vkmax = self.stencil.vmax[0]
-            for k in xrange(self.stencil.unvtot):
+            for k in range(self.stencil.unvtot):
                 vk = self.stencil.unique_velocities[k].vx
                 color = (1.-(vkmax+vk)*0.5/vkmax, 0., (vkmax+vk)*0.5/vkmax)
                 indbord = np.where(self.distance[k,:]<=1)[0]
@@ -582,16 +584,16 @@ def verification(dom, with_color=False):
 
     print('Nombre de points : ' + str(dom.Na) + '\n')
     if (dom.dim==1):
-        for k in xrange(dom.Na[0]):
+        for k in range(dom.Na[0]):
             print('{0:3d}'.format((int)(dom.in_or_out[k])), end=' ')
         print(' ')
-        for k in xrange(1, dom.stencil.unvtot):
+        for k in range(1, dom.stencil.unvtot):
             vx = dom.stencil.unique_velocities[k].vx
             print('*'*50)
             print('Check the velocity {0:2d} = {1:2d}'.format(k, vx))
             print('-'*50)
             print('Distances')
-            for i in xrange(dom.Na[0]):
+            for i in range(dom.Na[0]):
                 if (dom.in_or_out[i]==dom.valout):
                     print(blue + ' *  ' + black, end=' ')
                 elif (dom.distance[k,i]==dom.valin):
@@ -601,7 +603,7 @@ def verification(dom, with_color=False):
             print()
             print('-'*50)
             print('Border Flags')
-            for i in xrange(dom.Na[0]):
+            for i in range(dom.Na[0]):
                 if (dom.in_or_out[i]==dom.valout):
                     print(blue + ' *  ' + black, end=' ')
                 elif (dom.distance[k,i]==dom.valin):
@@ -611,19 +613,19 @@ def verification(dom, with_color=False):
             print()
             print('*'*50)
     if (dom.dim==2):
-        for k in xrange(dom.Na[1]-1, -1, -1):
-            for l in xrange(dom.Na[0]):
+        for k in range(dom.Na[1]-1, -1, -1):
+            for l in range(dom.Na[0]):
                 print('{0:3d}'.format((int)(dom.in_or_out[k,l])), end=' ')
             print(' ')
-        for k in xrange(dom.stencil.unvtot):
+        for k in range(dom.stencil.unvtot):
             vx = dom.stencil.unique_velocities[k].vx
             vy = dom.stencil.unique_velocities[k].vy
             print('*'*50)
             print('Check the velocity {0:2d} = ({1:2d},{2:2d})'.format(k, vx, vy))
             print('-'*50)
             print('Distances')
-            for j in xrange(dom.Na[1]-1,-1,-1):
-                for i in xrange(dom.Na[0]):
+            for j in range(dom.Na[1]-1,-1,-1):
+                for i in range(dom.Na[0]):
                     if (dom.distance[k,j,i] > 1 and dom.distance[k,j,i]<dom.valin): # nothing
                         print(white + '{0:3d} '.format(int(dom.distance[k,j,i])) + black, end=' ')
                     elif (dom.in_or_out[j,i] == dom.valout): # outer
@@ -635,8 +637,8 @@ def verification(dom, with_color=False):
                 print()
             print('-'*50)
             print('Border flags')
-            for j in xrange(dom.Na[1]-1,-1,-1):
-                for i in xrange(dom.Na[0]):
+            for j in range(dom.Na[1]-1,-1,-1):
+                for i in range(dom.Na[0]):
                     if (dom.distance[k,j,i] > 1 and dom.distance[k,j,i]<dom.valin):
                         print(white + '{0:3d} '.format(int(dom.distance[k,j,i])) + black, end=' ')
                     elif (dom.in_or_out[j,i] == dom.valout):
@@ -655,7 +657,7 @@ if __name__ == "__main__":
         'box':{'x': [0, 1], 'y': [0, 1], 'label':0},
         'elements':[pyLBM.Circle((0.5,0.5), 0.2, label = 1)],
         'space_step':0.05,
-        'schemes':[{'velocities':range(9)}]
+        'schemes':[{'velocities':list(range(9))}]
     }
     dom = pyLBM.Domain(dico)
     dom.visualize(opt=0)

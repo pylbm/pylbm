@@ -5,6 +5,7 @@
 # License: BSD 3 clause
 import sympy as sp
 import re
+from six.moves import range
 
 from .base import Generator, INDENT
 from .utils import matMult, load_or_store
@@ -112,8 +113,8 @@ class NumpyGenerator(Generator):
 
         slices = [':']*len(self.sorder)
 
-        for k in xrange(ns):
-            for i in xrange(stencil.nv[k]):
+        for k in range(ns):
+            for i in range(stencil.nv[k]):
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
                     slices[self.sorder[0]] = str(stencil.nv_ptr[k] + i)
                     if eq[k][i] != 0:
@@ -159,8 +160,8 @@ class NumpyGenerator(Generator):
 
         slices = [':']*len(self.sorder)
 
-        for k in xrange(ns):
-            for i in xrange(stencil.nv[k]):
+        for k in range(ns):
+            for i in range(stencil.nv[k]):
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
                     slices[self.sorder[0]] = str(stencil.nv_ptr[k] + i)
                     if eq[k][i] != 0:

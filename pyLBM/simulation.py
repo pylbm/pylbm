@@ -1,10 +1,12 @@
 from __future__ import print_function
+from __future__ import division
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
 
+from six.moves import range
 import sys
 import types
 import cmath
@@ -46,7 +48,7 @@ proto_simu = {
     'inittype':(type(None), bytes),
 }
 
-class Simulation:
+class Simulation(object):
     """
     create a class simulation
 
@@ -174,7 +176,7 @@ class Simulation:
 
         self.t = 0.
         self.nt = 0
-        self.dt = self.domain.dx / self.scheme.la
+        self.dt = self.domain.dx/self.scheme.la
         try:
             assert self.domain.dim == self.scheme.dim
         except:
@@ -274,7 +276,7 @@ class Simulation:
         unity_name = ['d', 'h', 'm', 's']
         tcut = []
         for u in unity:
-            tcut.append(ttot / u)
+            tcut.append(ttot/u)
             ttot -= tcut[-1]*u
         #computational time measurement
         s = '*'*50
@@ -362,7 +364,7 @@ class Simulation:
             self.log.error(sss)
             sys.exit()
 
-        for k, v in self.scheme.init.iteritems():
+        for k, v in self.scheme.init.items():
             ns = self.scheme.stencil.nv_ptr[k[0]] + k[1]
 
             if isinstance(v, tuple):

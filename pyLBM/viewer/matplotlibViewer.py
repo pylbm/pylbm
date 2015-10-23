@@ -1,9 +1,12 @@
-from __future__ import print_function
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
+
+from __future__ import print_function
+from __future__ import division
+from six.moves import range
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import Colormap
@@ -15,7 +18,7 @@ import numpy as np
 
 from .base import Viewer
 
-class Fig:
+class Fig(object):
     def __init__(self, nrows=1, ncols=1, dim = 0):
         self.fig = plt.figure()
         self._grid = plt.GridSpec(nrows, ncols)

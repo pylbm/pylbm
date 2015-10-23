@@ -1,18 +1,21 @@
-from __future__ import print_function
-from __future__ import absolute_import
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
 
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
+from six.moves import range
 import sympy as sp
 from sympy.matrices import Matrix, zeros
+
 from .stencil import Stencil
 from .scheme import Scheme
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
-u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
+u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in range(25)] for i in range(10)]
 
 def D1Q3(la=1., alpha=0.5, relaxparam=1.9):
     dim = 1 # spatial dimension

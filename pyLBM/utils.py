@@ -66,7 +66,7 @@ class bound2itemproperty(property):
 
 if __name__ == '__main__':
     import numpy as np
-    class test:
+    class test(object):
         def __init__(self):
             self._m = np.arange(10).reshape((2, 5))
             self.nv_ptr = [0, 3, 8]

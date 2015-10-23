@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import division
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -7,6 +8,8 @@ from __future__ import print_function
 
 import sys
 import types
+from six import string_types
+from six.moves import range
 
 import numpy as np
 import sympy as sp
@@ -53,12 +56,12 @@ proto_cons = {
 
 def param_to_tuple(param):
     if param is not None:
-        pk, pv = param.keys(), param.values()
+        pk, pv = list(param.keys()), list(param.values())
     else:
         pk, pv = (), ()
     return pk, pv
 
-class Scheme:
+class Scheme(object):
     """
     Create the class with all the needed informations for each elementary scheme.
 
@@ -176,7 +179,7 @@ class Scheme:
             self.la_symb = None
         elif isinstance(la, sp.Symbol):
             self.la_symb = la
-            self.la = sp.N(la.subs(zip(pk, pv)))
+            self.la = sp.N(la.subs(list(zip(pk, pv))))
         else:
             self.log.error("The entry 'scheme_velocity' is wrong.")
         self.nscheme = self.stencil.nstencils
@@ -197,9 +200,11 @@ class Scheme:
                 """
                 result = []
                 i = 0
+                print('tokens ->', tokens)
                 while(i < len(tokens)):
                     tokNum, tokVal = tokens[i]
                     if tokVal == 'm':
+                        print(tokVal)
                         name = ''.join([val for n, val in tokens[i:i+7]])
                         result.extend([(1, 'Symbol'),
                                        (51, '('),
@@ -212,7 +217,7 @@ class Scheme:
                 return result
             res = []
             for l in L:
-                if isinstance(l, str):
+                if isinstance(l, string_types):
                     res.append(parse_expr(l, transformations=(auto_moments,) + standard_transformations))
                 else:
                     res.append(l)
@@ -233,8 +238,8 @@ class Scheme:
         #       y is the index in equilibrium corresponding to the conserved moment
         self._EQ = copy.deepcopy(self.EQ)
 
-        m = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(self.stencil.unvtot)] for i in xrange(len(self.EQ))]
-        for cm, icm in self.consm.iteritems():
+        m = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in range(self.stencil.unvtot)] for i in range(len(self.EQ))]
+        for cm, icm in self.consm.items():
             for i, eq in enumerate(self._EQ):
                 for j, e in enumerate(eq):
                     self._EQ[i][j] = e.replace(cm, m[icm[0]][icm[1]])
@@ -242,11 +247,11 @@ class Scheme:
         self._check_entry_size(scheme, 'relaxation_parameters')
         self.s_symb = [s['relaxation_parameters'] for s in scheme]
         self.s = [copy.deepcopy(s['relaxation_parameters']) for s in scheme]
-        for k in xrange(len(self.s)):
-            for l in xrange(len(self.s[k])):
+        for k in range(len(self.s)):
+            for l in range(len(self.s[k])):
                 if not isinstance(self.s[k][l], (int, float)):
                     try:
-                        self.s[k][l] = sp.N(self.s[k][l].subs(zip(pk, pv)))
+                        self.s[k][l] = sp.N(self.s[k][l].subs(list(zip(pk, pv))))
                     except:
                         self.log.error('cannot evaluate relaxation parameter')
 
@@ -269,7 +274,7 @@ class Scheme:
             dico_linearization = dicostab.get('linearization', None)
             if dico_linearization is not None:
                 self.list_linearization = []
-                for cm, cv in dico_linearization.iteritems():
+                for cm, cv in dico_linearization.items():
                     icm = self.consm[cm]
                     self.list_linearization.append((m[icm[0]][icm[1]], cv))
             else:
@@ -307,22 +312,22 @@ class Scheme:
         s += "\t spatial dimension: dim={0:d}\n".format(self.dim)
         s += "\t number of schemes: nscheme={0:d}\n".format(self.nscheme)
         s += "\t number of velocities:\n"
-        for k in xrange(self.nscheme):
+        for k in range(self.nscheme):
             s += "    Stencil.nv[{0:d}]=".format(k) + str(self.stencil.nv[k]) + "\n"
         s += "\t velocities value:\n"
-        for k in xrange(self.nscheme):
+        for k in range(self.nscheme):
             s+="    v[{0:d}]=".format(k)
             for v in self.stencil.v[k]:
                 s += v.__str__() + ', '
             s += '\n'
         s += "\t polynomials:\n"
-        for k in xrange(self.nscheme):
+        for k in range(self.nscheme):
             s += "    P[{0:d}]=".format(k) + self.P[k].__str__() + "\n"
         s += "\t equilibria:\n"
-        for k in xrange(self.nscheme):
+        for k in range(self.nscheme):
             s += "    EQ[{0:d}]=".format(k) + self.EQ[k].__str__() + "\n"
         s += "\t relaxation parameters:\n"
-        for k in xrange(self.nscheme):
+        for k in range(self.nscheme):
             s += "    s[{0:d}]=".format(k) + self.s[k].__str__() + "\n"
         s += "\t moments matrices\n"
         s += "M = " + self.M.__str__() + "\n"
@@ -338,8 +343,8 @@ class Scheme:
             compt+=1
             lv = len(v)
             self.M.append(sp.zeros(lv, lv))
-            for i in xrange(lv):
-                for j in xrange(lv):
+            for i in range(lv):
+                for j in range(lv):
                     self.M[-1][i, j] = p[i].subs([('X', v[j].vx), ('Y', v[j].vy), ('Z', v[j].vz)])
             try:
                 self.invM.append(self.M[-1].inv())
@@ -355,14 +360,14 @@ class Scheme:
         pk, pv = param_to_tuple(self.param)
 
         try:
-            for k in xrange(self.nscheme):
+            for k in range(self.nscheme):
                 nvk = self.stencil.nv[k]
                 self.Mnum.append(np.empty((nvk, nvk)))
                 self.invMnum.append(np.empty((nvk, nvk)))
-                for i in xrange(nvk):
-                    for j in xrange(nvk):
-                        self.Mnum[k][i, j] = sp.N(self.M[k][i, j].subs(zip(pk, pv)))
-                        self.invMnum[k][i, j] = sp.N(self.invM[k][i, j].subs(zip(pk, pv)))
+                for i in range(nvk):
+                    for j in range(nvk):
+                        self.Mnum[k][i, j] = sp.N(self.M[k][i, j].subs(list(zip(pk, pv))))
+                        self.invMnum[k][i, j] = sp.N(self.invM[k][i, j].subs(list(zip(pk, pv))))
                         self.MnumGlob[self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j] = self.Mnum[k][i, j]
                         self.invMnumGlob[self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j] = self.invMnum[k][i, j]
         except TypeError:
@@ -424,11 +429,11 @@ class Scheme:
         ns = self.stencil.nstencils # number of stencil
         nv = self.stencil.nv # number of velocities for each stencil
         l_cons = [[] for n in nv]
-        l_noncons = [range(n) for n in nv]
-        for vk in self.consm.values():
+        l_noncons = [list(range(n)) for n in nv]
+        for vk in list(self.consm.values()):
             l_cons[vk[0]].append(vk[1])
             l_noncons[vk[0]].remove(vk[1])
-        for n in xrange(ns):
+        for n in range(ns):
             l_cons[n].sort()
             l_noncons[n].sort()
         return l_cons, l_noncons
@@ -460,7 +465,7 @@ class Scheme:
             if init_scheme is None:
                 self.log.warning("You don't define initialization step for your conserved moments")
                 continue
-            for k, v in s['init'].iteritems():
+            for k, v in s['init'].items():
 
                 try:
                     if isinstance(k, str):
@@ -509,7 +514,7 @@ class Scheme:
         pk, pv = param_to_tuple(self.param)
         EQ = []
         for e in self._EQ:
-            EQ.append(e.subs(zip(pk, pv)))
+            EQ.append(e.subs(list(zip(pk, pv))))
 
         self.generator.equilibrium(self.nscheme, self.stencil, EQ)
         self.generator.relaxation(self.nscheme, self.stencil, self.s, EQ)
@@ -610,10 +615,10 @@ class Scheme:
         k = 0
 
         pk, pv = param_to_tuple(self.param)
-        m = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(self.stencil.unvtot)] for i in xrange(len(self.EQ))]
+        m = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in range(self.stencil.unvtot)] for i in range(len(self.EQ))]
         for n in range(ns):
             for i in range(nv[n]):
-                eqi = self._EQ[n][i].subs(zip(pk, pv))
+                eqi = self._EQ[n][i].subs(list(zip(pk, pv)))
                 if str(eqi) != "u[%d][%d]"%(n, i):
                     l = 0
                     for mm in range(ns):
@@ -701,14 +706,14 @@ class Scheme:
         else:
             LA = self.la
 
-        m = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(nvtot)] for i in xrange(ns)]
+        m = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in range(nvtot)] for i in range(ns)]
         order = dicocons['order']
         if order<1:
             order = 1
         dico_linearization = dicocons.get('linearization', None)
         if dico_linearization is not None:
             self.list_linearization = []
-            for cm, cv in dico_linearization.iteritems():
+            for cm, cv in dico_linearization.items():
                 icm = self.consm[cm]
                 self.list_linearization.append((m[icm[0]][icm[1]], cv))
         else:
@@ -717,12 +722,12 @@ class Scheme:
         M = sp.zeros(nvtot, nvtot)
         invM = sp.zeros(nvtot, nvtot)
         il = 0
-        for n in xrange(ns):
+        for n in range(ns):
             for k in self.ind_cons[n]:
                 M[il,self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]] = self.M[n][k,:]
                 invM[self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1],il] = self.invM[n][:,k]
                 il += 1
-        for n in xrange(ns):
+        for n in range(ns):
             for k in self.ind_noncons[n]:
                 M[il,self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1]] = self.M[n][k,:]
                 invM[self.stencil.nv_ptr[n]:self.stencil.nv_ptr[n+1],il] = self.invM[n][:,k]
@@ -732,7 +737,7 @@ class Scheme:
         # build the matrix of equilibrium
         Eeq = sp.zeros(nvtot, nvtot)
         il = 0
-        for n_i in xrange(ns):
+        for n_i in range(ns):
             for k_i in self.ind_cons[n_i]:
                 Eeq[il, il] = 1
                 ## the equilibrium value of the conserved moments is itself
@@ -747,11 +752,11 @@ class Scheme:
                 #        Eeq[il, ic] = sp.diff(eqk, m[n_j][k_j])
                 #        ic += 1
                 il += 1
-        for n_i in xrange(ns):
+        for n_i in range(ns):
             for k_i in self.ind_noncons[n_i]:
                 eqk = self._EQ[n_i][k_i]
                 ic = 0
-                for n_j in xrange(ns):
+                for n_j in range(ns):
                     for k_j in self.ind_cons[n_j]:
                         dummy = sp.diff(eqk, m[n_j][k_j])
                         if self.list_linearization is not None:
@@ -768,11 +773,11 @@ class Scheme:
 
         S = sp.zeros(nvtot, nvtot)
         il = 0
-        for n_i in xrange(ns):
+        for n_i in range(ns):
             for k_i in self.ind_cons[n_i]:
                 S[il, il] = self.s_symb[n_i][k_i]
                 il += 1
-        for n_i in xrange(ns):
+        for n_i in range(ns):
             for k_i in self.ind_noncons[n_i]:
                 S[il, il] = self.s_symb[n_i][k_i]
                 il += 1
@@ -785,11 +790,11 @@ class Scheme:
         matA, matB, matC, matD = [], [], [], []
         Dn = sp.zeros(nvtot, nvtot)
         nnn = sp.Symbol('nnn')
-        for k in xrange(nvtot):
-            Dnk = (- sum([LA * sp.Integer(v[alpha, k]) * drondx[alpha] for alpha in xrange(self.dim)]))**nnn / sp.factorial(nnn)
+        for k in range(nvtot):
+            Dnk = (- sum([LA * sp.Integer(v[alpha, k]) * drondx[alpha] for alpha in range(self.dim)]))**nnn/sp.factorial(nnn)
             Dn[k,k] = Dnk
         dummyn = M * Dn * invM * J
-        for n in xrange(order+1):
+        for n in range(order+1):
             dummy = dummyn.subs([(nnn,n)])
             dummy.simplify()
             matA.append(dummy[:N, :N])
@@ -804,25 +809,25 @@ class Scheme:
         matC[0] = iS * matC[0]
         matC[0].simplify()
         Gamma = []
-        for k in xrange(1,order+1):
-            for j in xrange(1,k+1):
+        for k in range(1,order+1):
+            for j in range(1,k+1):
                 matA[k] += matB[j] * matC[k-j]
             Gammak = [matA[k].copy()]
-            for j in xrange(k-1):
+            for j in range(k-1):
                 Gammakj = sp.zeros(N,N)
-                for l in xrange(1,k-j):
+                for l in range(1,k-j):
                     Gammakj += matA[l] * Gamma[k-l-1][j]
                 Gammakj.simplify()
                 Gammak.append(Gammakj)
             Gamma.append(Gammak)
-            for j in xrange(1, k):
+            for j in range(1, k):
                 matA[k] -= Gamma[k-1][j]/sp.factorial(j+1)
             matA[k].simplify()
-            for j in xrange(1,k+1):
+            for j in range(1,k+1):
                 matC[k] += matD[j] * matC[k-j]
-            for j in xrange(k):
+            for j in range(k):
                 Kkj = sp.zeros(nvtot-N, N)
-                for l in xrange(k-j):
+                for l in range(k-j):
                     Kkj += matC[l] * Gamma[k-l-1][j]
                 matC[k] -= Kkj/sp.factorial(j+1)
             matC[k] = iS * matC[k]
@@ -833,17 +838,17 @@ class Scheme:
         W = sp.zeros(N, 1)
         dummy = [0]
         sp.init_printing()
-        for n in xrange(ns):
+        for n in range(ns):
             dummy.append(dummy[-1] + len(self.ind_cons[n]))
-        for wk, ik in self.consm.iteritems():
+        for wk, ik in self.consm.items():
             W[dummy[ik[0]] + self.ind_cons[ik[0]].index(ik[1]),0] = wk
         self.consistency = {}
-        for k in xrange(N):
+        for k in range(N):
             wk = W[k,0]
             self.consistency[wk] = {'lhs':[sp.simplify(drondt * W[k,0]), sp.simplify(-(matA[1]*W)[k,0])]}
             lhs = sp.simplify(sum(self.consistency[wk]['lhs']))
             dummy = []
-            for n in xrange(1,order):
+            for n in range(1,order):
                 dummy.append(sp.simplify(time_step**n * (matA[n+1]*W)[k,0]))
             self.consistency[wk]['rhs'] = dummy
             rhs = sp.simplify(sum(self.consistency[wk]['rhs']))
@@ -886,7 +891,7 @@ def test_1D(opt):
            }
     elif (opt == 2):
         dico['number_of_schemes'] = 1 # number of elementary schemes
-        dico[0] = {'velocities':range(5),
+        dico[0] = {'velocities':list(range(5)),
            'polynomials':Matrix([1, la*X, X**2/2, X**3/2, X**4/2]),
            'equilibrium':Matrix([u[0][0], u[0][1], (0.5*la)**2/2*u[0][0], 0, 0]),
            'relaxation_parameters':[0,0,1.9, 1., 1.]
@@ -905,12 +910,12 @@ def test_2D(opt):
     dico = {'dim':dim, 'scheme_velocity':la}
     if (opt == 0):
         dico['number_of_schemes'] = 2 # number of elementary schemes
-        dico[0] = {'velocities':range(1,5),
+        dico[0] = {'velocities':list(range(1,5)),
            'polynomials':Matrix([1, la*X, la*Y, X**2-Y**2]),
            'equilibrium':Matrix([u[0][0], .1*u[0][0], 0, 0]),
            'relaxation_parameters':[0, 1, 1, 1]
            }
-        dico[1] = {'velocities':range(5),
+        dico[1] = {'velocities':list(range(5)),
            'polynomials':Matrix([1, la*X, la*Y, X**2+Y**2, X**2-Y**2]),
            'equilibrium':Matrix([u[1][0], 0, 0, 0.1*u[1][0], 0]),
            'relaxation_parameters':[0, 1, 1, 1, 1]
@@ -923,7 +928,7 @@ def test_2D(opt):
         q2  = qx2+qy2
         qxy = dummy*u[0][1]*u[0][2]
         dico['number_of_schemes'] = 1 # number of elementary schemes
-        dico[0] = {'velocities':range(9),
+        dico[0] = {'velocities':list(range(9)),
            'polynomials':Matrix([1, la*X, la*Y, 3*(X**2+Y**2)-4, (9*(X**2+Y**2)**2-21*(X**2+Y**2)+8)/2, 3*X*(X**2+Y**2)-5*X, 3*Y*(X**2+Y**2)-5*Y, X**2-Y**2, X*Y]),
            'equilibrium':Matrix([u[0][0], u[0][1], u[0][3], -2*u[0][0] + 3*q2, u[0][0]+1.5*q2, u[0][1]/la, u[0][2]/la, qx2-qy2, qxy]),
            'relaxation_parameters':[0, 0, 0, 1, 1, 1, 1, 1, 1]

@@ -5,6 +5,7 @@
 # License: BSD 3 clause
 
 import numpy as np
+
 from .base import Element
 from ..logs import setLogger
 from .utils import *

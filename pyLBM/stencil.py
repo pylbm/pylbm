@@ -1,10 +1,13 @@
 from __future__ import print_function
+from __future__ import division
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
 
+from past.builtins import cmp
+from six.moves import range
 import numpy as np
 from math import sqrt
 from textwrap import dedent
@@ -13,6 +16,7 @@ from .utils import itemproperty
 from .geometry import get_box
 from .logs import setLogger
 from . import viewer
+from future.utils import with_metaclass
 
 def permute_in_place(a):
     """
@@ -91,7 +95,7 @@ class Singleton(type):
             self._instances[key] = super(Singleton, self).__call__(*args, **kwargs)
         return self._instances[key]
 
-class Velocity(object):
+class Velocity(with_metaclass(Singleton, object)):
     """
     Create a velocity.
 
@@ -148,7 +152,6 @@ class Velocity(object):
     .. plot:: codes/Velocities.py
 
     """
-    __metaclass__ = Singleton
     _d = 1e3
     _R2 = np.array([[[5, 6, 4], [_d, _d, 2], [2, 5, 3]],
                     [[3, _d, _d], [_d, -1, _d], [1, _d, _d]],
@@ -230,7 +233,7 @@ class Velocity(object):
 
     def set_symmetric(self):
         self.numsym = [self.get_symmetric().num,]
-        for i in xrange(self.dim):
+        for i in range(self.dim):
             self.numsym.append(self.get_symmetric(i).num)
 
     def _set_num(self):
@@ -253,9 +256,9 @@ class Velocity(object):
         elif self.dim == 3:
             count = 0
             sign = [1, -1]
-            for k in xrange(100):
-                for i in xrange(k + 1):
-                    for j in xrange(i + 1):
+            for k in range(100):
+                for i in range(k + 1):
+                    for j in range(i + 1):
                         for (kk, ii, jj) in permute_in_place([k, i, j]):
                             for pmk in sign[0: kk + 1]: # loop over + and - if kk > 0
                                 for pmi in sign[0:ii + 1]: # loop over + and - if ii > 0
@@ -270,10 +273,10 @@ class Velocity(object):
     def _set_coord(self):
         if self.dim == 1:
             n = self.num + 1
-            self.vx = (1 - 2*(n % 2))*(n / 2)
+            self.vx = int((1 - 2*(n % 2))*(n/2))
             return
         elif self.dim == 2:
-            n = (int)(sqrt(self.num)+1)/2
+            n = (int)((sqrt(self.num)+1)/2)
             p = self.num - (2*n-1)**2
             if (p<4):
                 Lx, Ly = [n, 0, -n, 0], [0, n, 0, -n]
@@ -285,29 +288,29 @@ class Velocity(object):
                 k, l = n, p/8
                 Lx, Ly = [k, l, -l, -k, -k, -l, l, k], [l, k, k, l, -l, -k, -k, -l]
                 vx, vy = Lx[p%8], Ly[p%8]
-            self.vx = vx
-            self.vy = vy
+            self.vx = int(vx)
+            self.vy = int(vy)
             return
         elif self.dim == 3:
             count = 0
             sign = [1, -1]
-            for k in xrange(100):
-                for i in xrange(k + 1):
-                    for j in xrange(i + 1):
+            for k in range(100):
+                for i in range(k + 1):
+                    for j in range(i + 1):
                         for (kk, ii, jj) in permute_in_place([k, i, j]):
                             for pmk in sign[0:kk + 1]: # loop over + and - if kk > 0
                                 for pmi in sign[0:ii + 1]: # loop over + and - if ii > 0
                                     for pmj in sign[0:jj + 1]: # loop over + and - if jj > 0
                                         if self.num == count:
-                                            self.vx = pmk*kk
-                                            self.vy = pmi*ii
-                                            self.vz = pmj*jj
+                                            self.vx = int(pmk*kk)
+                                            self.vy = int(pmi*ii)
+                                            self.vz = int(pmj*jj)
                                             return
                                         else:
                                             count +=1
         self.log.error("The velocity number {0} cannot be computed".format(self.num))
 
-class OneStencil:
+class OneStencil(object):
     """
     Create a stencil of a LBM scheme.
 
@@ -564,7 +567,7 @@ class Stencil(list):
 
         # get the index in the v[k] of the num velocity
         self.num2index = []
-        for k in xrange(self.nstencils):
+        for k in range(self.nstencils):
             num = self.num[k]
             nmax = np.max(num)
             tmp = -1000 + np.zeros(nmax + 1, dtype=np.int32)
@@ -577,7 +580,7 @@ class Stencil(list):
         self.unum2index = -1000 + np.zeros(np.max(unum) + 1, dtype=np.int32)
         self.unum2index[unum] = np.arange(unum.size)
 
-        for k in xrange(self.nstencils):
+        for k in range(self.nstencils):
             self.append(OneStencil(self.v[k], self.nv[k], self.num2index[k], self.nv_ptr[k]))
 
         self.log.debug(self.__str__())
@@ -700,7 +703,7 @@ class Stencil(list):
         s += "\n\t * minimal velocity in each direction: "
         s += str(self.vmin)
         s += "\n\t * Informations for each elementary stencil:\n"
-        for k in xrange(self.nstencils):
+        for k in range(self.nstencils):
             s += "\t\tstencil {0:1d}\n".format(k)
             s += "\t\t - number of velocities: {0:2d}\n".format(self.nv[k])
             s += "\t\t - velocities: "
@@ -769,7 +772,7 @@ class Stencil(list):
             pos[:, 1] = vy
             pos[:, 2] = vz
 
-            ax.text(map(str, self.unum), pos, dim = self.dim)
+            ax.text(list(map(str, self.unum)), pos, dim = self.dim)
 
             xmin, xmax = np.min(vx) - 1, np.max(vx) + 1
             ymin, ymax = np.min(vy) - 1, np.max(vy) + 1
@@ -778,7 +781,7 @@ class Stencil(list):
             ax.axis(xmin, xmax, ymin, ymax, zmin, zmax)
         else:
             if k is None:
-                lv = range(self.nstencils)
+                lv = list(range(self.nstencils))
             elif isinstance(k, int):
                 lv = [k]
             else:
@@ -802,7 +805,7 @@ class Stencil(list):
                 pos[:, 1] = vy
                 pos[:, 2] = vz
 
-                ax.text(map(str, self.num[i]), pos, dim = self.dim)
+                ax.text(list(map(str, self.num[i])), pos, dim = self.dim)
 
                 xmin, xmax = np.min(vx) - 1, np.max(vx) + 1
                 ymin, ymax = np.min(vy) - 1, np.max(vy) + 1
@@ -840,9 +843,9 @@ if __name__ == '__main__':
     """
     d = {'dim': 2,
          'number_of_schemes': 3,
-         0:{'velocities': range(5)},
+         0:{'velocities': list(range(5))},
          1:{'velocities': [0,2,4,5,1]},
-         2:{'velocities': range(13)},
+         2:{'velocities': list(range(13))},
          }
 
     s = Stencil(d)
