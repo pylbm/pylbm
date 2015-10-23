@@ -7,6 +7,7 @@ import numpy as np
 import sympy as sp
 import re
 from six.moves import range
+import mpi4py.MPI as mpi
 
 from .base import Generator, INDENT
 from .utils import matMult, load_or_store
@@ -388,8 +389,9 @@ def onetimestep(double[{0}::1] m, double[{0}::1] f, double[{0}::1] fnew, double[
         If the compilation can use the option -fopenmp, add it here.
         """
         Generator.compile(self)
-        bld = open(self.f.name.replace('.pyx', '.pyxbld'), "w")
-        code = """
+        if mpi.COMM_WORLD.Get_rank() == 0:
+            bld = open(self.f.name.replace('.pyx', '.pyxbld'), "w")
+            code = """
 def make_ext(modname, pyxfilename):
     from distutils.extension import Extension
 
@@ -401,9 +403,10 @@ def make_ext(modname, pyxfilename):
                      #extra_compile_args = ['-O3', '-fopenmp', '-w'],
                      #extra_link_args= ['-fopenmp'])
                     )
-        """
-        bld.write(code)
-        bld.close()
+                    """
+            bld.write(code)
+            bld.close()
 
-        import pyximport
-        pyximport.install(build_dir= self.build_dir, inplace=True)
+            import pyximport
+            pyximport.install(build_dir= self.build_dir, inplace=True)
+            self.get_module()

@@ -214,6 +214,11 @@ class Simulation(object):
         self._F.set_conserved_moments(self.scheme.consm, self.domain.stencil.nv_ptr)
 
         self.scheme.generate(sorder)
+        # be sure that process 0 generate the code
+        mpi.COMM_WORLD.Barrier()
+        self.scheme.generator.get_module()
+        mpi.COMM_WORLD.Barrier()
+        self.scheme.generator.exit()
 
         self.log.info('Build boundary conditions')
 

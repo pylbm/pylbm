@@ -3,15 +3,17 @@
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
-import tempfile
 import atexit
+import shutil
 import sys
 import os
 import importlib
+import mpi4py.MPI as mpi
 
 from ..logs import setLogger
 
 INDENT = ' '*4
+BUILD_DIR = './LBMtmp/'
 
 class Generator(object):
     """
@@ -79,13 +81,16 @@ class Generator(object):
 
         self.build_dir = build_dir
         if build_dir is None:
-            self.build_dir = tempfile.mkdtemp(suffix='LBM') + '/'
-        self.f = tempfile.NamedTemporaryFile(suffix=suffix, prefix=self.build_dir + 'LBM', delete=False)
-        self.modulename = self.f.name.replace(self.build_dir, "").split('.')[0]
+            self.build_dir = BUILD_DIR #tempfile.mkdtemp(suffix='LBM') + '/'
+        if mpi.COMM_WORLD.Get_rank() == 0:
+            if not os.path.exists(self.build_dir):
+                os.mkdir(self.build_dir)
+            self.f = open(self.build_dir + "generated_code" + suffix, "w") #tempfile.NamedTemporaryFile(suffix=suffix, prefix=self.build_dir + 'LBM', delete=False)
 
-        sys.path.append(self.build_dir)
+        self.modulename = "generated_code" #self.f.name.replace(self.build_dir, "").split('.')[0]
 
-        atexit.register(self.exit)
+        sys.path.append(sys.path[0] + '/' + self.build_dir)
+        #atexit.register(self.exit)
 
         self.log.info("Temporary file use for code generator :\n{0}".format(self.modulename))
         #print self.f.name
@@ -109,9 +114,10 @@ class Generator(object):
         pass
 
     def compile(self):
-        self.log.info("*"*30 + "\n" + self.code + "\n" + "*"*30)
-        self.f.write(self.code)
-        self.f.close()
+        if mpi.COMM_WORLD.Get_rank() == 0:
+            self.log.info("*"*30 + "\n" + self.code + "\n" + "*"*30)
+            self.f.write(self.code)
+            self.f.close()
 
     def get_module(self):
         if self.importmodule is None:
@@ -120,4 +126,6 @@ class Generator(object):
 
     def exit(self):
         self.log.info("delete generator")
-        os.unlink(self.f.name)
+        if mpi.COMM_WORLD.Get_rank() == 0:
+            if self.build_dir == BUILD_DIR:
+                shutil.rmtree(sys.path[0] + '/' + self.build_dir)
