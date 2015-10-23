@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -89,11 +90,11 @@ if __name__ == '__main__':
 
 
     a = test()
-    print a.m[1]
-    print a.m[:]
+    print(a.m[1])
+    print(a.m[:])
     a.m[1] = 1.
-    print a.m2[0][1]
+    print(a.m2[0][1])
     a.m2[0][1] = 1.
-    print a.m2[0][1], a.m2[0][1][1:]
+    print(a.m2[0][1], a.m2[0][1][1:])
     a.m2[0][1][1:] = 2
-    print a._m2
+    print(a._m2)

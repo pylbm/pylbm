@@ -45,7 +45,7 @@ setup(
                       'colorlog>=2.4.0',
                       'Cython>=0.21.1',
                       'mpi4py>=1.3.1',
-                      'matplotlib>=1.4.3',
+                      'matplotlib>=1.4.0',
                       'PyEVTK>=1.0.0',
                       ],
     extras_require={'pythran': ["pythran>=0.7.1"],

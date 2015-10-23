@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -20,9 +21,9 @@ from .validate_dictionary import *
 
 proto_box = {
     'x': (is_2_list_int_or_float,),
-    'y': (types.NoneType, is_2_list_int_or_float,),
-    'z': (types.NoneType, is_2_list_int_or_float,),
-    'label': (types.NoneType, types.IntType, types.StringType, is_list_int_or_string),
+    'y': (type(None), is_2_list_int_or_float,),
+    'z': (type(None), is_2_list_int_or_float,),
+    'label': (type(None), int, bytes, is_list_int_or_string),
 }
 
 def get_box(dico):
@@ -299,8 +300,8 @@ def test_1D(number):
 
     if dgeom is not None:
         geom = Geometry(dgeom)
-        print "\n\nTest number {0:d} in {1:d}D:".format(number, geom.dim)
-        print geom
+        print("\n\nTest number {0:d} in {1:d}D:".format(number, geom.dim))
+        print(geom)
         geom.visualize()
         return 1
     else:
@@ -342,8 +343,8 @@ def test_2D(number):
         dgeom = None
     if dgeom is not None:
         geom = Geometry(dgeom)
-        print "\n\nTest number {0:d} in {1:d}D:".format(number, geom.dim)
-        print geom
+        print("\n\nTest number {0:d} in {1:d}D:".format(number, geom.dim))
+        print(geom)
         geom.visualize()
         return 1
     else:

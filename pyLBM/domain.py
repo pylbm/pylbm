@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -23,17 +24,17 @@ from . import viewer
 
 proto_domain = {
     'box':(is_dico_box,),
-    'elements':(types.NoneType, is_list_elem),
-    'dim':(types.NoneType, types.IntType),
-    'space_step':(types.IntType, types.FloatType,),
-    'scheme_velocity':(types.NoneType, types.IntType, types.FloatType, sp.Symbol),
-    'parameters':(types.NoneType, is_dico_sp_float),
+    'elements':(type(None), is_list_elem),
+    'dim':(type(None), int),
+    'space_step':(int, float,),
+    'scheme_velocity':(type(None), int, float, sp.Symbol),
+    'parameters':(type(None), is_dico_sp_float),
     'schemes':(is_list_sch_dom,),
-    'boundary_conditions':(types.NoneType, is_dico_bc),
-    'generator':(types.NoneType, is_generator),
-    'stability':(types.NoneType, is_dico_stab),
-    'consistency':(types.NoneType, is_dico_cons),
-    'inittype':(types.NoneType, types.StringType),
+    'boundary_conditions':(type(None), is_dico_bc),
+    'generator':(type(None), is_generator),
+    'stability':(type(None), is_dico_stab),
+    'consistency':(type(None), is_dico_cons),
+    'inittype':(type(None), bytes),
 }
 
 class Domain:
@@ -579,73 +580,73 @@ def verification(dom, with_color=False):
         green = ''
         white = ''
 
-    print 'Nombre de points : ' + str(dom.Na) + '\n'
+    print('Nombre de points : ' + str(dom.Na) + '\n')
     if (dom.dim==1):
         for k in xrange(dom.Na[0]):
-            print '{0:3d}'.format((int)(dom.in_or_out[k])),
-        print ' '
+            print('{0:3d}'.format((int)(dom.in_or_out[k])), end=' ')
+        print(' ')
         for k in xrange(1, dom.stencil.unvtot):
             vx = dom.stencil.unique_velocities[k].vx
-            print '*'*50
-            print 'Check the velocity {0:2d} = {1:2d}'.format(k, vx)
-            print '-'*50
-            print 'Distances'
+            print('*'*50)
+            print('Check the velocity {0:2d} = {1:2d}'.format(k, vx))
+            print('-'*50)
+            print('Distances')
             for i in xrange(dom.Na[0]):
                 if (dom.in_or_out[i]==dom.valout):
-                    print blue + ' *  ' + black,
+                    print(blue + ' *  ' + black, end=' ')
                 elif (dom.distance[k,i]==dom.valin):
-                    print ' .  ',
+                    print(' .  ', end=' ')
                 else:
-                    print green + '{0:.2f}'.format(dom.distance[k,i]) + black,
-            print
-            print '-'*50
-            print 'Border Flags'
+                    print(green + '{0:.2f}'.format(dom.distance[k,i]) + black, end=' ')
+            print()
+            print('-'*50)
+            print('Border Flags')
             for i in xrange(dom.Na[0]):
                 if (dom.in_or_out[i]==dom.valout):
-                    print blue + ' *  ' + black,
+                    print(blue + ' *  ' + black, end=' ')
                 elif (dom.distance[k,i]==dom.valin):
-                    print ' .  ',
+                    print(' .  ', end=' ')
                 else:
-                    print green + '{0:.2f}'.format(dom.flag[k,i]) + black,
-            print
-            print '*'*50
+                    print(green + '{0:.2f}'.format(dom.flag[k,i]) + black, end=' ')
+            print()
+            print('*'*50)
     if (dom.dim==2):
         for k in xrange(dom.Na[1]-1, -1, -1):
             for l in xrange(dom.Na[0]):
-                print '{0:3d}'.format((int)(dom.in_or_out[k,l])),
-            print ' '
+                print('{0:3d}'.format((int)(dom.in_or_out[k,l])), end=' ')
+            print(' ')
         for k in xrange(dom.stencil.unvtot):
             vx = dom.stencil.unique_velocities[k].vx
             vy = dom.stencil.unique_velocities[k].vy
-            print '*'*50
-            print 'Check the velocity {0:2d} = ({1:2d},{2:2d})'.format(k, vx, vy)
-            print '-'*50
-            print 'Distances'
+            print('*'*50)
+            print('Check the velocity {0:2d} = ({1:2d},{2:2d})'.format(k, vx, vy))
+            print('-'*50)
+            print('Distances')
             for j in xrange(dom.Na[1]-1,-1,-1):
                 for i in xrange(dom.Na[0]):
                     if (dom.distance[k,j,i] > 1 and dom.distance[k,j,i]<dom.valin): # nothing
-                        print white + '{0:3d} '.format(int(dom.distance[k,j,i])) + black,
+                        print(white + '{0:3d} '.format(int(dom.distance[k,j,i])) + black, end=' ')
                     elif (dom.in_or_out[j,i] == dom.valout): # outer
-                        print blue + '  * ' + black,
+                        print(blue + '  * ' + black, end=' ')
                     elif (dom.distance[k,j,i]==dom.valin):  # inner
-                        print '  . ',
+                        print('  . ', end=' ')
                     else: # border
-                        print green + '{0:.2f}'.format(dom.distance[k,j,i]) + black,
-                print
-            print '-'*50
-            print 'Border flags'
+                        print(green + '{0:.2f}'.format(dom.distance[k,j,i]) + black, end=' ')
+                print()
+            print('-'*50)
+            print('Border flags')
             for j in xrange(dom.Na[1]-1,-1,-1):
                 for i in xrange(dom.Na[0]):
                     if (dom.distance[k,j,i] > 1 and dom.distance[k,j,i]<dom.valin):
-                        print white + '{0:3d} '.format(int(dom.distance[k,j,i])) + black,
+                        print(white + '{0:3d} '.format(int(dom.distance[k,j,i])) + black, end=' ')
                     elif (dom.in_or_out[j,i] == dom.valout):
-                        print blue + '  * ' + black,
+                        print(blue + '  * ' + black, end=' ')
                     elif (dom.distance[k,j,i]==dom.valin):
-                        print '  . ',
+                        print('  . ', end=' ')
                     else:
-                        print green + '{0:.2f}'.format(dom.flag[k,j,i]) + black,
-                print
-            print '*'*50
+                        print(green + '{0:.2f}'.format(dom.flag[k,j,i]) + black, end=' ')
+                print()
+            print('*'*50)
 
 
 if __name__ == "__main__":

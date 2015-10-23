@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import sympy as sp
 import copy
@@ -316,19 +317,19 @@ if __name__ == '__main__':
 
     a1 = Array(nv, [nx, ny])
     a1[1:3, :2, 1:] = 1
-    print a1.shape
+    print(a1.shape)
     #print a1.array
-    print a1.swaparray.shape
-    print a1.swaparray
+    print(a1.swaparray.shape)
+    print(a1.swaparray)
 
     a2 = Array(nv, [nx, ny], inv=1, inspace=[2, 0])
     #a2[1:3, :2, 1:] = 1
-    print a2.shape
-    print a2.swaparray.shape
+    print(a2.shape)
+    print(a2.swaparray.shape)
 
     #print a2.array
-    print a2.swaparray.flags
-    print a2.array.flags
+    print(a2.swaparray.flags)
+    print(a2.array.flags)
     #print a2.swaparray
     # import time
     # t = time.time()

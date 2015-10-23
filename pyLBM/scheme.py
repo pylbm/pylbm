@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -23,31 +24,31 @@ import mpi4py.MPI as mpi
 
 proto_sch = {
     'velocities': (is_list_int,),
-    'conserved_moments': (sp.Symbol, types.StringType, is_list_symb),
+    'conserved_moments': (sp.Symbol, bytes, is_list_symb),
     'polynomials': (is_list_sp_or_nb,),
     'equilibrium': (is_list_sp_or_nb,),
     'relaxation_parameters': (is_list_sp_or_nb,),
-    'init':(types.NoneType, is_dico_init),
+    'init':(type(None), is_dico_init),
 }
 
 proto_sch_dom = {
     'velocities': (is_list_int,),
-    'conserved_moments': (types.NoneType, sp.Symbol, types.StringType, is_list_symb),
-    'polynomials': (types.NoneType, is_list_sp_or_nb,),
-    'equilibrium': (types.NoneType, is_list_sp_or_nb,),
-    'relaxation_parameters': (types.NoneType, is_list_sp_or_nb,),
-    'init':(types.NoneType, is_dico_init),
+    'conserved_moments': (type(None), sp.Symbol, bytes, is_list_symb),
+    'polynomials': (type(None), is_list_sp_or_nb,),
+    'equilibrium': (type(None), is_list_sp_or_nb,),
+    'relaxation_parameters': (type(None), is_list_sp_or_nb,),
+    'init':(type(None), is_dico_init),
 }
 
 proto_stab = {
-    'linearization':(types.NoneType, is_dico_sp_float),
-    'test_maximum_principle':(types.NoneType, types.BooleanType),
-    'test_L2_stability':(types.NoneType, types.BooleanType),
+    'linearization':(type(None), is_dico_sp_float),
+    'test_maximum_principle':(type(None), bool),
+    'test_L2_stability':(type(None), bool),
 }
 
 proto_cons = {
-    'order': (types.IntType,),
-    'linearization':(types.NoneType, is_dico_sp_sporfloat),
+    'order': (int,),
+    'linearization':(type(None), is_dico_sp_sporfloat),
 }
 
 def param_to_tuple(param):
@@ -277,15 +278,15 @@ class Scheme:
             Li_stab = dicostab.get('test_monotonic_stability', False)
             if Li_stab:
                 if self.is_monotonically_stable():
-                    print "The scheme is monotonically stable"
+                    print("The scheme is monotonically stable")
                 else:
-                    print "The scheme is not monotonically stable"
+                    print("The scheme is not monotonically stable")
             L2_stab = dicostab.get('test_L2_stability', False)
             if L2_stab:
                 if self.is_L2_stable():
-                    print "The scheme is stable for the norm L2"
+                    print("The scheme is stable for the norm L2")
                 else:
-                    print "The scheme is not stable for the norm L2"
+                    print("The scheme is not stable for the norm L2")
 
         dicocons = dico.get('consistency', None)
         if dicocons is not None:
@@ -779,7 +780,7 @@ class Scheme:
         J = sp.eye(nvtot) - S + S * Eeq
 
         t1 = mpi.Wtime()
-        print "Initialization time: ", t1-t0
+        print("Initialization time: ", t1-t0)
 
         matA, matB, matC, matD = [], [], [], []
         Dn = sp.zeros(nvtot, nvtot)
@@ -797,7 +798,7 @@ class Scheme:
             matD.append(dummy[N:, N:])
 
         t2 = mpi.Wtime()
-        print "Compute A, B, C, D: ", t2-t1
+        print("Compute A, B, C, D: ", t2-t1)
 
         iS = S[N:,N:].inv()
         matC[0] = iS * matC[0]
@@ -827,7 +828,7 @@ class Scheme:
             matC[k] = iS * matC[k]
             matC[k].simplify()
         t3 = mpi.Wtime()
-        print "Compute alpha, beta: ", t3-t2
+        print("Compute alpha, beta: ", t3-t2)
 
         W = sp.zeros(N, 1)
         dummy = [0]
@@ -846,23 +847,23 @@ class Scheme:
                 dummy.append(sp.simplify(time_step**n * (matA[n+1]*W)[k,0]))
             self.consistency[wk]['rhs'] = dummy
             rhs = sp.simplify(sum(self.consistency[wk]['rhs']))
-            print "\n" + "*"*50
-            print "Conservation equation for {0} at order {1}".format(wk, order)
+            print("\n" + "*"*50)
+            print("Conservation equation for {0} at order {1}".format(wk, order))
             sp.pprint(lhs)
-            print " "*10, "="
+            print(" "*10, "=")
             sp.pprint(rhs)
-            print "*"*50
+            print("*"*50)
         #print self.consistency
 
         t4 = mpi.Wtime()
-        print "Compute equations: ", t4-t3
-        print "Total time: ", t4-t0
+        print("Compute equations: ", t4-t3)
+        print("Total time: ", t4-t0)
 
 
 def test_1D(opt):
     dim = 1 # spatial dimension
     la = 1.
-    print "\n\nTest number {0:d} in {1:d}D:".format(opt,dim)
+    print("\n\nTest number {0:d} in {1:d}D:".format(opt,dim))
     dico = {'dim':dim, 'scheme_velocity':la}
     if (opt == 0):
         dico['number_of_schemes'] = 1 # number of elementary schemes
@@ -892,7 +893,7 @@ def test_1D(opt):
            }
     try:
         LBMscheme = Scheme(dico)
-        print LBMscheme
+        print(LBMscheme)
         return 1
     except:
         return 0
@@ -900,7 +901,7 @@ def test_1D(opt):
 def test_2D(opt):
     dim = 2 # spatial dimension
     la = 1.
-    print "\n\nTest number {0:d} in {1:d}D:".format(opt,dim)
+    print("\n\nTest number {0:d} in {1:d}D:".format(opt,dim))
     dico = {'dim':dim, 'scheme_velocity':la}
     if (opt == 0):
         dico['number_of_schemes'] = 2 # number of elementary schemes
@@ -929,7 +930,7 @@ def test_2D(opt):
            }
     try:
         LBMscheme = Scheme(dico)
-        print LBMscheme
+        print(LBMscheme)
         return 1
     except:
         return 0

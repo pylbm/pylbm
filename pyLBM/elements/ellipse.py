@@ -154,7 +154,7 @@ class Ellipse(Element):
             theta = .5*np.pi
         else:
             theta = np.arctan(v[1] / v[0])
-        print theta
+
         viewer.ellipse(self.center*scale, (r1*scale[0], r2*scale[1]), color, angle = theta)
         if viewlabel:
             x, y = self.center[0] + r1*np.cos(theta), self.center[1] + r1*np.sin(theta)

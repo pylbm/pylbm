@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -6,8 +8,8 @@
 
 import sympy as sp
 from sympy.matrices import Matrix, zeros
-from stencil import Stencil
-from scheme import Scheme
+from .stencil import Stencil
+from .scheme import Scheme
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
@@ -44,8 +46,8 @@ def D2Q9(la=1., rhoo=1., relaxparam=[1.5, 1.5, 1.5, 1.5, 1.5, 1.5]):
 
 if __name__ == "__main__":
     scheme = D2Q9()
-    print scheme.Code_Transport
-    print scheme.Code_Equilibrium
-    print scheme.Code_Relaxation
-    print scheme.Code_m2F
-    print scheme.Code_F2m
+    print(scheme.Code_Transport)
+    print(scheme.Code_Equilibrium)
+    print(scheme.Code_Relaxation)
+    print(scheme.Code_m2F)
+    print(scheme.Code_F2m)

@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -12,7 +13,7 @@ from .validate_dictionary import *
 
 proto_bc = {
     'method':(is_dico_bcmethod, ),
-    'value':(types.NoneType, types.FunctionType),
+    'value':(type(None), types.FunctionType),
 }
 
 class Boundary_Velocity:
@@ -339,4 +340,4 @@ if __name__ == "__main__":
         return np.array([[1], [1]])+i
 
     b.add_iload(changek, changei)
-    print b.istore, b.iload
+    print(b.istore, b.iload)

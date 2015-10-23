@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -156,17 +157,17 @@ if __name__ == '__main__':
 
     nv = 2
     nspace = [0, 1]
-    print load_or_store('f', 'f', -v, v, nv, nspace)
-    print load_or_store('floc', 'f', v, None, nv, nspace, vectorized=False)
-    print load_or_store('f', 'floc', None, np.zeros(v.shape), nv, nspace, vectorized=False)
+    print(load_or_store('f', 'f', -v, v, nv, nspace))
+    print(load_or_store('floc', 'f', v, None, nv, nspace, vectorized=False))
+    print(load_or_store('f', 'floc', None, np.zeros(v.shape), nv, nspace, vectorized=False))
 
     nv = 1
     nspace = [0, 2]
-    print load_or_store('f', 'f', -v, v, nv, nspace)
-    print load_or_store('floc', 'f', v, None, nv, nspace, vectorized=False)
-    print load_or_store('f', 'floc', None, np.zeros(v.shape), nv, nspace, vectorized=False)
+    print(load_or_store('f', 'f', -v, v, nv, nspace))
+    print(load_or_store('floc', 'f', v, None, nv, nspace, vectorized=False))
+    print(load_or_store('f', 'floc', None, np.zeros(v.shape), nv, nspace, vectorized=False))
 
     A = np.arange(12).reshape(4,3)
     A[2, :] *= -1
-    print matMult(A, 'm', 'f')
-    print matMult(A, 'm', 'f', nv, nspace, '\t')
+    print(matMult(A, 'm', 'f'))
+    print(matMult(A, 'm', 'f', nv, nspace, '\t'))

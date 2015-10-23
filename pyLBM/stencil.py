@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -852,10 +853,10 @@ if __name__ == '__main__':
     #for i in xrange(5):
     #    print s.get_index(1, i)
 
-    print s.vx[0]
-    print s.vy[0]
-    print s.vz[0]
+    print(s.vx[0])
+    print(s.vy[0])
+    print(s.vz[0])
 
-    print s.unum
+    print(s.unum)
 
     #s.visualize(v, k=2)

@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -170,8 +171,8 @@ if __name__ == '__main__':
     t = 0
     def update(frame_number):
         image.set_data(np.sin(x+frame_number)*np.sin(y))
-        print frame_number
+        print(frame_number)
 
     f.animate(update)
     plt.show()
-    print f.plot_widgets
+    print(f.plot_widgets)

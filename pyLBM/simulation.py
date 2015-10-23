@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -32,17 +33,17 @@ from .generator import NumpyGenerator
 
 proto_simu = {
     'box':(is_dico_box,),
-    'elements':(types.NoneType, is_list_elem),
-    'dim':(types.NoneType, types.IntType),
-    'space_step':(types.FloatType,),
-    'scheme_velocity':(types.IntType, types.FloatType, sp.Symbol),
-    'parameters':(types.NoneType, is_dico_sp_float),
+    'elements':(type(None), is_list_elem),
+    'dim':(type(None), int),
+    'space_step':(float,),
+    'scheme_velocity':(int, float, sp.Symbol),
+    'parameters':(type(None), is_dico_sp_float),
     'schemes':(is_list_sch,),
-    'boundary_conditions':(types.NoneType, is_dico_bc),
-    'generator':(types.NoneType, is_generator),
-    'stability':(types.NoneType, is_dico_stab),
-    'consistency':(types.NoneType, is_dico_cons),
-    'inittype':(types.NoneType, types.StringType),
+    'boundary_conditions':(type(None), is_dico_bc),
+    'generator':(type(None), is_generator),
+    'stability':(type(None), is_dico_stab),
+    'consistency':(type(None), is_dico_cons),
+    'inittype':(type(None), bytes),
 }
 
 class Simulation:
@@ -309,7 +310,7 @@ class Simulation:
         s += '\n* boundary conditions: {0:2d}%'.format(int(100*t['boundary_conditions']/ttotal))
         s += ' '*23 + '*'
         s += '\n' + '*'*50
-        print s
+        print(s)
 
     def initialization(self, dico):
         """
