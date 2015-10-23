@@ -14,6 +14,7 @@
 
 import numpy as np
 import sympy as sp
+from six.moves import range
 
 import pyLBM
 
@@ -41,7 +42,7 @@ dico = {
     'scheme_velocity':la,
     'schemes':[
         {
-            'velocities':range(1,5),
+            'velocities':list(range(1,5)),
             'conserved_moments':u,
             'polynomials':[1, LA*X, LA*Y, X**2-Y**2],
             'relaxation_parameters':s,
@@ -53,7 +54,7 @@ dico = {
     'parameters':{LA:la},
     }
 
-sol = pyLBM.Simulation(dico, sorder=[1, 2, 0])
+sol = pyLBM.Simulation(dico)
 
 # create the viewer to plot the solution
 viewer = pyLBM.viewer.matplotlibViewer

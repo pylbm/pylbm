@@ -1,3 +1,4 @@
+from six.moves import range
 import numpy as np
 import sympy as sp
 import pyLBM
@@ -19,7 +20,7 @@ def vorticity(sol):
 
 def update(iframe):
     nrep = 256
-    for i in xrange(nrep):
+    for i in range(nrep):
          sol.one_time_step()
 
     image.set_data(vorticity(sol))
@@ -56,7 +57,7 @@ dico = {
     'elements':[pyLBM.Parallelogram((xmin,ymin),(xc,ymin),(xmin,yc), label=0)],
     'scheme_velocity':la,
     'space_step': dx,
-    'schemes':[{'velocities':range(9),
+    'schemes':[{'velocities':list(range(9)),
                 'polynomials':[1,
                        X, Y,
                        3*(X**2+Y**2)-4,
@@ -88,7 +89,7 @@ viewer = pyLBM.viewer.matplotlibViewer
 fig = viewer.Fig()
 ax = fig[0]
 image = ax.image(vorticity, (sol,), cmap='jet', clim=[0, .1])
-ax.polygon([[xmin/dx, ymin/dx],[xmin/dx, yc/dx], [xc/dx, yc/dx], [xc/dx, ymin/dx]], 'k')
+#ax.polygon([[xmin/dx, ymin/dx],[xmin/dx, yc/dx], [xc/dx, yc/dx], [xc/dx, ymin/dx]], 'k')
 
 # run the simulation
 fig.animate(update, interval=1)
