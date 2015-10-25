@@ -1,3 +1,4 @@
+from six.moves import range
 import numpy as np
 import sympy as sp
 
@@ -9,18 +10,9 @@ rho, qx, qy = sp.symbols('rho, qx, qy')
 def bc_in(f, m, x, y):
     m[rho] = (x-0.5*width) * grad_pressure
     m[qx] = max_velocity * (1. - 4.*y**2/height**2)
-<<<<<<< Updated upstream
 
 def bc_out(f, m, x, y):
     m[rho] = (x-0.5*width) * grad_pressure
-=======
-    m[qy] = 0.
-
-def bc_out(f, m, x, y):
-    m[rho] = (x-0.5*width) * grad_pressure
-    m[qx] = 0.
-    m[qy] = 0.
->>>>>>> Stashed changes
 
 def update(iframe):
     sol.one_time_step()
@@ -55,7 +47,7 @@ dico = {
     'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[2, 1, 0, 0]},
     'space_step':dx,
     'scheme_velocity':la,
-    'schemes':[{'velocities':range(9),
+    'schemes':[{'velocities':list(range(9)),
                 'polynomials':[1,
                          LA*X, LA*Y,
                          3*(X**2+Y**2)-4,

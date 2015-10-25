@@ -1,4 +1,7 @@
+from __future__ import print_function
+
 import pyLBM
+from six.moves import range
 import sympy as sp
 import math
 import mpi4py.MPI as mpi
@@ -21,7 +24,7 @@ def save(x, y, z, m, im):
     vtk.add_vector('velocity', [qx_n, qy_n, qz_n])
     vtk.save()
 
-dx = 1./128
+dx = 1./64
 la = 1.
 rho0 = 1.
 Re = 200
@@ -42,7 +45,7 @@ dico = {
     'space_step':dx,
     'scheme_velocity':la,
     'schemes':[{
-        'velocities':range(7) + range(19,27),
+        'velocities':list(range(7)) + list(range(19,27)),
         'conserved_moments':[mass, qx, qy, qz],
         'polynomials':[
             1,
@@ -99,7 +102,7 @@ while sol.t < 200.:
     compt += 1
     if compt == 100:
         if mpi.COMM_WORLD.Get_rank() == 0:
-            print sol.time_info()
+            print(sol.time_info())
         im += 1
         save(x, y, z, sol.m, im)
         compt = 0

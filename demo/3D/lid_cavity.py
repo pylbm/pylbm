@@ -1,3 +1,4 @@
+from six.moves import range
 import pyLBM
 import sympy as sp
 import math
@@ -21,7 +22,7 @@ def save(x, y, z, m, im):
     vtk.add_vector('velocity', [qx_n, qy_n, qz_n])
     vtk.save()
 
-dx = 1./128
+dx = 1./64
 la = 1.
 rho0 = 1.
 Re = 200
@@ -41,7 +42,7 @@ dico = {
     'space_step':dx,
     'scheme_velocity':la,
     'schemes':[{
-        'velocities':range(7) + range(19,27),
+        'velocities':list(range(7)) + list(range(19,27)),
         'conserved_moments':[mass, qx, qy, qz],
         'polynomials':[
             1,

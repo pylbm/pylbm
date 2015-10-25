@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import division
+from six.moves import range
 import numpy as np
 import sympy as sp
 import matplotlib.pyplot as plt
@@ -12,7 +15,7 @@ def init_m(x, y, val):
 
 def init_un(x, y):
     uu = np.zeros((y.size, x.size))
-    uu[y.size/2, x.size/2] = 1.
+    uu[y.size//2, x.size//2] = 1.
     return uu
 
 def test_transport():
@@ -31,7 +34,7 @@ def test_transport():
     q2  = qx2+qy2
     qxy = dummy*qx*qy
 
-    vitesse = range(9)
+    vitesse = list(range(9))
 
     polynomes = [1,
                  LA*X, LA*Y,
@@ -85,13 +88,13 @@ def test_transport():
         sol.transport()
         #sol.f2m()
         sol.t += sol.dt
-        print sol.t
-    print
-    print sol.F[rho][1:-1, 1:-1]
-    print
-    print sol.F[qx][1:-1, 1:-1]
-    print
-    print sol.F[qy][1:-1, 1:-1]
+        print(sol.t)
+    print()
+    print(sol.F[rho][1:-1, 1:-1])
+    print()
+    print(sol.F[qx][1:-1, 1:-1])
+    print()
+    print(sol.F[qy][1:-1, 1:-1])
 
 # def test_relaxation():
 #     # parameters

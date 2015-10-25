@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import division
+from six.moves import range
 import numpy as np
 import sympy as sp
 
@@ -20,7 +23,7 @@ def vorticity(sol):
 
 def update(iframe):
     nrep = 100
-    for i in xrange(nrep):
+    for i in range(nrep):
          sol.one_time_step()
     #print sol.time_info()
     image.set_data(vorticity(sol))
@@ -53,7 +56,7 @@ dico = {
     'scheme_velocity':la,
     'schemes':[
         {
-            'velocities':range(9),
+            'velocities':list(range(9)),
             'polynomials':[
                 1,
                 LA*X, LA*Y,
@@ -91,7 +94,7 @@ dico = {
 sol = pyLBM.Simulation(dico)
 
 Re = rhoo*uo*2*radius/mu
-print "Reynolds number {0:10.3e}".format(Re)
+print("Reynolds number {0:10.3e}".format(Re))
 
 # init viewer
 viewer = pyLBM.viewer.matplotlibViewer

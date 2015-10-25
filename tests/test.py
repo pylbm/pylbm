@@ -1,3 +1,5 @@
+from __future__ import division
+from six.moves import range
 import sys
 import cmath
 from math import pi
@@ -19,7 +21,7 @@ import pyLBM.domain as pyLBMDom
 import pyLBM.scheme as pyLBMScheme
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
-u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
+u = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in range(25)] for i in range(10)]
 
 def Riemann_pb(x, ug, ud):
     xm = 0.5*(xmin+xmax)
@@ -34,7 +36,7 @@ if __name__ == "__main__":
     ug, ud = 0.5, 0. # left and right state
     Tf = 1.
     NbImages = 2
-    
+
     dicoQ2 = {'dim':dim,
               'box':([xmin, xmax],),
               'space_step':2*dx,
@@ -81,7 +83,7 @@ if __name__ == "__main__":
     plt.draw()
     plt.pause(1.e-3)
     compt = 0
-    Ncompt = (int)(Tf/(NbImages*sol3.dt))
+    Ncompt = int(Tf/(NbImages*sol3.dt))
     im = 0
     while (sol3.t<=Tf):
         compt += 1

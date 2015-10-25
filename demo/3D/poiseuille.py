@@ -29,7 +29,7 @@
 #     - periodic conditions in z
 #
 ##############################################################################
-
+from six.moves import range
 import numpy as np
 import sympy as sp
 
@@ -79,7 +79,7 @@ s = 1./(.5+sigma)
 vs = [0., s, s, s, s, s]
 
 
-velocities = range(1, 7)
+velocities = list(range(1, 7))
 polynomes = [1, LA*X, LA*Y, LA*Z, X**2-Y**2, X**2-Z**2]
 
 dico = {

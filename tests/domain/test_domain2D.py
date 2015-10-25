@@ -1,3 +1,4 @@
+from six.moves import range
 import numpy as np
 import copy
 import os
@@ -18,10 +19,10 @@ def check_from_file(dom, fname):
                  distance = dom.distance,
                  flag = dom.flag)
 
-class test_domain2D:
+class test_domain2D(object):
     dom2d = {'box':{'x': [0, 1], 'y': [0, 2], 'label': 0},
              'space_step':0.25,
-             'schemes': [{'velocities':range(5)}],
+             'schemes': [{'velocities':list(range(5))}],
              }
 
     valin = 999

@@ -19,7 +19,7 @@ def test_scheme():
         module = importlib.import_module(stest)
         seq = []
         for e1 in module.eq:
-            seq.append([map(str, e2) for e2 in e1])
+            seq.append([list(map(str, e2)) for e2 in e1])
 
         for pa in module.param:
             for p in module.poly:

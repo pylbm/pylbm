@@ -1,5 +1,5 @@
 import sys
-
+from six.moves import range
 import numpy as np
 import sympy as sp
 
@@ -23,7 +23,7 @@ def plot_init(num = 0):
     return l
 
 def update(iframe):
-    for k in xrange(32):
+    for k in range(32):
         sol.one_time_step()      # increment the solution of one time step
     im.set_data(sol.m[rho].transpose())
     ax.title = 'solution at t = {0:f}'.format(sol.t)
@@ -45,7 +45,7 @@ if __name__ == "__main__":
     s0  = [0., s_0qx, s_0qx, s_0xy]
     s1  = [0., s_1qx, s_1qx, s_1xy]
 
-    vitesse = range(1,5)
+    vitesse = list(range(1,5))
     polynomes = [1, LA*X, LA*Y, X**2-Y**2]
 
     dico   = {

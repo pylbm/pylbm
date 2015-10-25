@@ -12,6 +12,7 @@
 # u(t,x,y,z) = u0(x-cx*t,y-cy*t,z-cz*t)
 #
 ##############################################################################
+from six.moves import range
 import numpy as np
 import sympy as sp
 import pyLBM
@@ -28,10 +29,14 @@ def u0(x, y, z):
     return .5*np.ones((x.size, y.size, z.size)) \
           + .5*(((x-xm)**2+(y-ym)**2+(z-zm)**2)<.25**2)
 
-def save(x, y, z, m, num):
-    vtk = pyLBM.VTKFile(filename, path, num)
+def save(x, y, z, m, im):
+    init_pvd = False
+    if im == 1:
+        init_pvd = True
+
+    vtk = pyLBM.VTKFile('advection', './data', im, init_pvd=init_pvd)
     vtk.set_grid(x, y, z)
-    vtk.add_scalar('u', m[0][0][1:-1,1:-1,1:-1])
+    vtk.add_scalar('u', m[u])
     vtk.save()
 
 s = 1.
@@ -42,7 +47,7 @@ d = {
     'space_step':dx,
     'scheme_velocity':la,
     'schemes':[{
-        'velocities': range(1,7),
+        'velocities': list(range(1,7)),
         'conserved_moments':[u],
         'polynomials': [1, LA*X, LA*Y, LA*Z, X**2-Y**2, X**2-Z**2],
         'equilibrium': [u, ux*u, uy*u, uz*u, 0., 0.],
@@ -55,16 +60,10 @@ d = {
 
 sol = pyLBM.Simulation(d)
 
-x, y, z = sol.domain.x[0][1:-1], sol.domain.x[1][1:-1], sol.domain.x[2][1:-1]
-
-filename = 'advection'
-path = './data'
+x, y, z = sol.domain.x[0], sol.domain.x[1], sol.domain.x[2]
 
 im = 0
 while sol.t<1.:
     sol.one_time_step()
-    sol.f2m()
-    save(x, y, z, sol.m, im)
     im += 1
-
-pyLBM.write_collection(filename, path, im)
+    save(x, y, z, sol.m, im)

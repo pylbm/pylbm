@@ -1,11 +1,13 @@
+from __future__ import print_function
+from six.moves import range
 import numpy as np
 import copy
 import pyLBM
 
-class test_domain1D:
+class test_domain1D(object):
     dom1d = {'box':{'x': [0, 1], 'label': 0},
              'space_step':0.25,
-             'schemes': [{'velocities':range(3)}],
+             'schemes': [{'velocities':list(range(3))}],
              }
     valin = 999
     valout = -1
@@ -24,7 +26,7 @@ class test_domain1D:
 
     def test_with_given_geometry_and_stencil(self):
         geom = pyLBM.Geometry({'box': {'x': [0, 1]}})
-        sten = pyLBM.Stencil({'dim': 1, 'schemes': [{'velocities':range(3)}]})
+        sten = pyLBM.Stencil({'dim': 1, 'schemes': [{'velocities':list(range(3))}]})
         dom = pyLBM.Domain(geometry = geom, stencil=sten, space_step=.25)
 
     def test_domain_with_one_scheme(self):
@@ -36,7 +38,7 @@ class test_domain1D:
 
         desired_distance = self.valin*np.ones((3, 6))
         desired_distance[[(1, 2), (-2, 1)]] = .5
-        print dom.distance
+        print(dom.distance)
         assert(np.all(dom.distance == desired_distance))
 
         desired_flag = self.valin*np.ones((3, 6), dtype=int)
@@ -45,7 +47,7 @@ class test_domain1D:
 
     def test_domain_with_two_schemes_without_label(self):
         dom1d = copy.deepcopy(self.dom1d)
-        dom1d['schemes'].append({'velocities':range(5)})
+        dom1d['schemes'].append({'velocities':list(range(5))})
 
         dom = pyLBM.Domain(dom1d)
 
@@ -69,7 +71,7 @@ class test_domain1D:
         lleft, lright = 1, 2
         dom1d = copy.deepcopy(self.dom1d)
         dom1d['box'] = {'x': [0, 1], 'label': [lleft, lright]}
-        dom1d['schemes'].append({'velocities':range(5)})
+        dom1d['schemes'].append({'velocities':list(range(5))})
 
         dom = pyLBM.Domain(dom1d)
 

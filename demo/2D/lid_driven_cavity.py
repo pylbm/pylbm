@@ -1,4 +1,4 @@
-
+from six.moves import range
 import numpy as np
 import sympy as sp
 
@@ -20,7 +20,7 @@ def vorticity(sol):
 
 def update(iframe):
     nrep = 100
-    for i in xrange(nrep):
+    for i in range(nrep):
          sol.one_time_step()
 
     image.set_data(vorticity(sol))
@@ -39,7 +39,7 @@ Tf = 10.
 lid_cavity = {'box':{'x':[0., 1.], 'y':[0., 1.], 'label':[0, 0, 0, 1]},
               'space_step': dx,
               'scheme_velocity':1,
-              'schemes':[{'velocities':range(9),
+              'schemes':[{'velocities':list(range(9)),
                           'polynomials':[1,
                                    X, Y,
                                    3*(X**2+Y**2)-4,
