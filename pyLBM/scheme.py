@@ -520,6 +520,9 @@ class Scheme(object):
         self.generator.relaxation(self.nscheme, self.stencil, self.s, EQ)
         self.generator.compile()
 
+        mpi.COMM_WORLD.Barrier()
+        self.generator.get_module()
+
     def m2f(self, m, f):
         """ Compute the distribution functions f from the moments m """
         mod = self.generator.get_module()
