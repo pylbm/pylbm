@@ -27,7 +27,7 @@ import mpi4py.MPI as mpi
 
 proto_sch = {
     'velocities': (is_list_int,),
-    'conserved_moments': (sp.Symbol, bytes, is_list_symb),
+    'conserved_moments': (sp.Symbol, is_list_symb) + string_types,
     'polynomials': (is_list_sp_or_nb,),
     'equilibrium': (is_list_sp_or_nb,),
     'relaxation_parameters': (is_list_sp_or_nb,),
@@ -36,7 +36,7 @@ proto_sch = {
 
 proto_sch_dom = {
     'velocities': (is_list_int,),
-    'conserved_moments': (type(None), sp.Symbol, bytes, is_list_symb),
+    'conserved_moments': (type(None), sp.Symbol, is_list_symb) + string_types,
     'polynomials': (type(None), is_list_sp_or_nb,),
     'equilibrium': (type(None), is_list_sp_or_nb,),
     'relaxation_parameters': (type(None), is_list_sp_or_nb,),

@@ -7,6 +7,8 @@
 from __future__ import print_function
 from __future__ import division
 from six.moves import range
+from six import string_types
+
 import types
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
@@ -25,7 +27,7 @@ proto_box = {
     'x': (is_2_list_int_or_float,),
     'y': (type(None), is_2_list_int_or_float,),
     'z': (type(None), is_2_list_int_or_float,),
-    'label': (type(None), int, bytes, is_list_int_or_string),
+    'label': (type(None), int, is_list_int_or_string) + string_types,
 }
 
 def get_box(dico):

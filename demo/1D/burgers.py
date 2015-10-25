@@ -14,7 +14,7 @@
 # The solution is a shock wave if uL>uR and a linear rarefaction wave if uL<uR
 #
 ##############################################################################
-
+from six.moves import range
 import numpy as np
 import sympy as sp
 
@@ -83,7 +83,7 @@ dico2 = {
     'scheme_velocity':la,
     'schemes':[
         {
-            'velocities':range(3),
+            'velocities':list(range(3)),
             'conserved_moments':u,
             'polynomials':[1,LA*X,LA**2*X**2],
             'relaxation_parameters':[0., s, s],

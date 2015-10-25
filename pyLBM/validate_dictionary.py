@@ -6,6 +6,7 @@ from __future__ import print_function
 # License: BSD 3 clause
 
 from six.moves import range
+from six import string_types
 import types
 import sympy as sp
 import numpy as np
@@ -94,10 +95,10 @@ def is_list_generic(l, lte, size=None):
     return test, ligne
 
 def is_dico_sp_float(d, ntab=0):
-    return is_dico_generic(d, (sp.Symbol, bytes), (int, float), ntab=ntab)
+    return is_dico_generic(d, (sp.Symbol, string_types), (int, float), ntab=ntab)
 
 def is_dico_sp_sporfloat(d, ntab=0):
-    return is_dico_generic(d, (sp.Symbol, bytes), (int, float, sp.Symbol, bytes), ntab=ntab)
+    return is_dico_generic(d, (sp.Symbol, string_types), (int, float, sp.Symbol, string_types), ntab=ntab)
 
 def is_dico_int_func(d, ntab=0):
     return is_dico_generic(d, int, types.FunctionType, ntab=ntab)
@@ -110,7 +111,7 @@ def is_dico_bc(d, ntab=0):
     ligne = ''
     if test:
         for label, dico_bc_label in list(d.items()):
-            if not isinstance(label, (int, bytes)):
+            if not isinstance(label, (int, string_types)):
                 test = False
                 debut_l = debut(False) + space(ntab)
                 ligne_l = PrintInColor.error(label) + ": "
@@ -131,7 +132,7 @@ def is_dico_bc(d, ntab=0):
     return test, ligne
 
 def is_dico_init(d, ntab=0):
-    return is_dico_generic(d, (sp.Symbol, bytes), (tuple, int, float), ntab=ntab)
+    return is_dico_generic(d, (sp.Symbol, string_types), (tuple, int, float), ntab=ntab)
 
 def is_dico_stab(d, ntab=0):
     return test_dico_prototype(d, pyLBM.scheme.proto_stab, ntab=ntab)
@@ -204,7 +205,7 @@ def is_list_int(l, ntab=None):
     return is_list_generic(l, int)
 
 def is_list_int_or_string(l, ntab=None):
-    return is_list_generic(l, (int, bytes))
+    return is_list_generic(l, (int, string_types))
 
 def is_list_float(l, ntab=None):
     return is_list_generic(l, (int, float))
@@ -223,13 +224,13 @@ def is_list_elem(l, ntab=None):
     return is_list_generic(l, pyLBM.elements.base.Element)
 
 def is_list_sp(l, ntab=None):
-    return is_list_generic(l, (sp.Expr, bytes))
+    return is_list_generic(l, (sp.Expr, string_types))
 
 def is_list_sp_or_nb(l, ntab=None):
-    return is_list_generic(l, (int, float, sp.Expr, bytes))
+    return is_list_generic(l, (int, float, sp.Expr, string_types))
 
 def is_list_symb(l, ntab=None):
-    return is_list_generic(l, (sp.Symbol, bytes))
+    return is_list_generic(l, (sp.Symbol, string_types))
 
 def test_dico_prototype(dico, proto, ntab=0):
     test_g = True
@@ -254,7 +255,7 @@ def test_dico_prototype(dico, proto, ntab=0):
                         test_loc = True
                         break
                 else:
-                    print("\n\n" + "*"*50 + "\nUnknown type\n" + "*"*50)
+                    print("\n\n" + "*"*50 + "\nUnknown type:", vpk, "\n" + "*"*50)
         aff += debut(test_loc) + space(ntab) + aff_k
         test_g = test_g and test_loc
     for key_p, value_p in list(proto.items()):

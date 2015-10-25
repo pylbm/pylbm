@@ -7,6 +7,7 @@ from __future__ import division
 # License: BSD 3 clause
 
 from six.moves import range
+from six import string_types
 import sys
 import types
 import cmath
@@ -45,7 +46,7 @@ proto_simu = {
     'generator':(type(None), is_generator),
     'stability':(type(None), is_dico_stab),
     'consistency':(type(None), is_dico_cons),
-    'inittype':(type(None), bytes),
+    'inittype':(type(None),) + string_types,
 }
 
 class Simulation(object):
@@ -215,10 +216,6 @@ class Simulation(object):
 
         self.scheme.generate(sorder)
         # be sure that process 0 generate the code
-        mpi.COMM_WORLD.Barrier()
-        self.scheme.generator.get_module()
-        mpi.COMM_WORLD.Barrier()
-        self.scheme.generator.exit()
 
         self.log.info('Build boundary conditions')
 
@@ -297,8 +294,8 @@ class Simulation(object):
                 s += ' '*4
             else:
                 test_dummy = False
-                s += '{0:2d}{1} '.format(tcut[k], unity_name[k])
-        s += '{0:2d}{1} '.format(tcut[-1], unity_name[-1])
+                s += '{0:2d}{1} '.format(int(tcut[k]), unity_name[k])
+        s += '{0:2d}{1} '.format(int(tcut[-1]), unity_name[-1])
         if test_dummy:
             s += '{0:3d}ms'.format(tms) + ' '*13 + '*'
         else:

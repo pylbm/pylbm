@@ -11,6 +11,7 @@ import sympy as sp
 import sys
 import copy
 from six.moves import range
+from six import string_types
 
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
@@ -36,7 +37,7 @@ proto_domain = {
     'generator':(type(None), is_generator),
     'stability':(type(None), is_dico_stab),
     'consistency':(type(None), is_dico_cons),
-    'inittype':(type(None), bytes),
+    'inittype':(type(None),) + string_types,
 }
 
 class Domain(object):
@@ -163,7 +164,7 @@ class Domain(object):
             if test:
                 self.log.info(aff)
             else:
-                selflog.error(aff)
+                self.log.error(aff)
                 sys.exit()
 
         self.geom = Geometry(dico) if geometry is None else geometry
@@ -243,7 +244,7 @@ class Domain(object):
 
         s = self.stencil
         uvel = [s.uvx, s.uvy, s.uvz]
-        
+
         for iuv, uv in enumerate(uvel[:self.dim]):
             for k, vk in np.ndenumerate(uv):
                 indices = [k] + [slice(None)]*self.dim
