@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -17,5 +18,5 @@ dico = {
     'elements':[pyLBM.Ellipsoid((.5,.5,.5), v1, v2, v3, label=1)],
 }
 geom = pyLBM.Geometry(dico)
-print geom
+print(geom)
 geom.visualize(viewlabel=True)

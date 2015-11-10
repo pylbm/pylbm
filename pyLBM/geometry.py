@@ -183,14 +183,17 @@ class Geometry(object):
         """
         self.list_elem.append(elem)
 
-    def visualize(self, viewer_app=viewer.matplotlibViewer, viewlabel=False, fluid='blue'):
+    def visualize(self, viewer_app=viewer.matplotlibViewer, viewlabel=False, fluid_color='blue'):
         """
         plot a view of the geometry
 
         Parameters
         ----------
 
-        viewlabel : boolean to activate the labels mark (optional)
+        viewer_app : a viewer (default matplotlibViewer)
+        viewlabel : boolean to activate the labels mark (default False)
+        fluid_color : color for the fluid part (default blue)
+
         """
         view = viewer_app.Fig(dim = self.dim)
         ax = view[0]
@@ -203,9 +206,9 @@ class Geometry(object):
             lpos = np.asarray([[xmin+l,xmin,xmin,xmin+l],[-h,-h,h,h]]).T
             pos = np.asarray([[xmin,xmax],[0, 0]]).T
             rpos = np.asarray([[xmax-l,xmax,xmax,xmax-l],[-h,-h,h,h]]).T
-            ax.line(lpos, color=fluid)
-            ax.line(rpos, color=fluid)
-            ax.line(pos, color=fluid)
+            ax.line(lpos, color=fluid_color)
+            ax.line(rpos, color=fluid_color)
+            ax.line(pos, color=fluid_color)
             if viewlabel:
                 # label 0 for left
                 ax.text(str(self.box_label[0]), [xmin+l, -2*h])
@@ -215,12 +218,10 @@ class Geometry(object):
         elif self.dim == 2:
             xmin, xmax = self.bounds[0][:]
             ymin, ymax = self.bounds[1][:]
-
             ax.polygon(np.array([[xmin, ymin],
                           [xmin, ymax],
                           [xmax, ymax],
-                          [xmax, ymin]]), fluid)
-
+                          [xmax, ymin]]), fluid_color)
             if viewlabel:
                 # label 0 for left
                 ax.text(str(self.box_label[0]), [xmin, 0.5*(ymin+ymax)])
@@ -230,14 +231,12 @@ class Geometry(object):
                 ax.text(str(self.box_label[2]), [0.5*(xmin+xmax), ymin])
                 # label 3 for top
                 ax.text(str(self.box_label[3]), [0.5*(xmin+xmax), ymax])
-
             for elem in self.list_elem:
                 if elem.isfluid:
-                    color = fluid
+                    color = fluid_color
                 else:
                     color = 'white'
                 elem._visualize(ax, color, viewlabel)
-
             xpercent = 0.05*(xmax-xmin)
             ypercent = 0.05*(ymax-ymin)
             ax.axis(xmin-xpercent, xmax+xpercent, ymin-ypercent, ymax+ypercent)
@@ -265,10 +264,9 @@ class Geometry(object):
                         ct_lab += 1
             ax.axis(xmin,xmax,ymin,ymax,zmin,zmax)
             ax.set_label("X", "Y", "Z")
-
             for elem in self.list_elem:
                 if elem.isfluid:
-                    coul = fluid
+                    coul = fluid_color
                 else:
                     coul = [couleurs[elem.label[k]] for k in range(elem.number_of_bounds)]
                 elem._visualize(ax, coul, viewlabel)
@@ -286,82 +284,4 @@ class Geometry(object):
         for elem in self.list_elem:
             L = np.union1d(L, elem.label)
         return L
-
-
-def test_1D(number):
-    """
-    Test 1D-Geometry
-
-    * ``Test_1D(0)`` for the segment (0,1)
-    * ``Test_1D(1)`` for the segment (-1,2)
-    """
-    if number == 0:
-        dgeom = {'box':{'x': [0, 1]}}
-    elif number == 1:
-        dgeom = {'box':{'x': [-1, 2]}}
-    else:
-        dgeom = None
-
-    if dgeom is not None:
-        geom = Geometry(dgeom)
-        print("\n\nTest number {0:d} in {1:d}D:".format(number, geom.dim))
-        print(geom)
-        geom.visualize()
-        return 1
-    else:
-        return 0
-
-def test_2D(number):
-    """
-    Test 2D-Geometry
-
-    * ``Test_2D(0)`` for the square [0,1]**2
-    * ``Test_2D(1)`` for the rectangular cavity with a circular obstacle
-    * ``Test_2D(2)`` for the circular cavity
-    * ``Test_2D(3)`` for the square cavity with a triangular obstacle
-    """
-    if number == 0:
-        dgeom = {'box':{'x': [0, 1], 'y': [0, 1]}}
-    elif number == 1:
-        dgeom = {'box':{'x': [0, 2], 'y': [0, 1]},
-                 'elements':[Circle((0.5, 0.5), 0.1)]
-                }
-    elif number == 2:
-        dgeom = {'box':{'x': [0, 2], 'y': [0, 1]},
-                 'elements':[Parallelogram((0, 0), (2, 0), (0, 1)),
-                             Parallelogram((0, .4), (2, 0), (0, .2), isfluid=True),
-                             Circle((1, .5), 0.5, isfluid=True),
-                             Circle((1, .5), 0.2, isfluid=False)
-                             ]
-                }
-    elif number == 3:
-        dgeom = {'box':{'x': [0, 1], 'y': [0, 1]},
-                 'elements':[Triangle((0.3, 0.3), (0.5, -0.1), (0.3, 0.5))]}
-    elif (number==4):
-        dgeom = {'box':{'x': [0, 2], 'y': [0, 1]},
-                 'elements':[Parallelogram((0.4, 0.4), (0., 0.2), (0.2, 0.)),
-                             Parallelogram((1.4, 0.5), (0.1, 0.1), (0.1, -0.1))
-                            ]
-                }
-    else:
-        dgeom = None
-    if dgeom is not None:
-        geom = Geometry(dgeom)
-        print("\n\nTest number {0:d} in {1:d}D:".format(number, geom.dim))
-        print(geom)
-        geom.visualize()
-        return 1
-    else:
-        return 0
-
-if __name__ == "__main__":
-    k = 1
-    compt = 0
-    while k==1:
-        k = test_1D(compt)
-        compt += 1
-    k = 1
-    compt = 2
-    while (k==1):
-        k = test_2D(compt)
-        compt += 1
+        

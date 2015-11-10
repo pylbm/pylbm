@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -7,10 +8,11 @@
 """
 Example of a 3D geometry: the cube [0,1] x [0,1] x [0,1]
 """
+from six.moves import range
 import pyLBM
 dico = {
-    'box':{'x': [0, 1], 'y': [0, 1], 'z':[0, 1], 'label':range(6)},
+    'box':{'x': [0, 1], 'y': [0, 1], 'z':[0, 1], 'label':list(range(6))},
 }
 geom = pyLBM.Geometry(dico)
-print geom
+print(geom)
 geom.visualize(viewlabel=True)

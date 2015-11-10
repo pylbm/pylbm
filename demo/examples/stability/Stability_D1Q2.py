@@ -20,7 +20,7 @@ def scheme_constructor(ux, s):
         'scheme_velocity':1.,
         'schemes':[
             {
-            'velocities':range(1, 3),
+            'velocities':[1, 2],
             'conserved_moments':u,
             'polynomials':[1, X],
             'relaxation_parameters':[0., s],

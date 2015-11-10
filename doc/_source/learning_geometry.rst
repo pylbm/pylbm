@@ -5,20 +5,30 @@ With pyLBM, the numerical simulations can be performed in a domain
 with a complex geometry. This geometry is construct without considering a
 particular mesh but only with geometrical objects.
 All the geometrical informations are defined through a dictionary and
-put in an object of the class :py:class:`Geometry <pyLBM.geometry.Geometry>`.
+put into an object of the class :py:class:`Geometry <pyLBM.geometry.Geometry>`.
 
-Fist, the domain is put into a box: a segment in 1D, a rectangle in 2D, and
+First, the domain is put into a box: a segment in 1D, a rectangle in 2D, and
 a rectangular parallelepipoid in 3D.
 
 Then, the domain is modified by adding or deleting some elementary shapes.
 In 2D, the elementary shapes are
 
 * a :py:class:`Circle <pyLBM.elements.Circle>`
+* an :py:class:`Ellipse <pyLBM.elements.Ellipse>`
 * a :py:class:`Parallelogram <pyLBM.elements.Parallelogram>`
 * a :py:class:`Triangle <pyLBM.elements.Triangle>`
 
-In 3D, the elementary shapes are not yet implemented.
+From version 0.2, the geometrical elements are implemented in 3D.
+The elementary shapes are
 
+* a :py:class:`Sphere <pyLBM.elements.Sphere>`
+* an :py:class:`Ellipsoid <pyLBM.elements.Ellipsoid>`
+* a :py:class:`Parallelepiped <pyLBM.elements.Parallelepiped>`
+* a Cylinder with a 2D-base
+
+  - :py:class:`Cylinder (Circle) <pyLBM.elements.Cylinder_Circle>`
+  - :py:class:`Cylinder (Ellipse) <pyLBM.elements.Cylinder_Ellipse>`
+  - :py:class:`Cylinder (Triangle) <pyLBM.elements.Cylinder_Triangle>`
 
 Several examples of geometries can be found in
 demo/examples/geometry/
@@ -152,7 +162,7 @@ The cube :math:`[0,1]^3`
 ==============================
 
 .. literalinclude:: codes/geometry_3D_cube.py
-    :lines: 11-
+    :lines: 12-
 
 .. plot:: codes/geometry_3D_cube.py
 
@@ -176,3 +186,16 @@ through a list of integers with the conventions:
 If all the labels have the same value, a shorter solution is to
 give only the integer value of the label instead of the list.
 If no labels are given in the dictionary, the default value is -1.
+
+The cube :math:`[0,1]^3` with a hole
+====================================
+
+.. literalinclude:: codes/geometry_3D_cube_hole.py
+    :lines: 11-
+
+.. plot:: codes/geometry_3D_cube_hole.py
+
+The cube :math:`[0,1]^3` and the spherical hole are created
+by the dictionary with the keys ``box`` and ``elements``.
+The result is then visualized by using the method
+:py:meth:`visualize <pyLBM.geometry.Geometry.visualize>`.

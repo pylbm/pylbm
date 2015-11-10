@@ -9,18 +9,16 @@ from __future__ import print_function
 Example of a 3D geometry: the cube [0,1] x [0,1] x [0,1] with a cylindrical hole
 """
 import pyLBM
-
-v1 = [0, 1., 1.]
-v2 = [0,-1.5, 1.5]
-v3 = [1, -1, 0]
-w1 = [.5,0,0]
-w2 = [0,.5,0]
-w3 = [0,0,1.5]
+import numpy as np
+a, b = 1./np.sqrt(3), 1./np.sqrt(2)
+c = a*b
+v0 = [a, a, a]
+v1 = [b, -b, 0]
+v2 = [c, c, -2*c]
+v0, v1, v2 = [1,0,0], [0,1,0], [0,0,1]
 dico = {
     'box':{'x': [-3, 3], 'y': [-3, 3], 'z':[-3, 3], 'label':9},
-    'elements':[#pyLBM.Cylinder_Ellipse((0.5,0,0), v1, v2, v3, label=[1,0,0]),
-                pyLBM.Cylinder_Triangle((0.5,0,0), v1, v2, v3, label=0),
-                pyLBM.Cylinder_Circle((-1.5,-1.5,0), w1, w2, w3, label=[1,0,0]),],
+    'elements':[pyLBM.Parallelepiped((0,0,0), v0, v1, v2, label=0)],
 }
 geom = pyLBM.Geometry(dico)
 print(geom)

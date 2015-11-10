@@ -61,13 +61,13 @@ class PlotWidget(object):
     def legend(self, loc = 'upper left'):
         self.ax.legend(loc = loc)
 
-    def text(self, text, pos, fontsize=18, color='k', dim=2, horizontalalignment='center', verticalalignment='center'):
+    def text(self, text, pos, fontsize=18, color='k', horizontalalignment='center', verticalalignment='center'):
         allt = []
         if isinstance(text, str):
             text = (text,)
             pos = (pos,)
         for t, p in zip(text, pos):
-            if dim < 3:
+            if len(p) == 2:
                 allt.append(self.ax.text(p[0], p[1], t,
                     fontsize=fontsize, color=color,
                     horizontalalignment=horizontalalignment,
@@ -87,10 +87,10 @@ class PlotWidget(object):
 
     def segments(self, pos,  width=5, color='k', **kwargs):
         if pos.shape[1] == 2:
-            for i in range(pos.shape[0]/2):
+            for i in range(pos.shape[0]//2):
                 self.ax.plot(pos[2*i:2*i+2, 0], pos[2*i:2*i+2, 1], c=color, lw=width)
         else:
-            for i in range(pos.shape[0]/2):
+            for i in range(pos.shape[0]//2):
                 self.ax.plot(pos[2*i:2*i+2, 0], pos[2*i:2*i+2, 1], pos[2*i:2*i+2, 2], c=color, lw=width)
 
     def clear(self):
