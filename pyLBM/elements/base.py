@@ -128,8 +128,8 @@ class Base_Ellipse(Base2D):
     v1 : a list of the three coordinates of the first vector that defines the ellipsoidal base
     v2 : a list of the three coordinates of the second vector that defines the ellipsoidal base
 
-    Warning
-    -------
+    Warnings
+    --------
 
     The vectors v1 and v2 have to be orthogonal.
 

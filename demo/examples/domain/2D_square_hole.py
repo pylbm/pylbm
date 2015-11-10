@@ -17,4 +17,4 @@ dico = {
 }
 dom = pyLBM.Domain(dico)
 dom.visualize()
-dom.visualize(view_distance=True)
+dom.visualize(view_distance=True, label=1)

@@ -7,11 +7,12 @@
 """
 Example of a square in 2D with a D2Q9
 """
+from six.moves import range
 import pyLBM
 dico = {
-    'box':{'x': [0, 1], 'y': [0, 1]},
+    'box':{'x': [0, 1], 'y': [0, 1], 'label':0},
     'space_step':0.1,
-    'schemes':[{'velocities':range(9)}],
+    'schemes':[{'velocities':list(range(9))}],
 }
 dom = pyLBM.Domain(dico)
 dom.visualize()

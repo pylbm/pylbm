@@ -401,8 +401,18 @@ class Domain(object):
         viewer_app : Viewer, optional
             define the viewer to plot the domain
             default is viewer.matplotlibViewer
-        view_distance : boolean, optional
+        view_distance : boolean or int or list of int, optional
             view the distance between the interior points and the border
+            default is False
+        view_in : boolean, optional
+            view the inner points
+            default is True
+        view_out : boolean, optional
+            view the outer points
+            default is True
+        view_bound : boolean, optional
+            view the points on the bounds
+            default is False
         label : int or list of int, optional
             view the distance only for the specified labels
 
@@ -470,8 +480,8 @@ class Domain(object):
                 xmin, xmax = self.bounds[0][:]
                 ymin, ymax = self.bounds[1][:]
 
-                xpercent = 0.05*(xmax-xmin)
-                ypercent = 0.05*(ymax-ymin)
+                xpercent = 0.1*(xmax-xmin)
+                ypercent = 0.1*(ymax-ymin)
                 view.axis(xmin-xpercent, xmax+xpercent, ymin-ypercent, ymax+ypercent)
 
                 x, y = self.x[:]
@@ -482,7 +492,19 @@ class Domain(object):
                     vxk = self.stencil.unique_velocities[k].vx
                     vyk = self.stencil.unique_velocities[k].vy
                     color = (1.-(vxkmax+vxk)*0.5/vxkmax, (vykmax+vyk)*0.5/vykmax, (vxkmax+vxk)*0.5/vxkmax)
-                    indbordx, indbordy = np.where(self.distance[k, :]<=1)
+                    if label is not None:
+                        dummy = np.zeros(self.distance.shape[1:])
+                        if isinstance(label, int):
+                            dummy = np.logical_or(dummy, self.flag[k,:]==label)
+                        elif isinstance(label, (tuple, list)):
+                            for labelk in label:
+                                dummy = np.logical_or(dummy, self.flag[k,:]==labelk)
+                        else:
+                            self.log.error("Error in visualize (domain): wrong type for optional argument label")
+                    else:
+                        dummy = np.ones(self.distance.shape[1:])
+                    dummy = np.logical_and(dummy, self.distance[k,:]<=1)
+                    indbordx, indbordy = np.where(dummy)
                     if indbordx.size != 0:
                         dist = self.distance[k, indbordx, indbordy]
                         xx = x[indbordx]
@@ -504,9 +526,9 @@ class Domain(object):
             ymin, ymax = self.bounds[1][:]
             zmin, zmax = self.bounds[2][:]
 
-            xpercent = 0.05*(xmax-xmin)
-            ypercent = 0.05*(ymax-ymin)
-            zpercent = 0.05*(zmax-zmin)
+            xpercent = 0.1*(xmax-xmin)
+            ypercent = 0.1*(ymax-ymin)
+            zpercent = 0.1*(zmax-zmin)
             view.axis(xmin-xpercent, xmax+xpercent, ymin-ypercent, ymax+ypercent, zmin-zpercent, zmax+zpercent)
 
             if view_in:
@@ -650,17 +672,3 @@ def verification(dom, with_color=False):
                         print(green + '{0:.2f}'.format(dom.flag[k,j,i]) + black, end=' ')
                 print()
             print('*'*50)
-
-
-if __name__ == "__main__":
-    import pyLBM
-    dico = {
-        'box':{'x': [0, 1], 'y': [0, 1], 'label':0},
-        'elements':[pyLBM.Circle((0.5,0.5), 0.2, label = 1)],
-        'space_step':0.05,
-        'schemes':[{'velocities':list(range(9))}]
-    }
-    dom = pyLBM.Domain(dico)
-    dom.visualize(opt=0)
-    dom.visualize(opt=1)
-    verification(dom, with_color = True)

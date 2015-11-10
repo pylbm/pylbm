@@ -10,16 +10,25 @@ Lattice Boltzmann solvers.
 pyLBM is licensed under the BSD license,
 enabling reuse with few restrictions.
 
-First steps
+Getting started
 ---------------------------
 
 pyLBM can be a simple way to make numerical simulations
 by using the Lattice Boltzmann method.
 
-Once the module is installed by the command::
+To install pyLBM, you have several ways. You can clone the project::
+
+    git clone https://gitlab.com/gouarin/pylbm
+
+and install the module by the command::
 
     python setup.py install
 
+You can also install the last version on Pypi::
+
+    pip install pyLBM
+
+Once the module is installed
 you just have to understand how build a dictionary that will be
 understood by pyLBM to perform the simulation.
 The dictionary should contain all the needed informations as
@@ -29,6 +38,9 @@ The dictionary should contain all the needed informations as
 - the boundary conditions (see :doc:`here<learning_bounds>` for documentation)
 - another informations like the space step, the scheme velocity, the generator
   of the functions...
+
+To understand how to use pyLBM, you have a lot of Python notebooks
+in the `tutorial <tutorial.html>`_.
 
 Documentation for users
 ---------------------------
@@ -40,7 +52,7 @@ Documentation for users
    The domain of the simulation <learning_domain>
    The scheme <learning_scheme>
    The boundary conditions <learning_bounds>
-   
+
 
 Documentation of the code
 ---------------------------

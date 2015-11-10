@@ -259,8 +259,8 @@ class Cylinder_Ellipse(Cylinder):
              - True if the cylinder is added
              - False if the cylinder is deleted
 
-    Warning
-    -------
+    Warnings
+    --------
 
     The vectors v1 and v2 have to be orthogonal.
 

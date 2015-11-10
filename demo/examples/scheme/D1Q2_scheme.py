@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -9,7 +10,7 @@ Example of a two velocities scheme for the advection equation in 1D
 """
 import sympy as sp
 import pyLBM
-u, X = sp.symbols('u,X')
+u, X = sp.symbols('u, X')
 d = {
     'dim':1,
     'scheme_velocity':1.,

@@ -3,11 +3,8 @@ the module elements
 
 .. automodule:: pyLBM.elements
 
-.. warning::
-  No geometrical elements are implemented in 3D in the version 0.1.
-
 .. versionadded:: 0.2
-  The geometrical elements are implemented in 3D.
+  the geometrical elements are yet implemented in 3D.
 
 The module elements contains all the geometrical shapes that can be used
 to build the geometry.

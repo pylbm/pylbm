@@ -1,11 +1,11 @@
+from __future__ import print_function
+from __future__ import division
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
 
-from __future__ import print_function
-from __future__ import division
 from six.moves import range
 from six import string_types
 
@@ -284,4 +284,3 @@ class Geometry(object):
         for elem in self.list_elem:
             L = np.union1d(L, elem.label)
         return L
-        

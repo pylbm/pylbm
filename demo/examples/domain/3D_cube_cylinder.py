@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -20,5 +21,5 @@ dico = {
     'schemes':[{'velocities':list(range(19))}]
 }
 dom = pyLBM.Domain(dico)
-print dom
+print(dom)
 dom.visualize(view_distance=False, view_in=False, view_out=False, view_bound=True, label=[1,2,3])

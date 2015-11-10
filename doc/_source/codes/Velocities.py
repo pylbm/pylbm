@@ -1,3 +1,5 @@
+from __future__ import print_function, division
+from six.moves import range
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
@@ -26,7 +28,7 @@ def Velocities_1D(n):
     plt.hold(True)
     xmin, xmax, ymin, ymax = 1000, -1000, -1, 1
     e = 0.2
-    for k in xrange((2*n+1)**dim):
+    for k in range((2*n+1)**dim):
         v = pyLBM.stencil.Velocity(dim = dim, num = k)
         x = v.vx
         xmin = min(xmin, x)
@@ -48,7 +50,6 @@ def Velocities_1D(n):
     plt.ylim(ymin-2*e, ymax+2*e)
     plt.draw()
     plt.hold(False)
-    #plt.savefig('Velocities_{0:1d}D.jpeg'.format(dim), dpi = 80)
 
 def Velocities_2D(n):
     dim = 2
@@ -57,7 +58,7 @@ def Velocities_2D(n):
     plt.hold(True)
     xmin, xmax, ymin, ymax = 1000, -1000, 1000, -1000
     e = .5
-    for k in xrange((2*n+1)**dim):
+    for k in range((2*n+1)**dim):
         v = pyLBM.stencil.Velocity(dim = dim, num = k)
         x = v.vx
         y = v.vy
@@ -70,9 +71,9 @@ def Velocities_2D(n):
         plt.text(x, y, str(v.num), color=[couleur_texte]*3,
                  horizontalalignment='center',verticalalignment='center',
                  fontsize=15)
-    for x in xrange(xmin, xmax+1):
+    for x in range(xmin, xmax+1):
         plt.plot([x, x], [ymin, ymax], ':', color=[couleur_trait]*3)
-    for y in xrange(ymin, ymax+1):
+    for y in range(ymin, ymax+1):
         plt.plot([xmin, xmax], [y, y], ':', color=[couleur_trait]*3)
     plt.text(0., ymax+2*e, "Velocities numbering {0:1d}D".format(dim),fontsize=20,
         verticalalignment='center', horizontalalignment='center', color='b')
@@ -87,7 +88,6 @@ def Velocities_2D(n):
     plt.ylim(ymin-2*e, ymax+2*e)
     plt.draw()
     plt.hold(False)
-    #plt.savefig('Velocities_{0:1d}D.jpeg'.format(dim), dpi = 80)
 
 def Velocities_3D(n):
     dim = 3
@@ -98,7 +98,7 @@ def Velocities_3D(n):
     ax = fig.add_subplot(111, projection='3d')
     xmin, xmax, ymin, ymax, zmin, zmax = 1000, -1000, 1000, -1000, 1000, -1000
     e = .5
-    for k in xrange((2*n+1)**dim):
+    for k in range((2*n+1)**dim):
         v = pyLBM.stencil.Velocity(dim = dim, num = k)
         x = v.vx
         y = v.vy
@@ -114,14 +114,14 @@ def Velocities_3D(n):
         ax.text(x, y, z, str(v.num), color=couleur_texte,
                  horizontalalignment='center',verticalalignment='center',
                  fontsize=15)
-    for x in xrange(xmin, xmax+1):
-        for y in xrange(ymin, ymax+1):
+    for x in range(xmin, xmax+1):
+        for y in range(ymin, ymax+1):
             ax.plot([x, x], [y, y], [zmin, zmax], ':', color=[couleur_trait]*3)
-    for x in xrange(xmin, xmax+1):
-        for z in xrange(zmin, zmax+1):
+    for x in range(xmin, xmax+1):
+        for z in range(zmin, zmax+1):
             ax.plot([x, x], [ymin, ymax], [z, z], ':', color=[couleur_trait]*3)
-    for z in xrange(zmin, zmax+1):
-        for y in xrange(ymin, ymax+1):
+    for z in range(zmin, zmax+1):
+        for y in range(ymin, ymax+1):
             ax.plot([xmin, xmax], [y, y], [z, z], ':', color=[couleur_trait]*3)
 
     XS, YS = np.meshgrid([-1,1],[-1,1])
@@ -157,7 +157,6 @@ def Velocities_3D(n):
     plt.axis('off')
     plt.draw()
     plt.hold(False)
-    #plt.savefig('Velocities_{0:1d}D.jpeg'.format(dim), dpi = 80)
 
 def Velocities(dim, n):
     if dim == 1:
@@ -167,7 +166,7 @@ def Velocities(dim, n):
     elif dim == 3:
         Velocities_3D(n)
     else:
-        print "error of dimension"
+        print("error of dimension")
     plt.show()
 
 Velocities(1, 3)
