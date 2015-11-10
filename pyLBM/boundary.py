@@ -8,6 +8,7 @@ from __future__ import division
 
 import numpy as np
 from six.moves import range
+import types
 
 from .logs import setLogger
 from .storage import Array
@@ -15,7 +16,7 @@ from .validate_dictionary import *
 
 proto_bc = {
     'method':(is_dico_bcmethod, ),
-    'value':(type(None), types.FunctionType),
+    'value':(type(None), types.FunctionType, tuple),
 }
 
 class Boundary_Velocity(object):
@@ -147,6 +148,7 @@ class Boundary_method(object):
 
     """
     def __init__(self, istore, ilabel, distance, stencil, value_bc):
+        self.log = setLogger(__name__)
         self.istore = istore
         self.feq = np.zeros((stencil.nv_ptr[-1], istore.shape[1]))
         self.rhs = np.zeros(istore.shape[1])
@@ -187,7 +189,15 @@ class Boundary_method(object):
                 f = Array(nv, nspace , 0, sorder)
                 f.set_conserved_moments(simulation.scheme.consm, self.stencil.nv_ptr)
 
-                value(f, m, *coords)
+                #TODO add error message and more tests
+                if isinstance(value, types.FunctionType):
+                    value(f, m, *coords)
+                elif isinstance(value, tuple):
+                    if len(value) != 2:
+                        self.log.error("""Function set in boundary must be the function name or a tuple
+                                       of size 2 with function name and extra args.""")
+                    args = coords + value[1]
+                    value[0](f, m, *args)
                 simulation.scheme.equilibrium(m)
                 simulation.scheme.m2f(m, f)
 

@@ -85,10 +85,11 @@ class Generator(object):
             if not os.path.exists(lbm_tmp_dir):
                 os.mkdir(lbm_tmp_dir)
             self.build_dir = tempfile.mkdtemp(dir=lbm_tmp_dir) +'/'
-            self.f = open(self.build_dir + "generated_code" + suffix, "w") #tempfile.NamedTemporaryFile(suffix=suffix, prefix=self.build_dir + 'LBM', delete=False)
+            self.f = tempfile.NamedTemporaryFile(dir=self.build_dir, suffix=suffix, delete=False)
+            self.modulename = self.f.name.replace(self.build_dir, "").split('.')[0]
 
         self.build_dir = mpi.COMM_WORLD.bcast(self.build_dir, root=0)
-        self.modulename = "generated_code" #self.f.name.replace(self.build_dir, "").split('.')[0]
+        self.modulename = mpi.COMM_WORLD.bcast(self.modulename, root=0)
 
         self.log.info("Temporary file use for code generator :\n{0}".format(self.modulename))
 
@@ -120,16 +121,10 @@ class Generator(object):
         if self.importmodule is None:
             sys.path.append(self.build_dir)
             self.importmodule = importlib.import_module(self.modulename)
+            sys.path.remove(self.build_dir)
         return self.importmodule
 
     def __del__(self):
-        self.exit()
-
-    def exit(self):
         self.log.info("delete generator")
         if mpi.COMM_WORLD.Get_rank() == 0:
-            try:
-                sys.path.remove(self.build_dir)
-            except:
-                pass
             shutil.rmtree(self.build_dir)

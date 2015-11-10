@@ -199,16 +199,22 @@ class Simulation(object):
             if isinstance(self.scheme.generator, NumpyGenerator):
                 self._m = SOA(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
                 self._F = SOA(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
-                self._Fold = self._F
+                #self._Fold = self._F
                 sorder = [i for i in range(self.dim + 1)]
             else:
                 self._m = AOS(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
                 self._F = AOS(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
-                self._Fold = AOS(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
+                #self._Fold = AOS(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
                 sorder = [self.dim] + [i for i in range(self.dim)]
         else:
             self._m = Array(nv, nspace, vmax, sorder=sorder, cartcomm=self.interface.cartcomm)
             self._F = Array(nv, nspace, vmax, sorder=sorder, cartcomm=self.interface.cartcomm)
+            #self._Fold = self._F
+            #self._Fold = Array(nv, nspace, vmax, sorder=sorder, cartcomm=self.interface.cartcomm)
+
+        if self.scheme.generator.sameF:
+            self._Fold = self._F
+        else:
             self._Fold = Array(nv, nspace, vmax, sorder=sorder, cartcomm=self.interface.cartcomm)
 
         self._m.set_conserved_moments(self.scheme.consm, self.domain.stencil.nv_ptr)
@@ -382,8 +388,6 @@ class Simulation(object):
             self.scheme.m2f(self._m, self._F)
         elif inittype == 'distributions':
             self.scheme.f2m(self._F, self._m)
-
-        #self._Fold[:] = self._F[:]
 
     def transport(self):
         """

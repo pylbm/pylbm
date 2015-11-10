@@ -54,7 +54,8 @@ class NumpyGenerator(Generator):
     """
     def __init__(self, build_dir=None):
         Generator.__init__(self, build_dir)
-
+        self.sameF = True
+        
     def transport(self, ns, stencil, dtype = 'f8'):
         """
         generate the code of the transport phase

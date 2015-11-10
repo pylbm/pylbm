@@ -64,7 +64,8 @@ class CythonGenerator(Generator):
     """
     def __init__(self, build_dir=None):
         Generator.__init__(self, build_dir, suffix='.pyx')
-
+        self.sameF = False
+        
     def setup(self):
         """
         initialization of the .pyx file to use cython
@@ -408,5 +409,6 @@ def make_ext(modname, pyxfilename):
             bld.close()
 
             import pyximport
-            pyximport.install(build_dir= self.build_dir, inplace=True)
+            py_importer, pyx_importer = pyximport.install(build_dir=self.build_dir, inplace=True)
             self.get_module()
+            pyximport.uninstall(py_importer, pyx_importer)
