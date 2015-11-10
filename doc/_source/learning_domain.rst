@@ -10,7 +10,7 @@ and put in a object of the class :py:class:`Domain <pyLBM.domain.Domain>`.
 The domain is built from three types of informations:
 
 * a geometry (class :py:class:`Geometry <pyLBM.geometry.Geometry>`),
-* a stencil (class :py:class:`Stencil <pyLBM.geometry.Stencil>`),
+* a stencil (class :py:class:`Stencil <pyLBM.stencil.Stencil>`),
 * a space step (a float for the grid step of the simulation).
 
 The domain is a uniform cartesian discretization of the geometry with a grid step

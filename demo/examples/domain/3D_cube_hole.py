@@ -7,12 +7,13 @@
 """
 Example of the cube in 3D with a spherical hole
 """
+from six.moves import range
 import pyLBM
 dico = {
-    'box':{'x': [0, 2], 'y': [0, 2], 'z':[0, 2], 'label':range(1,7)},
+    'box':{'x': [0, 2], 'y': [0, 2], 'z':[0, 2], 'label':list(range(1,7))},
     'elements':[pyLBM.Sphere((1,1,1), 0.5, label = 0)],
     'space_step':0.25,
-    'schemes':[{'velocities':range(19)}]
+    'schemes':[{'velocities':list(range(19))}]
 }
 dom = pyLBM.Domain(dico)
 print dom

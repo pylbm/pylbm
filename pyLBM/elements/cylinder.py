@@ -401,16 +401,16 @@ class Cylinder_Triangle(Cylinder):
             s += '(solid)'
         return s
 
-class Cylinder_Parallelogram(Cylinder):
+class Parallelepiped(Cylinder):
     """
-    Class Cylinder_Parallelogram
+    Class Parallelepiped
 
     Parameters
     ----------
-    center : a list that contains the three coordinates of the center
-    v0 : a list of the three coordinates of the first vector that defines the section
-    v1 : a list of the three coordinates of the second vector that defines the section
-    w : a list of the three coordinates of the vector that defines the direction of the side
+    point : a list that contains the three coordinates of the first point
+    v0 : a list of the three coordinates of the first vector that defines the edge
+    v1 : a list of the three coordinates of the second vector that defines the edge
+    v2 : a list of the three coordinates of the third vector that defines the edge
     label : list of three integers (default [0,0,0] for the bottom, the top and the side)
     isfluid : boolean
              - True if the cylinder is added
@@ -420,57 +420,57 @@ class Cylinder_Parallelogram(Cylinder):
     ----------
     number_of_bounds : int
       6
-    center : numpy array
-      the coordinates of the center of the cylinder
+    point : numpy array
+      the coordinates of the first point of the parallelepiped
     v0 : list of doubles
-      the three coordinates of the first vector that defines the base section
+      the three coordinates of the first vector
     v1 : list of doubles
-      the three coordinates of the second vector that defines the base section
-    w : list of doubles
-      the three coordinates of the vector that defines the direction of the side
+      the three coordinates of the second vector
+    v2 : list of doubles
+      the three coordinates of the third vector
     label : list of integers
       the list of the label of the edge
     isfluid : boolean
-      True if the cylinder is added
-      and False if the cylinder is deleted
+      True if the parallelepiped is added
+      and False if the parallelepiped is deleted
 
     Examples
     --------
 
-    the vertical canonical cylinder centered in (0, 0, 1/2)
+    the vertical canonical cube centered in (0, 0, 0)
 
     >>> center = [0., 0., 0.5]
-    >>> v0, v1 = [1., 0., 0.], [0., 1., 0.]
-    >>> w = [0., 0., 1.]
-    >>> Cylinder_Parallelogram(center, v0, v1, w)
-        Cylinder_Parallelogram([0 0 0.5], [1 0 0], [0 1 0], [0 0 1]) (solid)
+    >>> v0, v1, v2 = [1., 0., 0.], [0., 1., 0.], [0., 0., 1.]
+    >>> Parallelepiped(center, v0, v1, v2)
+        Parallelepiped([0 0 0], [1 0 0], [0 1 0], [0 0 1]) (solid)
 
     Methods
     -------
     get_bounds :
-      return the bounds of the cylinder
+      return the bounds of the parallelepiped
     point_inside :
-      return True or False if the points are in or out the cylinder
+      return True or False if the points are in or out the parallelepiped
     distance :
-      get the distance of a point to the cylinder
+      get the distance of a point to the parallelepiped
     """
     number_of_bounds = 6 # number of edges
 
-    def __init__(self, center, v1, v2, w, label = 0, isfluid = False):
+    def __init__(self, point, v0, v1, v2, label = 0, isfluid = False):
         self.log = setLogger(__name__)
-        self.center = np.asarray(center)
-        self.v1 = np.asarray(v1)
-        self.v2 = np.asarray(v2)
-        self.w = np.asarray(w)
+        self.point = np.asarray(point)
+        self.v1 = np.asarray(v0)
+        self.v2 = np.asarray(v1)
+        self.w = .5*np.asarray(v2)
+        self.center = self.point + self.w
         self.change_of_variables()
         self.base = Base_Parallelogram(self.center, self.v1, self.v2)
         self.isfluid = isfluid
         Cylinder.__init__(self, self.base, label=label, isfluid=isfluid)
 
     def __str__(self):
-        s = 'Cylinder_Parallelogram(' + self.center.__str__() + ', '
+        s = 'Parallelepiped(' + self.point.__str__() + ', '
         s += self.v1.__str__() + ', ' + self.v2.__str__() + ', '
-        s += self.w.__str__() +  ') '
+        s += (2*self.w).__str__() +  ') '
         if self.isfluid:
             s += '(fluid)'
         else:

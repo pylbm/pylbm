@@ -16,7 +16,7 @@ d = {
     'scheme_velocity':1.,
     'schemes':[
         {
-            'velocities': range(1,5),
+            'velocities': [1, 2, 3, 4],
             'conserved_moments':u,
             'polynomials': [1, X, Y, X**2-Y**2],
             'equilibrium': [u, cx*u, cy*u, 0.],
