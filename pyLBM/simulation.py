@@ -35,6 +35,7 @@ from .generator import NumpyGenerator
 
 
 proto_simu = {
+    'name':(type(None),) + string_types,
     'box':(is_dico_box,),
     'elements':(type(None), is_list_elem),
     'dim':(type(None), int),
