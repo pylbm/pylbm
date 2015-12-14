@@ -786,6 +786,7 @@ class Scheme(object):
                 il += 1
 
         J = sp.eye(nvtot) - S + S * Eeq
+        # print(J)
 
         t1 = mpi.Wtime()
         print("Initialization time: ", t1-t0)
@@ -807,25 +808,42 @@ class Scheme(object):
 
         t2 = mpi.Wtime()
         print("Compute A, B, C, D: ", t2-t1)
+        # for k in range(len(matA)):
+        #     print("k={0}".format(k))
+        #     print(matA[k][0,0])
+        #     print(matB[k][0,0])
+        #     print(matC[k][0,0])
+        #     print(matD[k][0,0])
 
         iS = S[N:,N:].inv()
         matC[0] = iS * matC[0]
         matC[0].simplify()
+        # Gamma[0][0] = matA[1]
+        #
+        # Gamma[1][0] = matA[2]
+        # Gamma[1][1] = matA[1] * Gamma[0][0]
+        #
+        # Gamma[2][0] = matA[3]
+        # Gamma[2][1] = matA[1] * Gamma[1][0] + matA[2] * Gamma[0][0]
+        # Gamma[2][2] = matA[1] * Gamma[1][1]
+        # ...
         Gamma = []
         for k in range(1,order+1):
             for j in range(1,k+1):
                 matA[k] += matB[j] * matC[k-j]
-            Gammak = [matA[k].copy()]
-            for j in range(k-1):
+            matA[k].simplify()
+            Gammak = [None]
+            for j in range(1,k):
                 Gammakj = sp.zeros(N,N)
-                for l in range(1,k-j):
-                    Gammakj += matA[l] * Gamma[k-l-1][j]
+                for l in range(1, k-j+1):
+                    Gammakj += matA[l] * Gamma[k-l-1][j-1]
                 Gammakj.simplify()
                 Gammak.append(Gammakj)
             Gamma.append(Gammak)
-            for j in range(1, k):
+            for j in range(1,k):
                 matA[k] -= Gamma[k-1][j]/sp.factorial(j+1)
             matA[k].simplify()
+            Gamma[-1][0] = matA[k].copy()
             for j in range(1,k+1):
                 matC[k] += matD[j] * matC[k-j]
             for j in range(k):
@@ -837,6 +855,16 @@ class Scheme(object):
             matC[k].simplify()
         t3 = mpi.Wtime()
         print("Compute alpha, beta: ", t3-t2)
+        # for k in range(len(matA)):
+        #     print("k={0}".format(k))
+        #     print(matA[k][0,0])
+        #     print(matC[k][0,0])
+        # k = 0
+        # for Gammak in Gamma:
+        #     print("***** k={0} *****".format(k))
+        #     for Gammakj in Gammak:
+        #         print(sp.simplify(Gammakj[0,0]))
+        #     k += 1
 
         W = sp.zeros(N, 1)
         dummy = [0]

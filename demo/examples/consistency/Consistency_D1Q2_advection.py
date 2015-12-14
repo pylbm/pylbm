@@ -19,12 +19,12 @@ d = {
         {
             'velocities': [1,2],
             'conserved_moments':u,
-            'polynomials': [1, X],
+            'polynomials': [1, LA*X],
             'equilibrium': [u, c*u],
             'relaxation_parameters': [0, 1/(sigma+sp.Rational(1,2))],
         },
     ],
     'parameters':{LA:1., c:.1, sigma:1./1.9-.5},
-    'consistency':{'order':2}
+    'consistency':{'order':3}
 }
 s = pyLBM.Scheme(d)
