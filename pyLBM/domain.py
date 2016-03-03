@@ -189,6 +189,8 @@ class Domain(object):
                                          self.bounds[k][1] + debord[k],
                                          Na[k]) for k in range(self.dim)])
 
+        self.x_in = np.asarray([self.x[k][self.extent[k]:-self.extent[k]] for k in range(self.dim)])
+
         for k in range(self.dim):
             extra_points = (self.globalbounds[k][1] - self.globalbounds[k][0])/self.dx
             if not extra_points.is_integer():

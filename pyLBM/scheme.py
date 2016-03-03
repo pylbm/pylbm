@@ -153,8 +153,24 @@ class Scheme(object):
       Compute the distribution functions from the moments
     onetimestep :
       One time step of the Lattice Boltzmann method
+    set_initialization :
+      set the initialization functions for the conserved moments
     set_boundary_conditions :
       Apply the boundary conditions
+
+    compute_amplification_matrix_relaxation :
+      compute the amplification matrix of the relaxation
+    compute_amplification_matrix(wave_vector) :
+      compute the amplification matrix of one time step of the scheme
+      for the given wave vector
+    vp_amplification_matrix(wave_vector) :
+      compute the eigenvalues of the amplification matrix
+      for a given wave vector
+    is_L2_stable :
+      test the L2 stability of the scheme
+    is_monotonically_stable :
+      test the monotonical stability of the scheme
+
 
     Examples
     --------
@@ -337,6 +353,12 @@ class Scheme(object):
     def create_moments_matrices(self):
         """
         Create the moments matrices M and M^{-1} used to transform the repartition functions into the moments
+
+        Three versions of these matrices are computed:
+
+          - a sympy version M and invM for each scheme
+          - a numerical version Mnum and invMnum for each scheme
+          - a global numerical version MnumGlob and invMnumGlob for all the schemes
         """
         compt=0
         for v, p in zip(self.stencil.v, self.P):
@@ -383,8 +405,8 @@ class Scheme(object):
 
         scheme : dictionnary that describes the LBM schemes
 
-        Output
-        ------
+        Returns
+        -------
 
         consm : dictionnary where the keys are the conserved moments and
                 the values their indices in the LBM schemes.
@@ -419,8 +441,8 @@ class Scheme(object):
         """
         return the list of the conserved moments and the list of the non conserved moments
 
-        Output
-        ------
+        Returns
+        -------
 
         l_cons : the list of the indices of the conserved moments
         l_noncons : the list of the indices of the non conserver moments
@@ -448,15 +470,12 @@ class Scheme(object):
 
         scheme : dictionnary that describes the LBM schemes
 
-        Output
-        ------
+        Returns
+        -------
 
-        init : dictionnary where the keys are the indices of the
-               conserved moments and the values must be
-
-               a constant (int or float)
-               a tuple of size 2 that describes a function and its
-               extra args
+        init : dictionnary where the keys are the indices of the conserved moments and the values must be
+           - a constant (int or float)
+           - a tuple of size 2 that describes a function and its extra args
 
         """
         init = {}
@@ -556,7 +575,7 @@ class Scheme(object):
 
     def set_boundary_conditions(self, f, m, bc, interface):
         """
-        Compute the boundary conditions
+        Apply the boundary conditions
 
         Parameters
         ----------
@@ -598,6 +617,22 @@ class Scheme(object):
             method.update(f)
 
     def compute_amplification_matrix_relaxation(self):
+        """
+        compute the amplification matrix of the relaxation.
+
+        Returns
+        -------
+
+        amplification_matrix_relaxation : numpy array
+          the matrix of the relaxation in the frame of the distribution functions
+
+        Notes
+        -----
+
+        The output matrix corresponds to the linear operator involved
+        in the relaxation phase. If the equilibrium is not a linear combination
+        of the conserved moments, a linearization is done arround a given state.
+        """
         ns = self.stencil.nstencils # number of stencil
         nv = self.stencil.nv # number of velocities for each stencil
         nvtot = sum(nv)
@@ -636,7 +671,24 @@ class Scheme(object):
         # global amplification matrix for the relaxation
         self.amplification_matrix_relaxation = np.eye(nvtot) + np.dot(iM, np.dot(C, M))
 
-    def amplification_matrix(self, wave_vector):
+    def compute_amplification_matrix(self, wave_vector):
+        """
+        compute the amplification matrix of one time step of the scheme
+        for the given wave vector.
+
+        Returns
+        -------
+
+        amplification_matrix : numpy array
+          the matrix of one time step of the sheme in the frame of the distribution functions
+
+        Notes
+        -----
+
+        The output matrix corresponds to the linear operator involved
+        in the relaxation phase. If the equilibrium is not a linear combination
+        of the conserved moments, a linearization is done arround a given state.
+        """
         Jr = self.amplification_matrix_relaxation
         # matrix of the transport phase
         q = Jr.shape[0]
@@ -652,10 +704,33 @@ class Scheme(object):
         return J
 
     def vp_amplification_matrix(self, wave_vector):
-        vp = np.linalg.eig(self.amplification_matrix(wave_vector))
-        return vp[0]
+        """
+        compute the eigenvalues of the amplification matrix
+        for a given wave vector.
+
+        Returns
+        -------
+
+        eigenvalues : numpy array
+          the complex eigenvalues computed by numpy.linalg.eig
+        """
+        return np.linalg.eig(self.compute_amplification_matrix(wave_vector))[0]
 
     def is_L2_stable(self, Nk = 101):
+        """
+        test the L2 stability of the scheme
+
+        Notes
+        -----
+
+        If the equilibrium is not a linear combination
+        of the conserved moments,
+        a linearization is done arround a given state.
+
+        The test is performed for Nk^d (default value Nk=101) wave vectors
+        uniformly distributed in [0,2pi]^d where d is the spatial dimension.
+
+        """
         R = 1.
         vk = np.linspace(0., 2*np.pi, Nk)
         if self.dim == 1:
@@ -690,6 +765,14 @@ class Scheme(object):
         return True
 
     def is_monotonically_stable(self):
+        """
+        test the monotonical stability of the scheme.
+
+        Notes
+        -----
+
+
+        """
         if np.min(self.amplification_matrix_relaxation) < 0:
             return False
         else:

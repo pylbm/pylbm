@@ -252,6 +252,22 @@ class Simulation(object):
             self.f2m()
         return self._m[i]
 
+    @utils.itemproperty
+    def m_in(self, i):
+        if self._update_m:
+            self._update_m = False
+            self.f2m()
+        vmax = np.asarray(self.domain.stencil.vmax[:self.dim])
+        if self.dim == 1:
+            return self._m[i][vmax[0]:-vmax[0]]
+        elif self.dim == 2:
+            return self._m[i][vmax[0]:-vmax[0]]
+        elif self.dim == 3:
+            return self._m[i][vmax[0]:-vmax[0]]
+        else:
+            self.log.error('m_in: the dimension is greater than 3\n')
+            sys.exit()
+
     @m.setter
     def m(self, i, value):
         self._update_m = False
