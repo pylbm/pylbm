@@ -154,7 +154,7 @@ class Simulation(object):
             self.log.info(aff)
         else:
             self.log.error(aff)
-            sys.exit()
+            #sys.exit()
 
         self.log.info('Build the domain')
         try:
