@@ -55,7 +55,7 @@ class NumpyGenerator(Generator):
     def __init__(self, build_dir=None):
         Generator.__init__(self, build_dir)
         self.sameF = True
-        
+
     def transport(self, ns, stencil, dtype = 'f8'):
         """
         generate the code of the transport phase
@@ -126,7 +126,7 @@ class NumpyGenerator(Generator):
                         self.code += INDENT + "m[%s] = 0.\n"%(', '.join(slices))
         self.code += "\n"
 
-    def relaxation(self, ns, stencil, s, eq, dtype = 'f8'):
+    def relaxation(self, ns, stencil, s, eq, st, dtype = 'f8'):
         """
         generate the code of the relaxation phase
 
@@ -141,6 +141,8 @@ class NumpyGenerator(Generator):
           the values of the relaxation parameters
         eq : sympy matrix
           the equilibrium (formally given)
+        st : sympy matrix
+          the source term (formally given)
         dtype : string, optional
           the type of the data (default 'f8')
 
@@ -161,6 +163,16 @@ class NumpyGenerator(Generator):
 
         slices = [':']*len(self.sorder)
 
+        # add the first half of the source term
+        for k in range(ns):
+            for i in range(stencil.nv[k]):
+                if st[k][i] is not None and st[k][i] != 0:
+                    slices[self.sorder[0]] = str(stencil.nv_ptr[k] + i)
+                    stki = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub,
+                                   str(0.5*st[k][i]))
+                    self.code += INDENT + "m[{0}] += {1}\n".format(', '.join(slices), stki)
+
+        # add the relaxation phase
         for k in range(ns):
             for i in range(stencil.nv[k]):
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
@@ -171,6 +183,16 @@ class NumpyGenerator(Generator):
                         self.code += INDENT + "m[{0}] += {1:.16f}*({2} - m[{0}])\n".format(', '.join(slices), s[k][i], res)
                     else:
                         self.code += INDENT + "m[{0}] *= (1. - {1:.16f})\n".format(', '.join(slices), s[k][i])
+
+        # add the second half of the source term
+        for k in range(ns):
+            for i in range(stencil.nv[k]):
+                if st[k][i] is not None and st[k][i] != 0:
+                    slices[self.sorder[0]] = str(stencil.nv_ptr[k] + i)
+                    stki = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub,
+                                   str(0.5*st[k][i]))
+                    self.code += INDENT + "m[{0}] += {1}\n".format(', '.join(slices), stki)
+
         self.code += "\n"
 
     def m2f(self, A, dim, dtype = 'f8'):

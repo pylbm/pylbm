@@ -31,6 +31,7 @@ proto_sch = {
     'polynomials': (is_list_sp_or_nb,),
     'equilibrium': (is_list_sp_or_nb,),
     'relaxation_parameters': (is_list_sp_or_nb,),
+    'source_terms': (type(None), is_dico_sources),
     'init':(type(None), is_dico_init),
 }
 
@@ -40,6 +41,7 @@ proto_sch_dom = {
     'polynomials': (type(None), is_list_sp_or_nb,),
     'equilibrium': (type(None), is_list_sp_or_nb,),
     'relaxation_parameters': (type(None), is_list_sp_or_nb,),
+    'source_terms': (type(None), is_dico_sources),
     'init':(type(None), is_dico_init),
 }
 
@@ -96,6 +98,10 @@ class Scheme(object):
 
     dim : int
       spatial dimension
+    dx : double
+      space step
+    dt : double
+      time step
     la : double
       scheme velocity, ratio dx/dt
     nscheme : int
@@ -189,6 +195,7 @@ class Scheme(object):
         else:
             self.stencil = Stencil(dico)
         self.dim = self.stencil.dim
+
         la = dico.get('scheme_velocity', None)
         if isinstance(la, (int, float)):
             self.la = la
@@ -198,6 +205,15 @@ class Scheme(object):
             self.la = sp.N(la.subs(list(zip(pk, pv))))
         else:
             self.log.error("The entry 'scheme_velocity' is wrong.")
+        dx = dico.get('space_step', None)
+        if isinstance(dx, (int, float)):
+            self.dx = dx
+            self.dx_symb = None
+        elif isinstance(dx, sp.Symbol):
+            self.dx_symb = dx
+            self.dx = sp.N(dx.subs(list(zip(pk, pv))))
+        self.dx = self.dx / self.la
+
         self.nscheme = self.stencil.nstencils
         scheme = dico['schemes']
         if not isinstance(scheme, list):
@@ -272,6 +288,14 @@ class Scheme(object):
                         self.log.error('cannot evaluate relaxation parameter')
 
         self.init = self.set_initialization(scheme)
+
+        self.source_terms = self.set_source_terms(scheme)
+        self._source_terms = [create_matrix(s) for s in self.source_terms]
+        for cm, icm in self.consm.items():
+            for i, eq in enumerate(self._source_terms):
+                for j, e in enumerate(eq):
+                    if e is not None:
+                        self._source_terms[i][j] = e.replace(cm, m[icm[0]][icm[1]])
 
         self.M, self.invM = [], []
         self.Mnum, self.invMnum = [], []
@@ -511,6 +535,50 @@ class Scheme(object):
                     sys.exit()
         return init
 
+    def set_source_terms(self, scheme):
+        """
+        set the source terms functions for the conserved moments.
+
+        Parameters
+        ----------
+
+        scheme : dictionnary that describes the LBM schemes
+
+        Returns
+        -------
+
+        source_terms : dictionnary where the keys are the indices of the conserved moments
+        and the values must be a sympy expression or None
+
+        """
+        source_terms = []
+        for ns, s in enumerate(scheme):
+            source_terms.append([None]*self.stencil.nv[ns]) # by default no source term
+            source_scheme = s.get('source_terms', None)
+            if source_scheme is not None:
+                for k, v in s['source_terms'].items():
+                    try:
+                        if isinstance(k, str):
+                            indices = self.consm[parse_expr(k)]
+                        elif isinstance(k, sp.Symbol):
+                            indices = self.consm[k]
+                        elif isinstance(k, int):
+                            indices = (ns, k)
+                        else:
+                            raise ValueError
+                    except ValueError:
+                        sss = 'Error in the creation of the scheme: wrong dictionnary\n'
+                        sss += 'the key `source_terms` should contain a dictionnary with'
+                        sss += '   key: the moment concerned'
+                        sss += '        should be the name of the moment as a string or'
+                        sss += '        a sympy Symbol or an integer'
+                        sss += '   value: the value of the source term'
+                        sss += '        should be a float or a sympy expression'
+                        self.log.error(sss)
+                        sys.exit()
+                    source_terms[-1][indices[1]] = v
+        return source_terms
+
     def generate(self, sorder):
         """
         Generate the code by using the appropriated generator
@@ -535,8 +603,13 @@ class Scheme(object):
         for e in self._EQ:
             EQ.append(e.subs(list(zip(pk, pv))))
 
+        ST = copy.deepcopy(self._source_terms)
+        for i, sti in enumerate(ST):
+            for j, stij in enumerate(sti):
+                if stij is not None:
+                    ST[i][j] = self.dx * stij.subs(list(zip(pk, pv)))
         self.generator.equilibrium(self.nscheme, self.stencil, EQ)
-        self.generator.relaxation(self.nscheme, self.stencil, self.s, EQ)
+        self.generator.relaxation(self.nscheme, self.stencil, self.s, EQ, ST)
         self.generator.compile()
 
         mpi.COMM_WORLD.Barrier()

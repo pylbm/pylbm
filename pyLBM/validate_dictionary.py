@@ -134,6 +134,9 @@ def is_dico_bc(d, ntab=0):
 def is_dico_init(d, ntab=0):
     return is_dico_generic(d, (sp.Symbol, string_types), (tuple, int, float), ntab=ntab)
 
+def is_dico_sources(d, ntab=0):
+    return is_dico_generic(d, (sp.Symbol, string_types), (tuple, int, float, sp.Expr, string_types), ntab=ntab)
+
 def is_dico_stab(d, ntab=0):
     return test_dico_prototype(d, pyLBM.scheme.proto_stab, ntab=ntab)
 

@@ -65,7 +65,7 @@ class CythonGenerator(Generator):
     def __init__(self, build_dir=None):
         Generator.__init__(self, build_dir, suffix='.pyx')
         self.sameF = False
-        
+
     def setup(self):
         """
         initialization of the .pyx file to use cython
@@ -279,7 +279,7 @@ from libc.stdlib cimport malloc, free
                         self.code += indent + "m[%s] = 0.\n"%(', '.join(slices))
         self.code += "\n"
 
-    def relaxation(self, ns, stencil, s, eq, dtype = 'f8'):
+    def relaxation(self, ns, stencil, s, eq, st, dtype = 'f8'):
         """
         generate the code of the relaxation phase
 
@@ -294,6 +294,8 @@ from libc.stdlib cimport malloc, free
           the values of the relaxation parameters
         eq : sympy matrix
           the equilibrium (formally given)
+        st : sympy matrix
+          the source term (formally given)
         dtype : string, optional
           the type of the data (default 'f8')
 
@@ -318,6 +320,16 @@ from libc.stdlib cimport malloc, free
 
             return '[' + str(stencil.nv_ptr[i] + j) + ']'
 
+        # add the first half of the source term
+        for k in range(ns):
+            for i in range(stencil.nv[k]):
+                if st[k][i] is not None and st[k][i] != 0:
+                    stki = str(0.5*st[k][i])
+                    stki = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", subpow, stki)
+                    stki = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub, stki)
+                    self.code += 2*INDENT + "m[{0:d}] += {1}\n".format(stencil.nv_ptr[k] + i, stki)
+
+        # add the relaxation phase
         for k in range(ns):
             for i in range(stencil.nv[k]):
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
@@ -329,6 +341,16 @@ from libc.stdlib cimport malloc, free
                         self.code += 2*INDENT + "m[{0:d}] += {1:.16f}*({2} - m[{0:d}])\n".format(stencil.nv_ptr[k] + i, s[k][i], res)
                     else:
                         self.code += 2*INDENT + "m[{0:d}] *= (1. - {1:.16f})\n".format(stencil.nv_ptr[k] + i, s[k][i])
+
+        # add the second half of the source term
+        for k in range(ns):
+            for i in range(stencil.nv[k]):
+                if st[k][i] is not None and st[k][i] != 0:
+                    stki = str(0.5*st[k][i])
+                    stki = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", subpow, stki)
+                    stki = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub, stki)
+                    self.code += 2*INDENT + "m[{0:d}] += {1}\n".format(stencil.nv_ptr[k] + i, stki)
+
         self.code += "\n"
 
     def onetimestep(self, stencil):
