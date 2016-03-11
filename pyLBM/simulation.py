@@ -421,7 +421,7 @@ class Simulation(object):
         (the array _m is modified)
         """
         t = mpi.Wtime()
-        self.scheme.relaxation(self._m)
+        self.scheme.relaxation(self._m, self.t, self.dt)
         self.cpu_time['relaxation'] += mpi.Wtime() - t
 
     def f2m(self):
@@ -491,7 +491,7 @@ class Simulation(object):
         self.boundary_condition()
 
         tloci = mpi.Wtime()
-        self.scheme.onetimestep(self._m, self._F, self._Fold, self.domain.in_or_out, self.domain.valin)
+        self.scheme.onetimestep(self._m, self._F, self._Fold, self.domain.in_or_out, self.domain.valin, self.t, self.dt)
         self._F, self._Fold = self._Fold, self._F
         tlocf = mpi.Wtime()
         self.cpu_time['transport'] += 0.5*(tlocf-tloci)

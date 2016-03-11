@@ -126,7 +126,7 @@ class NumpyGenerator(Generator):
                         self.code += INDENT + "m[%s] = 0.\n"%(', '.join(slices))
         self.code += "\n"
 
-    def relaxation(self, ns, stencil, s, eq, st, dtype = 'f8'):
+    def relaxation(self, ns, stencil, s, eq, st, vart = None, dtype = 'f8'):
         """
         generate the code of the relaxation phase
 
@@ -143,6 +143,8 @@ class NumpyGenerator(Generator):
           the equilibrium (formally given)
         st : sympy matrix
           the source term (formally given)
+        vart : string
+          the symbol of the time variable (optional)
         dtype : string, optional
           the type of the data (default 'f8')
 
@@ -152,7 +154,7 @@ class NumpyGenerator(Generator):
         code : string
           add the relaxation phase in the attribute ``code``.
         """
-        self.code += "def relaxation(m):\n"
+        self.code += "def relaxation(m, tn=0., dt=0.):\n"
 
         def sub(g):
             slices = [':']*len(self.sorder)
@@ -163,16 +165,18 @@ class NumpyGenerator(Generator):
 
         slices = [':']*len(self.sorder)
 
-        # add the first half of the source term
+        # half of the source term code
+        code_source_term = ''
         for k in range(ns):
             for i in range(stencil.nv[k]):
                 if st[k][i] is not None and st[k][i] != 0:
                     slices[self.sorder[0]] = str(stencil.nv_ptr[k] + i)
                     stki = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub,
                                    str(0.5*st[k][i]))
-                    self.code += INDENT + "m[{0}] += {1}\n".format(', '.join(slices), stki)
+                    stki = re.sub(str(vart), '{0}', stki)
+                    code_source_term = INDENT + "m[{0}] += {1}\n".format(', '.join(slices), stki)
 
-        # add the relaxation phase
+        # relaxation code
         for k in range(ns):
             for i in range(stencil.nv[k]):
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
@@ -180,19 +184,13 @@ class NumpyGenerator(Generator):
                     if eq[k][i] != 0:
                         res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub,
                                    str(eq[k][i]))
-                        self.code += INDENT + "m[{0}] += {1:.16f}*({2} - m[{0}])\n".format(', '.join(slices), s[k][i], res)
+                        code_relaxation = INDENT + "m[{0}] += {1:.16f}*({2} - m[{0}])\n".format(', '.join(slices), s[k][i], res)
                     else:
-                        self.code += INDENT + "m[{0}] *= (1. - {1:.16f})\n".format(', '.join(slices), s[k][i])
+                        code_relaxation = INDENT + "m[{0}] *= (1. - {1:.16f})\n".format(', '.join(slices), s[k][i])
 
-        # add the second half of the source term
-        for k in range(ns):
-            for i in range(stencil.nv[k]):
-                if st[k][i] is not None and st[k][i] != 0:
-                    slices[self.sorder[0]] = str(stencil.nv_ptr[k] + i)
-                    stki = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub,
-                                   str(0.5*st[k][i]))
-                    self.code += INDENT + "m[{0}] += {1}\n".format(', '.join(slices), stki)
-
+        self.code += code_source_term.format('tn')
+        self.code += code_relaxation
+        self.code += code_source_term.format('tn')
         self.code += "\n"
 
     def m2f(self, A, dim, dtype = 'f8'):
@@ -264,10 +262,10 @@ class NumpyGenerator(Generator):
 
     def onetimestep(self, stencil):
         self.code += """
-def onetimestep(m, f, fnew, in_or_out, valin):
+def onetimestep(m, f, fnew, in_or_out, valin, tn=0., dt=0.):
     transport(f)
     f2m(f, m)
-    relaxation(m)
+    relaxation(m, tn, dt)
     m2f(m, f)
 
 """

@@ -608,8 +608,13 @@ class Scheme(object):
             for j, stij in enumerate(sti):
                 if stij is not None:
                     ST[i][j] = self.dx * stij.subs(list(zip(pk, pv)))
+        vart = None
+        for i, pki in enumerate(pk):
+            if pki == 'time':
+                vart = pv[i]
+
         self.generator.equilibrium(self.nscheme, self.stencil, EQ)
-        self.generator.relaxation(self.nscheme, self.stencil, self.s, EQ, ST)
+        self.generator.relaxation(self.nscheme, self.stencil, self.s, EQ, ST, vart)
         self.generator.compile()
 
         mpi.COMM_WORLD.Barrier()
@@ -636,15 +641,15 @@ class Scheme(object):
         func = getattr(mod, "equilibrium")
         func(m.array)
 
-    def relaxation(self, m):
+    def relaxation(self, m, tn=0., dt=0.):
         """ The relaxation phase on the moments m """
         mod = self.generator.get_module()
-        mod.relaxation(m.array)
+        mod.relaxation(m.array, tn, dt)
 
-    def onetimestep(self, m, fold, fnew, in_or_out, valin):
+    def onetimestep(self, m, fold, fnew, in_or_out, valin, tn=0., dt=0.):
         """ Compute one time step of the Lattice Boltzmann method """
         mod = self.generator.get_module()
-        mod.onetimestep(m.array, fold.array, fnew.array, in_or_out, valin)
+        mod.onetimestep(m.array, fold.array, fnew.array, in_or_out, valin, tn, dt)
 
     def set_boundary_conditions(self, f, m, bc, interface):
         """

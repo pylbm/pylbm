@@ -279,7 +279,7 @@ from libc.stdlib cimport malloc, free
                         self.code += indent + "m[%s] = 0.\n"%(', '.join(slices))
         self.code += "\n"
 
-    def relaxation(self, ns, stencil, s, eq, st, dtype = 'f8'):
+    def relaxation(self, ns, stencil, s, eq, st, vart=None, dtype = 'f8'):
         """
         generate the code of the relaxation phase
 
@@ -296,6 +296,8 @@ from libc.stdlib cimport malloc, free
           the equilibrium (formally given)
         st : sympy matrix
           the source term (formally given)
+        vart : string
+          the symbol of the time variable (optional)
         dtype : string, optional
           the type of the data (default 'f8')
 
@@ -305,7 +307,7 @@ from libc.stdlib cimport malloc, free
         code : string
           add the relaxation phase in the attribute ``code``.
         """
-        self.code += "cdef void relaxation(double *m) nogil:\n"
+        self.code += "cdef void relaxation(double *m, double tn, double dt) nogil:\n"
 
         def subpow(g):
             s = '(' + g.group('m')
@@ -320,16 +322,18 @@ from libc.stdlib cimport malloc, free
 
             return '[' + str(stencil.nv_ptr[i] + j) + ']'
 
-        # add the first half of the source term
+        # half of the source term code
+        code_source_term = ''
         for k in range(ns):
             for i in range(stencil.nv[k]):
                 if st[k][i] is not None and st[k][i] != 0:
                     stki = str(0.5*st[k][i])
                     stki = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", subpow, stki)
                     stki = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub, stki)
-                    self.code += 2*INDENT + "m[{0:d}] += {1}\n".format(stencil.nv_ptr[k] + i, stki)
+                    stki = re.sub(str(vart), '{0}', stki)
+                    code_source_term = 2*INDENT + "m[{0:d}] += {1}\n".format(stencil.nv_ptr[k] + i, stki)
 
-        # add the relaxation phase
+        # relaxation code
         for k in range(ns):
             for i in range(stencil.nv[k]):
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
@@ -338,19 +342,14 @@ from libc.stdlib cimport malloc, free
                         res = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", subpow, str2input)
                         res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub, res)
 
-                        self.code += 2*INDENT + "m[{0:d}] += {1:.16f}*({2} - m[{0:d}])\n".format(stencil.nv_ptr[k] + i, s[k][i], res)
+                        code_relaxation = 2*INDENT + "m[{0:d}] += {1:.16f}*({2} - m[{0:d}])\n".format(stencil.nv_ptr[k] + i, s[k][i], res)
                     else:
-                        self.code += 2*INDENT + "m[{0:d}] *= (1. - {1:.16f})\n".format(stencil.nv_ptr[k] + i, s[k][i])
+                        code_relaxation = 2*INDENT + "m[{0:d}] *= (1. - {1:.16f})\n".format(stencil.nv_ptr[k] + i, s[k][i])
 
-        # add the second half of the source term
-        for k in range(ns):
-            for i in range(stencil.nv[k]):
-                if st[k][i] is not None and st[k][i] != 0:
-                    stki = str(0.5*st[k][i])
-                    stki = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", subpow, stki)
-                    stki = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub, stki)
-                    self.code += 2*INDENT + "m[{0:d}] += {1}\n".format(stencil.nv_ptr[k] + i, stki)
 
+        self.code += code_source_term.format('tn')
+        self.code += code_relaxation
+        self.code += code_source_term.format('tn')
         self.code += "\n"
 
     def onetimestep(self, stencil):
@@ -373,7 +372,7 @@ from libc.stdlib cimport malloc, free
         ext = s[:-2]
 
         self.code += """
-def onetimestep(double[{0}::1] m, double[{0}::1] f, double[{0}::1] fnew, double[{2}]in_or_out, double valin):
+def onetimestep(double[{0}::1] m, double[{0}::1] f, double[{0}::1] fnew, double[{2}]in_or_out, double valin, double tn, double dt):
     cdef:
         double floc[{1}]
         double mloc[{1}]
@@ -394,7 +393,7 @@ def onetimestep(double[{0}::1] m, double[{0}::1] f, double[{0}::1] fnew, double[
         indent += INDENT
         self.code += indent + "get_f(floc, f, {0})\n".format(', '.join(['i' + str(i) for i in range(stencil.dim)]))
         self.code += indent + "f2m_loc(floc, mloc)\n"
-        self.code += indent + "relaxation(mloc)\n"
+        self.code += indent + "relaxation(mloc, tn, dt)\n"
         self.code += indent + "m2f_loc(mloc, floc)\n"
         self.code += indent + "set_f(floc, fnew, {0})\n".format(', '.join(['i' + str(i) for i in range(stencil.dim)]))
 
