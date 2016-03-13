@@ -9,6 +9,7 @@ from six.moves import range
 
 from .base import Generator, INDENT
 from .utils import matMult, load_or_store
+from .ode_schemes import *
 
 class NumpyGenerator(Generator):
     """
@@ -126,7 +127,7 @@ class NumpyGenerator(Generator):
                         self.code += INDENT + "m[%s] = 0.\n"%(', '.join(slices))
         self.code += "\n"
 
-    def relaxation(self, ns, stencil, s, eq, st, vart = None, dtype = 'f8'):
+    def relaxation(self, ns, stencil, s, eq, dicoST = None, dtype = 'f8'):
         """
         generate the code of the relaxation phase
 
@@ -141,10 +142,8 @@ class NumpyGenerator(Generator):
           the values of the relaxation parameters
         eq : sympy matrix
           the equilibrium (formally given)
-        st : sympy matrix
-          the source term (formally given)
-        vart : string
-          the symbol of the time variable (optional)
+        dicoST : dictionary
+          the dictionary for the source term
         dtype : string, optional
           the type of the data (default 'f8')
 
@@ -154,7 +153,7 @@ class NumpyGenerator(Generator):
         code : string
           add the relaxation phase in the attribute ``code``.
         """
-        self.code += "def relaxation(m, tn=0., dt=0.):\n"
+        self.code += "def relaxation(m, tn=0., k=0.):\n"
 
         def sub(g):
             slices = [':']*len(self.sorder)
@@ -166,17 +165,27 @@ class NumpyGenerator(Generator):
         slices = [':']*len(self.sorder)
 
         # half of the source term code
-        code_source_term = ''
-        for k in range(ns):
-            for i in range(stencil.nv[k]):
-                if st[k][i] is not None and st[k][i] != 0:
-                    slices[self.sorder[0]] = str(stencil.nv_ptr[k] + i)
-                    stki = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub,
-                                   str(0.5*st[k][i]))
-                    stki = re.sub(str(vart), '{0}', stki)
-                    code_source_term = INDENT + "m[{0}] += {1}\n".format(', '.join(slices), stki)
+        test_source_term = False
+        if dicoST is not None:
+            st = dicoST['ST']
+            vart = dicoST['vart']
+            ode_solver = dicoST['ode_solver']
+            indices_m = []
+            f = []
+            for k in range(ns):
+                for i in range(stencil.nv[k]):
+                    if st[k][i] is not None and st[k][i] != 0:
+                        test_source_term = True
+                        indices_m.append((k, i))
+                        f.append(str(st[k][i]))
+            if test_source_term:
+                ode_solver.parameters(indices_m, f, dt='0.5*k', indent=INDENT, add_copy = ".copy()")
+                code_source_term = ode_solver.cpt_code()
+                code_source_term = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub, code_source_term)
+                code_source_term = re.sub(str(vart), 'tn', code_source_term)
 
         # relaxation code
+        code_relaxation = ''
         for k in range(ns):
             for i in range(stencil.nv[k]):
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
@@ -184,13 +193,21 @@ class NumpyGenerator(Generator):
                     if eq[k][i] != 0:
                         res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub,
                                    str(eq[k][i]))
-                        code_relaxation = INDENT + "m[{0}] += {1:.16f}*({2} - m[{0}])\n".format(', '.join(slices), s[k][i], res)
+                        code_relaxation += INDENT + "m[{0}] += {1:.16f}*({2} - m[{0}])\n".format(', '.join(slices), s[k][i], res)
                     else:
-                        code_relaxation = INDENT + "m[{0}] *= (1. - {1:.16f})\n".format(', '.join(slices), s[k][i])
+                        code_relaxation += INDENT + "m[{0}] *= (1. - {1:.16f})\n".format(', '.join(slices), s[k][i])
 
-        self.code += code_source_term.format('tn')
-        self.code += code_relaxation
-        self.code += code_source_term.format('tn')
+        if test_source_term:
+            N = ode_solver.nb_of_floors
+            if N>0:
+                self.code += INDENT + 'import numpy as np\n'
+                for k in range(N):
+                    self.code += INDENT + 'dummy{1:1d} = [np.zeros(m[0][0].shape)]*{0}\n'.format(len(indices_m), k)
+            self.code += code_source_term
+            self.code += code_relaxation
+            self.code += code_source_term
+        else:
+            self.code += code_relaxation
         self.code += "\n"
 
     def m2f(self, A, dim, dtype = 'f8'):

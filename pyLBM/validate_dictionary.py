@@ -223,6 +223,13 @@ def is_generator(d, ntab=None):
         test = False
     return test, PrintInColor.unknown(d, test)
 
+def is_ode_solver(d, ntab=None):
+    try:
+        test = issubclass(d, pyLBM.generator.ode_schemes.ode_solver)
+    except:
+        test = False
+    return test, PrintInColor.unknown(d, test)
+
 def is_list_elem(l, ntab=None):
     return is_list_generic(l, pyLBM.elements.base.Element)
 

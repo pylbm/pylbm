@@ -21,7 +21,7 @@ def Riemann_pb(x, xmin, xmax, ug, ud):
     xm = 0.5*(xmin+xmax)
     return ug*(x<xm) + ud*(x>xm) + 0.5*(ug+ud)*(x==xm)
 
-def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
     """
     Parameters
     ----------
@@ -60,6 +60,7 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
                 'polynomials':[1, LA*X],
                 'relaxation_parameters':[0, s],
                 'equilibrium':[h, q],
+                'source_terms':{h: 0.5*h},
                 'init':{h:(Riemann_pb, (xmin, xmax, hg, hd))},
             },
             {
@@ -68,6 +69,7 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
                 'polynomials':[1, LA*X],
                 'relaxation_parameters':[0, s],
                 'equilibrium':[q, q**2/h+.5*g*h**2],
+                'source_terms':{q: -0.5*g*h},
                 'init':{q:(Riemann_pb, (xmin, xmax, qg, qd))},
             },
         ],
@@ -75,10 +77,12 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
             0:{'method':{0: pyLBM.bc.Neumann, 1: pyLBM.bc.Neumann}},
         },
         'generator': generator,
+        'ode_solver': pyLBM.generator.RK4,
         'parameters':{LA:la, g:1.},
     }
 
     sol = pyLBM.Simulation(dico, sorder=sorder)
+    print sol.scheme.generator.code
 
     if withPlot:
         # create the viewer to plot the solution

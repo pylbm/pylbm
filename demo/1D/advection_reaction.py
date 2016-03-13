@@ -25,7 +25,7 @@ def solution(t, x, xmin, xmax, c, mu):
     ui = u0(x - c*t, xmin, xmax)
     return (dt+2*ui-(1-2*ui)*dt)/(2-2*(1-2*ui)*dt)
 
-def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=True):
     """
     Parameters
     ----------
@@ -64,7 +64,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
             'polynomials':[1,LA*X],
             'relaxation_parameters':[0., s],
             'equilibrium':[u, C*u],
-            'source_terms':{u:MU*u*(1-u)},
+            'source_terms':{u:MU*u*t - MU*u**2},
             'init':{u:(u0,(xmin, xmax))},
         },
         ],
@@ -76,31 +76,32 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     sol = pyLBM.Simulation(dico, sorder=sorder) # build the simulation
     print sol.scheme.generator.code
 
-    if withPlot:
-        # create the viewer to plot the solution
-        viewer = pyLBM.viewer.matplotlibViewer
-        fig = viewer.Fig()
-        ax = fig[0]
-        ymin, ymax = -.2, 1.2
-        ax.axis(xmin, xmax, ymin, ymax)
 
-        x = sol.domain.x[0][1:-1]
-        l1 = ax.plot(x, sol.m[u][1:-1], width=2, color='b', label='D1Q2')[0]
-        l2 = ax.plot(x, solution(sol.t, x, xmin, xmax, c, mu), width=2, color='k', label='exact')[0]
-
-        def update(iframe):
-            if sol.t < Tf:                 # time loop
-                sol.one_time_step()      # increment the solution of one time step
-                l1.set_data(x, sol.m[u][1:-1])
-                l2.set_data(x, solution(sol.t, x, xmin, xmax, c, mu))
-                ax.title = 'solution at t = {0:f}'.format(sol.t)
-                ax.legend()
-
-        fig.animate(update)
-        fig.show()
-    else:
-        while sol.t < Tf:
-            sol.one_time_step()
+    # if withPlot:
+    #     # create the viewer to plot the solution
+    #     viewer = pyLBM.viewer.matplotlibViewer
+    #     fig = viewer.Fig()
+    #     ax = fig[0]
+    #     ymin, ymax = -.2, 1.2
+    #     ax.axis(xmin, xmax, ymin, ymax)
+    #
+    #     x = sol.domain.x[0][1:-1]
+    #     l1 = ax.plot(x, sol.m[u][1:-1], width=2, color='b', label='D1Q2')[0]
+    #     l2 = ax.plot(x, solution(sol.t, x, xmin, xmax, c, mu), width=2, color='k', label='exact')[0]
+    #
+    #     def update(iframe):
+    #         if sol.t < Tf:                 # time loop
+    #             sol.one_time_step()      # increment the solution of one time step
+    #             l1.set_data(x, sol.m[u][1:-1])
+    #             l2.set_data(x, solution(sol.t, x, xmin, xmax, c, mu))
+    #             ax.title = 'solution at t = {0:f}'.format(sol.t)
+    #             ax.legend()
+    #
+    #     fig.animate(update)
+    #     fig.show()
+    # else:
+    #     while sol.t < Tf:
+    #         sol.one_time_step()
 
     return sol
 

@@ -11,6 +11,7 @@ import mpi4py.MPI as mpi
 
 from .base import Generator, INDENT
 from .utils import matMult, load_or_store
+from .ode_schemes import *
 
 class CythonGenerator(Generator):
     """
@@ -279,7 +280,7 @@ from libc.stdlib cimport malloc, free
                         self.code += indent + "m[%s] = 0.\n"%(', '.join(slices))
         self.code += "\n"
 
-    def relaxation(self, ns, stencil, s, eq, st, vart=None, dtype = 'f8'):
+    def relaxation(self, ns, stencil, s, eq, dicoST = None, dtype = 'f8'):
         """
         generate the code of the relaxation phase
 
@@ -294,10 +295,8 @@ from libc.stdlib cimport malloc, free
           the values of the relaxation parameters
         eq : sympy matrix
           the equilibrium (formally given)
-        st : sympy matrix
-          the source term (formally given)
-        vart : string
-          the symbol of the time variable (optional)
+        dicoST : dictionary
+          the dictionary for the source term
         dtype : string, optional
           the type of the data (default 'f8')
 
@@ -307,8 +306,7 @@ from libc.stdlib cimport malloc, free
         code : string
           add the relaxation phase in the attribute ``code``.
         """
-        self.code += "cdef void relaxation(double *m, double tn, double dt) nogil:\n"
-
+        self.code += "cdef void relaxation(double *m, double tn, double k) nogil:\n"
         def subpow(g):
             s = '(' + g.group('m')
             for i in range(int(g.group('pow')) - 1):
@@ -323,17 +321,28 @@ from libc.stdlib cimport malloc, free
             return '[' + str(stencil.nv_ptr[i] + j) + ']'
 
         # half of the source term code
-        code_source_term = ''
-        for k in range(ns):
-            for i in range(stencil.nv[k]):
-                if st[k][i] is not None and st[k][i] != 0:
-                    stki = str(0.5*st[k][i])
-                    stki = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", subpow, stki)
-                    stki = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub, stki)
-                    stki = re.sub(str(vart), '{0}', stki)
-                    code_source_term = 2*INDENT + "m[{0:d}] += {1}\n".format(stencil.nv_ptr[k] + i, stki)
+        test_source_term = False
+        if dicoST is not None:
+            st = dicoST['ST']
+            vart = dicoST['vart']
+            ode_solver = dicoST['ode_solver']
+            indices_m = []
+            f = []
+            for k in range(ns):
+                for i in range(stencil.nv[k]):
+                    if st[k][i] is not None and st[k][i] != 0:
+                        test_source_term = True
+                        indices_m.append((k, i))
+                        f.append(str(st[k][i]))
+            if test_source_term:
+                ode_solver.parameters(indices_m, f, dt='0.5*k', indent=INDENT, add_copy='')
+                code_source_term = ode_solver.cpt_code()
+                code_source_term = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", subpow, code_source_term)
+                code_source_term = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub, code_source_term)
+                code_source_term = re.sub(str(vart), 'tn', code_source_term)
 
         # relaxation code
+        code_relaxation = ''
         for k in range(ns):
             for i in range(stencil.nv[k]):
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
@@ -342,14 +351,21 @@ from libc.stdlib cimport malloc, free
                         res = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", subpow, str2input)
                         res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub, res)
 
-                        code_relaxation = 2*INDENT + "m[{0:d}] += {1:.16f}*({2} - m[{0:d}])\n".format(stencil.nv_ptr[k] + i, s[k][i], res)
+                        code_relaxation += INDENT + "m[{0:d}] += {1:.16f}*({2} - m[{0:d}])\n".format(stencil.nv_ptr[k] + i, s[k][i], res)
                     else:
-                        code_relaxation = 2*INDENT + "m[{0:d}] *= (1. - {1:.16f})\n".format(stencil.nv_ptr[k] + i, s[k][i])
+                        code_relaxation += INDENT + "m[{0:d}] *= (1. - {1:.16f})\n".format(stencil.nv_ptr[k] + i, s[k][i])
 
-
-        self.code += code_source_term.format('tn')
-        self.code += code_relaxation
-        self.code += code_source_term.format('tn')
+        if test_source_term:
+            N = ode_solver.nb_of_floors
+            if N>0:
+                self.code += INDENT + 'cdef:\n'
+                for k in range(N):
+                    self.code += 2*INDENT + 'double dummy{1:1d}[{0}]\n'.format(len(indices_m), k)
+            self.code += code_source_term
+            self.code += code_relaxation
+            self.code += code_source_term
+        else:
+            self.code += code_relaxation
         self.code += "\n"
 
     def onetimestep(self, stencil):

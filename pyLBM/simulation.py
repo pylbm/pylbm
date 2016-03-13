@@ -45,6 +45,7 @@ proto_simu = {
     'schemes':(is_list_sch,),
     'boundary_conditions':(type(None), is_dico_bc),
     'generator':(type(None), is_generator),
+    'ode_solver':(type(None), is_ode_solver),
     'stability':(type(None), is_dico_stab),
     'consistency':(type(None), is_dico_cons),
     'inittype':(type(None),) + string_types,

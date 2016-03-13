@@ -123,10 +123,15 @@ class Scheme(object):
       the symbolic inverse matrix
     invMnum : numpy array
       the numeric inverse matrix (F = invMnum m)
-    generator : :py:class:`Generator <pyLBM.generator.Generator>`
+    generator : :py:class:`Generator <pyLBM.generator.base.Generator>`
       the used generator (
       :py:class:`NumpyGenerator<pyLBM.generator.NumpyGenerator>`,
       :py:class:`CythonGenerator<pyLBM.generator.CythonGenerator>`,
+      ...)
+    ode_solver : :py:class:`ode_solver <pyLBM.generator.ode_schemes.ode_solver>`,
+      the used ODE solver (
+      :py:class:`explicit_euler<pyLBM.generator.explicit_euler>`,
+      :py:class:`heun<pyLBM.generator.heun>`,
       ...)
 
     Methods
@@ -290,13 +295,17 @@ class Scheme(object):
         self.init = self.set_initialization(scheme)
 
         self.source_terms = self.set_source_terms(scheme)
-        self._source_terms = [create_matrix(s) for s in self.source_terms]
-        for cm, icm in self.consm.items():
-            for i, eq in enumerate(self._source_terms):
-                for j, e in enumerate(eq):
-                    if e is not None:
-                        self._source_terms[i][j] = e.replace(cm, m[icm[0]][icm[1]])
-
+        if self.set_source_terms is not None:
+            self._source_terms = [create_matrix(s) for s in self.source_terms]
+            for cm, icm in self.consm.items():
+                for i, eq in enumerate(self._source_terms):
+                    for j, e in enumerate(eq):
+                        if e is not None:
+                            self._source_terms[i][j] = e.replace(cm, m[icm[0]][icm[1]])
+            self.ode_solver = dico.get('ode_solver', basic)()
+        else:
+            self._source_terms = None
+            self.ode_solver = None
         self.M, self.invM = [], []
         self.Mnum, self.invMnum = [], []
 
@@ -552,6 +561,7 @@ class Scheme(object):
 
         """
         source_terms = []
+        is_empty = True
         for ns, s in enumerate(scheme):
             source_terms.append([None]*self.stencil.nv[ns]) # by default no source term
             source_scheme = s.get('source_terms', None)
@@ -577,7 +587,11 @@ class Scheme(object):
                         self.log.error(sss)
                         sys.exit()
                     source_terms[-1][indices[1]] = v
-        return source_terms
+                    is_empty = False
+        if is_empty:
+            return None
+        else:
+            return source_terms
 
     def generate(self, sorder):
         """
@@ -590,6 +604,25 @@ class Scheme(object):
 
         >>> print S.generator.code
         """
+        pk, pv = param_to_tuple(self.param)
+        EQ = []
+        for e in self._EQ:
+            EQ.append(e.subs(list(zip(pk, pv))))
+
+        if self._source_terms is not None:
+            ST = copy.deepcopy(self._source_terms)
+            for i, sti in enumerate(ST):
+                for j, stij in enumerate(sti):
+                    if stij is not None:
+                        ST[i][j] = stij.subs(list(zip(pk, pv)))
+            vart = None
+            for i, pki in enumerate(pk):
+                if pki == 'time':
+                    vart = pv[i]
+            dicoST = {'ST':ST, 'vart':vart, 'ode_solver':self.ode_solver}
+        else:
+            dicoST = None
+
         self.generator.sorder = sorder
         self.generator.setup()
         self.generator.m2f(self.invMnumGlob, 0, self.dim)
@@ -597,24 +630,8 @@ class Scheme(object):
         self.generator.onetimestep(self.stencil)
 
         self.generator.transport(self.nscheme, self.stencil)
-
-        pk, pv = param_to_tuple(self.param)
-        EQ = []
-        for e in self._EQ:
-            EQ.append(e.subs(list(zip(pk, pv))))
-
-        ST = copy.deepcopy(self._source_terms)
-        for i, sti in enumerate(ST):
-            for j, stij in enumerate(sti):
-                if stij is not None:
-                    ST[i][j] = self.dx * stij.subs(list(zip(pk, pv)))
-        vart = None
-        for i, pki in enumerate(pk):
-            if pki == 'time':
-                vart = pv[i]
-
         self.generator.equilibrium(self.nscheme, self.stencil, EQ)
-        self.generator.relaxation(self.nscheme, self.stencil, self.s, EQ, ST, vart)
+        self.generator.relaxation(self.nscheme, self.stencil, self.s, EQ, dicoST)
         self.generator.compile()
 
         mpi.COMM_WORLD.Barrier()
