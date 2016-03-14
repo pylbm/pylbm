@@ -17,6 +17,7 @@ class ode_solver():
         self.log = setLogger(__name__)
         self.code = ''
         self.nb_of_floors = 0
+        self.nom_solver = ""
     def parameters(self, indices_m, f, dt, indent = '', add_copy=''):
         self.indices_m = indices_m
         self.f = f
@@ -28,7 +29,9 @@ class ode_solver():
         if n != m or n != self.nb_of_floors+1:
             self.log.error('Problem of size in the definition of the ode solver.')
     def __str__(self):
-        return str(self.nb_of_floors)
+        return self.nom_solver
+    def __repr__(self):
+        return self.__str__()
     def cpt_code(self):
         N = len(self.indices_m)
         for nfi in range(self.nb_of_floors):
@@ -78,6 +81,7 @@ class basic(ode_solver):
     """
     def __init__(self):
         ode_solver.__init__(self)
+        self.nom_solver = "basic"
     def cpt_code(self):
         for l in range(len(self.indices_m)):
             k = self.indices_m[l][0]
@@ -93,6 +97,7 @@ class explicit_euler(ode_solver):
     """
     def __init__(self):
         ode_solver.__init__(self)
+        self.nom_solver = "explicit Euler"
         self.nb_of_floors = 1
         self.tbl = np.array([[0, 0], [0, 1]])
         self.verification()
@@ -105,6 +110,7 @@ class heun(ode_solver):
     """
     def __init__(self):
         ode_solver.__init__(self)
+        self.nom_solver = "Heun"
         self.nb_of_floors = 2
         self.tbl = np.array([[0, 0, 0], [1, 1, 0], [0, 0.5, 0.5]])
         self.verification()
@@ -117,6 +123,7 @@ class middle_point(ode_solver):
     """
     def __init__(self):
         ode_solver.__init__(self)
+        self.nom_solver = "middle point"
         self.nb_of_floors = 2
         self.tbl = np.array([[0, 0, 0], [0.5, 0.5, 0], [0, 0, 1]])
         self.verification()
@@ -129,6 +136,7 @@ class RK4(ode_solver):
     """
     def __init__(self):
         ode_solver.__init__(self)
+        self.nom_solver = "4th order Runge Kutta"
         self.nb_of_floors = 4
         self.tbl = np.array([
             [0, 0, 0, 0, 0],
