@@ -141,6 +141,7 @@ def load_or_store(x, y, load_list, store_list, sorder, indent='', vectorized = T
 
     t = Template("$indent$x[$indx] = $y[$indy]")
     code = ''
+    is_empty = True
     ind = 0
     for ss1, ss2 in zip(s1, s2):
         tmp1 = get_indices(ss1, ind, sorder)
@@ -148,9 +149,10 @@ def load_or_store(x, y, load_list, store_list, sorder, indent='', vectorized = T
         if not (tmp1 == tmp2 and avoid_copy):
             code += "{0}{1}[{2}] = {3}[{4}]\n".format(indent, x, ', '.join(tmp2),
                         y, ', '.join(tmp1))
+            is_empty = False
         ind += 1
 
-    return code
+    return code, is_empty
 
 if __name__ == '__main__':
     import numpy as np

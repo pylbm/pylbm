@@ -295,7 +295,7 @@ class Scheme(object):
         self.init = self.set_initialization(scheme)
 
         self.source_terms = self.set_source_terms(scheme)
-        if self.set_source_terms is not None:
+        if self.source_terms is not None:
             self._source_terms = [create_matrix(s) for s in self.source_terms]
             for cm, icm in self.consm.items():
                 for i, eq in enumerate(self._source_terms):

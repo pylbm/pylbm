@@ -206,8 +206,10 @@ from libc.stdlib cimport malloc, free
         set_f = "cdef void set_f({0} *floc, {0}[:{1}:1] f{2}) nogil:\n".format(dtype, ', :'*stencil.dim, stmp)
 
         v = stencil.get_all_velocities()
-        get_f += load_or_store('floc', 'f', v, None, self.sorder, indent=INDENT, vectorized=False, avoid_copy=False)
-        set_f += load_or_store('f', 'floc', None, np.zeros(v.shape), self.sorder, indent=INDENT, vectorized=False, avoid_copy=False)
+        tmp_get_f, is_empty = load_or_store('floc', 'f', v, None, self.sorder, indent=INDENT, vectorized=False, avoid_copy=False)
+        get_f += tmp_get_f
+        tmp_set_f, is_empty= load_or_store('f', 'floc', None, np.zeros(v.shape), self.sorder, indent=INDENT, vectorized=False, avoid_copy=False)
+        set_f += tmp_set_f
 
         self.code += get_f + "\n"
         self.code += set_f + "\n"
@@ -266,6 +268,7 @@ from libc.stdlib cimport malloc, free
         for js, s in enumerate(self.sorder[1:]):
             slices[s] = 'i%d'%js
 
+        dummy_test = True
         for k in range(ns):
             for i in range(stencil.nv[k]):
                 slices[self.sorder[0]] = str(stencil.nv_ptr[k] + i)
@@ -278,6 +281,9 @@ from libc.stdlib cimport malloc, free
                         self.code += indent + "m[%s] = %s\n"%(', '.join(slices), res)
                     else:
                         self.code += indent + "m[%s] = 0.\n"%(', '.join(slices))
+                    dummy_test = False
+        if dummy_test:
+            self.code += indent + "pass\n"
         self.code += "\n"
 
     def relaxation(self, ns, stencil, s, eq, dicoST = None, dtype = 'f8'):
@@ -320,6 +326,7 @@ from libc.stdlib cimport malloc, free
 
             return '[' + str(stencil.nv_ptr[i] + j) + ']'
 
+        dummy_test = True
         # half of the source term code
         test_source_term = False
         if dicoST is not None:
@@ -335,6 +342,7 @@ from libc.stdlib cimport malloc, free
                         indices_m.append((k, i))
                         f.append(str(st[k][i]))
             if test_source_term:
+                dummy_test = False
                 ode_solver.parameters(indices_m, f, dt='0.5*k', indent=INDENT, add_copy='')
                 code_source_term = ode_solver.cpt_code()
                 code_source_term = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", subpow, code_source_term)
@@ -354,6 +362,7 @@ from libc.stdlib cimport malloc, free
                         code_relaxation += INDENT + "m[{0:d}] += {1:.16f}*({2} - m[{0:d}])\n".format(stencil.nv_ptr[k] + i, s[k][i], res)
                     else:
                         code_relaxation += INDENT + "m[{0:d}] *= (1. - {1:.16f})\n".format(stencil.nv_ptr[k] + i, s[k][i])
+                    dummy_test = False
 
         if test_source_term:
             N = ode_solver.nb_of_floors
@@ -366,6 +375,8 @@ from libc.stdlib cimport malloc, free
             self.code += code_source_term
         else:
             self.code += code_relaxation
+        if dummy_test:
+            self.code += INDENT + "pass\n"
         self.code += "\n"
 
     def onetimestep(self, stencil):

@@ -21,7 +21,7 @@ def u0(x, xmin, xmax):
     largeur = 0.1*(xmax-xmin)
     return 1.0/largeur**10 * (x%1-milieu-largeur)**5 * (milieu-x%1-largeur)**5 * (abs(x%1-milieu)<=largeur)
 
-def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
     """
     Parameters
     ----------

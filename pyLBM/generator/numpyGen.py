@@ -79,7 +79,11 @@ class NumpyGenerator(Generator):
         """
         self.code += "def transport(f):\n"
         v = stencil.get_all_velocities()
-        self.code += load_or_store('f', 'f', -v, v, self.sorder, indent=INDENT)
+        code, is_empty = load_or_store('f', 'f', -v, v, self.sorder, indent=INDENT)
+        if is_empty:
+            self.code += INDENT + "pass\n"
+        else:
+            self.code += code
         self.code += "\n"
 
     def equilibrium(self, ns, stencil, eq, dtype = 'f8'):
@@ -115,6 +119,7 @@ class NumpyGenerator(Generator):
 
         slices = [':']*len(self.sorder)
 
+        dummy_test = True
         for k in range(ns):
             for i in range(stencil.nv[k]):
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
@@ -125,6 +130,9 @@ class NumpyGenerator(Generator):
                         self.code += INDENT + "m[%s] = %s\n"%(', '.join(slices), res)
                     else:
                         self.code += INDENT + "m[%s] = 0.\n"%(', '.join(slices))
+                    dummy_test = False
+        if dummy_test:
+            self.code += INDENT + "pass\n"
         self.code += "\n"
 
     def relaxation(self, ns, stencil, s, eq, dicoST = None, dtype = 'f8'):
@@ -164,6 +172,7 @@ class NumpyGenerator(Generator):
 
         slices = [':']*len(self.sorder)
 
+        dummy_test = True
         # half of the source term code
         test_source_term = False
         if dicoST is not None:
@@ -179,6 +188,7 @@ class NumpyGenerator(Generator):
                         indices_m.append((k, i))
                         f.append(str(st[k][i]))
             if test_source_term:
+                dummy_test = False
                 ode_solver.parameters(indices_m, f, dt='0.5*k', indent=INDENT, add_copy = ".copy()")
                 code_source_term = ode_solver.cpt_code()
                 code_source_term = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub, code_source_term)
@@ -196,6 +206,7 @@ class NumpyGenerator(Generator):
                         code_relaxation += INDENT + "m[{0}] += {1:.16f}*({2} - m[{0}])\n".format(', '.join(slices), s[k][i], res)
                     else:
                         code_relaxation += INDENT + "m[{0}] *= (1. - {1:.16f})\n".format(', '.join(slices), s[k][i])
+                    dummy_test = False
 
         if test_source_term:
             N = ode_solver.nb_of_floors
@@ -208,6 +219,8 @@ class NumpyGenerator(Generator):
             self.code += code_source_term
         else:
             self.code += code_relaxation
+        if dummy_test:
+            self.code += INDENT + "pass\n"
         self.code += "\n"
 
     def m2f(self, A, dim, dtype = 'f8'):
