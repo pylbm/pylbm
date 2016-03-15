@@ -12,15 +12,34 @@ from ..logs import setLogger
 class ode_solver():
     """
     generic class for the ode solver
+
+    Methods
+    -------
+
+    parameters :
+      set the parameters of the source terms
+    verification :
+      check the parameters compatibility
+    cpt_code :
+      return the code of the integration of the source terms
+
+    Notes
+    -----
+
+    This generic class is used to directly compute the code
+    by using a Runge Kutta method given by the points and the weights
+    of the integration method.
+
     """
     def __init__(self):
         self.log = setLogger(__name__)
         self.code = ''
         self.nb_of_floors = 0
         self.nom_solver = ""
-    def parameters(self, indices_m, f, dt, indent = '', add_copy=''):
+    def parameters(self, indices_m, f, vart, dt, indent = '', add_copy=''):
         self.indices_m = indices_m
         self.f = f
+        self.vart = vart
         self.dt = dt
         self.indent = indent
         self.add_copy = add_copy
@@ -41,8 +60,9 @@ class ode_solver():
                 self.code += self.indent + "dummy{3:1d}[{0}] = m[{1}][{2}]".format(l, k, i, nfi) + self.add_copy + "\n"
                 for nfj in range(nfi):
                     if self.tbl[nfi, nfj+1] != 0:
+                        tnj = "(" + str(self.vart) + " + " + str(self.tbl[nfj, 0]) + "*k)"
                         self.code += self.indent + "dummy{0:1d}[{1}] += ".format(nfi, l)
-                        filj = self.f[l]
+                        filj = re.sub(str(self.vart), tnj, self.f[l])
                         for ll in range(N):
                             kk = self.indices_m[ll][0]
                             ii = self.indices_m[ll][1]
@@ -58,8 +78,9 @@ class ode_solver():
             cpt_dummy = True
             for nfj in range(self.nb_of_floors):
                 wj = self.tbl[self.nb_of_floors, nfj+1]
+                tnj = "(" + str(self.vart) + " + " + str(self.tbl[nfj, 0]) + "*k)"
                 if  wj != 0:
-                    filj = self.f[l]
+                    filj = re.sub(str(self.vart), tnj, self.f[l])
                     for ll in range(N):
                         kk = self.indices_m[ll][0]
                         ii = self.indices_m[ll][1]
@@ -78,6 +99,24 @@ class basic(ode_solver):
     """
     basic ode solver with no Runge-Kutta formalism
     no dummy variables -> more efficient
+
+    Methods
+    -------
+
+    parameters :
+      set the parameters of the source terms
+    verification :
+      check the parameters compatibility
+    cpt_code :
+      compute the code by an efficient way
+
+    Notes
+    -----
+
+    This method is an optimized version of the
+    explicit Euler method without using the formalism
+    of the Runge Kutta method.
+    The member function cpt_code is directly implemented.
     """
     def __init__(self):
         ode_solver.__init__(self)
@@ -94,6 +133,28 @@ class explicit_euler(ode_solver):
     """
     explicit Euler solver (1st order accuracy)
     formalism of Runge-Kutta solvers
+
+    Notes
+    -----
+
+    The method in the formalism of Runge Kutta reads
+
+    +-----+-----+
+    |  0  |  0  |
+    +-----+-----+
+    |     |  1  |
+    +-----+-----+
+
+    Methods
+    -------
+
+    parameters :
+      set the parameters of the source terms
+    verification :
+      check the parameters compatibility
+    cpt_code :
+      return the code of the integration of the source terms
+
     """
     def __init__(self):
         ode_solver.__init__(self)
@@ -107,6 +168,30 @@ class heun(ode_solver):
     """
     Heun solver (2nd order accuracy)
     formalism of Runge-Kutta solvers
+
+    Notes
+    -----
+
+    The method in the formalism of Runge Kutta reads
+
+    +-----+-----+-----+
+    |  0  |  0  |  0  |
+    +-----+-----+-----+
+    |  1  |  1  |  0  |
+    +-----+-----+-----+
+    |     | 1/2 | 1/2 |
+    +-----+-----+-----+
+
+    Methods
+    -------
+
+    parameters :
+      set the parameters of the source terms
+    verification :
+      check the parameters compatibility
+    cpt_code :
+      return the code of the integration of the source terms
+
     """
     def __init__(self):
         ode_solver.__init__(self)
@@ -120,6 +205,30 @@ class middle_point(ode_solver):
     """
     middle point solver (2nd order accuracy)
     formalism of Runge-Kutta solvers
+
+    Notes
+    -----
+
+    The method in the formalism of Runge Kutta reads
+
+    +-----+-----+-----+
+    |  0  |  0  |  0  |
+    +-----+-----+-----+
+    | 1/2 | 1/2 |  0  |
+    +-----+-----+-----+
+    |     |  0  |  1  |
+    +-----+-----+-----+
+
+    Methods
+    -------
+
+    parameters :
+      set the parameters of the source terms
+    verification :
+      check the parameters compatibility
+    cpt_code :
+      return the code of the integration of the source terms
+
     """
     def __init__(self):
         ode_solver.__init__(self)
@@ -133,6 +242,34 @@ class RK4(ode_solver):
     """
     RK4 solver (4th order accuracy)
     formalism of Runge-Kutta solvers
+
+    Notes
+    -----
+
+    The method in the formalism of Runge Kutta reads
+
+    +-----+-----+-----+-----+-----+
+    |   0 |  0  |  0  |  0  |  0  |
+    +-----+-----+-----+-----+-----+
+    | 1/2 | 1/2 |  0  |  0  |  0  |
+    +-----+-----+-----+-----+-----+
+    | 1/2 |  0  | 1/2 |  0  |  0  |
+    +-----+-----+-----+-----+-----+
+    |  1  |  0  |  0  |  1  |  0  |
+    +-----+-----+-----+-----+-----+
+    |     | 1/6 | 1/3 | 1/3 | 1/6 |
+    +-----+-----+-----+-----+-----+
+
+    Methods
+    -------
+
+    parameters :
+      set the parameters of the source terms
+    verification :
+      check the parameters compatibility
+    cpt_code :
+      return the code of the integration of the source terms
+
     """
     def __init__(self):
         ode_solver.__init__(self)

@@ -57,6 +57,18 @@ class NumpyGenerator(Generator):
         Generator.__init__(self, build_dir)
         self.sameF = True
 
+    def setup(self):
+        """
+        initialization of the .py file to use numpy
+        """
+        dummy = "from numpy import "
+        self.code += dummy + "exp, log, log2, log10\n"
+        self.code += dummy + "sin, cos, tan\n"
+        self.code += dummy + "arcsin, arccos, arctan\n"
+        self.code += dummy + "sinh, cosh, tanh\n"
+        self.code += dummy + "arcsinh, arccosh, arctanh\n"
+        self.code += "\n"
+
     def transport(self, ns, stencil, dtype = 'f8'):
         """
         generate the code of the transport phase
@@ -161,7 +173,7 @@ class NumpyGenerator(Generator):
         code : string
           add the relaxation phase in the attribute ``code``.
         """
-        self.code += "def relaxation(m, tn=0., k=0.):\n"
+        self.code += "def relaxation(m, tn=0., k=0., x=None, y=None, z=None):\n"
 
         def sub(g):
             slices = [':']*len(self.sorder)
@@ -189,7 +201,7 @@ class NumpyGenerator(Generator):
                         f.append(str(st[k][i]))
             if test_source_term:
                 dummy_test = False
-                ode_solver.parameters(indices_m, f, dt='0.5*k', indent=INDENT, add_copy = ".copy()")
+                ode_solver.parameters(indices_m, f, vart, dt='0.5*k', indent=INDENT, add_copy = ".copy()")
                 code_source_term = ode_solver.cpt_code()
                 code_source_term = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub, code_source_term)
                 code_source_term = re.sub(str(vart), 'tn', code_source_term)
@@ -292,10 +304,10 @@ class NumpyGenerator(Generator):
 
     def onetimestep(self, stencil):
         self.code += """
-def onetimestep(m, f, fnew, in_or_out, valin, tn=0., dt=0.):
+def onetimestep(m, f, fnew, in_or_out, valin, tn=0., dt=0., x=None, y=None, z=None):
     transport(f)
     f2m(f, m)
-    relaxation(m, tn, dt)
+    relaxation(m, tn, dt, x, y, z)
     m2f(m, f)
 
 """

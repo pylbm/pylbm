@@ -76,7 +76,9 @@ class Scheme(object):
         (la = dx / dt)
       - schemes : a list of dictionaries, one for each scheme
       - generator : a generator for the code, optional
-        (see :py:class:`Generator <pyLBM.generator.Generator>`)
+        (see :py:class:`Generator <pyLBM.generator.base.Generator>`)
+      - ode_solver : a method to integrate the source terms, optional
+        (see :py:class:`ode_solver <pyLBM.generator.ode_schemes.ode_solver>`)
       - test_stability : boolean (optional)
 
     Notes
@@ -89,7 +91,8 @@ class Scheme(object):
     - polynomials : list of the polynomial functions that define the moments
     - equilibrium : list of the values that define the equilibrium
     - relaxation_parameters : list of the value of the relaxation parameters
-    - init : a dictionary to define the initial conditions (see examples)
+    - source_terms : dictionary do define the source terms (optional, see examples)
+    - init : dictionary to define the initial conditions (see examples)
 
     If the stencil has already been computed, it can be pass in argument.
 
@@ -166,6 +169,8 @@ class Scheme(object):
       One time step of the Lattice Boltzmann method
     set_initialization :
       set the initialization functions for the conserved moments
+    set_source_terms :
+      set the source terms functions
     set_boundary_conditions :
       Apply the boundary conditions
 
@@ -217,6 +222,11 @@ class Scheme(object):
         elif isinstance(dx, sp.Symbol):
             self.dx_symb = dx
             self.dx = sp.N(dx.subs(list(zip(pk, pv))))
+        else:
+            self.dx = 1.
+            s = "The value 'space_step' is not given or wrong.\n"
+            s += "The scheme takes default value: dx = 1."
+            self.log.warning(s)
         self.dx = self.dx / self.la
 
         self.nscheme = self.stencil.nstencils
@@ -602,7 +612,7 @@ class Scheme(object):
 
         The code can be viewed. If S is the scheme
 
-        >>> print S.generator.code
+        >>> print(S.generator.code)
         """
         pk, pv = param_to_tuple(self.param)
         EQ = []
@@ -658,15 +668,15 @@ class Scheme(object):
         func = getattr(mod, "equilibrium")
         func(m.array)
 
-    def relaxation(self, m, tn=0., dt=0.):
+    def relaxation(self, m, tn=0., dt=0., x=None, y=None, z=None):
         """ The relaxation phase on the moments m """
         mod = self.generator.get_module()
-        mod.relaxation(m.array, tn, dt)
+        mod.relaxation(m.array, tn, dt, x, y, z)
 
-    def onetimestep(self, m, fold, fnew, in_or_out, valin, tn=0., dt=0.):
+    def onetimestep(self, m, fold, fnew, in_or_out, valin, tn=0., dt=0., x=None, y=None, z=None):
         """ Compute one time step of the Lattice Boltzmann method """
         mod = self.generator.get_module()
-        mod.onetimestep(m.array, fold.array, fnew.array, in_or_out, valin, tn, dt)
+        mod.onetimestep(m.array, fold.array, fnew.array, in_or_out, valin, tn, dt, x, y, z)
 
     def set_boundary_conditions(self, f, m, bc, interface):
         """

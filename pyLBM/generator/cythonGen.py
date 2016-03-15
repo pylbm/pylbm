@@ -343,7 +343,7 @@ from libc.stdlib cimport malloc, free
                         f.append(str(st[k][i]))
             if test_source_term:
                 dummy_test = False
-                ode_solver.parameters(indices_m, f, dt='0.5*k', indent=INDENT, add_copy='')
+                ode_solver.parameters(indices_m, f, vart, dt='0.5*k', indent=INDENT, add_copy='')
                 code_source_term = ode_solver.cpt_code()
                 code_source_term = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", subpow, code_source_term)
                 code_source_term = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub, code_source_term)
