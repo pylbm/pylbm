@@ -187,7 +187,13 @@ class Simulation(object):
             sys.exit()
 
         self.dim = self.domain.dim
-
+        self.x, self.y, self.z = 0, 0, 0
+        if self.dim >= 1:
+            self.x = self.domain.x[0]
+        if self.dim >= 2:
+            self.y = self.domain.x[1]
+        if self.dim >= 3:
+            self.z = self.domain.x[2]
 
         self.log.info('Build arrays')
 
@@ -422,12 +428,7 @@ class Simulation(object):
         (the array _m is modified)
         """
         t = mpi.Wtime()
-        if self.dim == 1:
-            self.scheme.relaxation(self._m, self.t, self.dt, self.domain.x[0])
-        elif self.dim == 2:
-            self.scheme.relaxation(self._m, self.t, self.dt, self.domain.x[0], self.domain.x[1])
-        elif self.dim == 3:
-            self.scheme.relaxation(self._m, self.t, self.dt, self.domain.x[0], self.domain.x[1], self.domain.x[2])
+        self.scheme.relaxation(self._m, self.t, self.dt, self.x, self.y, self.z)
         self.cpu_time['relaxation'] += mpi.Wtime() - t
 
     def f2m(self):
@@ -497,15 +498,8 @@ class Simulation(object):
         self.boundary_condition()
 
         tloci = mpi.Wtime()
-        if self.dim == 1:
-            self.scheme.onetimestep(self._m, self._F, self._Fold, self.domain.in_or_out, self.domain.valin, self.t, self.dt,
-                self.domain.x[0])
-        elif self.dim == 2:
-            self.scheme.onetimestep(self._m, self._F, self._Fold, self.domain.in_or_out, self.domain.valin, self.t, self.dt,
-                self.domain.x[0], self.domain.x[1])
-        elif self.dim == 3:
-            self.scheme.onetimestep(self._m, self._F, self._Fold, self.domain.in_or_out, self.domain.valin, self.t, self.dt,
-                self.domain.x[0], self.domain.x[1], self.domain.x[2])
+        self.scheme.onetimestep(self._m, self._F, self._Fold, self.domain.in_or_out, self.domain.valin, self.t, self.dt,
+            self.x, self.y, self.z)
         self._F, self._Fold = self._Fold, self._F
         tlocf = mpi.Wtime()
         self.cpu_time['transport'] += 0.5*(tlocf-tloci)
@@ -521,28 +515,6 @@ class Simulation(object):
             dummy *= n
         dummy /= self.cpu_time['total'] * 1.e6
         self.cpu_time['MLUPS'] = dummy
-
-    def affiche_2D(self):
-        fig = plt.figure(0,figsize=(8, 8))
-        fig.clf()
-        plt.ion()
-        plt.imshow(np.float32(self.m[0][0][1:-1,1:-1].transpose()), origin='lower', cmap=cm.gray, interpolation='nearest')
-        plt.title("Solution",fontsize=14)
-        plt.draw()
-        plt.hold(False)
-        plt.ioff()
-        plt.show()
-
-    def affiche_1D(self):
-        fig = plt.figure(0,figsize=(8, 8))
-        fig.clf()
-        plt.ion()
-        plt.plot(self.domain.x[0][1:-1],self.m[0][0][1:-1])
-        plt.title("Solution",fontsize=14)
-        plt.draw()
-        plt.hold(False)
-        plt.ioff()
-        #plt.show()
 
 if __name__ == "__main__":
     pass

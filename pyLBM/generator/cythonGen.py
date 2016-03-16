@@ -79,6 +79,8 @@ class CythonGenerator(Generator):
 #import cython
 from cython.parallel import parallel, prange
 from libc.stdlib cimport malloc, free
+from libc.math cimport sin
+
 """
 
     def m2f(self, A, k, dim, dtype = 'double'):
@@ -312,7 +314,7 @@ from libc.stdlib cimport malloc, free
         code : string
           add the relaxation phase in the attribute ``code``.
         """
-        self.code += "cdef void relaxation(double *m, double tn, double k) nogil:\n"
+        self.code += "cdef void relaxation(double *m, double tn, double k, double x, double y, double z) nogil:\n"
         def subpow(g):
             s = '(' + g.group('m')
             for i in range(int(g.group('pow')) - 1):
@@ -397,13 +399,18 @@ from libc.stdlib cimport malloc, free
         """
         s = ':, '*stencil.dim
         ext = s[:-2]
-
+        dummy1 = ["double[{0}] x".format(ext), "double[{0}] y".format(ext), "double[{0}] z".format(ext)]
+        dummy2 = ["double x", "double y", "double z"]
+        dummy1 = dummy1[:stencil.dim]
+        dummy2 = dummy2[stencil.dim:]
+        dummy = ", ".join(dummy1) + ", " + ", ".join(dummy2)
         self.code += """
-def onetimestep(double[{0}::1] m, double[{0}::1] f, double[{0}::1] fnew, double[{2}]in_or_out, double valin, double tn, double dt):
+def onetimestep(double[{0}::1] m, double[{0}::1] f, double[{0}::1] fnew, double[{2}] in_or_out, double valin, double tn, double dt, {3}):
     cdef:
         double floc[{1}]
         double mloc[{1}]
-""".format(s, stencil.nv_ptr[-1], ext)
+        double xloc=0, yloc=0, zloc=0
+""".format(s, stencil.nv_ptr[-1], ext, dummy)
 
         for i, x in enumerate(self.sorder[1:]):
             self.code += 2*INDENT + "int i{0}, n{0} = f.shape[{1}] \n".format(i, x)
@@ -415,12 +422,13 @@ def onetimestep(double[{0}::1] m, double[{0}::1] f, double[{0}::1] fnew, double[
         for i in sind:
             self.code += indent + "for i{0} in xrange(n{0}):\n".format(i)
             indent += INDENT
+            self.code += indent + "{0}loc = {0}[i{1}]\n".format(['x', 'y', 'z'][i], i)
 
         self.code += indent + "if in_or_out[{0}] == valin:\n".format(', '.join(['i' + str(i) for i in range(stencil.dim)]))
         indent += INDENT
         self.code += indent + "get_f(floc, f, {0})\n".format(', '.join(['i' + str(i) for i in range(stencil.dim)]))
         self.code += indent + "f2m_loc(floc, mloc)\n"
-        self.code += indent + "relaxation(mloc, tn, dt)\n"
+        self.code += indent + "relaxation(mloc, tn, dt, xloc, yloc, zloc)\n"
         self.code += indent + "m2f_loc(mloc, floc)\n"
         self.code += indent + "set_f(floc, fnew, {0})\n".format(', '.join(['i' + str(i) for i in range(stencil.dim)]))
 

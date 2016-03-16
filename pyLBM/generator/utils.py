@@ -154,6 +154,26 @@ def load_or_store(x, y, load_list, store_list, sorder, indent='', vectorized = T
 
     return code, is_empty
 
+def import_mathematical_function(gen):
+    if gen == 'Numpy':
+        list_of_numpy_function = [
+            "sin", "cos", "tan", "arcsin", "arccos", "arctan", "arctan2",
+            "sinh", "cosh", "tanh", "arcsinh", "arccosh", "arctanh",
+            "around", "rint", "fix", "floor", "ceil", "trunc",
+            "exp", "expm1", "exp2", "log", "log2", "log10", "log1p",
+            "i0", "sinc", "signbit",
+            "add", "reciprocal", "negative", "multiply", "power", "subtract",
+            "true_divide", "floor_divide", "fmod", "mod", "modf", "remainder",
+            "clip", "sqrt", "square", "absolute", "fabs", "sign",
+            "maximum", "minimum", "fmax", "fmin",
+            "prod", "sum", "nansum", "cumprod", "cumsum",
+            "diff", "ediff1d", "gradient", "cross", "trapz"
+        ]
+        code = "from numpy import "
+        code += ", ".join(list_of_numpy_function)
+        code += "\n\n"
+    return code
+
 if __name__ == '__main__':
     import numpy as np
     v = np.asarray([[0, 0], [1, 0], [0, 1], [-1, 0], [0, -1], [1, 1], [-1, 1], [-1, -1], [1, -1]])

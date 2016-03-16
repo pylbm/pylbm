@@ -642,6 +642,7 @@ class Scheme(object):
         self.generator.transport(self.nscheme, self.stencil)
         self.generator.equilibrium(self.nscheme, self.stencil, EQ)
         self.generator.relaxation(self.nscheme, self.stencil, self.s, EQ, dicoST)
+        print(self.generator.code)
         self.generator.compile()
 
         mpi.COMM_WORLD.Barrier()

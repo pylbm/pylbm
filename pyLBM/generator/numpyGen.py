@@ -8,7 +8,7 @@ import re
 from six.moves import range
 
 from .base import Generator, INDENT
-from .utils import matMult, load_or_store
+from .utils import matMult, load_or_store, import_mathematical_function
 from .ode_schemes import *
 
 class NumpyGenerator(Generator):
@@ -61,13 +61,7 @@ class NumpyGenerator(Generator):
         """
         initialization of the .py file to use numpy
         """
-        dummy = "from numpy import "
-        self.code += dummy + "exp, log, log2, log10\n"
-        self.code += dummy + "sin, cos, tan\n"
-        self.code += dummy + "arcsin, arccos, arctan\n"
-        self.code += dummy + "sinh, cosh, tanh\n"
-        self.code += dummy + "arcsinh, arccosh, arctanh\n"
-        self.code += "\n"
+        self.code += import_mathematical_function('Numpy')
 
     def transport(self, ns, stencil, dtype = 'f8'):
         """
@@ -173,7 +167,7 @@ class NumpyGenerator(Generator):
         code : string
           add the relaxation phase in the attribute ``code``.
         """
-        self.code += "def relaxation(m, tn=0., k=0., x=None, y=None, z=None):\n"
+        self.code += "def relaxation(m, tn=0., k=0., x=0, y=0, z=0):\n"
 
         def sub(g):
             slices = [':']*len(self.sorder)
@@ -304,7 +298,7 @@ class NumpyGenerator(Generator):
 
     def onetimestep(self, stencil):
         self.code += """
-def onetimestep(m, f, fnew, in_or_out, valin, tn=0., dt=0., x=None, y=None, z=None):
+def onetimestep(m, f, fnew, in_or_out, valin, tn=0., dt=0., x=0, y=0, z=0):
     transport(f)
     f2m(f, m)
     relaxation(m, tn, dt, x, y, z)
