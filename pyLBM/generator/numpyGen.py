@@ -6,9 +6,10 @@
 import sympy as sp
 import re
 from six.moves import range
+from six import string_types
 
 from .base import Generator, INDENT
-from .utils import matMult, load_or_store, import_mathematical_function
+from .utils import matMult, load_or_store, list_of_numpy_functions, dictionnary_of_translation_numpy
 from .ode_schemes import *
 
 class NumpyGenerator(Generator):
@@ -61,7 +62,9 @@ class NumpyGenerator(Generator):
         """
         initialization of the .py file to use numpy
         """
-        self.code += import_mathematical_function('Numpy')
+        self.code += "from numpy import "
+        self.code += ", ".join(list_of_numpy_functions)
+        self.code += "\n\n"
 
     def transport(self, ns, stencil, dtype = 'f8'):
         """
@@ -116,7 +119,7 @@ class NumpyGenerator(Generator):
         """
         self.code += "def equilibrium(m):\n"
 
-        def sub(g):
+        def sub_slices(g):
             slices = [':']*len(self.sorder)
             i = int(g.group('i'))
             j = int(g.group('j'))
@@ -131,8 +134,9 @@ class NumpyGenerator(Generator):
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
                     slices[self.sorder[0]] = str(stencil.nv_ptr[k] + i)
                     if eq[k][i] != 0:
-                        res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub,
-                                   str(eq[k][i]))
+                        res = reduce(lambda x, y: x.replace(y, dictionnary_of_translation_numpy[y]),
+                                     dictionnary_of_translation_numpy, str(eq[k][i]))
+                        res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub_slices, res)
                         self.code += INDENT + "m[%s] = %s\n"%(', '.join(slices), res)
                     else:
                         self.code += INDENT + "m[%s] = 0.\n"%(', '.join(slices))
@@ -167,9 +171,10 @@ class NumpyGenerator(Generator):
         code : string
           add the relaxation phase in the attribute ``code``.
         """
+        var_time = sp.Symbol('var_time') # long variable for the time to avoid crazy replacement
         self.code += "def relaxation(m, tn=0., k=0., x=0, y=0, z=0):\n"
 
-        def sub(g):
+        def sub_slices(g):
             slices = [':']*len(self.sorder)
             i = int(g.group('i'))
             j = int(g.group('j'))
@@ -184,6 +189,8 @@ class NumpyGenerator(Generator):
         if dicoST is not None:
             st = dicoST['ST']
             vart = dicoST['vart']
+            if isinstance(vart, string_types):
+                vart = sp.Symbol(vart)
             ode_solver = dicoST['ode_solver']
             indices_m = []
             f = []
@@ -192,13 +199,19 @@ class NumpyGenerator(Generator):
                     if st[k][i] is not None and st[k][i] != 0:
                         test_source_term = True
                         indices_m.append((k, i))
-                        f.append(str(st[k][i]))
+                        # change the name of the time variable
+                        if isinstance(st[k][i], sp.Expr):
+                            f.append(str(st[k][i].subs(vart, var_time)))
+                        elif isinstance(st[k][i], string_types):
+                            f.append(str(st[k][i].replace(str(vart), str(var_time))))
             if test_source_term:
                 dummy_test = False
-                ode_solver.parameters(indices_m, f, vart, dt='0.5*k', indent=INDENT, add_copy = ".copy()")
+                ode_solver.parameters(indices_m, f, var_time, dt='0.5*k', indent=INDENT, add_copy = ".copy()")
                 code_source_term = ode_solver.cpt_code()
-                code_source_term = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub, code_source_term)
-                code_source_term = re.sub(str(vart), 'tn', code_source_term)
+                code_source_term = reduce(lambda x, y: x.replace(y, dictionnary_of_translation_numpy[y]),
+                                          dictionnary_of_translation_numpy, code_source_term)
+                code_source_term = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub_slices, code_source_term)
+                code_source_term = re.sub(str(var_time), 'tn', code_source_term)
 
         # relaxation code
         code_relaxation = ''
@@ -207,8 +220,9 @@ class NumpyGenerator(Generator):
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
                     slices[self.sorder[0]] = str(stencil.nv_ptr[k] + i)
                     if eq[k][i] != 0:
-                        res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub,
-                                   str(eq[k][i]))
+                        res = reduce(lambda x, y: x.replace(y, dictionnary_of_translation_numpy[y]),
+                                     dictionnary_of_translation_numpy, str(eq[k][i]))
+                        res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub_slices, res)
                         code_relaxation += INDENT + "m[{0}] += {1:.16f}*({2} - m[{0}])\n".format(', '.join(slices), s[k][i], res)
                     else:
                         code_relaxation += INDENT + "m[{0}] *= (1. - {1:.16f})\n".format(', '.join(slices), s[k][i])

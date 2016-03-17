@@ -7,10 +7,11 @@ import numpy as np
 import sympy as sp
 import re
 from six.moves import range
+from six import string_types
 import mpi4py.MPI as mpi
 
 from .base import Generator, INDENT
-from .utils import matMult, load_or_store
+from .utils import matMult, load_or_store, list_of_cython_functions, dictionnary_of_translation_cython
 from .ode_schemes import *
 
 class CythonGenerator(Generator):
@@ -79,9 +80,10 @@ class CythonGenerator(Generator):
 #import cython
 from cython.parallel import parallel, prange
 from libc.stdlib cimport malloc, free
-from libc.math cimport sin
-
 """
+        self.code += "from libc.math cimport "
+        self.code += ", ".join(list_of_cython_functions)
+        self.code += "\n\n"
 
     def m2f(self, A, k, dim, dtype = 'double'):
         """
@@ -250,14 +252,14 @@ from libc.math cimport sin
             self.code += indent + "for i{0} in xrange(n{0}):\n".format(i)
             indent += INDENT
 
-        def subpow(g):
+        def sub_pow(g):
             s = '(' + g.group('m')
             for i in range(int(g.group('pow')) - 1):
                 s += '*' + g.group('m')
             s += ')'
             return s
 
-        def sub(g):
+        def sub_slices(g):
             i = int(g.group('i'))
             j = int(g.group('j'))
             slices = ['']*len(self.sorder)
@@ -277,9 +279,10 @@ from libc.math cimport sin
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
                     if eq[k][i] != 0:
                         str2input = str(eq[k][i])
-                        res = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", subpow, str2input)
-                        res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub, res)
-
+                        res = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", sub_pow, str2input)
+                        res = reduce(lambda x, y: x.replace(y, dictionnary_of_translation_cython[y]),
+                                     dictionnary_of_translation_cython, res)
+                        res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub_slices, res)
                         self.code += indent + "m[%s] = %s\n"%(', '.join(slices), res)
                     else:
                         self.code += indent + "m[%s] = 0.\n"%(', '.join(slices))
@@ -314,15 +317,17 @@ from libc.math cimport sin
         code : string
           add the relaxation phase in the attribute ``code``.
         """
+        var_time = sp.Symbol('var_time') # long variable for the time to avoid crazy replacement
         self.code += "cdef void relaxation(double *m, double tn, double k, double x, double y, double z) nogil:\n"
-        def subpow(g):
+
+        def sub_pow(g):
             s = '(' + g.group('m')
             for i in range(int(g.group('pow')) - 1):
                 s += '*' + g.group('m')
             s += ')'
             return s
 
-        def sub(g):
+        def sub_slices(g):
             i = int(g.group('i'))
             j = int(g.group('j'))
 
@@ -334,6 +339,8 @@ from libc.math cimport sin
         if dicoST is not None:
             st = dicoST['ST']
             vart = dicoST['vart']
+            if isinstance(vart, string_types):
+                vart = sp.Symbol(vart)
             ode_solver = dicoST['ode_solver']
             indices_m = []
             f = []
@@ -342,14 +349,20 @@ from libc.math cimport sin
                     if st[k][i] is not None and st[k][i] != 0:
                         test_source_term = True
                         indices_m.append((k, i))
-                        f.append(str(st[k][i]))
+                        # change the name of the time variable
+                        if isinstance(st[k][i], sp.Expr):
+                            f.append(str(st[k][i].subs(vart, var_time)))
+                        elif isinstance(st[k][i], string_types):
+                            f.append(str(st[k][i].replace(str(vart), str(var_time))))
             if test_source_term:
                 dummy_test = False
-                ode_solver.parameters(indices_m, f, vart, dt='0.5*k', indent=INDENT, add_copy='')
+                ode_solver.parameters(indices_m, f, var_time, dt='0.5*k', indent=INDENT, add_copy='')
                 code_source_term = ode_solver.cpt_code()
-                code_source_term = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", subpow, code_source_term)
-                code_source_term = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub, code_source_term)
-                code_source_term = re.sub(str(vart), 'tn', code_source_term)
+                code_source_term = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", sub_pow, code_source_term)
+                code_source_term = reduce(lambda x, y: x.replace(y, dictionnary_of_translation_cython[y]),
+                                          dictionnary_of_translation_cython, code_source_term)
+                code_source_term = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub_slices, code_source_term)
+                code_source_term = re.sub(str(var_time), 'tn', code_source_term)
 
         # relaxation code
         code_relaxation = ''
@@ -358,9 +371,10 @@ from libc.math cimport sin
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
                     if eq[k][i] != 0:
                         str2input = str(eq[k][i])
-                        res = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", subpow, str2input)
-                        res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub, res)
-
+                        res = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", sub_pow, str2input)
+                        res = reduce(lambda x, y: x.replace(y, dictionnary_of_translation_cython[y]),
+                                     dictionnary_of_translation_cython, res)
+                        res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub_slices, res)
                         code_relaxation += INDENT + "m[{0:d}] += {1:.16f}*({2} - m[{0:d}])\n".format(stencil.nv_ptr[k] + i, s[k][i], res)
                     else:
                         code_relaxation += INDENT + "m[{0:d}] *= (1. - {1:.16f})\n".format(stencil.nv_ptr[k] + i, s[k][i])
