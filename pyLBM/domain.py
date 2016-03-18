@@ -32,7 +32,7 @@ proto_domain = {
     'dim':(type(None), int),
     'space_step':(int, float,),
     'scheme_velocity':(type(None), int, float, sp.Symbol),
-    'parameters':(type(None), is_dico_sp_float),
+    'parameters':(type(None), is_dico_sp_sporfloat),
     'schemes':(is_list_sch_dom,),
     'boundary_conditions':(type(None), is_dico_bc),
     'generator':(type(None), is_generator),
@@ -167,7 +167,7 @@ class Domain(object):
         self.log = setLogger(__name__)
 
         if dico is not None:
-            self.log.info('Check the dictionary')
+            self.log.info('Check the dictionary (by Domain)')
             test, aff = validate(dico, proto_domain, test_comp = False)
             if test:
                 self.log.info(aff)

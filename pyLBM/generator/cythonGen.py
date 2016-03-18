@@ -318,7 +318,8 @@ from libc.stdlib cimport malloc, free
           add the relaxation phase in the attribute ``code``.
         """
         var_time = sp.Symbol('var_time') # long variable for the time to avoid crazy replacement
-        self.code += "cdef void relaxation(double *m, double tn, double k, double X, double Y, double Z) nogil:\n"
+        varx, vary, varz = str(dicoST['varx']), str(dicoST['vary']), str(dicoST['varz'])
+        self.code += "cdef void relaxation(double *m, double tn, double k, double {0}, double {1}, double {2}) nogil:\n".format(varx, vary, varz)
 
         def sub_pow(g):
             s = '(' + g.group('m')

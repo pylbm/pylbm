@@ -62,7 +62,8 @@ class ode_solver():
                     if self.tbl[nfi, nfj+1] != 0:
                         tnj = "(" + str(self.vart) + " + " + str(self.tbl[nfj, 0]) + "*k)"
                         self.code += self.indent + "dummy{0:1d}[{1}] += ".format(nfi, l)
-                        filj = re.sub(str(self.vart), tnj, self.f[l])
+                        filj = self.f[l].sub(str(self.vart), tnj)
+                        #filj = filj.sub(dummylist)
                         for ll in range(N):
                             kk = self.indices_m[ll][0]
                             ii = self.indices_m[ll][1]

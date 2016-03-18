@@ -229,6 +229,13 @@ class Scheme(object):
             self.log.warning(s)
         self.dt = self.dx / self.la
 
+        # fix the variables of time and space
+        if self.param is not None:
+            self.vart = self.param.get('time', sp.Symbol('t'))
+            self.varx = self.param.get('space_x', sp.Symbol('X'))
+            self.vary = self.param.get('space_y', sp.Symbol('Y'))
+            self.varz = self.param.get('space_z', sp.Symbol('Z'))
+
         self.nscheme = self.stencil.nstencils
         scheme = dico['schemes']
         if not isinstance(scheme, list):
@@ -410,7 +417,7 @@ class Scheme(object):
             self.M.append(sp.zeros(lv, lv))
             for i in range(lv):
                 for j in range(lv):
-                    self.M[-1][i, j] = p[i].subs([('X', v[j].vx), ('Y', v[j].vy), ('Z', v[j].vz)])
+                    self.M[-1][i, j] = p[i].subs([(str(self.varx), v[j].vx), (str(self.vary), v[j].vy), (str(self.varz), v[j].vz)])
             try:
                 self.invM.append(self.M[-1].inv())
             except:
@@ -625,11 +632,16 @@ class Scheme(object):
                 for j, stij in enumerate(sti):
                     if stij is not None:
                         ST[i][j] = stij.subs(list(zip(pk, pv)))
-            vart = None
-            for i, pki in enumerate(pk):
-                if pki == 'time':
-                    vart = pv[i]
-            dicoST = {'ST':ST, 'vart':vart, 'ode_solver':self.ode_solver}
+            # vart = None
+            # for i, pki in enumerate(pk):
+            #     if pki == 'time':
+            #         vart = pv[i]
+            dicoST = {'ST':ST,
+                      'vart':self.vart,
+                      'varx':self.varx,
+                      'vary':self.vary,
+                      'varz':self.varz,
+                      'ode_solver':self.ode_solver}
         else:
             dicoST = None
 

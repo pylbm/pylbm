@@ -41,7 +41,7 @@ proto_simu = {
     'dim':(type(None), int),
     'space_step':(float,),
     'scheme_velocity':(int, float, sp.Symbol),
-    'parameters':(type(None), is_dico_sp_float),
+    'parameters':(type(None), is_dico_sp_sporfloat),
     'schemes':(is_list_sch,),
     'boundary_conditions':(type(None), is_dico_bc),
     'generator':(type(None), is_generator),
@@ -149,13 +149,13 @@ class Simulation(object):
         self.order = 'C'
         self._update_m = True
 
-        self.log.info('Check the dictionary')
+        self.log.info('Check the dictionary (by Simulation)')
         test, aff = validate(dico, proto_simu)
         if test:
             self.log.info(aff)
         else:
             self.log.error(aff)
-            #sys.exit()
+            sys.exit()
 
         self.log.info('Build the domain')
         try:

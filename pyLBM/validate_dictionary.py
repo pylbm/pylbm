@@ -67,6 +67,7 @@ def is_dico_generic(d, ltk, ltv, ntab=0):
                 test_k = False
                 ligne_k += PrintInColor.error(v)
             ligne += debut(test_k) + space(ntab) + ligne_k
+            test = test and test_k
     else:
         ligne = ''
     return test, ligne
@@ -397,6 +398,8 @@ def validate(dico, proto, test_comp = True):
             aff += aff_c2
             aff += aff_c3
             aff += '-'*60 + '\n'
+        else:
+            aff += '\n'
     else:
         aff += '\n'
     aff += "*"*75 + '\n'

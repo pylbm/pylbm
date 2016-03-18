@@ -15,7 +15,7 @@ from scipy import stats
 import sympy as sp
 import pyLBM
 
-X, LA, u = sp.symbols('X, LA, u')
+t, XX, LA, u = sp.symbols('t, x, LA, u')
 C, MU = sp.symbols('C, MU')
 
 
@@ -68,7 +68,7 @@ def run(dt, Tf,
         {
             'velocities':[1,2],
             'conserved_moments':u,
-            'polynomials':[1,LA*X],
+            'polynomials':[1,LA*XX],
             'relaxation_parameters':[0., s],
             'equilibrium':[u, C*u],
             'source_terms':{u:MU*u*(1-u)},
@@ -77,7 +77,7 @@ def run(dt, Tf,
         ],
         'generator': generator,
         'ode_solver': ode_solver,
-        'parameters': {LA: la, C: c, MU: mu},
+        'parameters': {LA: la, C: c, MU: mu, 'time': t, 'space_x': XX},
     }
 
     # simulation
@@ -113,4 +113,4 @@ def run(dt, Tf,
 
 if __name__ == '__main__':
     Tf = 2.
-    run(1./128, 1.,     generator = pyLBM.generator.CythonGenerator)
+    run(1./128, 1., generator = pyLBM.generator.CythonGenerator)

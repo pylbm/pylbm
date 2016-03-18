@@ -171,8 +171,10 @@ class NumpyGenerator(Generator):
         code : string
           add the relaxation phase in the attribute ``code``.
         """
-        var_time = sp.Symbol('var_time') # long variable for the time to avoid crazy replacement
-        self.code += "def relaxation(m, tn=0., k=0., X=0, Y=0, Z=0):\n"
+        # long variables to avoid crazy replacement
+        var_time = sp.Symbol('var_time')
+        varx, vary, varz = str(dicoST['varx']), str(dicoST['vary']), str(dicoST['varz'])
+        self.code += "def relaxation(m, tn=0., k=0., {0}=0, {1}=0, {2}=0):\n".format(varx, vary, varz)
 
         def sub_slices(g):
             slices = [':']*len(self.sorder)
