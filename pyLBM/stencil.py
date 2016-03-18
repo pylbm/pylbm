@@ -774,7 +774,7 @@ class Stencil(list):
             pos[:, 1] = vy
             pos[:, 2] = vz
 
-            ax.text(list(map(str, self.unum)), pos, dim = self.dim)
+            ax.text(list(map(str, self.unum)), pos[:,:max(2,self.dim)])
 
             xmin, xmax = np.min(vx) - 1, np.max(vx) + 1
             ymin, ymax = np.min(vy) - 1, np.max(vy) + 1
@@ -792,7 +792,7 @@ class Stencil(list):
             else:
                 lv = k
 
-            view = viewer_mod.Fig(len(lv), 1)
+            view = viewer_mod.Fig(len(lv), 1, dim = self.dim)
 
             for ii, i in enumerate(lv):
                 ax = view[ii]
@@ -810,17 +810,16 @@ class Stencil(list):
                 pos[:, 1] = vy
                 pos[:, 2] = vz
 
-                ax.text(list(map(str, self.num[i])), pos, dim = self.dim)
+                ax.text(list(map(str, self.num[i])), pos[:,:max(2,self.dim)])
 
                 xmin, xmax = np.min(vx) - 1, np.max(vx) + 1
                 ymin, ymax = np.min(vy) - 1, np.max(vy) + 1
                 zmin, zmax = np.min(vz) - 1, np.max(vz) + 1
                 ax.title = "Stencil {0:d}".format(ii)
-                if self.dim < 3:
-                    ax.axis(xmin, xmax, ymin, ymax, zmin, zmax)
+                if self.dim == 3:
+                    ax.axis(xmin, xmax, ymin, ymax, zmin, zmax, self.dim)
                 else:
                     ax.axis(xmin, xmax, ymin, ymax)
-
 
         view.show()
 

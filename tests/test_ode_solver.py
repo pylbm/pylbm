@@ -13,9 +13,6 @@ u, X = sp.symbols('u, x')
 def solution(t, alpha):
     return np.exp(-alpha*t)
 
-def rhs(u, alpha):
-    return -alpha*u
-
 def verification(dt, alpha, f, ode_solver):
     c = 0.5*alpha*dt
     if ode_solver == pyLBM.generator.basic or ode_solver == pyLBM.generator.explicit_euler:
@@ -52,13 +49,14 @@ def run(dt, alpha,
                'polynomials':[1,],
                'relaxation_parameters':[0,],
                'equilibrium':[u,],
-               'source_terms':{u:rhs(u, alpha)},
+               'source_terms':{u:-alpha*u},
                'init':{u:1.},
            },
         ],
     }
 
     sol = pyLBM.Simulation(dico)
+    #print(sol.scheme.generator.code)
     fnum = np.empty((Nt,))
     tnum = np.empty((Nt,))
     fnum[0] = sol.m[u][1]

@@ -154,6 +154,6 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
     return sol1, sol2
 
 if __name__ == '__main__':
-    dx = 1./256
+    dx = 1./128
     Tf = .5
     run(dx, Tf)

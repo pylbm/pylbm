@@ -187,13 +187,6 @@ class Simulation(object):
             sys.exit()
 
         self.dim = self.domain.dim
-        self.x, self.y, self.z = 0, 0, 0
-        if self.dim >= 1:
-            self.x = self.domain.x[0]
-        if self.dim >= 2:
-            self.y = self.domain.x[1]
-        if self.dim >= 3:
-            self.z = self.domain.x[2]
 
         self.log.info('Build arrays')
 
@@ -428,7 +421,7 @@ class Simulation(object):
         (the array _m is modified)
         """
         t = mpi.Wtime()
-        self.scheme.relaxation(self._m, self.t, self.dt, self.x, self.y, self.z)
+        self.scheme.relaxation(self._m, self.t, self.dt, *self.domain.x)
         self.cpu_time['relaxation'] += mpi.Wtime() - t
 
     def f2m(self):
@@ -498,8 +491,9 @@ class Simulation(object):
         self.boundary_condition()
 
         tloci = mpi.Wtime()
+
         self.scheme.onetimestep(self._m, self._F, self._Fold, self.domain.in_or_out, self.domain.valin, self.t, self.dt,
-            self.x, self.y, self.z)
+            *self.domain.x)
         self._F, self._Fold = self._Fold, self._F
         tlocf = mpi.Wtime()
         self.cpu_time['transport'] += 0.5*(tlocf-tloci)

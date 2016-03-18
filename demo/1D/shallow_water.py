@@ -44,7 +44,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     # parameters
     xmin, xmax = 0., 1.  # bounds of the domain
     la = 2.              # velocity of the scheme
-    s = 1.7              # relaxation parameter
+    s = 1.5              # relaxation parameter
 
     hg, hd, qg, qd = 1., .25, 0.10, 0.10
     ymina, ymaxa, yminb, ymaxb = 0., 1., 0., .5
@@ -60,7 +60,6 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
                 'polynomials':[1, LA*X],
                 'relaxation_parameters':[0, s],
                 'equilibrium':[h, q],
-                'source_terms':{h: 0.5*h},
                 'init':{h:(Riemann_pb, (xmin, xmax, hg, hd))},
             },
             {
@@ -69,7 +68,6 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
                 'polynomials':[1, LA*X],
                 'relaxation_parameters':[0, s],
                 'equilibrium':[q, q**2/h+.5*g*h**2],
-                'source_terms':{q: -0.5*g*h},
                 'init':{q:(Riemann_pb, (xmin, xmax, qg, qd))},
             },
         ],
@@ -77,12 +75,10 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
             0:{'method':{0: pyLBM.bc.Neumann, 1: pyLBM.bc.Neumann}},
         },
         'generator': generator,
-        'ode_solver': pyLBM.generator.RK4,
         'parameters':{LA:la, g:1.},
     }
 
     sol = pyLBM.Simulation(dico, sorder=sorder)
-    print sol.scheme.generator.code
 
     if withPlot:
         # create the viewer to plot the solution
@@ -114,6 +110,6 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     return sol
 
 if __name__ == '__main__':
-    dx = 1./128
+    dx = 1./1024
     Tf = 1.
-    run(dx, Tf)#, generator=pyLBM.generator.CythonGenerator)
+    run(dx, Tf, generator=pyLBM.generator.CythonGenerator)

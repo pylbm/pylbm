@@ -52,6 +52,7 @@ Documentation for users
    The domain of the simulation <learning_domain>
    The scheme <learning_scheme>
    The boundary conditions <learning_bounds>
+   Learning by examples <tutorial>
 
 
 Documentation of the code

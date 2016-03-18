@@ -350,10 +350,13 @@ from libc.stdlib cimport malloc, free
                         test_source_term = True
                         indices_m.append((k, i))
                         # change the name of the time variable
-                        if isinstance(st[k][i], sp.Expr):
-                            f.append(str(st[k][i].subs(vart, var_time)))
-                        elif isinstance(st[k][i], string_types):
-                            f.append(str(st[k][i].replace(str(vart), str(var_time))))
+                        if vart is not None:
+                            if isinstance(st[k][i], sp.Expr):
+                                f.append(str(st[k][i].subs(vart, var_time)))
+                            elif isinstance(st[k][i], string_types):
+                                f.append(str(st[k][i].replace(str(vart), str(var_time))))
+                        else:
+                            f.append(str(st[k][i]))
             if test_source_term:
                 dummy_test = False
                 ode_solver.parameters(indices_m, f, var_time, dt='0.5*k', indent=INDENT, add_copy='')
@@ -413,7 +416,8 @@ from libc.stdlib cimport malloc, free
         """
         s = ':, '*stencil.dim
         ext = s[:-2]
-        dummy1 = ["double[{0}] x".format(ext), "double[{0}] y".format(ext), "double[{0}] z".format(ext)]
+        #dummy1 = ["double[{0}] x".format(':'), "double[{0}] y".format(':'), "double[{0}] z".format(':')]
+        dummy1 = ["double[:] x", "double[:] y", "double[:] z"]
         dummy2 = ["double x", "double y", "double z"]
         dummy1 = dummy1[:stencil.dim]
         dummy2 = dummy2[stencil.dim:]
@@ -423,7 +427,7 @@ def onetimestep(double[{0}::1] m, double[{0}::1] f, double[{0}::1] fnew, double[
     cdef:
         double floc[{1}]
         double mloc[{1}]
-        double xloc=0, yloc=0, zloc=0
+        double xloc=0., yloc=0., zloc=0.
 """.format(s, stencil.nv_ptr[-1], ext, dummy)
 
         for i, x in enumerate(self.sorder[1:]):

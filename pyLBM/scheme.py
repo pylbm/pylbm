@@ -208,26 +208,26 @@ class Scheme(object):
 
         la = dico.get('scheme_velocity', None)
         if isinstance(la, (int, float)):
-            self.la = la
             self.la_symb = None
+            self.la = la
         elif isinstance(la, sp.Symbol):
             self.la_symb = la
-            self.la = sp.N(la.subs(list(zip(pk, pv))))
+            self.la = float(la.subs(list(zip(pk, pv))))
         else:
             self.log.error("The entry 'scheme_velocity' is wrong.")
         dx = dico.get('space_step', None)
         if isinstance(dx, (int, float)):
-            self.dx = dx
             self.dx_symb = None
+            self.dx = dx
         elif isinstance(dx, sp.Symbol):
             self.dx_symb = dx
-            self.dx = sp.N(dx.subs(list(zip(pk, pv))))
+            self.dx = float(dx.subs(list(zip(pk, pv))))
         else:
             self.dx = 1.
             s = "The value 'space_step' is not given or wrong.\n"
             s += "The scheme takes default value: dx = 1."
             self.log.warning(s)
-        self.dx = self.dx / self.la
+        self.dt = self.dx / self.la
 
         self.nscheme = self.stencil.nstencils
         scheme = dico['schemes']
@@ -642,7 +642,6 @@ class Scheme(object):
         self.generator.transport(self.nscheme, self.stencil)
         self.generator.equilibrium(self.nscheme, self.stencil, EQ)
         self.generator.relaxation(self.nscheme, self.stencil, self.s, EQ, dicoST)
-        print(self.generator.code)
         self.generator.compile()
 
         mpi.COMM_WORLD.Barrier()
@@ -669,12 +668,12 @@ class Scheme(object):
         func = getattr(mod, "equilibrium")
         func(m.array)
 
-    def relaxation(self, m, tn=0., dt=0., x=None, y=None, z=None):
+    def relaxation(self, m, tn=0., dt=0., x=0., y=0., z=0.):
         """ The relaxation phase on the moments m """
         mod = self.generator.get_module()
         mod.relaxation(m.array, tn, dt, x, y, z)
 
-    def onetimestep(self, m, fold, fnew, in_or_out, valin, tn=0., dt=0., x=None, y=None, z=None):
+    def onetimestep(self, m, fold, fnew, in_or_out, valin, tn=0., dt=0., x=0., y=0., z=0.):
         """ Compute one time step of the Lattice Boltzmann method """
         mod = self.generator.get_module()
         mod.onetimestep(m.array, fold.array, fnew.array, in_or_out, valin, tn, dt, x, y, z)

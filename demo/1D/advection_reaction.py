@@ -15,15 +15,14 @@ from scipy import stats
 import sympy as sp
 import pyLBM
 
-X, LA, u = sp.symbols('t, X, LA, u')
+X, LA, u = sp.symbols('X, LA, u')
 C, MU = sp.symbols('C, MU')
 
 
 def u0(x, xmin, xmax):
-    #milieu = 0.5*(xmin+xmax)
-    #largeur = 0.1*(xmax-xmin)
-    #return 0.25 + .125/largeur**10 * (x%1-milieu-largeur)**5 * (milieu-x%1-largeur)**5 * (abs(x%1-milieu)<=largeur)
-    return 0.51 + 0.49 * np.cos(4*np.pi*(x-xmin)/(xmax-xmin))
+    milieu = 0.5*(xmin+xmax)
+    largeur = 0.1*(xmax-xmin)
+    return 0.25 + .125/largeur**10 * (x%1-milieu-largeur)**5 * (milieu-x%1-largeur)**5 * (abs(x%1-milieu)<=largeur)
 
 def solution(t, x, xmin, xmax, c, mu):
     dt = np.tanh(0.5*mu*t)
@@ -114,24 +113,4 @@ def run(dt, Tf,
 
 if __name__ == '__main__':
     Tf = 2.
-    ODES = [pyLBM.generator.basic,
-        pyLBM.generator.explicit_euler,
-        pyLBM.generator.heun,
-        pyLBM.generator.middle_point,
-        pyLBM.generator.RK4
-    ]
-    print(" "*28 + " Numpy      Cython")
-    for odes in ODES:
-        DT = []
-        ERnp = []
-        ERcy = []
-        for k in range(3, 10):
-            dt = 2**(-k)
-            DT.append(0.5*dt)
-            ERnp.append(run(dt, Tf,
-                generator = pyLBM.generator.NumpyGenerator,
-                ode_solver = odes, withPlot = False))
-            ERcy.append(run(dt, Tf,
-                generator = pyLBM.generator.NumpyGenerator,
-                ode_solver = odes, withPlot = False))
-        print("Slope for {0:14s}: {1:10.3e} {2:10.3e}".format(odes.__name__, stats.linregress(np.log2(DT), np.log2(ERnp))[0],  stats.linregress(np.log2(DT), np.log2(ERcy))[0]))
+    run(1./128, 1.,     generator = pyLBM.generator.NumpyGenerator)

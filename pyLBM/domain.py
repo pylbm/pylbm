@@ -212,6 +212,18 @@ class Domain(object):
 
         self.log.info(self.__str__())
 
+    # @property
+    # def x(self):
+    #     return self.coords[0]
+    #
+    # @property
+    # def y(self):
+    #     return self.coords[1]
+    #
+    # @property
+    # def z(self):
+    #     return self.coords[2]
+
     @property
     def shape(self):
         return [x.size for x in self.x]

@@ -172,7 +172,7 @@ class NumpyGenerator(Generator):
           add the relaxation phase in the attribute ``code``.
         """
         var_time = sp.Symbol('var_time') # long variable for the time to avoid crazy replacement
-        self.code += "def relaxation(m, tn=0., k=0., x=0, y=0, z=0):\n"
+        self.code += "def relaxation(m, tn=0., k=0., X=0, Y=0, Z=0):\n"
 
         def sub_slices(g):
             slices = [':']*len(self.sorder)
@@ -200,10 +200,13 @@ class NumpyGenerator(Generator):
                         test_source_term = True
                         indices_m.append((k, i))
                         # change the name of the time variable
-                        if isinstance(st[k][i], sp.Expr):
-                            f.append(str(st[k][i].subs(vart, var_time)))
-                        elif isinstance(st[k][i], string_types):
-                            f.append(str(st[k][i].replace(str(vart), str(var_time))))
+                        if vart is not None:
+                            if isinstance(st[k][i], sp.Expr):
+                                f.append(str(st[k][i].subs(vart, var_time)))
+                            elif isinstance(st[k][i], string_types):
+                                f.append(str(st[k][i].replace(str(vart), str(var_time))))
+                        else:
+                            f.append(str(st[k][i]))
             if test_source_term:
                 dummy_test = False
                 ode_solver.parameters(indices_m, f, var_time, dt='0.5*k', indent=INDENT, add_copy = ".copy()")

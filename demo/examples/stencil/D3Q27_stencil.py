@@ -14,4 +14,4 @@ dsten = {
 }
 s = pyLBM.Stencil(dsten)
 print s
-s.visualize(pyLBM.viewer.vispyViewer)
+s.visualize(pyLBM.viewer.matplotlibViewer)
