@@ -19,6 +19,9 @@ the domain of the computation.
 The stencil is necessary in order to know the maximal velocity in each direction
 so that the corresponding number of phantom cells are added at the borders of
 the domain (for the treatment of the boundary conditions).
+The user can get the coordinates of the points in the domain by the fields
+``x``, ``y``, and ``z``.
+By convention, if the spatial dimension is one, ``y=z=None``; and if it is two, ``z=None``.
 
 Several examples of domains can be found in
 demo/examples/domain/

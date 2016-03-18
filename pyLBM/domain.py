@@ -85,25 +85,25 @@ class Domain(object):
     In that case, dico does not need to contain the informations for generate
     the geometry and/or the stencil
 
-    In 1D, distance[q, i] is the distance between the point x[0][i]
+    In 1D, distance[q, i] is the distance between the point x[i]
     and the border in the direction of the qth velocity.
 
     In 2D, distance[q, j, i] is the distance between the point
-    (x[0][i], x[1][j]) and the border in the direction of qth
+    (x[i], y[j]) and the border in the direction of qth
     velocity
 
     In 3D, distance[q, k, j, i] is the distance between the point
-    (x[0][i], x[1][j], x[2][k]) and the border in the direction of qth
+    (x[i], y[j], z[k]) and the border in the direction of qth
     velocity
 
     In 1D, flag[q, i] is the flag of the border reached by the point
-    x[0][i] in the direction of the qth velocity
+    x[i] in the direction of the qth velocity
 
     In 2D, flag[q, j, i] is the flag of the border reached by the point
-    (x[0][i], x[1][j]) in the direction of qth velocity
+    (x[i], y[j]) in the direction of qth velocity
 
     In 2D, flag[q, k, j, i] is the flag of the border reached by the point
-    (x[0][i], x[1][j], x[2][k]) in the direction of qth velocity
+    (x[i], y[j], z[k]) in the direction of qth velocity
 
     Warnings
     --------
@@ -130,8 +130,14 @@ class Domain(object):
       number of points in each direction
     extent : list of int
       number of points to add on each side (max velocities)
-    x : numpy array
+    coords : numpy array
       coordinates of the domain
+    x : numpy array
+      first coordinate of the domain
+    y : numpy array
+      second coordinate of the domain (None if dim<2)
+    z : numpy array
+      third coordinate of the domain (None if dim<3)
     in_or_out : numpy array
       defines the fluid and the solid part
       (fluid: value=valin, solid: value=valout)
@@ -186,11 +192,11 @@ class Domain(object):
         self.extent = np.asarray(self.stencil.vmax[:self.dim])
         debord = self.dx*(self.extent - 0.5)
         Na = np.asarray(self.N) + 2*self.extent
-        self.x = np.asarray([np.linspace(self.bounds[k][0] - debord[k],
+        self.coords = np.asarray([np.linspace(self.bounds[k][0] - debord[k],
                                          self.bounds[k][1] + debord[k],
                                          Na[k]) for k in range(self.dim)])
 
-        self.x_in = np.asarray([self.x[k][self.extent[k]:-self.extent[k]] for k in range(self.dim)])
+        self.x_in = np.asarray([self.coords[k][self.extent[k]:-self.extent[k]] for k in range(self.dim)])
 
         for k in range(self.dim):
             extra_points = (self.globalbounds[k][1] - self.globalbounds[k][0])/self.dx
@@ -212,21 +218,27 @@ class Domain(object):
 
         self.log.info(self.__str__())
 
-    # @property
-    # def x(self):
-    #     return self.coords[0]
-    #
-    # @property
-    # def y(self):
-    #     return self.coords[1]
-    #
-    # @property
-    # def z(self):
-    #     return self.coords[2]
+    @property
+    def x(self):
+        return self.coords[0]
+
+    @property
+    def y(self):
+        if self.dim > 1:
+            return self.coords[1]
+        else:
+            return None
+
+    @property
+    def z(self):
+        if self.dim > 2:
+            return self.coords[2]
+        else:
+            return None
 
     @property
     def shape(self):
-        return [x.size for x in self.x]
+        return [x.size for x in self.coords]
 
     def __str__(self):
         s = "Domain informations\n"
@@ -295,11 +307,7 @@ class Domain(object):
                              self.stencil.vmax[k] + self.N[k]) for k in range(self.dim)])
         bmin, bmax = elem.get_bounds()
 
-        #if self.dim < 3:
-        #    xbeg = np.asarray([self.x[0][0], self.x[1][0]])
-        #else:
-        #    xbeg = np.asarray([self.x[0][0], self.x[1][0], self.x[2][0]])
-        xbeg = np.asarray([self.x[k][0] for k in range(self.dim)])
+        xbeg = np.asarray([self.coords[k][0] for k in range(self.dim)])
 
         tmp = np.array((bmin - xbeg)/self.dx - self.stencil.vmax[:self.dim], np.int)
         nmin = np.maximum(indbe[:, 0], tmp)
@@ -307,10 +315,10 @@ class Domain(object):
         nmax = np.minimum(indbe[:, 1], tmp)
 
         # set the grid
-        x = self.x[0][nmin[0]:nmax[0]]
-        y = self.x[1][nmin[1]:nmax[1]]
+        x = self.coords[0][nmin[0]:nmax[0]]
+        y = self.coords[1][nmin[1]:nmax[1]]
         if self.dim == 3:
-            z = self.x[2][nmin[2]:nmax[2]]
+            z = self.coords[2][nmin[2]:nmax[2]]
 
         if self.dim == 2:
             gridx = x[:, np.newaxis]
@@ -454,7 +462,7 @@ class Domain(object):
             self.log.error(s)
 
         if self.dim == 1:
-            x = self.x[0]
+            x = self.coords[0]
             y = np.zeros(x.shape)
             vkmax = self.stencil.vmax[0]
             for k in range(self.stencil.unvtot):
@@ -500,7 +508,7 @@ class Domain(object):
                 ypercent = 0.1*(ymax-ymin)
                 view.axis(xmin-xpercent, xmax+xpercent, ymin-ypercent, ymax+ypercent)
 
-                x, y = self.x[:]
+                x, y = self.coords[:]
                 dx = self.dx
                 vxkmax, vykmax = self.stencil.vmax[:self.dim]
 
@@ -536,7 +544,7 @@ class Domain(object):
                 view.markers(np.asarray([x[indoutx], y[indouty]]).T, 500*self.dx, symbol='s')
 
         elif self.dim == 3:
-            x, y, z = self.x[:]
+            x, y, z = self.coords[:]
             dx = self.dx
             xmin, xmax = self.bounds[0][:]
             ymin, ymax = self.bounds[1][:]

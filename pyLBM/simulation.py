@@ -301,7 +301,7 @@ class Simulation(object):
         unity_name = ['d', 'h', 'm', 's']
         tcut = []
         for u in unity:
-            tcut.append(ttot/u)
+            tcut.append(ttot//u)
             ttot -= tcut[-1]*u
         #computational time measurement
         s = '*'*50
@@ -367,16 +367,16 @@ class Simulation(object):
         # else, it could be distributions
         inittype = dico.get('inittype', 'moments')
         if self.dim == 1:
-            x = self.domain.x[0]
+            x = self.domain.x
             coords = (x,)
         elif self.dim == 2:
-            x = self.domain.x[0][:, np.newaxis]
-            y = self.domain.x[1][np.newaxis, :]
+            x = self.domain.x[:, np.newaxis]
+            y = self.domain.y[np.newaxis, :]
             coords = (x, y)
         elif self.dim == 3:
-            x = self.domain.x[0][:, np.newaxis, np.newaxis]
-            y = self.domain.x[1][np.newaxis, :, np.newaxis]
-            z = self.domain.x[2][np.newaxis, np.newaxis, :]
+            x = self.domain.x[:, np.newaxis, np.newaxis]
+            y = self.domain.y[np.newaxis, :, np.newaxis]
+            z = self.domain.z[np.newaxis, np.newaxis, :]
             coords = (x, y, z)
 
         if inittype == 'moments':
@@ -421,7 +421,7 @@ class Simulation(object):
         (the array _m is modified)
         """
         t = mpi.Wtime()
-        self.scheme.relaxation(self._m, self.t, self.dt, *self.domain.x)
+        self.scheme.relaxation(self._m, self.t, self.dt, *self.domain.coords)
         self.cpu_time['relaxation'] += mpi.Wtime() - t
 
     def f2m(self):
@@ -493,7 +493,7 @@ class Simulation(object):
         tloci = mpi.Wtime()
 
         self.scheme.onetimestep(self._m, self._F, self._Fold, self.domain.in_or_out, self.domain.valin, self.t, self.dt,
-            *self.domain.x)
+            *self.domain.coords)
         self._F, self._Fold = self._Fold, self._F
         tlocf = mpi.Wtime()
         self.cpu_time['transport'] += 0.5*(tlocf-tloci)

@@ -17,7 +17,7 @@ import numpy as np
 import sympy as sp
 import pyLBM
 
-u, X, Y, Z, LA = sp.symbols('u,X,Y,Z,LA')
+u, X, Y, Z, LA = sp.symbols('u, X, Y, Z, LA')
 
 def save(x, y, z, m, im):
     init_pvd = False
@@ -80,7 +80,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
 
     sol = pyLBM.Simulation(d, sorder=sorder)
 
-    x, y, z = sol.domain.x[0], sol.domain.x[1], sol.domain.x[2]
+    x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
 
     im = 0
     while sol.t < Tf:

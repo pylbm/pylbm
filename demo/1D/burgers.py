@@ -78,7 +78,7 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
     dico1 = {
         'box':{'x':[xmin, xmax], 'label':0},
         'space_step':dx,
-        'scheme_velocity':la,
+        'scheme_velocity':LA,
         'schemes':[
             {
                 'velocities':[1,2],
@@ -99,7 +99,7 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
     dico2 = {
         'box':{'x':[xmin, xmax], 'label':0},
         'space_step':dx,
-        'scheme_velocity':la,
+        'scheme_velocity':LA,
         'schemes':[
             {
                 'velocities':list(range(3)),
@@ -128,9 +128,9 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
         ymin, ymax = min([uL,uR])-.1*abs(uL-uR), max([uL,uR])+.1*abs(uL-uR)
         ax.axis(xmin, xmax, ymin, ymax)
 
-        x1 = sol1.domain.x[0][1:-1]
+        x1 = sol1.domain.x[1:-1]
         l1 = ax.plot(x1, sol1.m[u][1:-1], width=1, color='b', label='D1Q2')[0]
-        x2 = sol2.domain.x[0][1:-1]
+        x2 = sol2.domain.x[1:-1]
         l2 = ax.plot(x2, sol2.m[u][1:-1], width=1, color='r', label='D1Q3')[0]
         le = ax.plot(x1, solution(sol1.t, x1, xmin, xmax, uL, uR), width=1, color='k', label='exact')[0]
 

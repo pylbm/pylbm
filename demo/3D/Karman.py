@@ -8,8 +8,8 @@ import sympy as sp
 import math
 import mpi4py.MPI as mpi
 
-X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
-mass, qx, qy, qz = sp.symbols('mass,qx,qy,qz')
+X, Y, Z, LA = sp.symbols('X, Y, Z, LA')
+mass, qx, qy, qz = sp.symbols('mass, qx, qy, qz')
 
 def bc_up(f, m, x, y, z):
     m[qx] = .01
@@ -48,7 +48,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     """
     la = 1.
     rho0 = 1.
-    Re = 200
+    Re = 2000
     nu = 5./Re
 
     s1 = 1.6
@@ -114,16 +114,16 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
 
     sol = pyLBM.Simulation(dico, sorder=sorder)
 
-    x, y, z = sol.domain.x[0], sol.domain.x[1], sol.domain.x[2]
+    x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
 
     im = 0
     compt = 0
     while sol.t < Tf:
         sol.one_time_step()
         compt += 1
-        if compt == 100 and withPlot:
+        if compt == 128 and withPlot:
             if mpi.COMM_WORLD.Get_rank() == 0:
-                print(sol.time_info())
+                sol.time_info()
             im += 1
             save(x, y, z, sol.m, im)
             compt = 0
@@ -131,6 +131,6 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     return sol
 
 if __name__ == '__main__':
-    dx = 1./64
+    dx = 1./128
     Tf = 200.
     run(dx, Tf)

@@ -101,7 +101,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
         ax = fig[0]
 
         nt = int(sol.domain.N[0]/2)
-        y = sol.domain.x[1][1:-1]
+        y = sol.domain.y[1:-1]
         l1 = ax.plot(y, sol.m[qx][nt, 1:-1], color='r', marker='+', label='middle slice')[0]
         l2 = ax.plot(y, rhoo*max_velocity * (1.-4.*y**2/height**2), color='k', label='exact')[0]
         ax.title = 'Velocity at t = {0:f}'.format(sol.t)

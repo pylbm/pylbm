@@ -91,7 +91,7 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
         ax2 = fig[1]
         ax2.axis(xmin, xmax, .9*yminb, 1.1*ymaxb)
 
-        x = sol.domain.x[0][1:-1]
+        x = sol.domain.x[1:-1]
         l1 = ax1.plot(x, sol.m[ua][1:-1])[0]
         l2 = ax2.plot(x, sol.m[ub][1:-1])[0]
 
