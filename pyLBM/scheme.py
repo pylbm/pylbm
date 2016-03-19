@@ -329,8 +329,16 @@ class Scheme(object):
         self.create_moments_matrices()
 
         # generate the code
+        if self._source_terms is None:
+            dummypattern = ['transport', 'relaxation']
+        else:
+            dummypattern = ['transport', ('source_term', 0.5), 'relaxation', ('source_term', 0.5)]
+        self.pattern = dico.get('split_pattern', dummypattern)
         self.generator = dico.get('generator', NumpyGenerator)()
-        self.log.info("Generator used for the scheme functions:\n{0}\n".format(self.generator))
+        ssss = "Generator used for the scheme functions:\n{0}\n".format(self.generator)
+        ssss += "with the pattern " + self.pattern.__str__() + "\n"
+        self.log.info(ssss)
+
 
         self.bc_compute = True
 
@@ -632,10 +640,6 @@ class Scheme(object):
                 for j, stij in enumerate(sti):
                     if stij is not None:
                         ST[i][j] = stij.subs(list(zip(pk, pv)))
-            # vart = None
-            # for i, pki in enumerate(pk):
-            #     if pki == 'time':
-            #         vart = pv[i]
             dicoST = {'ST':ST,
                       'vart':self.vart,
                       'varx':self.varx,
@@ -649,11 +653,14 @@ class Scheme(object):
         self.generator.setup()
         self.generator.m2f(self.invMnumGlob, 0, self.dim)
         self.generator.f2m(self.MnumGlob, 0, self.dim)
-        self.generator.onetimestep(self.stencil)
+        self.generator.onetimestep(self.stencil, self.pattern)
 
         self.generator.transport(self.nscheme, self.stencil)
         self.generator.equilibrium(self.nscheme, self.stencil, EQ)
-        self.generator.relaxation(self.nscheme, self.stencil, self.s, EQ, dicoST)
+        self.generator.relaxation(self.nscheme, self.stencil, self.s, EQ)
+        if dicoST is not None:
+            self.generator.source_term(self.nscheme, self.stencil, dicoST)
+        print(self.generator.code)
         self.generator.compile()
 
         mpi.COMM_WORLD.Barrier()

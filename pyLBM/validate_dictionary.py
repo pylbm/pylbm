@@ -217,6 +217,9 @@ def is_list_float(l, ntab=None):
 def is_2_list_int_or_float(l, ntab=None):
     return is_list_generic(l, (int, float), size=2)
 
+def is_list_string_or_tuple(l, ntab=None):
+    return is_list_generic(l, (tuple, string_types))
+
 def is_generator(d, ntab=None):
     try:
         test = issubclass(d, pyLBM.generator.base.Generator)

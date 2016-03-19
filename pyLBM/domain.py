@@ -37,6 +37,7 @@ proto_domain = {
     'boundary_conditions':(type(None), is_dico_bc),
     'generator':(type(None), is_generator),
     'ode_solver':(type(None), is_ode_solver),
+    'split_pattern': (type(None), is_list_string_or_tuple),
     'stability':(type(None), is_dico_stab),
     'consistency':(type(None), is_dico_cons),
     'inittype':(type(None),) + string_types,

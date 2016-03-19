@@ -145,7 +145,7 @@ class NumpyGenerator(Generator):
             self.code += INDENT + "pass\n"
         self.code += "\n"
 
-    def relaxation(self, ns, stencil, s, eq, dicoST = None, dtype = 'f8'):
+    def relaxation(self, ns, stencil, s, eq, dtype = 'f8'):
         """
         generate the code of the relaxation phase
 
@@ -160,8 +160,6 @@ class NumpyGenerator(Generator):
           the values of the relaxation parameters
         eq : sympy matrix
           the equilibrium (formally given)
-        dicoST : dictionary
-          the dictionary for the source term
         dtype : string, optional
           the type of the data (default 'f8')
 
@@ -171,10 +169,7 @@ class NumpyGenerator(Generator):
         code : string
           add the relaxation phase in the attribute ``code``.
         """
-        # long variables to avoid crazy replacement
-        var_time = sp.Symbol('var_time')
-        varx, vary, varz = str(dicoST['varx']), str(dicoST['vary']), str(dicoST['varz'])
-        self.code += "def relaxation(m, tn=0., k=0., {0}=0, {1}=0, {2}=0):\n".format(varx, vary, varz)
+        self.code += "def relaxation(m):\n"
 
         def sub_slices(g):
             slices = [':']*len(self.sorder)
@@ -185,8 +180,65 @@ class NumpyGenerator(Generator):
 
         slices = [':']*len(self.sorder)
 
+        # relaxation code
         dummy_test = True
-        # half of the source term code
+        code_relaxation = ''
+        for k in range(ns):
+            for i in range(stencil.nv[k]):
+                if str(eq[k][i]) != "m[%d][%d]"%(k,i):
+                    slices[self.sorder[0]] = str(stencil.nv_ptr[k] + i)
+                    if eq[k][i] != 0:
+                        res = reduce(lambda x, y: x.replace(y, dictionnary_of_translation_numpy[y]),
+                                     dictionnary_of_translation_numpy, str(eq[k][i]))
+                        res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub_slices, res)
+                        code_relaxation += INDENT + "m[{0}] += {1:.16f}*({2} - m[{0}])\n".format(', '.join(slices), s[k][i], res)
+                    else:
+                        code_relaxation += INDENT + "m[{0}] *= (1. - {1:.16f})\n".format(', '.join(slices), s[k][i])
+                    dummy_test = False
+
+        self.code += code_relaxation
+        if dummy_test:
+            self.code += INDENT + "pass\n"
+        self.code += "\n"
+
+    def source_term(self, ns, stencil, dicoST = None, dtype = 'f8'):
+        """
+        generate the code to integrate the source term
+
+        Parameters
+        ----------
+
+        ns : int
+          the number of elementary schemes
+        stencil : :py:class:`Stencil<pyLBM.stencil.Stencil>`
+          the stencil of velocities
+        dicoST : dictionary
+          the dictionary for the source term
+        dtype : string, optional
+          the type of the data (default 'f8')
+
+        Returns
+        -------
+
+        code : string
+          add the source term integration in the attribute ``code``.
+        """
+        # long variables to avoid crazy replacement
+        var_time = sp.Symbol('var_time')
+        varx, vary, varz = str(dicoST['varx']), str(dicoST['vary']), str(dicoST['varz'])
+        self.code += "def source_term(m, tn=0., k=0., {0}=0, {1}=0, {2}=0):\n".format(varx, vary, varz)
+
+        def sub_slices(g):
+            slices = [':']*len(self.sorder)
+            i = int(g.group('i'))
+            j = int(g.group('j'))
+            slices[self.sorder[0]] = str(stencil.nv_ptr[i] + j)
+            return '[%s]'%(', '.join(slices))
+
+        slices = [':']*len(self.sorder)
+
+        # the source term code
+        dummy_test = True
         test_source_term = False
         if dicoST is not None:
             st = dicoST['ST']
@@ -211,27 +263,12 @@ class NumpyGenerator(Generator):
                             f.append(str(st[k][i]))
             if test_source_term:
                 dummy_test = False
-                ode_solver.parameters(indices_m, f, var_time, dt='0.5*k', indent=INDENT, add_copy = ".copy()")
+                ode_solver.parameters(indices_m, f, var_time, dt='k', indent=INDENT, add_copy = ".copy()")
                 code_source_term = ode_solver.cpt_code()
                 code_source_term = reduce(lambda x, y: x.replace(y, dictionnary_of_translation_numpy[y]),
                                           dictionnary_of_translation_numpy, code_source_term)
                 code_source_term = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub_slices, code_source_term)
                 code_source_term = re.sub(str(var_time), 'tn', code_source_term)
-
-        # relaxation code
-        code_relaxation = ''
-        for k in range(ns):
-            for i in range(stencil.nv[k]):
-                if str(eq[k][i]) != "m[%d][%d]"%(k,i):
-                    slices[self.sorder[0]] = str(stencil.nv_ptr[k] + i)
-                    if eq[k][i] != 0:
-                        res = reduce(lambda x, y: x.replace(y, dictionnary_of_translation_numpy[y]),
-                                     dictionnary_of_translation_numpy, str(eq[k][i]))
-                        res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub_slices, res)
-                        code_relaxation += INDENT + "m[{0}] += {1:.16f}*({2} - m[{0}])\n".format(', '.join(slices), s[k][i], res)
-                    else:
-                        code_relaxation += INDENT + "m[{0}] *= (1. - {1:.16f})\n".format(', '.join(slices), s[k][i])
-                    dummy_test = False
 
         if test_source_term:
             N = ode_solver.nb_of_floors
@@ -240,10 +277,6 @@ class NumpyGenerator(Generator):
                 for k in range(N):
                     self.code += INDENT + 'dummy{1:1d} = [np.zeros(m[0][0].shape)]*{0}\n'.format(len(indices_m), k)
             self.code += code_source_term
-            self.code += code_relaxation
-            self.code += code_source_term
-        else:
-            self.code += code_relaxation
         if dummy_test:
             self.code += INDENT + "pass\n"
         self.code += "\n"
@@ -315,12 +348,53 @@ class NumpyGenerator(Generator):
         self.code += matMult(A, 'f', 'm', self.sorder, indent=' '*4)
         self.code += "\n"
 
-    def onetimestep(self, stencil):
-        self.code += """
-def onetimestep(m, f, fnew, in_or_out, valin, tn=0., dt=0., x=0, y=0, z=0):
-    transport(f)
-    f2m(f, m)
-    relaxation(m, tn, dt, x, y, z)
-    m2f(m, f)
+    def onetimestep(self, stencil, pattern):
+        """
+        generate the code for one time step of the Lattice Boltzmann method
 
-"""
+        Parameters
+        ----------
+
+        stencil : :py:class:`Stencil<pyLBM.stencil.Stencil>`
+          the stencil of velocities
+        pattern : list
+          the list of the different phases
+
+        Returns
+        -------
+        code : string
+          add the onetimestep function in the attribute ``code``.
+
+        """
+        self.code += "def onetimestep(m, f, fnew, in_or_out, valin, tn=0., dt=0., x=0, y=0, z=0):\n"
+        is_f = True
+        is_m = True
+        for p in pattern:
+            if isinstance(p, str):
+                pm = p
+                pv = 0
+            elif isinstance(p, tuple):
+                pm = p[0]
+                pv = p[1]
+            if pm == 'transport':
+                if not is_f:
+                    self.code += INDENT + "m2f(m, f)\n"
+                self.code += INDENT + "transport(f)\n"
+                is_m, is_f = False, True
+            elif pm == 'relaxation':
+                if not is_m:
+                    self.code += INDENT + "f2m(f, m)\n"
+                self.code += INDENT + "relaxation(m)\n"
+                is_m, is_f = True, False
+            elif pm == 'source_term':
+                if not is_m:
+                    self.code += INDENT + "f2m(f, m)\n"
+                self.code += INDENT + "source_term(m, tn, {0}*dt, x, y, z)\n".format(pv)
+                is_m, is_f = True, False
+            else:
+                self.log.error('The pattern ' + pm.__str__() + ' is not known\n')
+        if not is_m:
+            self.code += INDENT + "f2m(f, m)\n"
+        if not is_f:
+            self.code += INDENT + "m2f(m, f)\n"
+        self.code += INDENT + '\n'

@@ -46,6 +46,7 @@ proto_simu = {
     'boundary_conditions':(type(None), is_dico_bc),
     'generator':(type(None), is_generator),
     'ode_solver':(type(None), is_ode_solver),
+    'split_pattern': (type(None), is_list_string_or_tuple),
     'stability':(type(None), is_dico_stab),
     'consistency':(type(None), is_dico_cons),
     'inittype':(type(None),) + string_types,
@@ -236,14 +237,16 @@ class Simulation(object):
         self.initialization(dico)
 
         #computational time measurement
-        self.cpu_time = {'relaxation':0.,
-                         'transport':0.,
-                         'f2m_m2f':0.,
-                         'boundary_conditions':0.,
-                         'total':0.,
-                         'number_of_iterations':0,
-                         'MLUPS':0.,
-                         }
+        self.cpu_time = {
+            'relaxation':0.,
+            'source_term':0.,
+            'transport':0.,
+            'f2m_m2f':0.,
+            'boundary_conditions':0.,
+            'total':0.,
+            'number_of_iterations':0,
+            'MLUPS':0.,
+        }
 
     @utils.itemproperty
     def m(self, i):
@@ -329,6 +332,8 @@ class Simulation(object):
             ttotal = t['total']
         s += '\n* ' + '-'*46 + ' *'
         s += '\n* relaxation         : {0:2d}%'.format(int(100*t['relaxation']/ttotal))
+        s += ' '*23 + '*'
+        s += '\n* source term        : {0:2d}%'.format(int(100*t['source_term']/ttotal))
         s += ' '*23 + '*'
         s += '\n* transport          : {0:2d}%'.format(int(100*t['transport']/ttotal))
         s += ' '*23 + '*'
@@ -421,8 +426,17 @@ class Simulation(object):
         (the array _m is modified)
         """
         t = mpi.Wtime()
-        self.scheme.relaxation(self._m, self.t, self.dt, *self.domain.coords)
+        self.scheme.relaxation(self._m)
         self.cpu_time['relaxation'] += mpi.Wtime() - t
+
+    def source_term(self):
+        """
+        compute the source term phase on moments
+        (the array _m is modified)
+        """
+        t = mpi.Wtime()
+        self.scheme.source_term(self._m, self.t, self.dt, *self.domain.coords)
+        self.cpu_time['source_term'] += mpi.Wtime() - t
 
     def f2m(self):
         """
@@ -496,8 +510,9 @@ class Simulation(object):
             *self.domain.coords)
         self._F, self._Fold = self._Fold, self._F
         tlocf = mpi.Wtime()
-        self.cpu_time['transport'] += 0.5*(tlocf-tloci)
-        self.cpu_time['relaxation'] += 0.5*(tlocf-tloci)
+        self.cpu_time['transport'] += 0.2*(tlocf-tloci)
+        self.cpu_time['relaxation'] += 0.4*(tlocf-tloci)
+        self.cpu_time['relaxation'] += 0.4*(tlocf-tloci)
         t2 = mpi.Wtime()
         self.cpu_time['total'] += t2 - t1
         self.cpu_time['number_of_iterations'] += 1

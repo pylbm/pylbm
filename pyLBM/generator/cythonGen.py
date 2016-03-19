@@ -291,7 +291,7 @@ from libc.stdlib cimport malloc, free
             self.code += indent + "pass\n"
         self.code += "\n"
 
-    def relaxation(self, ns, stencil, s, eq, dicoST = None, dtype = 'f8'):
+    def relaxation(self, ns, stencil, s, eq, dtype = 'f8'):
         """
         generate the code of the relaxation phase
 
@@ -306,8 +306,6 @@ from libc.stdlib cimport malloc, free
           the values of the relaxation parameters
         eq : sympy matrix
           the equilibrium (formally given)
-        dicoST : dictionary
-          the dictionary for the source term
         dtype : string, optional
           the type of the data (default 'f8')
 
@@ -317,9 +315,7 @@ from libc.stdlib cimport malloc, free
         code : string
           add the relaxation phase in the attribute ``code``.
         """
-        var_time = sp.Symbol('var_time') # long variable for the time to avoid crazy replacement
-        varx, vary, varz = str(dicoST['varx']), str(dicoST['vary']), str(dicoST['varz'])
-        self.code += "cdef void relaxation(double *m, double tn, double k, double {0}, double {1}, double {2}) nogil:\n".format(varx, vary, varz)
+        self.code += "cdef void relaxation(double *m) nogil:\n"
 
         def sub_pow(g):
             s = '(' + g.group('m')
@@ -334,8 +330,70 @@ from libc.stdlib cimport malloc, free
 
             return '[' + str(stencil.nv_ptr[i] + j) + ']'
 
+        # relaxation code
         dummy_test = True
-        # half of the source term code
+        code_relaxation = ''
+        for k in range(ns):
+            for i in range(stencil.nv[k]):
+                if str(eq[k][i]) != "m[%d][%d]"%(k,i):
+                    if eq[k][i] != 0:
+                        str2input = str(eq[k][i])
+                        res = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", sub_pow, str2input)
+                        res = reduce(lambda x, y: x.replace(y, dictionnary_of_translation_cython[y]),
+                                     dictionnary_of_translation_cython, res)
+                        res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub_slices, res)
+                        code_relaxation += INDENT + "m[{0:d}] += {1:.16f}*({2} - m[{0:d}])\n".format(stencil.nv_ptr[k] + i, s[k][i], res)
+                    else:
+                        code_relaxation += INDENT + "m[{0:d}] *= (1. - {1:.16f})\n".format(stencil.nv_ptr[k] + i, s[k][i])
+                    dummy_test = False
+
+        self.code += code_relaxation
+        if dummy_test:
+            self.code += INDENT + "pass\n"
+        self.code += "\n"
+
+
+    def source_term(self, ns, stencil, dicoST = None, dtype = 'f8'):
+        """
+        generate the code of the relaxation phase
+
+        Parameters
+        ----------
+
+        ns : int
+          the number of elementary schemes
+        stencil : :py:class:`Stencil<pyLBM.stencil.Stencil>`
+          the stencil of velocities
+        dicoST : dictionary
+          the dictionary for the source term
+        dtype : string, optional
+          the type of the data (default 'f8')
+
+        Returns
+        -------
+
+        code : string
+          add the relaxation phase in the attribute ``code``.
+        """
+        var_time = sp.Symbol('var_time') # long variable for the time to avoid crazy replacement
+        varx, vary, varz = str(dicoST['varx']), str(dicoST['vary']), str(dicoST['varz'])
+        self.code += "cdef void source_term(double *m, double tn, double k, double {0}, double {1}, double {2}) nogil:\n".format(varx, vary, varz)
+
+        def sub_pow(g):
+            s = '(' + g.group('m')
+            for i in range(int(g.group('pow')) - 1):
+                s += '*' + g.group('m')
+            s += ')'
+            return s
+
+        def sub_slices(g):
+            i = int(g.group('i'))
+            j = int(g.group('j'))
+
+            return '[' + str(stencil.nv_ptr[i] + j) + ']'
+
+        # the source term code
+        dummy_test = True
         test_source_term = False
         if dicoST is not None:
             st = dicoST['ST']
@@ -360,29 +418,13 @@ from libc.stdlib cimport malloc, free
                             f.append(str(st[k][i]))
             if test_source_term:
                 dummy_test = False
-                ode_solver.parameters(indices_m, f, var_time, dt='0.5*k', indent=INDENT, add_copy='')
+                ode_solver.parameters(indices_m, f, var_time, dt='k', indent=INDENT, add_copy='')
                 code_source_term = ode_solver.cpt_code()
                 code_source_term = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", sub_pow, code_source_term)
                 code_source_term = reduce(lambda x, y: x.replace(y, dictionnary_of_translation_cython[y]),
                                           dictionnary_of_translation_cython, code_source_term)
                 code_source_term = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub_slices, code_source_term)
                 code_source_term = re.sub(str(var_time), 'tn', code_source_term)
-
-        # relaxation code
-        code_relaxation = ''
-        for k in range(ns):
-            for i in range(stencil.nv[k]):
-                if str(eq[k][i]) != "m[%d][%d]"%(k,i):
-                    if eq[k][i] != 0:
-                        str2input = str(eq[k][i])
-                        res = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", sub_pow, str2input)
-                        res = reduce(lambda x, y: x.replace(y, dictionnary_of_translation_cython[y]),
-                                     dictionnary_of_translation_cython, res)
-                        res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub_slices, res)
-                        code_relaxation += INDENT + "m[{0:d}] += {1:.16f}*({2} - m[{0:d}])\n".format(stencil.nv_ptr[k] + i, s[k][i], res)
-                    else:
-                        code_relaxation += INDENT + "m[{0:d}] *= (1. - {1:.16f})\n".format(stencil.nv_ptr[k] + i, s[k][i])
-                    dummy_test = False
 
         if test_source_term:
             N = ode_solver.nb_of_floors
@@ -391,15 +433,11 @@ from libc.stdlib cimport malloc, free
                 for k in range(N):
                     self.code += 2*INDENT + 'double dummy{1:1d}[{0}]\n'.format(len(indices_m), k)
             self.code += code_source_term
-            self.code += code_relaxation
-            self.code += code_source_term
-        else:
-            self.code += code_relaxation
         if dummy_test:
             self.code += INDENT + "pass\n"
         self.code += "\n"
 
-    def onetimestep(self, stencil):
+    def onetimestep(self, stencil, pattern):
         """
         generate the code for one time step of the Lattice Boltzmann method
 
@@ -408,6 +446,8 @@ from libc.stdlib cimport malloc, free
 
         stencil : :py:class:`Stencil<pyLBM.stencil.Stencil>`
           the stencil of velocities
+        pattern : list
+          the list of the different phases
 
         Returns
         -------
@@ -447,7 +487,9 @@ def onetimestep(double[{0}::1] m, double[{0}::1] f, double[{0}::1] fnew, double[
         indent += INDENT
         self.code += indent + "get_f(floc, f, {0})\n".format(', '.join(['i' + str(i) for i in range(stencil.dim)]))
         self.code += indent + "f2m_loc(floc, mloc)\n"
-        self.code += indent + "relaxation(mloc, tn, dt, xloc, yloc, zloc)\n"
+        self.code += indent + "source_term(mloc, tn, dt, xloc, yloc, zloc)\n"
+        self.code += indent + "relaxation(mloc)\n"
+        self.code += indent + "source_term(mloc, tn, dt, xloc, yloc, zloc)\n"
         self.code += indent + "m2f_loc(mloc, floc)\n"
         self.code += indent + "set_f(floc, fnew, {0})\n".format(', '.join(['i' + str(i) for i in range(stencil.dim)]))
 

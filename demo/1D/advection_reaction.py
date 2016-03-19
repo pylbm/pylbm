@@ -77,6 +77,7 @@ def run(dt, Tf,
         ],
         'generator': generator,
         'ode_solver': ode_solver,
+        'split_pattern': [('source_term', 0.5), 'transport', 'relaxation', ('source_term', 0.5)],
         'parameters': {LA: la, C: c, MU: mu, 'time': t, 'space_x': XX},
     }
 
@@ -109,6 +110,7 @@ def run(dt, Tf,
         while sol.t < Tf:
             sol.one_time_step()
 
+    sol.time_info()
     return np.linalg.norm(sol.m[u][1:-1] - solution(sol.t, sol.domain.x[1:-1], xmin, xmax, c, mu), np.inf)
 
 if __name__ == '__main__':

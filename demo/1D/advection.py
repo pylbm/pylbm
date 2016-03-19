@@ -63,6 +63,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
         },
         ],
         'generator': generator,
+        'split_pattern': ['transport', 'relaxation'],
         'parameters': {LA: la},
     }
 
@@ -100,4 +101,4 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
 if __name__ == '__main__':
     dx = 1./128
     Tf = 1.
-    sol = run(dx, Tf)
+    sol = run(dx, Tf, generator = pyLBM.generator.NumpyGenerator)
