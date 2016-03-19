@@ -230,11 +230,20 @@ class Scheme(object):
         self.dt = self.dx / self.la
 
         # fix the variables of time and space
+        self.vart, self.varx, self.vary, self.varz = None, None, None, None
         if self.param is not None:
-            self.vart = self.param.get('time', sp.Symbol('t'))
-            self.varx = self.param.get('space_x', sp.Symbol('X'))
-            self.vary = self.param.get('space_y', sp.Symbol('Y'))
-            self.varz = self.param.get('space_z', sp.Symbol('Z'))
+            self.vart = self.param.get('time', None)
+            self.varx = self.param.get('space_x', None)
+            self.vary = self.param.get('space_y', None)
+            self.varz = self.param.get('space_z', None)
+        if self.vart is None:
+            self.vart = sp.Symbol('t')
+        if self.varx is None:
+            self.varx = sp.Symbol('X')
+        if self.vary is None:
+            self.vary = sp.Symbol('Y')
+        if self.varz is None:
+            self.varz = sp.Symbol('Z')
 
         self.nscheme = self.stencil.nstencils
         scheme = dico['schemes']
@@ -660,7 +669,7 @@ class Scheme(object):
         self.generator.relaxation(self.nscheme, self.stencil, self.s, EQ)
         if dicoST is not None:
             self.generator.source_term(self.nscheme, self.stencil, dicoST)
-        print(self.generator.code)
+        #print(self.generator.code)
         self.generator.compile()
 
         mpi.COMM_WORLD.Barrier()

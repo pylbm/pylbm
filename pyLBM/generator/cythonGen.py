@@ -455,6 +455,13 @@ from libc.stdlib cimport malloc, free
           add the onetimestep function in the attribute ``code``.
 
         """
+        # search if there is source terms in the pattern
+        # HAS TO BE FIX FOR GOOD pattern
+        is_source = False
+        for p in pattern:
+            if isinstance(p, tuple):
+                if p[0] == 'source_term':
+                    is_source = True
         s = ':, '*stencil.dim
         ext = s[:-2]
         #dummy1 = ["double[{0}] x".format(':'), "double[{0}] y".format(':'), "double[{0}] z".format(':')]
@@ -487,9 +494,11 @@ def onetimestep(double[{0}::1] m, double[{0}::1] f, double[{0}::1] fnew, double[
         indent += INDENT
         self.code += indent + "get_f(floc, f, {0})\n".format(', '.join(['i' + str(i) for i in range(stencil.dim)]))
         self.code += indent + "f2m_loc(floc, mloc)\n"
-        self.code += indent + "source_term(mloc, tn, dt, xloc, yloc, zloc)\n"
+        if is_source:
+            self.code += indent + "source_term(mloc, tn, {0}*dt, xloc, yloc, zloc)\n".format(0.5)
         self.code += indent + "relaxation(mloc)\n"
-        self.code += indent + "source_term(mloc, tn, dt, xloc, yloc, zloc)\n"
+        if is_source:
+            self.code += indent + "source_term(mloc, tn, {0}*dt, xloc, yloc, zloc)\n".format(0.5)
         self.code += indent + "m2f_loc(mloc, floc)\n"
         self.code += indent + "set_f(floc, fnew, {0})\n".format(', '.join(['i' + str(i) for i in range(stencil.dim)]))
 
