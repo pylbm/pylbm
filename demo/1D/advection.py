@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 """
  Solver D1Q2 for the advection equation on the 1D-torus
 

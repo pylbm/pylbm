@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 """
  Solver D1Q2Q2 for the p-system on [0, 1]
 

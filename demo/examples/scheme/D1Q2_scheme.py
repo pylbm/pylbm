@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import division
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -26,3 +27,4 @@ d = {
 }
 s = pyLBM.Scheme(d)
 print(s)
+print(s.generator.code)

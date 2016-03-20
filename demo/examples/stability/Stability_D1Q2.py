@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -54,7 +56,7 @@ def vp_plot(ux):
             if rloc>R+1.e-14:
                 R = rloc
         if R>1+1.e-14:
-            print "instable scheme for s={0:5.3f}".format(s)
+            print("instable scheme for s={0:5.3f}".format(s))
         plt.hold(False)
         plt.title('eigenvalues for $s = {0:5.3f}$'.format(s))
         plt.pause(1.e-1)
@@ -72,7 +74,7 @@ def stability_array():
     nb_calcul = 0
     mR, nb_calcul = stability_array_recur(vs, vux, mR, [0,Nu,0,Ns], nb_calcul)
     plt.hold(False)
-    print "Number of stability computations: {0:d}".format(nb_calcul)
+    print("Number of stability computations: {0:d}".format(nb_calcul))
     plt.show()
 
 def stability_array_recur(vs, vux, mR, l, nb_calcul):

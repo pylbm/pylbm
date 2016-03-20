@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import division
 """
  Solver D2Q(4,4,4) for a Poiseuille flow
 

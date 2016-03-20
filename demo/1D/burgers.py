@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 """
  Solver D1Q2 and D1Q3 for the Burger's equation on [-1, 1]
 

@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 """
  Solver D3Q6 for the advection equation on the 3D-torus
 

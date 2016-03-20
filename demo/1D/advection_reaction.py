@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 """
  Solver D1Q2 for the advection reaction equation on the 1D-torus
 
@@ -7,8 +9,6 @@
 
  test: True
 """
-from __future__ import print_function
-from __future__ import division
 from six.moves import range
 import numpy as np
 from scipy import stats

@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -7,11 +9,12 @@
 """
 Example of a 19 velocities scheme in 3D
 """
+from six.moves import range
 import pyLBM
 dsten = {
     'dim':3,
-    'schemes':[{'velocities':range(19)},],
+    'schemes':[{'velocities':list(range(19))},],
 }
 s = pyLBM.Stencil(dsten)
-print s
+print(s)
 s.visualize(pyLBM.viewer.matplotlibViewer)
