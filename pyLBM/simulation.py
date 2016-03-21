@@ -30,7 +30,7 @@ from . import utils
 from .validate_dictionary import *
 
 from .logs import setLogger
-from .storage import Array, AOS, SOA
+from .storage import Array, Array_in, AOS, SOA
 from .generator import NumpyGenerator
 
 
@@ -221,6 +221,9 @@ class Simulation(object):
         self._m.set_conserved_moments(self.scheme.consm, self.domain.stencil.nv_ptr)
         self._F.set_conserved_moments(self.scheme.consm, self.domain.stencil.nv_ptr)
 
+        self._m_in = Array_in(self._m)
+        self._F_in = Array_in(self._F)
+
         self.scheme.generate(sorder)
         # be sure that process 0 generate the code
 
@@ -246,41 +249,46 @@ class Simulation(object):
                          }
 
     @utils.itemproperty
-    def m(self, i):
+    def m_halo(self, i):
         if self._update_m:
             self._update_m = False
             self.f2m()
         return self._m[i]
 
-    @utils.itemproperty
-    def m_in(self, i):
-        if self._update_m:
-            self._update_m = False
-            self.f2m()
-        vmax = np.asarray(self.domain.stencil.vmax[:self.dim])
-        if self.dim == 1:
-            return self._m[i][vmax[0]:-vmax[0]]
-        elif self.dim == 2:
-            return self._m[i][vmax[0]:-vmax[0]]
-        elif self.dim == 3:
-            return self._m[i][vmax[0]:-vmax[0]]
-        else:
-            self.log.error('m_in: the dimension is greater than 3\n')
-            sys.exit()
-
-    @m.setter
-    def m(self, i, value):
+    @m_halo.setter
+    def m_halo(self, i, value):
         self._update_m = False
         self._m[i] = value
 
     @utils.itemproperty
-    def F(self, i):
+    def m(self, i):
+        if self._update_m:
+            self._update_m = False
+            self.f2m()
+        return self._m_in[i]
+
+    @m.setter
+    def m(self, i, value):
+        self._update_m = False
+        self._m_in[i] = value
+
+    @utils.itemproperty
+    def F_halo(self, i):
         return self._F[i]
+
+    @F_halo.setter
+    def F_halo(self, i, value):
+        self._update_m = True
+        self._F[i] = value
+
+    @utils.itemproperty
+    def F(self, i):
+        return self._F_in[i]
 
     @F.setter
     def F(self, i, value):
         self._update_m = True
-        self._F[i] = value
+        self._F_in[i] = value
 
     def __str__(self):
         s = "Simulation informations\n"

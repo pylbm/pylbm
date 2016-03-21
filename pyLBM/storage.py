@@ -35,7 +35,7 @@ class Array(object):
         for i in range(len(shape)):
             shape[ind[i]] = tmpshape[i]
         self.array = np.zeros((shape), dtype=dtype)
-
+        
         dim = len(nspace)
         self.swaparray = self.array
         for i in range(dim + 1):
@@ -49,7 +49,7 @@ class Array(object):
             self._set_subarray()
 
     def __getitem__(self, key):
-        if isinstance(key , sp.Symbol):
+        if isinstance(key, sp.Symbol):
             return self.swaparray[self.consm[key]]
         return self.swaparray[key]
 
@@ -63,6 +63,22 @@ class Array(object):
         self.consm = {}
         for k, v in consm.items():
             self.consm[k] = nv_ptr[v[0]] + v[1]
+
+    def get_global_array(self):
+        size = np.asarray(self.cartcomm.gather(self.nspace, 0))
+        topo = self.cartcomm.Get_topo()
+        recvbuf = [[], mpi.DOUBLE]
+        garray = None
+        if self.cartcomm.Get_rank() == 0:
+            size.shape = topo[0] + [self.dim]
+            n = []
+            #get global size
+            for i in range(self.dim):
+                n.append(np.sum(size[..., i], axis=i)[0] - 2*self.vmax[i]*(size.shape[i]-1))
+            garray = np.empty([self.nv] + n)
+            recvbuf = [garray, mpi.DOUBLE]
+        self.cartcomm.Gather([np.ascontiguousarray(self.swaparray[:, 1:-1, 1:-1]), mpi.DOUBLE], recvbuf, root=0)
+        return garray
 
     @property
     def nspace(self):
@@ -79,6 +95,10 @@ class Array(object):
     @property
     def size(self):
         return self.array.size
+
+    @property
+    def dim(self):
+        return len(self.nspace)
 
     def _set_subarray(self):
         """
@@ -249,6 +269,18 @@ class AOS(Array):
     def reshape(self):
         return self.array.reshape((np.prod(self.nspace), self.nv))
 
+class Array_in(Array):
+    def __init__(self, array):
+        self.log = setLogger(__name__)
+        self.vmax = array.vmax
+        self.consm = array.consm
+
+        ind = [slice(None)]
+        for vmax in array.vmax:
+            ind.append(slice(vmax, -vmax))
+        ind = np.asarray(ind)
+        self.swaparray = array.swaparray[tuple(ind)]
+        self.array = array.array[tuple(ind[array.sorder])]
 
 def get_directions(dim):
     """
@@ -313,10 +345,10 @@ def get_tags(dim):
 if __name__ == '__main__':
     nrep = 100
     nx, ny, nz, nv = 2, 3, 5, 4
-    f = SOA(nv, [nx, ny])
+    f = SOA(nv, [nx, ny], [1, 1])
     tt = np.arange(f.size).reshape(f.shape)
 
-    a1 = Array(nv, [nx, ny])
+    a1 = Array(nv, [nx, ny], [1, 1])
     a1[1:3, :2, 1:] = 1
     print(a1.shape)
     #print a1.array
