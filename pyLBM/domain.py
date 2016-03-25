@@ -30,7 +30,7 @@ proto_domain = {
     'box':(is_dico_box,),
     'elements':(type(None), is_list_elem),
     'dim':(type(None), int),
-    'space_step':(int, float,),
+    'space_step':(int, float, sp.Symbol),
     'scheme_velocity':(type(None), int, float, sp.Symbol),
     'parameters':(type(None), is_dico_sp_sporfloat),
     'schemes':(is_list_sch_dom,),

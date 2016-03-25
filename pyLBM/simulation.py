@@ -39,7 +39,7 @@ proto_simu = {
     'box':(is_dico_box,),
     'elements':(type(None), is_list_elem),
     'dim':(type(None), int),
-    'space_step':(float,),
+    'space_step':(int, float, sp.Symbol),
     'scheme_velocity':(int, float, sp.Symbol),
     'parameters':(type(None), is_dico_sp_sporfloat),
     'schemes':(is_list_sch,),
@@ -157,6 +157,8 @@ class Simulation(object):
         else:
             self.log.error(aff)
             sys.exit()
+
+        self.name = dico.get('name', None)
 
         self.log.info('Build the domain')
         try:
@@ -286,7 +288,10 @@ class Simulation(object):
         self._F[i] = value
 
     def __str__(self):
-        s = "Simulation informations\n"
+        s = "Simulation informations: "
+        if self.name is not None:
+            s += "[ " + self.name + " ]"
+        s += '\n'
         s += self.domain.__str__()
         s += self.scheme.__str__()
         return s
