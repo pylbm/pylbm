@@ -156,9 +156,78 @@ class Domain(object):
 
 
     """
+    valin = 999  # value in the fluid domain
+    valout = -1   # value in the solid domain
+
     def __init__(self, dico=None, geometry=None, stencil=None, space_step=None, verif=True):
         self.log = setLogger(__name__)
 
+        self.check_dictionary(dico)
+
+        self.geom = Geometry(dico) if geometry is None else geometry
+        self.stencil = Stencil(dico) if stencil is None else stencil
+        self.dx = dico['space_step'] if space_step is None else space_step
+        self.dim = self.geom.dim
+
+        self.create_coords()
+
+        get_shape = lambda x: int((x[1] - x[0] + .5*self.dx)/self.dx)
+        self.Ng = list(map(get_shape, self.geom.globalbounds))
+        self.N = list(map(get_shape, self.geom.bounds))
+        
+        # distance to the borders
+        total_size = [self.stencil.unvtot] + self.shape_halo
+        self.in_or_out = self.valin*np.ones(self.shape_halo)
+        self.distance = self.valin*np.ones(total_size)
+        self.flag = self.valin*np.ones(total_size, dtype = 'int')
+
+        self.__add_init(self.geom.box_label) # compute the distance and the flag for the primary box
+        for elem in self.geom.list_elem: # treat each element of the geometry
+            self.__add_elem(elem)
+
+        self.log.info(self.__str__())
+
+    @property
+    def shape_halo(self):
+        return [c.size for c in self.coords_halo]
+
+    @property
+    def shape_in(self):
+        return [c.size for c in self.coords]
+
+    @property
+    def x(self):
+        return self.coords[0]
+
+    @property
+    def y(self):
+        return self.coords[1]
+
+    @property
+    def z(self):
+        return self.coords[2]
+
+    @property
+    def x_halo(self):
+        return self.coords_halo[0]
+
+    @property
+    def y_halo(self):
+        return self.coords_halo[1]
+
+    @property
+    def z_halo(self):
+        return self.coords_halo[2]
+
+    def __str__(self):
+        s = "Domain informations\n"
+        s += "\t spatial dimension: {0:d}\n".format(self.dim)
+        #s += "\t bounds of the box: bounds = " + self.bounds.__str__() + "\n"
+        s += "\t space step: dx={0:10.3e}\n".format(self.dx)
+        #s += "\t Number of points in each direction: N=" + self.N.__str__() + ", Na=" + self.Na.__str__() + "\n"
+        return s
+
+    def check_dictionary(self, dico):
         if dico is not None:
             self.log.info('Check the dictionary')
             test, aff = validate(dico, proto_domain, test_comp = False)
@@ -168,63 +237,45 @@ class Domain(object):
                 self.log.error(aff)
                 sys.exit()
 
-        self.geom = Geometry(dico) if geometry is None else geometry
-        self.stencil = Stencil(dico) if stencil is None else stencil
-        self.dx = dico['space_step'] if space_step is None else space_step
+    def create_coords(self):
+        phys_box = self.geom.globalbounds # the physical box where the domain lies
 
-        self.dim = self.geom.dim
-
-        self.globalbounds = self.geom.globalbounds # the box where the domain lies
-        self.bounds = self.geom.bounds # the local box of the process
-
-        get_shape = lambda x: int((x[1] - x[0] + .5*self.dx)/self.dx)
-        self.Ng = list(map(get_shape, self.globalbounds[:self.dim]))
-        self.N = list(map(get_shape, self.bounds[:self.dim]))
-
-        # spatial mesh
-        self.extent = np.asarray(self.stencil.vmax[:self.dim])
-        debord = self.dx*(self.extent - 0.5)
-        Na = np.asarray(self.N) + 2*self.extent
-        self.x = np.asarray([np.linspace(self.bounds[k][0] - debord[k],
-                                         self.bounds[k][1] + debord[k],
-                                         Na[k]) for k in range(self.dim)])
-
-        self.x_in = np.asarray([self.x[k][self.extent[k]:-self.extent[k]] for k in range(self.dim)])
-
+        # validation of the space step with the physical box size
         for k in range(self.dim):
-            extra_points = (self.globalbounds[k][1] - self.globalbounds[k][0])/self.dx
+            extra_points = (phys_box[k][1] - phys_box[k][0])/self.dx
             if not extra_points.is_integer():
                 self.log.error('The length of the box in the direction {0} must be a multiple of the space step'.format(k))
+                sys.exit()
 
-        # distance to the borders
-        self.valin = 999  # value in the fluid domain
-        self.valout = -1   # value in the solid domain
+        local_phys_box = self.geom.bounds # the local physical box of the process
 
-        s2 = np.concatenate(([self.stencil.unvtot], Na))
-        self.in_or_out = self.valin*np.ones(Na)
-        self.distance = self.valin*np.ones(s2)
-        self.flag = self.valin*np.ones(s2, dtype = 'int')
+        get_shape = lambda x: int((x[1] - x[0] + .5*self.dx)/self.dx)
+        local_phys_box_size = list(map(get_shape, local_phys_box))
 
-        self.__add_init(self.geom.box_label) # compute the distance and the flag for the primary box
-        for elem in self.geom.list_elem: # treat each element of the geometry
-            self.__add_elem(elem)
+        # spatial mesh
+        halo_size = np.asarray(self.stencil.vmax)
+        halo_beg = self.dx*(halo_size - 0.5)
+        compute_box_size = np.asarray(local_phys_box_size) + 2*halo_size
 
-        self.log.info(self.__str__())
+        self.coords_halo = [np.linspace(local_phys_box[k][0] - halo_beg[k],
+                                        local_phys_box[k][1] + halo_beg[k],
+                                        compute_box_size[k]) for k in range(self.dim)]
 
-    @property
-    def shape(self):
-        return [x.size for x in self.x]
+        self.coords = [self.coords_halo[k][halo_size[k]:-halo_size[k]] for k in range(self.dim)]
 
-    def __str__(self):
-        s = "Domain informations\n"
-        s += "\t spatial dimension: {0:d}\n".format(self.dim)
-        s += "\t bounds of the box: bounds = " + self.bounds.__str__() + "\n"
-        s += "\t space step: dx={0:10.3e}\n".format(self.dx)
-        #s += "\t Number of points in each direction: N=" + self.N.__str__() + ", Na=" + self.Na.__str__() + "\n"
-        return s
+    def get_bounds_halo(self):
+        bottom_right = np.asarray([self.coords_halo[k][0] for k in range(self.dim)])
+        upper_left = np.asarray([self.coords_halo[k][-1] for k in range(self.dim)])
+        return bottom_right, upper_left
+
+    def get_bounds(self):
+        bottom_right = np.asarray([self.coords[k][0] for k in range(self.dim)])
+        upper_left = np.asarray([self.coords[k][-1] for k in range(self.dim)])
+        return bottom_right, upper_left
 
     def __add_init(self, label):
-        phys_domain = [slice(e, e + n) for e, n in zip(self.extent, self.N)]
+        halo_size = np.asarray(self.stencil.vmax)
+        phys_domain = [slice(h, -h) for h in halo_size]
 
         self.in_or_out[:] = self.valout
 
@@ -278,122 +329,73 @@ class Domain(object):
              Need to be improved and implement for the 3D.
         """
         # compute the box around the element adding vmax safety points
-        indbe = np.asarray([(self.stencil.vmax[k],
-                             self.stencil.vmax[k] + self.N[k]) for k in range(self.dim)])
-        bmin, bmax = elem.get_bounds()
+        vmax = self.stencil.vmax
+        elem_bl, elem_ur = elem.get_bounds()
+        phys_bl, phys_ur = self.get_bounds_halo()
 
-        #if self.dim < 3:
-        #    xbeg = np.asarray([self.x[0][0], self.x[1][0]])
-        #else:
-        #    xbeg = np.asarray([self.x[0][0], self.x[1][0], self.x[2][0]])
-        xbeg = np.asarray([self.x[k][0] for k in range(self.dim)])
-
-        tmp = np.array((bmin - xbeg)/self.dx - self.stencil.vmax[:self.dim], np.int)
-        nmin = np.maximum(indbe[:, 0], tmp)
-        tmp = np.array((bmax - xbeg)/self.dx + self.stencil.vmax[:self.dim] + 1, np.int)
-        nmax = np.minimum(indbe[:, 1], tmp)
+        tmp = np.array((elem_bl - phys_bl)/self.dx, np.int) - vmax
+        nmin = np.maximum(vmax, tmp)
+        tmp = np.array((elem_ur - phys_bl)/self.dx, np.int) + vmax + 1
+        nmax = np.minimum(vmax + self.shape_in, tmp)
 
         # set the grid
-        x = self.x[0][nmin[0]:nmax[0]]
-        y = self.x[1][nmin[1]:nmax[1]]
-        if self.dim == 3:
-            z = self.x[2][nmin[2]:nmax[2]]
+        space_slice = [slice(imin, imax) for imin, imax in zip(nmin, nmax)]
+        total_slice = [slice(None)] + space_slice
+        # local view of the arrays
+        ioo_view = self.in_or_out[space_slice]
+        dist_view = self.distance[total_slice]
+        flag_view = self.flag[total_slice]
 
-        if self.dim == 2:
-            gridx = x[:, np.newaxis]
-            gridy = y[np.newaxis, :]
-
-            # local view of the arrays
-            ioo_view = self.in_or_out[nmin[0]:nmax[0], nmin[1]:nmax[1]]
-            dist_view = self.distance[:, nmin[0]:nmax[0], nmin[1]:nmax[1]]
-            flag_view = self.flag[:, nmin[0]:nmax[0], nmin[1]:nmax[1]]
-        else:
-            gridx = x[:, np.newaxis, np.newaxis]
-            gridy = y[np.newaxis, :, np.newaxis]
-            gridz = z[np.newaxis, np.newaxis, :]
-
-            # local view of the arrays
-            ioo_view = self.in_or_out[nmin[0]:nmax[0], nmin[1]:nmax[1], nmin[2]:nmax[2]]
-            dist_view = self.distance[:, nmin[0]:nmax[0], nmin[1]:nmax[1], nmin[2]:nmax[2]]
-            flag_view = self.flag[:, nmin[0]:nmax[0], nmin[1]:nmax[1], nmin[2]:nmax[2]]
+        tcoords = (self.coords_halo[d][s] for d, s in enumerate(space_slice))
+        grid = np.meshgrid(*tcoords, sparse=True, indexing='ij')
 
         if not elem.isfluid: # add a solid part
-            if self.dim == 2:
-                ind_solid = elem.point_inside(gridx, gridy)
-            else:
-                ind_solid = elem.point_inside(gridx, gridy, gridz)
+            ind_solid = elem.point_inside(grid)
             ind_fluid = np.logical_not(ind_solid)
             ioo_view[ind_solid] = self.valout
         else: # add a fluid part
-            if self.dim == 2:
-                ind_fluid = elem.point_inside(gridx, gridy)
-            else:
-                ind_fluid = elem.point_inside(gridx, gridy, gridz)
+            ind_fluid = elem.point_inside(grid)
             ind_solid = np.logical_not(ind_fluid)
             ioo_view[ind_fluid] = self.valin
 
-        if self.dim == 2:
-            for k in range(self.stencil.unvtot):
-                vxk = self.stencil.unique_velocities[k].vx
-                vyk = self.stencil.unique_velocities[k].vy
-                if (vxk != 0 or vyk != 0):
-                    condx = self.in_or_out[nmin[0] + vxk:nmax[0] + vxk, nmin[1] + vyk:nmax[1] + vyk] == self.valout
-                    alpha, border = elem.distance(gridx, gridy, (self.dx*vxk, self.dx*vyk), 1.)
-                    with np.errstate(invalid='ignore'):
-                        indx = np.logical_and(np.logical_and(alpha > 0, ind_fluid), condx)
+        for k in range(self.stencil.unvtot):
+            vk = np.asarray(self.stencil.unique_velocities[k].v)
+            if np.any(vk != 0):
+                space_slice = [slice(imin + vk[d], imax + vk[d]) for imin, imax, d in zip(nmin, nmax, range(self.dim))]
+                # check the cells that are out when we move with the vk velocity
+                out_cells = self.in_or_out[space_slice] == self.valout
+                # compute the distance and set the boundary label 
+                # of each cell and the element with the vk velocity
+                alpha, border = elem.distance(grid, self.dx*vk, 1.)
+                # take the indices where the distance is lower than 1 
+                # between a fluid cell and the border of the element
+                # with the vk velocity
+                with np.errstate(invalid='ignore'):
+                    indx = np.logical_and(np.logical_and(alpha > 0, ind_fluid), out_cells)
 
-                    if elem.isfluid:
-                        # take all points in the fluid in the ioo_view
-                        indfluidinbox = ioo_view == self.valin
-                        # take only points which
-                        borderToInt = np.logical_and(np.logical_not(condx), indfluidinbox)
-                        dist_view[k][borderToInt] = self.valin
-                        flag_view[k][borderToInt] = self.valin
-                    else:
-                        dist_view[k][ind_solid] = self.valin
-                        flag_view[k][ind_solid] = self.valin
+                if elem.isfluid:
+                    # take all points in the fluid in the ioo_view
+                    indfluidinbox = ioo_view == self.valin
+                    # take all the fluid points in the box (not only in the created element)
+                    # which always are in fluid after a displacement of the velocity vk
+                    borderToInt = np.logical_and(np.logical_not(out_cells), indfluidinbox)
+                    dist_view[k][borderToInt] = self.valin
+                    flag_view[k][borderToInt] = self.valin
+                else:
+                    dist_view[k][ind_solid] = self.valin
+                    flag_view[k][ind_solid] = self.valin
 
-                    #set distance
-                    ind4 = np.where(indx)
-                    if not elem.isfluid:
-                        ind3 = np.where(alpha[ind4] < dist_view[k][ind4])
-                    else:
-                        ind3 = np.where(np.logical_or(alpha[ind4] > dist_view[k][ind4], dist_view[k][ind4] == self.valin))
+                #set distance
+                ind4 = np.where(indx)
+                if not elem.isfluid:
+                    ind3 = np.where(alpha[ind4] < dist_view[k][ind4])[0]
+                else:
+                    ind3 = np.where(np.logical_or(alpha[ind4] > dist_view[k][ind4], dist_view[k][ind4] == self.valin))[0]
 
-                    dist_view[k][ind4[0][ind3[0]], ind4[1][ind3[0]]] = alpha[ind4[0][ind3[0]], ind4[1][ind3[0]]]
-                    flag_view[k][ind4[0][ind3[0]], ind4[1][ind3[0]]] = border[ind4[0][ind3[0]], ind4[1][ind3[0]]]
-        else:
-            for k in range(self.stencil.unvtot):
-                vxk = self.stencil.unique_velocities[k].vx
-                vyk = self.stencil.unique_velocities[k].vy
-                vzk = self.stencil.unique_velocities[k].vz
-
-                if (vxk != 0 or vyk != 0 or vzk != 0):
-                    condx = self.in_or_out[nmin[0] + vxk:nmax[0] + vxk, nmin[1] + vyk:nmax[1] + vyk, nmin[2] + vzk:nmax[2] + vzk] == self.valout
-                    alpha, border = elem.distance(gridx, gridy, gridz, (self.dx*vxk, self.dx*vyk, self.dx*vzk), 1.)
-                    with np.errstate(invalid='ignore'):
-                        indx = np.logical_and(np.logical_and(alpha > 0, ind_fluid), condx)
-
-                    if elem.isfluid:
-                        # take all points in the fluid in the ioo_view
-                        indfluidinbox = ioo_view == self.valin
-                        # take only points which
-                        borderToInt = np.logical_and(np.logical_not(condx), indfluidinbox)
-                        dist_view[k][borderToInt] = self.valin
-                        flag_view[k][borderToInt] = self.valin
-                    else:
-                        dist_view[k][ind_solid] = self.valin
-                        flag_view[k][ind_solid] = self.valin
-
-                    #set distance
-                    ind4 = np.where(indx)
-                    if not elem.isfluid:
-                        ind3 = np.where(alpha[ind4] < dist_view[k][ind4])
-                    else:
-                        ind3 = np.where(np.logical_or(alpha[ind4] > dist_view[k][ind4], dist_view[k][ind4] == self.valin))
-
-                    dist_view[k][ind4[0][ind3[0]], ind4[1][ind3[0]], ind4[2][ind3[0]]] = alpha[ind4[0][ind3[0]], ind4[1][ind3[0]], ind4[2][ind3[0]]]
-                    flag_view[k][ind4[0][ind3[0]], ind4[1][ind3[0]], ind4[2][ind3[0]]] = border[ind4[0][ind3[0]], ind4[1][ind3[0]], ind4[2][ind3[0]]]
+                #import ipdb; ipdb.set_trace()
+                ind = [i[ind3] for i in ind4]
+                dist_view[k][ind] = alpha[ind]
+                flag_view[k][ind] = border[ind]
 
     def visualize(self, viewer_app=viewer.matplotlibViewer, view_distance=False, view_in=True, view_out=True, view_bound=False, label=None):
         """
@@ -480,16 +482,16 @@ class Domain(object):
                 view.axis(-xpercent, xmax+xpercent, -ypercent, ymax+ypercent)
                 view.image(inT.transpose()>=0)
             else:
-                xmin, xmax = self.bounds[0][:]
-                ymin, ymax = self.bounds[1][:]
+                xmin, xmax = self.geom.bounds[0][:]
+                ymin, ymax = self.geom.bounds[1][:]
 
                 xpercent = 0.1*(xmax-xmin)
                 ypercent = 0.1*(ymax-ymin)
                 view.axis(xmin-xpercent, xmax+xpercent, ymin-ypercent, ymax+ypercent)
 
-                x, y = self.x[:]
+                x, y = self.coords_halo
                 dx = self.dx
-                vxkmax, vykmax = self.stencil.vmax[:self.dim]
+                vxkmax, vykmax = self.stencil.vmax
 
                 for k in view_distance:
                     vxk = self.stencil.unique_velocities[k].vx
@@ -542,7 +544,7 @@ class Domain(object):
                 view.markers(np.asarray([x[indoutx], y[indouty], z[indoutz]]).T, 200*self.dx**2, symbol='o', color='0.')
             view.set_label("X", "Y", "Z")
             if view_seg or view_bound:
-                vxkmax, vykmax, vzkmax = self.stencil.vmax[:self.dim]
+                vxkmax, vykmax, vzkmax = self.stencil.vmax
                 for k in view_distance:
                     vxk = self.stencil.unique_velocities[k].vx
                     vyk = self.stencil.unique_velocities[k].vy

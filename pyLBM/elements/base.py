@@ -26,10 +26,12 @@ class Element(object):
     def get_bounds(self):
         return float('Inf'), -float('Inf')
 
-    def point_inside(self, x, y, z=None):
-        if z is None:
+    def point_inside(self, grid):
+        if len(grid) == 2:
+            x, y = grid
             return x**2 + y**2 < -1.
-        else:
+        elif len(grid) == 3:
+            x, y, z = grid
             return x**2 + y**2 + z**2 < -1.
 
     def __str__(self):
@@ -97,10 +99,12 @@ class Base_Circle(Base2D):
         """
         return self.center - self.radius, self.center + self.radius
 
-    def point_inside(self, x, y):
+    def point_inside(self, grid):
+        x, y = grid
         return (x**2 + y**2) <= 1.
 
-    def distance(self, x, y, v, dmax, label):
+    def distance(self, grid, v, dmax, label):
+        x, y = grid
         c = np.zeros((2,))
         v1 = np.asarray([1,0])
         v2 = np.asarray([0,1])
@@ -151,10 +155,12 @@ class Base_Ellipse(Base2D):
         r = max(np.linalg.norm(self.v1), np.linalg.norm(self.v2))
         return self.center - r, self.center + r
 
-    def point_inside(self, x, y):
+    def point_inside(self, grid):
+        x, y = grid
         return (x**2 + y**2) <= 1.
 
-    def distance(self, x, y, v, dmax, label):
+    def distance(self, grid, v, dmax, label):
+        x, y = grid
         c = np.zeros((2,))
         v1 = np.asarray([1,0])
         v2 = np.asarray([0,1])
@@ -202,10 +208,12 @@ class Base_Triangle(Base2D):
                           self.center + self.v1 + self.v2, self.center + self.v2])
         return np.min(box, axis=0), np.max(box, axis=0)
 
-    def point_inside(self, x, y):
+    def point_inside(self, grid):
+        x, y = grid
         return np.logical_and(np.logical_and(x>=0, y>=0), x+y<=1)
 
-    def distance(self, x, y, v, dmax, label):
+    def distance(self, grid, v, dmax, label):
+        x, y = grid
         p = [[0, 0], [0, 0], [1, 0]]
         vt = [[1, 0], [0, 1], [-1, 1]]
         return distance_lines(x, y, v, p, vt, dmax, label)
@@ -259,11 +267,13 @@ class Base_Parallelogram(Base2D):
                           self.center + self.v1 + self.v2, self.center + self.v2])
         return np.min(box, axis=0), np.max(box, axis=0)
 
-    def point_inside(self, x, y):
+    def point_inside(self, grid):
+        x, y = grid
         return np.logical_and(np.logical_and(x>=0, y>=0),
                               np.logical_and(x<=1, y<=1))
 
-    def distance(self, x, y, v, dmax, label):
+    def distance(self, grid, v, dmax, label):
+        x, y = grid        
         p = [[0, 0], [0, 0], [1, 0], [0, 1]]
         vt = [[1, 0], [0, 1], [0, 1], [1, 0]]
         return distance_lines(x, y, v, p, vt, dmax, label)

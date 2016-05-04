@@ -193,7 +193,7 @@ class Simulation(object):
         self.interface = self.domain.geom.interface
 
         nv = self.scheme.stencil.nv_ptr[-1]
-        nspace = self.domain.shape
+        nspace = self.domain.shape_halo
         vmax = self.domain.stencil.vmax
 
         if sorder is None:
@@ -374,18 +374,19 @@ class Simulation(object):
         # by default, the initialization is on the moments
         # else, it could be distributions
         inittype = dico.get('inittype', 'moments')
-        if self.dim == 1:
-            x = self.domain.x[0]
-            coords = (x,)
-        elif self.dim == 2:
-            x = self.domain.x[0][:, np.newaxis]
-            y = self.domain.x[1][np.newaxis, :]
-            coords = (x, y)
-        elif self.dim == 3:
-            x = self.domain.x[0][:, np.newaxis, np.newaxis]
-            y = self.domain.x[1][np.newaxis, :, np.newaxis]
-            z = self.domain.x[2][np.newaxis, np.newaxis, :]
-            coords = (x, y, z)
+        coords = np.meshgrid(*(c for c in self.domain.coords_halo), sparse=True, indexing='ij')
+        # if self.dim == 1:
+        #     x = self.domain.x[0]
+        #     coords = (x,)
+        # elif self.dim == 2:
+        #     x = self.domain.x[0][:, np.newaxis]
+        #     y = self.domain.x[1][np.newaxis, :]
+        #     coords = (x, y)
+        # elif self.dim == 3:
+        #     x = self.domain.x[0][:, np.newaxis, np.newaxis]
+        #     y = self.domain.x[1][np.newaxis, :, np.newaxis]
+        #     z = self.domain.x[2][np.newaxis, np.newaxis, :]
+        #     coords = (x, y, z)
 
         if inittype == 'moments':
             array_to_init = self._m
@@ -403,7 +404,7 @@ class Simulation(object):
             if isinstance(v, tuple):
                 f = v[0]
                 extraargs = v[1] if len(v) == 2 else ()
-                fargs = coords + extraargs
+                fargs = tuple(coords) + extraargs
                 array_to_init[ns] = f(*fargs)
             else:
                 array_to_init[ns] = v

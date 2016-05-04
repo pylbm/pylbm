@@ -46,7 +46,7 @@ class Cylinder(Element):
         bounds_base = self.base.get_bounds()
         return bounds_base[0] - lw, bounds_base[1] + lw
 
-    def point_inside(self, x, y, z):
+    def point_inside(self, grid):
         """
         return a boolean array which defines
         if a point is inside or outside of the cylinder.
@@ -68,6 +68,7 @@ class Cylinder(Element):
 
         Array of boolean (True inside the cylinder, False otherwise)
         """
+        x, y, z = grid
         xx = x - self.center[0]
         yy = y - self.center[1]
         zz = z - self.center[2]
@@ -76,7 +77,7 @@ class Cylinder(Element):
         z_cyl = self.iA[2,0]*xx + self.iA[2,1]*yy + self.iA[2,2]*zz # the new z coordinates
         return np.logical_and(self.base.point_inside(x_cyl, y_cyl), np.abs(z_cyl)<=1.)
 
-    def distance(self, x, y, z, v, dmax=None):
+    def distance(self, grid, v, dmax=None):
         """
         Compute the distance in the v direction between
         the cylinder and the points defined by (x, y, z).
@@ -98,6 +99,8 @@ class Cylinder(Element):
         array of distances
 
         """
+        x, y, z = grid
+
         # rewritte the coordinates in the frame of the cylinder
         v_cyl = self.iA.dot(np.asarray(v)) # the velocity
         xx = x - self.center[0]

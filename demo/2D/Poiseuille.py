@@ -102,15 +102,16 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
         ax = fig[0]
 
         nt = int(sol.domain.N[0]/2)
-        y = sol.domain.x[1][1:-1]
-        l1 = ax.plot(y, sol.m[qx][nt, 1:-1], color='r', marker='+')[0]
+        y = sol.domain.y
+
+        l1 = ax.plot(y, sol.m[qx][nt], color='r', marker='+')[0]
         l2 = ax.plot(y, rhoo*max_velocity * (1.-4.*y**2/height**2), color='k')
         ax.title = 'Velocity at t = {0:f}'.format(sol.t)
         #ax.axis(ymin, ymax, 0., 1.2*max_velocity)
 
         def update(iframe):
             sol.one_time_step()
-            l1.set_data(y, sol.m[qx][nt, 1:-1])
+            l1.set_data(y, sol.m[qx][nt])
             ax.title = 'Velocity at t = {0:f}'.format(sol.t)
 
         # run the simulation

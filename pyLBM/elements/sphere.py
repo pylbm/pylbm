@@ -79,7 +79,7 @@ class Sphere(Element):
         """
         return self.center - self.radius, self.center + self.radius
 
-    def point_inside(self, x, y, z):
+    def point_inside(self, grid):
         """
         return a boolean array which defines
         if a point is inside or outside of the sphere.
@@ -101,10 +101,11 @@ class Sphere(Element):
 
         Array of boolean (True inside the sphere, False otherwise)
         """
+        x, y, z = grid
         v2 = np.asarray([x - self.center[0], y - self.center[1], z - self.center[2]])
         return (v2[0]**2 + v2[1]**2 + v2[2]**2)<=self.radius**2
 
-    def distance(self, x, y, z, v, dmax=None):
+    def distance(self, grid, v, dmax=None):
         """
         Compute the distance in the v direction between
         the sphere and the points defined by (x, y, z).
@@ -125,6 +126,7 @@ class Sphere(Element):
 
         array of distances
         """
+        x, y, z = grid
         v1 = self.radius*np.array([1,0,0])
         v2 = self.radius*np.array([0,1,0])
         v3 = self.radius*np.array([0,0,1])

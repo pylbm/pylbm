@@ -6,15 +6,13 @@ import pyLBM.elements as elem
 class TestParallelogram(object):
     def setUp(self):
         self.nx, self.ny = 10, 20
-        self.x = np.arange(self.nx)
-        self.y = np.arange(self.ny)
+        x = np.arange(self.nx)
+        y = np.arange(self.ny)
+        self.grid = np.meshgrid(x, y, sparse=True, indexing='ij')
         self.p1 = elem.Parallelogram([0, 0], [0, self.ny], [self.nx, 0])
 
     def test_inside(self):
-        gridx = self.x[np.newaxis, :]
-        gridy = self.y[:, np.newaxis]
-
-        in1 = self.p1.point_inside(gridx, gridy)
+        in1 = self.p1.point_inside(self.grid)
         assert(in1.all() == True)
 
     def test_bounds(self):
@@ -22,25 +20,18 @@ class TestParallelogram(object):
 
 class TestTriangle(object):
     def setUp(self):
-        self.nx, self.ny = 11, 11
-
-        self.x = np.linspace(0, 1, self.nx)
-        self.y = np.linspace(0, 1, self.ny)
-        print(self.x[1]-self.x[0], self.y[1]-self.y[0])
-
-        #self.x = np.arange(self.nx)
-        #self.y = np.arange(self.ny)
+        nx, ny = 11, 11
+        x = np.linspace(0, 1, nx)
+        y = np.linspace(0, 1, ny)
+        self.grid = np.meshgrid(x, y, sparse=True, indexing='ij')
 
         self.t1 = elem.Triangle([0, 0], [1, 0], [0, 1])
-        self.t2 = elem.Triangle([0, 0], [self.nx, 0], [0, self.nx])
-        self.t3 = elem.Triangle([self.nx - 1, 1], [-self.nx, self.nx], [0, self.nx - 1])
+        self.t2 = elem.Triangle([0, 0], [nx, 0], [0, nx])
+        self.t3 = elem.Triangle([nx - 1, 1], [-nx, nx], [0, nx - 1])
 
     def test_inside(self):
-        gridx = self.x[np.newaxis, :]
-        gridy = self.x[:, np.newaxis]
-
-        in1 = self.t2.point_inside(gridx, gridy)
-        in2 = self.t3.point_inside(gridx, gridy)
+        in1 = self.t2.point_inside(self.grid)
+        in2 = self.t3.point_inside(self.grid)
         assert(np.logical_or(in1, in2).all() == True)
 
     def test_bounds(self):

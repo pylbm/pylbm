@@ -86,7 +86,7 @@ class Ellipse(Element):
         r = max(np.linalg.norm(self.v1), np.linalg.norm(self.v2))
         return self.center - r, self.center + r
 
-    def point_inside(self, x, y):
+    def point_inside(self, grid):
         """
         return a boolean array which defines
         if a point is inside or outside of the ellipse.
@@ -107,6 +107,8 @@ class Ellipse(Element):
 
         Array of boolean (True inside the ellipse, False otherwise)
         """
+        x, y = grid
+
         X = x - self.center[0]
         Y = y - self.center[1]
         vx2 = self.v1[0]**2 + self.v2[0]**2
@@ -115,7 +117,7 @@ class Ellipse(Element):
         tv = self.v1[0]*self.v2[1]-self.v1[1]*self.v2[0]
         return X**2*vy2 + Y**2*vx2 - 2*X*Y*vxy <= tv**2
 
-    def distance(self, x, y, v, dmax=None):
+    def distance(self, grid, v, dmax=None):
         """
         Compute the distance in the v direction between
         the ellipse and the points defined by (x, y).
@@ -133,6 +135,7 @@ class Ellipse(Element):
         array of distances
 
         """
+        x, y = grid
         return distance_ellipse(x, y, v, self.center, self.v1, self.v2, dmax, self.label)
 
     def __str__(self):

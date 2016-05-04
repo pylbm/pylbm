@@ -93,7 +93,7 @@ class Ellipsoid(Element):
                 np.linalg.norm(self.v3))
         return self.center - r, self.center + r
 
-    def point_inside(self, x, y, z):
+    def point_inside(self, grid):
         """
         return a boolean array which defines
         if a point is inside or outside of the ellipsoid.
@@ -115,6 +115,8 @@ class Ellipsoid(Element):
 
         Array of boolean (True inside the ellipsoid, False otherwise)
         """
+        x, y, z = grid
+
         X = x - self.center[0]
         Y = y - self.center[1]
         Z = z - self.center[2]
@@ -133,7 +135,7 @@ class Ellipsoid(Element):
         return cxx*X**2 + cyy*Y**2 + czz*Z**2 + \
                cxy*X*Y + cyz*Y*Z + czx*Z*X <= d
 
-    def distance(self, x, y, z, v, dmax=None):
+    def distance(self, grid, v, dmax=None):
         """
         Compute the distance in the v direction between
         the ellipsoid and the points defined by (x, y, z).
@@ -151,6 +153,7 @@ class Ellipsoid(Element):
 
         array of distances
         """
+        x, y, z = grid
         return distance_ellipsoid(x, y, z, v, self.center, self.v1, self.v2, self.v3, dmax, self.label)
 
     def __str__(self):

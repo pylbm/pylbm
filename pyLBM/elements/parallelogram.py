@@ -92,7 +92,7 @@ class Parallelogram(Element):
                           self.point + self.v0 + self.v1, self.point + self.v1])
         return np.min(box, axis=0), np.max(box, axis=0)
 
-    def point_inside(self, x, y):
+    def point_inside(self, grid):
         """
         return a boolean array which defines
         if a point is inside or outside of the parallelogram.
@@ -114,7 +114,7 @@ class Parallelogram(Element):
         Array of boolean (True inside the parallelogram, False otherwise)
 
         """
-
+        x, y = grid
         # Barycentric coordinates
         v2 = np.asarray([x - self.point[0], y - self.point[1]])
         invdelta = 1./(self.v0[0]*self.v1[1] - self.v0[1]*self.v1[0])
@@ -123,7 +123,7 @@ class Parallelogram(Element):
         return np.logical_and(np.logical_and(u>=0, v>=0),
                               np.logical_and(u<=1, v<=1))
 
-    def distance(self, x, y, v, dmax=None):
+    def distance(self, grid, v, dmax=None):
         """
         Compute the distance in the v direction between the parallelogram
         and the points defined by (x, y).
@@ -144,7 +144,7 @@ class Parallelogram(Element):
         array of distances
 
         """
-
+        x, y = grid
         # points and triangle edges which define the lines for the intersections
         # with the lines defined by (x, y) and v
         p = [[0, 0], [0, 0], self.v1, self.v0]

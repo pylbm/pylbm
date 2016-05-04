@@ -78,7 +78,7 @@ class Circle(Element):
         """
         return self.center - self.radius, self.center + self.radius
 
-    def point_inside(self, x, y):
+    def point_inside(self, grid):
         """
         return a boolean array which defines
         if a point is inside or outside of the circle.
@@ -99,10 +99,11 @@ class Circle(Element):
 
         Array of boolean (True inside the circle, False otherwise)
         """
+        x, y = grid
         v2 = np.asarray([x - self.center[0], y - self.center[1]])
         return (v2[0]**2 + v2[1]**2)<=self.radius**2
 
-    def distance(self, x, y, v, dmax=None):
+    def distance(self, grid, v, dmax=None):
         """
         Compute the distance in the v direction between
         the circle and the points defined by (x, y).
@@ -123,6 +124,7 @@ class Circle(Element):
         array of distances
 
         """
+        x, y = grid        
         v1 = self.radius*np.array([1,0])
         v2 = self.radius*np.array([0,1])
         return distance_ellipse(x, y, v, self.center, v1, v2, dmax, self.label)

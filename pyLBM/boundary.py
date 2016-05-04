@@ -176,7 +176,7 @@ class Boundary_method(object):
                 s = 1 - self.distance[indices]
                 coords = tuple()
                 for i in range(simulation.domain.dim):
-                    x = simulation.domain.x[i][self.istore[i + 1, indices]]
+                    x = simulation.domain.coords_halo[i][self.istore[i + 1, indices]]
                     x += s*v[k, i]*simulation.domain.dx
                     x = x.ravel()
                     for i in range(1, simulation.domain.dim):
