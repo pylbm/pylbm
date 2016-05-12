@@ -116,8 +116,7 @@ dico = {
     'boundary_conditions':{
         0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back, 1: pyLBM.bc.Neumann}, 'value':None},
         1:{'method':{0: pyLBM.bc.Bouzidi_bounce_back, 1: pyLBM.bc.Bouzidi_anti_bounce_back}, 'value':bc_in},
-        2:{'method':{0: pyLBM.bc.Bouzidi_bounce_back, 1: pyLBM.bc.Neumann_vertical}, 'value':bc_out},
-        #2:{'method':{0: pyLBM.bc.Neumann_vertical, 1: pyLBM.bc.Neumann_vertical}, 'value':None},
+        2:{'method':{0: pyLBM.bc.Bouzidi_bounce_back, 1: pyLBM.bc.Neumann_x}, 'value':bc_out},
     },
     'generator': pyLBM.generator.CythonGenerator,
 }

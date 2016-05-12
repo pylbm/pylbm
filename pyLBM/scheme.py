@@ -688,7 +688,7 @@ class Scheme(object):
     def transport(self, f):
         """ The transport phase on the distribution functions f """
         mod = self.generator.get_module()
-        mod.transport(f)
+        mod.transport(f.array)
 
     def equilibrium(self, m):
         """ Compute the equilibrium """
@@ -696,10 +696,15 @@ class Scheme(object):
         func = getattr(mod, "equilibrium")
         func(m.array)
 
-    def relaxation(self, m, tn=0., dt=0., x=0., y=0., z=0.):
+    def relaxation(self, m):
         """ The relaxation phase on the moments m """
         mod = self.generator.get_module()
-        mod.relaxation(m.array, tn, dt, x, y, z)
+        mod.relaxation(m.array)
+
+    def source_term(self, m, tn=0., dt=0., x=0., y=0., z=0.):
+        """ The integration of the source term on the moments m """
+        mod = self.generator.get_module()
+        mod.source_term(m.array, tn, dt, x, y, z)        
 
     def onetimestep(self, m, fold, fnew, in_or_out, valin, tn=0., dt=0., x=0., y=0., z=0.):
         """ Compute one time step of the Lattice Boltzmann method """

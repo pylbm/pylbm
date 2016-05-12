@@ -434,13 +434,13 @@ class Simulation(object):
         self.scheme.relaxation(self._m)
         self.cpu_time['relaxation'] += mpi.Wtime() - t
 
-    def source_term(self):
+    def source_term(self, fraction_of_time_step = 1.):
         """
         compute the source term phase on moments
         (the array _m is modified)
         """
         t = mpi.Wtime()
-        self.scheme.source_term(self._m, self.t, self.dt, *self.domain.coords)
+        self.scheme.source_term(self._m, self.t, fraction_of_time_step * self.dt, *self.domain.coords)
         self.cpu_time['source_term'] += mpi.Wtime() - t
 
     def f2m(self):
