@@ -116,17 +116,23 @@ class Cylinder(Element):
         border[ind] = -1.
 
         # considering the two planes
+        dummyf = self.base.point_inside
         if v_cyl[2] == 0: # to avoid vertical velocities
             decal = 1.e-16
         else:
             decal = 0.
         alpha_top = (1.-z_cyl)/(v_cyl[2] + decal)
-        ind = np.logical_or(alpha_top<0, np.logical_not(self.base.point_inside(x_cyl + alpha_top*v_cyl[0], y_cyl + alpha_top*v_cyl[1])))
+        ind = np.logical_or( np.logical_or(alpha_top<0, alpha_top>dmax),
+                             np.logical_not(
+                                 dummyf(x_cyl + alpha_top*v_cyl[0],
+                                        y_cyl + alpha_top*v_cyl[1])))
         alpha_top[ind] = 1.e16
         alpha_bot = -(1.+z_cyl)/(v_cyl[2] + decal)
-        ind = np.logical_or(alpha_bot<0, np.logical_not(self.base.point_inside(x_cyl + alpha_bot*v_cyl[0], y_cyl + alpha_bot*v_cyl[1])))
+        ind = np.logical_or( np.logical_or(alpha_bot<0, alpha_bot>dmax),
+                             np.logical_not(
+                                 dummyf(x_cyl + alpha_bot*v_cyl[0],
+                                        y_cyl + alpha_bot*v_cyl[1])))
         alpha_bot[ind] = 1.e16
-
 
         # considering the first intersection point
         alpha = np.amin([alpha, alpha_top, alpha_bot], axis=0)
