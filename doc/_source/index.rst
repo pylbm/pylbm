@@ -52,6 +52,7 @@ Documentation for users
    The domain of the simulation <learning_domain>
    The scheme <learning_scheme>
    The boundary conditions <learning_bounds>
+   Learning by examples <tutorial>
 
 
 Documentation of the code
@@ -67,6 +68,7 @@ Documentation of the code
   The class Scheme <class_scheme>
   The module generator <module_generator>
   The class Simulation <class_simulation>
+
 
 References
 ---------------------------

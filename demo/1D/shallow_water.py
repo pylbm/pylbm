@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 """
  Solver D1Q2Q2 for the shallow water system on [0, 1]
 
@@ -21,7 +23,7 @@ def Riemann_pb(x, xmin, xmax, ug, ud):
     xm = 0.5*(xmin+xmax)
     return ug*(x<xm) + ud*(x>xm) + 0.5*(ug+ud)*(x==xm)
 
-def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
     """
     Parameters
     ----------
@@ -44,7 +46,7 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
     # parameters
     xmin, xmax = 0., 1.  # bounds of the domain
     la = 2.              # velocity of the scheme
-    s = 1.7              # relaxation parameter
+    s = 1.5              # relaxation parameter
 
     hg, hd, qg, qd = 1., .25, 0.10, 0.10
     ymina, ymaxa, yminb, ymaxb = 0., 1., 0., .5
@@ -89,7 +91,7 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
         ax2 = fig[1]
         ax2.axis(xmin, xmax, .9*yminb, 1.1*ymaxb)
 
-        x = sol.domain.x[0][1:-1]
+        x = sol.domain.x[1:-1]
         l1 = ax1.plot(x, sol.m[h][1:-1], color='b')[0]
         l2 = ax2.plot(x, sol.m[q][1:-1], color='r')[0]
 
@@ -110,6 +112,6 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
     return sol
 
 if __name__ == '__main__':
-    dx = 1./128
+    dx = 1./1024
     Tf = 1.
-    run(dx, Tf)#, generator=pyLBM.generator.CythonGenerator)
+    run(dx, Tf, generator=pyLBM.generator.CythonGenerator)

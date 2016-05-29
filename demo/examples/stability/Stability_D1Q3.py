@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -7,6 +9,7 @@
 """
 Stability of the D1Q3 for the advection
 """
+from six.moves import range
 import numpy as np
 import pylab as plt
 import sympy as sp
@@ -20,7 +23,7 @@ def scheme_constructor(ux, sq, sE):
         'scheme_velocity':1.,
         'schemes':[
             {
-            'velocities':range(3),
+            'velocities':list(range(3)),
             'conserved_moments':u,
             'polynomials':[1, X, X**2],
             'equilibrium':[u, ux*u, (2*ux**2+1)/3*u],
@@ -46,7 +49,7 @@ def stability_array_in_s(ux):
     nb_calcul = 0
     mR, nb_calcul = stability_array_in_s_recur(vs_q, vs_E, ux, mR, [0,N,0,N], nb_calcul)
     plt.hold(False)
-    print "Number of stability computations: {0:d}".format(nb_calcul)
+    print("Number of stability computations: {0:d}".format(nb_calcul))
     plt.show()
 
 def stability_array_in_s_recur(vs_q, vs_E, ux, mR, l, nb_calcul):

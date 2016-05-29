@@ -20,6 +20,6 @@ def test_3D():
     pass
 
 if __name__ == "__main__":
-    #test_1D()
+    test_1D()
     test_2D()
-    #test_3D()
+    test_3D()

@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 """
 test: True
 """
@@ -45,10 +47,9 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     max_velocity = 0.1
     rhoo = 1.
     mu   = 0.00185
-    zeta = 1.e-4
+    zeta = 1.e-2
     xmin, xmax, ymin, ymax = 0.0, width, -0.5*height, 0.5*height
     grad_pressure = - max_velocity * 8.0 / (height)**2 * 3.0/(la**2*rhoo) * mu
-    NbImages = 80 # number of figures
     dummy = 3.0/(la*rhoo*dx)
     s1 = 1.0/(0.5+zeta*dummy)
     s2 = 1.0/(0.5+mu*dummy)
@@ -74,7 +75,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
                     'equilibrium':[rho,
                               qx, qy,
                               -2*rho + 3*q2,
-                              rho + 1.5*q2,
+                              rho - 3*q2,
                               -qx/LA, -qy/LA,
                               qx2 - qy2, qxy],
                     'conserved_moments': [rho, qx, qy],
@@ -107,6 +108,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
         l1 = ax.plot(y, sol.m[qx][nt], color='r', marker='+')[0]
         l2 = ax.plot(y, rhoo*max_velocity * (1.-4.*y**2/height**2), color='k')
         ax.title = 'Velocity at t = {0:f}'.format(sol.t)
+        ax.legend()
         #ax.axis(ymin, ymax, 0., 1.2*max_velocity)
 
         def update(iframe):

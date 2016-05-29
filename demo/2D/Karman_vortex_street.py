@@ -90,7 +90,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
                 'conserved_moments': [rho, qx, qy],
                 'init':{
                     rho: rhoo,
-                    qx: uo,
+                    qx: rhoo * uo,
                     qy: 0.
                 },
             },

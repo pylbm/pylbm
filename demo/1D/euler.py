@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 """
  Solver D1Q2Q2 for the Euler system on [0, 1]
 
@@ -113,7 +115,7 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
         sol.one_time_step()
 
     if withPlot:
-        x = sol.domain.x[0][1:-1]
+        x = sol.domain.x[1:-1]
         rho_n = sol.m[rho][1:-1]
         q_n = sol.m[q][1:-1]
         E_n = sol.m[E][1:-1]

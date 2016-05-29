@@ -31,6 +31,7 @@ proto_sch = {
     'polynomials': (is_list_sp_or_nb,),
     'equilibrium': (is_list_sp_or_nb,),
     'relaxation_parameters': (is_list_sp_or_nb,),
+    'source_terms': (type(None), is_dico_sources),
     'init':(type(None), is_dico_init),
 }
 
@@ -40,6 +41,7 @@ proto_sch_dom = {
     'polynomials': (type(None), is_list_sp_or_nb,),
     'equilibrium': (type(None), is_list_sp_or_nb,),
     'relaxation_parameters': (type(None), is_list_sp_or_nb,),
+    'source_terms': (type(None), is_dico_sources),
     'init':(type(None), is_dico_init),
 }
 
@@ -74,7 +76,9 @@ class Scheme(object):
         (la = dx / dt)
       - schemes : a list of dictionaries, one for each scheme
       - generator : a generator for the code, optional
-        (see :py:class:`Generator <pyLBM.generator.Generator>`)
+        (see :py:class:`Generator <pyLBM.generator.base.Generator>`)
+      - ode_solver : a method to integrate the source terms, optional
+        (see :py:class:`ode_solver <pyLBM.generator.ode_schemes.ode_solver>`)
       - test_stability : boolean (optional)
 
     Notes
@@ -87,7 +91,8 @@ class Scheme(object):
     - polynomials : list of the polynomial functions that define the moments
     - equilibrium : list of the values that define the equilibrium
     - relaxation_parameters : list of the value of the relaxation parameters
-    - init : a dictionary to define the initial conditions (see examples)
+    - source_terms : dictionary do define the source terms (optional, see examples)
+    - init : dictionary to define the initial conditions (see examples)
 
     If the stencil has already been computed, it can be pass in argument.
 
@@ -96,6 +101,10 @@ class Scheme(object):
 
     dim : int
       spatial dimension
+    dx : double
+      space step
+    dt : double
+      time step
     la : double
       scheme velocity, ratio dx/dt
     nscheme : int
@@ -117,10 +126,15 @@ class Scheme(object):
       the symbolic inverse matrix
     invMnum : numpy array
       the numeric inverse matrix (F = invMnum m)
-    generator : :py:class:`Generator <pyLBM.generator.Generator>`
+    generator : :py:class:`Generator <pyLBM.generator.base.Generator>`
       the used generator (
       :py:class:`NumpyGenerator<pyLBM.generator.NumpyGenerator>`,
       :py:class:`CythonGenerator<pyLBM.generator.CythonGenerator>`,
+      ...)
+    ode_solver : :py:class:`ode_solver <pyLBM.generator.ode_schemes.ode_solver>`,
+      the used ODE solver (
+      :py:class:`explicit_euler<pyLBM.generator.explicit_euler>`,
+      :py:class:`heun<pyLBM.generator.heun>`,
       ...)
 
     Methods
@@ -155,6 +169,8 @@ class Scheme(object):
       One time step of the Lattice Boltzmann method
     set_initialization :
       set the initialization functions for the conserved moments
+    set_source_terms :
+      set the source terms functions
     set_boundary_conditions :
       Apply the boundary conditions
 
@@ -189,15 +205,46 @@ class Scheme(object):
         else:
             self.stencil = Stencil(dico)
         self.dim = self.stencil.dim
+
         la = dico.get('scheme_velocity', None)
         if isinstance(la, (int, float)):
-            self.la = la
             self.la_symb = None
+            self.la = la
         elif isinstance(la, sp.Symbol):
             self.la_symb = la
-            self.la = sp.N(la.subs(list(zip(pk, pv))))
+            self.la = float(la.subs(list(zip(pk, pv))))
         else:
             self.log.error("The entry 'scheme_velocity' is wrong.")
+        dx = dico.get('space_step', None)
+        if isinstance(dx, (int, float)):
+            self.dx_symb = None
+            self.dx = dx
+        elif isinstance(dx, sp.Symbol):
+            self.dx_symb = dx
+            self.dx = float(dx.subs(list(zip(pk, pv))))
+        else:
+            self.dx = 1.
+            s = "The value 'space_step' is not given or wrong.\n"
+            s += "The scheme takes default value: dx = 1."
+            self.log.warning(s)
+        self.dt = self.dx / self.la
+
+        # fix the variables of time and space
+        self.vart, self.varx, self.vary, self.varz = None, None, None, None
+        if self.param is not None:
+            self.vart = self.param.get('time', None)
+            self.varx = self.param.get('space_x', None)
+            self.vary = self.param.get('space_y', None)
+            self.varz = self.param.get('space_z', None)
+        if self.vart is None:
+            self.vart = sp.Symbol('t')
+        if self.varx is None:
+            self.varx = sp.Symbol('X')
+        if self.vary is None:
+            self.vary = sp.Symbol('Y')
+        if self.varz is None:
+            self.varz = sp.Symbol('Z')
+
         self.nscheme = self.stencil.nstencils
         scheme = dico['schemes']
         if not isinstance(scheme, list):
@@ -273,14 +320,34 @@ class Scheme(object):
 
         self.init = self.set_initialization(scheme)
 
+        self.source_terms = self.set_source_terms(scheme)
+        if self.source_terms is not None:
+            self._source_terms = [create_matrix(s) for s in self.source_terms]
+            for cm, icm in self.consm.items():
+                for i, eq in enumerate(self._source_terms):
+                    for j, e in enumerate(eq):
+                        if e is not None:
+                            self._source_terms[i][j] = e.replace(cm, m[icm[0]][icm[1]])
+            self.ode_solver = dico.get('ode_solver', basic)()
+        else:
+            self._source_terms = None
+            self.ode_solver = None
         self.M, self.invM = [], []
         self.Mnum, self.invMnum = [], []
 
         self.create_moments_matrices()
 
         # generate the code
+        if self._source_terms is None:
+            dummypattern = ['transport', 'relaxation']
+        else:
+            dummypattern = ['transport', ('source_term', 0.5), 'relaxation', ('source_term', 0.5)]
+        self.pattern = dico.get('split_pattern', dummypattern)
         self.generator = dico.get('generator', NumpyGenerator)()
-        self.log.info("Generator used for the scheme functions:\n{0}\n".format(self.generator))
+        ssss = "Generator used for the scheme functions:\n{0}\n".format(self.generator)
+        ssss += "with the pattern " + self.pattern.__str__() + "\n"
+        self.log.info(ssss)
+
 
         self.bc_compute = True
 
@@ -367,7 +434,7 @@ class Scheme(object):
             self.M.append(sp.zeros(lv, lv))
             for i in range(lv):
                 for j in range(lv):
-                    self.M[-1][i, j] = p[i].subs([('X', v[j].vx), ('Y', v[j].vy), ('Z', v[j].vz)])
+                    self.M[-1][i, j] = p[i].subs([(str(self.varx), v[j].vx), (str(self.vary), v[j].vy), (str(self.varz), v[j].vz)])
             try:
                 self.invM.append(self.M[-1].inv())
             except:
@@ -511,6 +578,55 @@ class Scheme(object):
                     sys.exit()
         return init
 
+    def set_source_terms(self, scheme):
+        """
+        set the source terms functions for the conserved moments.
+
+        Parameters
+        ----------
+
+        scheme : dictionnary that describes the LBM schemes
+
+        Returns
+        -------
+
+        source_terms : dictionnary where the keys are the indices of the conserved moments
+        and the values must be a sympy expression or None
+
+        """
+        source_terms = []
+        is_empty = True
+        for ns, s in enumerate(scheme):
+            source_terms.append([None]*self.stencil.nv[ns]) # by default no source term
+            source_scheme = s.get('source_terms', None)
+            if source_scheme is not None:
+                for k, v in s['source_terms'].items():
+                    try:
+                        if isinstance(k, str):
+                            indices = self.consm[parse_expr(k)]
+                        elif isinstance(k, sp.Symbol):
+                            indices = self.consm[k]
+                        elif isinstance(k, int):
+                            indices = (ns, k)
+                        else:
+                            raise ValueError
+                    except ValueError:
+                        sss = 'Error in the creation of the scheme: wrong dictionnary\n'
+                        sss += 'the key `source_terms` should contain a dictionnary with'
+                        sss += '   key: the moment concerned'
+                        sss += '        should be the name of the moment as a string or'
+                        sss += '        a sympy Symbol or an integer'
+                        sss += '   value: the value of the source term'
+                        sss += '        should be a float or a sympy expression'
+                        self.log.error(sss)
+                        sys.exit()
+                    source_terms[-1][indices[1]] = v
+                    is_empty = False
+        if is_empty:
+            return None
+        else:
+            return source_terms
+
     def generate(self, sorder):
         """
         Generate the code by using the appropriated generator
@@ -520,23 +636,40 @@ class Scheme(object):
 
         The code can be viewed. If S is the scheme
 
-        >>> print S.generator.code
+        >>> print(S.generator.code)
         """
-        self.generator.sorder = sorder
-        self.generator.setup()
-        self.generator.m2f(self.invMnumGlob, 0, self.dim)
-        self.generator.f2m(self.MnumGlob, 0, self.dim)
-        self.generator.onetimestep(self.stencil)
-
-        self.generator.transport(self.nscheme, self.stencil)
-
         pk, pv = param_to_tuple(self.param)
         EQ = []
         for e in self._EQ:
             EQ.append(e.subs(list(zip(pk, pv))))
 
+        if self._source_terms is not None:
+            ST = copy.deepcopy(self._source_terms)
+            for i, sti in enumerate(ST):
+                for j, stij in enumerate(sti):
+                    if stij is not None:
+                        ST[i][j] = stij.subs(list(zip(pk, pv)))
+            dicoST = {'ST':ST,
+                      'vart':self.vart,
+                      'varx':self.varx,
+                      'vary':self.vary,
+                      'varz':self.varz,
+                      'ode_solver':self.ode_solver}
+        else:
+            dicoST = None
+
+        self.generator.sorder = sorder
+        self.generator.setup()
+        self.generator.m2f(self.invMnumGlob, 0, self.dim)
+        self.generator.f2m(self.MnumGlob, 0, self.dim)
+        self.generator.onetimestep(self.stencil, self.pattern)
+
+        self.generator.transport(self.nscheme, self.stencil)
         self.generator.equilibrium(self.nscheme, self.stencil, EQ)
         self.generator.relaxation(self.nscheme, self.stencil, self.s, EQ)
+        if dicoST is not None:
+            self.generator.source_term(self.nscheme, self.stencil, dicoST)
+        #print(self.generator.code)
         self.generator.compile()
 
         mpi.COMM_WORLD.Barrier()
@@ -555,7 +688,7 @@ class Scheme(object):
     def transport(self, f):
         """ The transport phase on the distribution functions f """
         mod = self.generator.get_module()
-        mod.transport(f)
+        mod.transport(f.array)
 
     def equilibrium(self, m):
         """ Compute the equilibrium """
@@ -568,10 +701,15 @@ class Scheme(object):
         mod = self.generator.get_module()
         mod.relaxation(m.array)
 
-    def onetimestep(self, m, fold, fnew, in_or_out, valin):
+    def source_term(self, m, tn=0., dt=0., x=0., y=0., z=0.):
+        """ The integration of the source term on the moments m """
+        mod = self.generator.get_module()
+        mod.source_term(m.array, tn, dt, x, y, z)        
+
+    def onetimestep(self, m, fold, fnew, in_or_out, valin, tn=0., dt=0., x=0., y=0., z=0.):
         """ Compute one time step of the Lattice Boltzmann method """
         mod = self.generator.get_module()
-        mod.onetimestep(m.array, fold.array, fnew.array, in_or_out, valin)
+        mod.onetimestep(m.array, fold.array, fnew.array, in_or_out, valin, tn, dt, x, y, z)
 
     def set_boundary_conditions(self, f, m, bc, interface):
         """

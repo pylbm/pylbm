@@ -295,7 +295,7 @@ class Neumann(Boundary_method):
     def update(self, f):
         f[tuple(self.istore)] = f[tuple(self.iload[0])]
 
-class Neumann_vertical(Neumann):
+class Neumann_x(Neumann):
     def set_iload(self):
         k = self.istore[0]
         v = self.stencil.get_all_velocities()
@@ -303,12 +303,20 @@ class Neumann_vertical(Neumann):
         indices[0] += v[k].T[0]
         self.iload.append(np.concatenate([k[np.newaxis, :], indices]))
 
-class Neumann_horizontal(Neumann):
+class Neumann_y(Neumann):
     def set_iload(self):
         k = self.istore[0]
         v = self.stencil.get_all_velocities()
         indices = self.istore[1:].copy()
         indices[1] += v[k].T[1]
+        self.iload.append(np.concatenate([k[np.newaxis, :], indices]))
+
+class Neumann_z(Neumann):
+    def set_iload(self):
+        k = self.istore[0]
+        v = self.stencil.get_all_velocities()
+        indices = self.istore[1:].copy()
+        indices[1] += v[k].T[2]
         self.iload.append(np.concatenate([k[np.newaxis, :], indices]))
 
 if __name__ == "__main__":

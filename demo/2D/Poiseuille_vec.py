@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import division
 """
  Solver D2Q(4,4,4) for a Poiseuille flow
 
@@ -141,8 +142,8 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
         p_n = sol.m[p][1:-1, 1:-1]
         ux_n = sol.m[ux][1:-1, 1:-1]
         uy_n = sol.m[uy][1:-1, 1:-1]
-        x = sol.domain.x[0][1:-1]
-        y = sol.domain.x[1][1:-1]
+        x = sol.domain.x[1:-1]
+        y = sol.domain.y[1:-1]
         x = x[:, np.newaxis]
         y = y[np.newaxis, :]
         coeff = sol.domain.dx / np.sqrt(width*height)

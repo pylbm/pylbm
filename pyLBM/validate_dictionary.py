@@ -67,6 +67,7 @@ def is_dico_generic(d, ltk, ltv, ntab=0):
                 test_k = False
                 ligne_k += PrintInColor.error(v)
             ligne += debut(test_k) + space(ntab) + ligne_k
+            test = test and test_k
     else:
         ligne = ''
     return test, ligne
@@ -133,6 +134,9 @@ def is_dico_bc(d, ntab=0):
 
 def is_dico_init(d, ntab=0):
     return is_dico_generic(d, (sp.Symbol, string_types), (tuple, int, float), ntab=ntab)
+
+def is_dico_sources(d, ntab=0):
+    return is_dico_generic(d, (sp.Symbol, string_types), (tuple, int, float, sp.Expr, string_types), ntab=ntab)
 
 def is_dico_stab(d, ntab=0):
     return test_dico_prototype(d, pyLBM.scheme.proto_stab, ntab=ntab)
@@ -213,9 +217,19 @@ def is_list_float(l, ntab=None):
 def is_2_list_int_or_float(l, ntab=None):
     return is_list_generic(l, (int, float), size=2)
 
+def is_list_string_or_tuple(l, ntab=None):
+    return is_list_generic(l, (tuple, string_types))
+
 def is_generator(d, ntab=None):
     try:
         test = issubclass(d, pyLBM.generator.base.Generator)
+    except:
+        test = False
+    return test, PrintInColor.unknown(d, test)
+
+def is_ode_solver(d, ntab=None):
+    try:
+        test = issubclass(d, pyLBM.generator.ode_schemes.ode_solver)
     except:
         test = False
     return test, PrintInColor.unknown(d, test)
@@ -387,6 +401,8 @@ def validate(dico, proto, test_comp = True):
             aff += aff_c2
             aff += aff_c3
             aff += '-'*60 + '\n'
+        else:
+            aff += '\n'
     else:
         aff += '\n'
     aff += "*"*75 + '\n'

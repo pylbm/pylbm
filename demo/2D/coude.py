@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 """
 test: True
 """
@@ -20,6 +22,11 @@ def vorticity(sol):
                   - qy_n[2:, 1:-1] + qy_n[:-2, 1:-1])
     return vort.T
 
+def norme_q(sol):
+    qx_n = sol.m[qx]
+    qy_n = sol.m[qy]
+    nv = qx_n[1:-1, 1:-1]**2 + qy_n[1:-1, 1:-1]**2
+    return nv.T
 
 def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
     """
@@ -47,7 +54,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     la = 1. # velocity of the scheme
     rhoo = 1.
     uo = 0.05
-    mu   = 1.e-5 #0.00185
+    mu   = 2.5e-5 #0.00185
     zeta = 10*mu
     dummy = 3.0/(la*rhoo*dx)
     s3 = 1.0/(0.5+zeta*dummy)
@@ -79,13 +86,12 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
                            X**2-Y**2, X*Y],
                     'relaxation_parameters':s,
                     'equilibrium':[rho, qx, qy,
-                                -2*rho + 3*qx**2 + 3*qy**2,
-                                #rho + 3/2*qx**2 + 3/2*qy**2,
-                                rho - 3*qx**2 - 3*qy**2,
+                                -2*rho + 3*q2,
+                                rho - 3*q2,
                                 -qx, -qy,
-                                qx**2 - qy**2, qx*qy],
+                                qx2 - qy2, qxy],
                     'conserved_moments': [rho, qx, qy],
-                    'init': {rho: rhoo, qx: rhoo*uo, qy: 0.},
+                    'init': {rho: rhoo, qx: 0., qy: 0.},
         }],
         'boundary_conditions':{
            0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}},
@@ -93,6 +99,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
            2:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}, 'value':(bc_in, (rhoo, uo, ymin, ymax))}
         },
         'generator': generator,
+        'parameters':{'LA':la},
       }
 
     sol = pyLBM.Simulation(dico, sorder=sorder)
@@ -102,15 +109,15 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
         viewer = pyLBM.viewer.matplotlibViewer
         fig = viewer.Fig()
         ax = fig[0]
-        image = ax.image(vorticity, (sol,), cmap='jet', clim=[0, .1])
+        image = ax.image(norme_q, (sol,), cmap='jet', clim=[0, uo**2])
         ax.polygon([[xmin/dx, ymin/dx],[xmin/dx, yc/dx], [xc/dx, yc/dx], [xc/dx, ymin/dx]], 'k')
 
         def update(iframe):
-            nrep = 256
+            nrep = 64
             for i in range(nrep):
                  sol.one_time_step()
 
-            image.set_data(vorticity(sol))
+            image.set_data(norme_q(sol))
             ax.title = "Solution t={0:f}".format(sol.t)
 
         # run the simulation
@@ -123,6 +130,6 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     return sol
 
 if __name__ == '__main__':
-    dx = 1./128
+    dx = 1./512
     Tf = 1.
-    run(dx, Tf, generator=pyLBM.generator.NumpyGenerator)
+    run(dx, Tf, generator=pyLBM.generator.CythonGenerator)

@@ -69,7 +69,15 @@ def create_notebooks(notebooks):
     with open(export, 'w') as f:
         f.write('Tutorial\n')
         f.write('========\n')
+        f.write('\n')
+        f.write(".. toctree::\n")
+        f.write("   :hidden:\n")
+        f.write("   :titlesonly:\n\n")
+        for filename, name in notebooks:
+            f.write("   {0}<{1}>\n".format(name, './notebooks/' + name))
+        f.write('\n')
         #f.write('    :maxdepth: 1\n\n')
+
         for filename, name in notebooks:
             f.write(":download:`get the notebook<{0}>`\n\n".format('./notebooks/' + name + '.ipynb'))
             f.write("\n:doc:`{0}`\n\n".format('./notebooks/' + name))
@@ -78,6 +86,7 @@ def create_notebooks(notebooks):
                 lines = open(meta).readlines()
                 f.writelines(lines)
                 f.write('\n')
+
 
 if __name__ == '__main__':
     main()

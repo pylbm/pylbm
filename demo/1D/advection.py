@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 """
  Solver D1Q2 for the advection equation on the 1D-torus
 
@@ -21,7 +23,7 @@ def u0(x, xmin, xmax):
     largeur = 0.1*(xmax-xmin)
     return 1.0/largeur**10 * (x%1-milieu-largeur)**5 * (milieu-x%1-largeur)**5 * (abs(x%1-milieu)<=largeur)
 
-def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
     """
     Parameters
     ----------
@@ -51,7 +53,7 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
     dico = {
         'box':{'x':[xmin, xmax], 'label':-1},
         'space_step':dx,
-        'scheme_velocity':la,
+        'scheme_velocity':LA,
         'schemes':[
         {
             'velocities':[1,2],
@@ -63,6 +65,7 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
         },
         ],
         'generator': generator,
+        'split_pattern': ['transport', 'relaxation'],
         'parameters': {LA: la},
     }
 
@@ -77,7 +80,7 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
         ymin, ymax = -.2, 1.2
         ax.axis(xmin, xmax, ymin, ymax)
 
-        x = sol.domain.x[0][1:-1]
+        x = sol.domain.x
         l1 = ax.plot(x, sol.m_in[u], width=2, color='b', label='D1Q2')[0]
         l2 = ax.plot(x, u0(x-c*sol.t, xmin, xmax), width=2, color='k', label='exact')[0]
 
@@ -100,4 +103,4 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
 if __name__ == '__main__':
     dx = 1./128
     Tf = 1.
-    sol = run(dx, Tf)
+    sol = run(dx, Tf, generator = pyLBM.generator.NumpyGenerator)

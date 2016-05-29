@@ -46,3 +46,5 @@ def construct_scheme(module, dico):
     for m1, m2 in zip(s.Mnum, module.Mnum):
         tools.ok_(np.all(m1==m2))
     tools.eq_(s._EQ, module.EQ_result)
+
+test_scheme()

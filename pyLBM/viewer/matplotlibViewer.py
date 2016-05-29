@@ -82,8 +82,8 @@ class PlotWidget(object):
     def line(self, pos, width=2, color='k'):
         return self.ax.plot(pos[:, 0], pos[:, 1], c=color, lw=width)
 
-    def plot(self, x, y, width=2, color='k', label='', marker=''):
-        return self.ax.plot(x, y, c=color, lw=width, marker=marker, label=label)
+    def plot(self, x, y, width=2, color='k', label='', marker='', linestyle='-'):
+        return self.ax.plot(x, y, c=color, lw=width, marker=marker, label=label, linestyle=linestyle)
 
     def segments(self, pos,  width=5, color='k', **kwargs):
         if pos.shape[1] == 2:

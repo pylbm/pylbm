@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 """
  Solver D3Q6^4 for a Poiseuille flow
 
@@ -164,7 +166,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
 
     sol = pyLBM.Simulation(dico, sorder=sorder)
 
-    x, y, z = sol.domain.x[0], sol.domain.x[1], sol.domain.x[2]
+    x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
 
     im = 0
     c = 0

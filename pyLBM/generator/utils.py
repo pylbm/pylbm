@@ -8,8 +8,62 @@ from string import Template
 import numpy as np
 from six.moves import range
 
+list_of_numpy_functions = [
+    'sin', 'cos', 'tan', 'arcsin', 'arccos', 'arctan', 'arctan2',
+    'sinh', 'cosh', 'tanh', 'arcsinh', 'arccosh', 'arctanh',
+    'around', 'rint', 'fix', 'floor', 'ceil', 'trunc',
+    'exp', 'expm1', 'exp2', 'log', 'log2', 'log10', 'log1p',
+    'i0', 'sinc',
+    'add', 'reciprocal', 'negative', 'multiply', 'power', 'subtract',
+    'true_divide', 'floor_divide', 'fmod', 'mod', 'remainder',
+    'clip', 'sqrt', 'square', 'absolute', 'fabs', 'sign',
+    'maximum', 'minimum', 'fmax', 'fmin',
+    'prod', 'sum', 'nansum', 'cumprod', 'cumsum',
+    'diff', 'ediff1d', 'gradient', 'cross', 'trapz'
+]
+
+dictionnary_of_translation_numpy = {
+    'sin':'sin', 'cos':'cos', 'tan':'tan',
+    'asin':'arcsin', 'acos':'arccos', 'atan':'arctan', 'atan2':'arctan2',
+    'sinh':'sinh', 'cosh':'cosh', 'tanh':'tanh',
+    'asinh':'arcsinh', 'acosh':'arccosh', 'atanh':'arctanh',
+    'floor':'floor', 'ceiling':'ceil', 'trunc':'trunc',
+    'exp':'exp', 'log':'log',
+    'besseli':'i0', 'sinc':'sinc',
+    'Add':'add', 'Mul':'multiply', 'Pow':'power',
+    'Mod':'mod',
+    'sqrt':'sqrt', 'Abs':'absolute', 'sign':'sign',
+    'Max':'fmax', 'Min':'fmin',
+    'prod':'prod',
+}
+
+list_of_cython_functions = [
+    'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2',
+    'sinh', 'cosh', 'tanh', 'asinh', 'acosh', 'atanh',
+    'round', 'rint', 'nearbyint', 'floor', 'ceil', 'trunc',
+    'exp', 'expm1', 'exp2', 'log', 'log2', 'log10', 'log1p', 'logb', 'ilogb',
+    'signbit',
+    'fmod', 'remainder', 'remquo',
+    'sqrt', 'cbrt', 'pow', 'fabs',
+    'fmax', 'fmin', 'fdim',
+    'erf', 'erfc', 'lgamma', 'tgamma'
+]
+
+dictionnary_of_translation_cython = {
+    'sin':'sin', 'cos':'cos', 'tan':'tan',
+    'asin':'asin', 'acos':'acos', 'atan':'atan', 'atan2':'atan2',
+    'sinh':'sinh', 'cosh':'cosh', 'tanh':'tanh',
+    'asinh':'asinh', 'acosh':'acosh', 'atanh':'atanh',
+    'floor':'floor', 'ceiling':'ceil', 'trunc':'trunc',
+    'exp':'exp', 'log':'log',
+    'sign':'signbit', 'Pow':'pow',
+    'Mod':'fmod',
+    'sqrt':'sqrt', 'Abs':'fabs', 'sign':'sign',
+    'Max':'fmax', 'Min':'fmin',
+}
+
 def matMult(A, x, y, sorder=None, vectorized=True, indent=''):
-    """
+    '''
     return a string representing the unroll matrix vector operation y = Ax
 
     Parameters
@@ -57,7 +111,7 @@ def matMult(A, x, y, sorder=None, vectorized=True, indent=''):
         f[2, i, j] =  - 6.0000000000000000*m[0, i, j] - 7.0000000000000000*m[1, i, j] - 8.0000000000000000*m[2, i, j]
         f[3, i, j] =  + 9.0000000000000000*m[0, i, j] + 10.0000000000000000*m[1, i, j] + 11.0000000000000000*m[2, i, j]
 
-    """
+    '''
     nvk1, nvk2 = A.shape
     code = ''
 
@@ -72,7 +126,7 @@ def matMult(A, x, y, sorder=None, vectorized=True, indent=''):
         else:
             tmp[sorder[0]] = str(i)
 
-        code += indent + "{0}[{1}] = ".format(y, ', '.join(tmp))
+        code += indent + '{0}[{1}] = '.format(y, ', '.join(tmp))
 
         for j in range(nvk2):
             coef = A[i, j]
@@ -85,9 +139,9 @@ def matMult(A, x, y, sorder=None, vectorized=True, indent=''):
                 tmp[sorder[0]] = str(j)
 
             if coef != 0:
-                code += "{0}{1}{2}[{3}]".format(sign, scoef, x, ', '.join(tmp))
+                code += '{0}{1}{2}[{3}]'.format(sign, scoef, x, ', '.join(tmp))
 
-        code += "\n"
+        code += '\n'
 
     return code
 
@@ -139,18 +193,20 @@ def load_or_store(x, y, load_list, store_list, sorder, indent='', vectorized = T
     if store_list is None:
         s2 = ['']*len(s1)
 
-    t = Template("$indent$x[$indx] = $y[$indy]")
+    t = Template('$indent$x[$indx] = $y[$indy]')
     code = ''
+    is_empty = True
     ind = 0
     for ss1, ss2 in zip(s1, s2):
         tmp1 = get_indices(ss1, ind, sorder)
         tmp2 = get_indices(ss2, ind, sorder)
         if not (tmp1 == tmp2 and avoid_copy):
-            code += "{0}{1}[{2}] = {3}[{4}]\n".format(indent, x, ', '.join(tmp2),
+            code += '{0}{1}[{2}] = {3}[{4}]\n'.format(indent, x, ', '.join(tmp2),
                         y, ', '.join(tmp1))
+            is_empty = False
         ind += 1
 
-    return code
+    return code, is_empty
 
 if __name__ == '__main__':
     import numpy as np

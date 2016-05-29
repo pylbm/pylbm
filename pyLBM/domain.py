@@ -32,12 +32,14 @@ proto_domain = {
     'box':(is_dico_box,),
     'elements':(type(None), is_list_elem),
     'dim':(type(None), int),
-    'space_step':(int, float,),
+    'space_step':(int, float, sp.Symbol),
     'scheme_velocity':(type(None), int, float, sp.Symbol),
-    'parameters':(type(None), is_dico_sp_float),
+    'parameters':(type(None), is_dico_sp_sporfloat),
     'schemes':(is_list_sch_dom,),
     'boundary_conditions':(type(None), is_dico_bc),
     'generator':(type(None), is_generator),
+    'ode_solver':(type(None), is_ode_solver),
+    'split_pattern': (type(None), is_list_string_or_tuple),
     'stability':(type(None), is_dico_stab),
     'consistency':(type(None), is_dico_cons),
     'inittype':(type(None),) + string_types,
@@ -86,25 +88,25 @@ class Domain(object):
     In that case, dico does not need to contain the informations for generate
     the geometry and/or the stencil
 
-    In 1D, distance[q, i] is the distance between the point x[0][i]
+    In 1D, distance[q, i] is the distance between the point x[i]
     and the border in the direction of the qth velocity.
 
     In 2D, distance[q, j, i] is the distance between the point
-    (x[0][i], x[1][j]) and the border in the direction of qth
+    (x[i], y[j]) and the border in the direction of qth
     velocity
 
     In 3D, distance[q, k, j, i] is the distance between the point
-    (x[0][i], x[1][j], x[2][k]) and the border in the direction of qth
+    (x[i], y[j], z[k]) and the border in the direction of qth
     velocity
 
     In 1D, flag[q, i] is the flag of the border reached by the point
-    x[0][i] in the direction of the qth velocity
+    x[i] in the direction of the qth velocity
 
     In 2D, flag[q, j, i] is the flag of the border reached by the point
-    (x[0][i], x[1][j]) in the direction of qth velocity
+    (x[i], y[j]) in the direction of qth velocity
 
     In 2D, flag[q, k, j, i] is the flag of the border reached by the point
-    (x[0][i], x[1][j], x[2][k]) in the direction of qth velocity
+    (x[i], y[j], z[k]) in the direction of qth velocity
 
     Warnings
     --------
@@ -131,8 +133,14 @@ class Domain(object):
       number of points in each direction
     extent : list of int
       number of points to add on each side (max velocities)
-    x : numpy array
+    coords : numpy array
       coordinates of the domain
+    x : numpy array
+      first coordinate of the domain
+    y : numpy array
+      second coordinate of the domain (None if dim<2)
+    z : numpy array
+      third coordinate of the domain (None if dim<3)
     in_or_out : numpy array
       defines the fluid and the solid part
       (fluid: value=valin, solid: value=valout)
@@ -468,7 +476,7 @@ class Domain(object):
             self.log.error(s)
 
         if self.dim == 1:
-            x = self.x[0]
+            x = self.coords[0]
             y = np.zeros(x.shape)
             vkmax = self.stencil.vmax[0]
             for k in range(self.stencil.unvtot):
@@ -550,7 +558,7 @@ class Domain(object):
                 view.markers(np.asarray([x[indoutx], y[indouty]]).T, 500*self.dx, symbol='s')
 
         elif self.dim == 3:
-            x, y, z = self.x[:]
+            x, y, z = self.coords[:]
             dx = self.dx
             xmin, xmax = self.bounds[0][:]
             ymin, ymax = self.bounds[1][:]

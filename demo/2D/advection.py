@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 """
  Solver D2Q4 for the advection equation on the 2D-torus
 
@@ -75,17 +77,13 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
 
     sol = pyLBM.Simulation(dico, sorder=sorder)
 
-    sol._m.get_global_array()
-
     if withPlot:
         # create the viewer to plot the solution
         viewer = pyLBM.viewer.matplotlibViewer
         fig = viewer.Fig()
         ax = fig[0]
-    
         im = ax.image(sol.m[u].transpose())
         ax.title = 'solution at t = {0:f}'.format(sol.t)
-    
         def update(iframe):
             global compt
             if sol.t<Tf:                 # time loop
@@ -95,7 +93,6 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
                     compt = 0
                     im.set_data(sol.m[u].transpose())
                     ax.title = 'solution at t = {0:f}'.format(sol.t)
-    
         fig.animate(update, interval=1)
         fig.show()
     else:
@@ -107,4 +104,4 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
 if __name__ == '__main__':
     dx = 1./128
     Tf = 10.
-    run(dx, Tf, generator=pyLBM.generator.NumpyGenerator)
+    run(dx, Tf, generator=pyLBM.generator.CythonGenerator)
