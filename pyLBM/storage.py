@@ -14,38 +14,51 @@ class Array(object):
 
     It sets the storage in memory and how to access.
     """
-    def __init__(self, nv, nspace, vmax, sorder=None, dtype=np.double, cartcomm = None):
+    def __init__(self, nv, gspace_size, vmax, sorder=None, mpi_topo=None, dtype=np.double):
         self.log = setLogger(__name__)
         self.comm = mpi.COMM_WORLD
-        self.cartcomm = cartcomm
         self.sorder = sorder
 
-        if sorder is None:
-            ind = [i for i in range(len(nspace) + 1)]
+        self.gspace_size = gspace_size
+        self.dim = len(gspace_size)
+
+        if mpi_topo is not None:
+            self.mpi_topo = mpi_topo
+
+            self.region = mpi_topo.get_region(*gspace_size)
+            self.region_size = []
+            for i in range(self.dim):
+                self.region[i][0] -= vmax[i]
+                self.region[i][1] += vmax[i]
+                self.region_size.append(self.region[i][1] - self.region[i][0])
         else:
-            if len(sorder) != len(nspace) + 1:
+            self.region_size = gspace_size
+
+        if sorder is None:
+            ind = [i for i in range(self.dim + 1)]
+        else:
+            if len(sorder) != self.dim + 1:
                 self.log.error("storage order must have the same length of the spatial dimension + 1.")
             ind = copy.deepcopy(sorder)
 
         self.index = copy.copy(ind)
         self.vmax = vmax
 
-        tmpshape = [nv] + nspace
+        tmpshape = [nv] + self.region_size
         shape = [0]*len(tmpshape)
-        for i in range(len(shape)):
-            shape[ind[i]] = tmpshape[i]
+        for i in range(self.dim + 1):
+            shape[ind[i]] = int(tmpshape[i])
         self.array = np.zeros((shape), dtype=dtype)
         
-        dim = len(nspace)
         self.swaparray = self.array
-        for i in range(dim + 1):
+        for i in range(self.dim + 1):
             if i != ind[i]:
                 j = ind.index(i)
                 self.swaparray = self.swaparray.swapaxes(i, ind[i])
                 ind[j] = ind[i]
                 ind[i] = i
 
-        if cartcomm is not None:
+        if mpi_topo is not None:
             self._set_subarray()
 
     def __getitem__(self, key):
@@ -64,22 +77,6 @@ class Array(object):
         for k, v in consm.items():
             self.consm[k] = nv_ptr[v[0]] + v[1]
 
-    def get_global_array(self):
-        size = np.asarray(self.cartcomm.gather(self.nspace, 0))
-        topo = self.cartcomm.Get_topo()
-        recvbuf = [[], mpi.DOUBLE]
-        garray = None
-        if self.cartcomm.Get_rank() == 0:
-            size.shape = topo[0] + [self.dim]
-            n = []
-            #get global size
-            for i in range(self.dim):
-                n.append(np.sum(size[..., i], axis=i)[0] - 2*self.vmax[i]*(size.shape[i]-1))
-            garray = np.empty([self.nv] + n)
-            recvbuf = [garray, mpi.DOUBLE]
-        self.cartcomm.Gather([np.ascontiguousarray(self.swaparray[:, 1:-1, 1:-1]), mpi.DOUBLE], recvbuf, root=0)
-        return garray
-
     @property
     def nspace(self):
         return self.swaparray.shape[1:]
@@ -96,86 +93,66 @@ class Array(object):
     def size(self):
         return self.array.size
 
-    @property
-    def dim(self):
-        return len(self.nspace)
-
     def _set_subarray(self):
         """
         Create the neigbors and the subarrays to update interfaces
         between each processes.
 
-        Parameters
-        ----------
-
-        vmax : list
-          the maximal velocity in norm for each spatial direction.
-
         """
-
-        rank = self.cartcomm.Get_rank()
-        coords = self.cartcomm.Get_coords(rank)
-
-        nspace = self.nspace
+        nspace = list(self.nspace)
         nv = self.nv
-        dim = len(self.nspace)
+        dim = self.dim
         vmax = self.vmax
 
-        # set nloc without the ghost points
-        nloc = [i - 2*v for i, v in zip(nspace, vmax)]
-        nswap = (nv,) + nspace
-        n = [0]*(dim+1)
-        for i in range(dim+1):
-            n[self.index[i]] = nswap[i]
-        # set the size and the start indices
-        # for the send and receive messages
-        start_send = []
-        start_recv = []
-        msize = []
-        stag, rtag = get_tags(dim)
-        for i in range(dim):
-            start_send.append([vmax[i], vmax[i], nspace[i]-2*vmax[i]])
-            start_recv.append([0, vmax[i], nspace[i]-vmax[i]])
-            msize.append([vmax[i], nloc[i], vmax[i]])
-        start_send = np.asarray(start_send)
-        start_recv = np.asarray(start_recv)
-        msize = np.asarray(msize)
+        def swap(array_in):
+            array_out = [0]*(dim+1)
+            for i in range(dim+1):
+                array_out[self.index[i]] = array_in[i]
+            return array_out
 
-        # set the neighbors of the domain and their subarrays
-        # for the send and receive messages
+        sizes = swap([nv] + nspace)
+
+        rank = self.mpi_topo.cartcomm.Get_rank()
+        coords = self.mpi_topo.cartcomm.Get_coords(rank)
+
         self.neighbors = []
+        direction = []
+        for i in range(dim):
+            direction = copy.copy(coords); direction[i] -= 1
+            self.neighbors.append(self.mpi_topo.cartcomm.Get_cart_rank(direction))
+            direction = copy.copy(coords); direction[i] += 1
+            self.neighbors.append(self.mpi_topo.cartcomm.Get_cart_rank(direction))
+
+        self.sendTag = [0, 1, 2, 3, 4, 5]
+        self.recvTag = [1, 0, 3, 2, 5, 4]
+
         self.sendType = []
-        self.sendTag = []
         self.recvType = []
-        self.recvTag = []
-        directions = get_directions(dim)
-        rows = np.arange(dim)
-        for d in directions:
-            if not np.all(d == 0):
-                try:
-                    neighbor = self.cartcomm.Get_cart_rank(coords + d)
-                    self.neighbors.append(neighbor)
 
-                    msswap = [nv] + list(msize[rows, d+1])
-                    ssswap = [0] + list(start_send[rows, d+1])
-                    srswap = [0] + list(start_recv[rows, d+1])
+        for d in range(dim):
+            subsizes = [nv] + nspace; subsizes[d+1] = vmax[d]
+            subsizes = swap(subsizes)
+        
+            sstart = [0]*(dim+1); sstart[d+1] = vmax[d]
+            sstart = swap(sstart)
+            rstart = [0]*(dim+1)
 
-                    ms = [0]*(dim+1)
-                    ss = [0]*(dim+1)
-                    sr = [0]*(dim+1)
-                    for i in range(dim+1):
-                        ms[self.index[i]] = msswap[i]
-                        ss[self.index[i]] = ssswap[i]
-                        sr[self.index[i]] = srswap[i]
+            self.sendType.append(mpi.DOUBLE.Create_subarray(sizes, subsizes, sstart))
+            self.recvType.append(mpi.DOUBLE.Create_subarray(sizes, subsizes, rstart))
 
-                    self.sendType.append(mpi.DOUBLE.Create_subarray(n, ms, ss))
-                    self.recvType.append(mpi.DOUBLE.Create_subarray(n, ms, sr))
-                    self.sendTag.append(stag[tuple(d+1)])
-                    self.recvTag.append(rtag[tuple(d+1)])
-                    self.log.info("[{0}] send to {1} with tag {2} subarray:{3}".format(rank, neighbor, self.sendTag[-1], (n, ms, ss)))
-                    self.log.info("[{0}] recv from {1} with tag {2} subarray:{3}".format(rank, neighbor, self.recvTag[-1], (n, ms, sr)))
-                except mpi.Exception:
-                    pass
+            self.log.info("[{0}] send to {1} with tag {2} subarray:{3}".format(rank, self.neighbors[2*d], self.sendTag[2*d], (sizes, subsizes, sstart)))
+            self.log.info("[{0}] recv from {1} with tag {2} subarray:{3}".format(rank, self.neighbors[2*d], self.recvTag[2*d], (sizes, subsizes, rstart)))
+
+            sstart = [0]*(dim+1); sstart[d+1] = nspace[d] - 2*vmax[d]
+            sstart = swap(sstart)
+            rstart = [0]*(dim+1); rstart[d+1] = nspace[d] - vmax[d]
+            rstart = swap(rstart)
+
+            self.sendType.append(mpi.DOUBLE.Create_subarray(sizes, subsizes, sstart))
+            self.recvType.append(mpi.DOUBLE.Create_subarray(sizes, subsizes, rstart))
+
+            self.log.info("[{0}] send to {1} with tag {2} subarray:{3}".format(rank, self.neighbors[2*d+1], self.sendTag[2*d+1], (sizes, subsizes, sstart)))
+            self.log.info("[{0}] recv from {1} with tag {2} subarray:{3}".format(rank, self.neighbors[2*d+1], self.recvTag[2*d+1], (sizes, subsizes, rstart)))
 
         for s, r in zip(self.sendType, self.recvType):
             s.Commit()
@@ -185,14 +162,16 @@ class Array(object):
         """
         update ghost points on the interface with the datas of the neighbors.
         """
-        req = []
-        for i in range(len(self.recvType)):
-            req.append(self.comm.Irecv([self.array, self.recvType[i]], source = self.neighbors[i], tag=self.recvTag[i]))
+        for d in range(self.dim):
+            req = []
 
-        for i in range(len(self.sendType)):
-            req.append(self.comm.Isend([self.array, self.sendType[i]], dest = self.neighbors[i], tag=self.sendTag[i]))
+            req.append(self.comm.Irecv([self.array, self.recvType[2*d]], source = self.neighbors[2*d], tag=self.recvTag[2*d]))
+            req.append(self.comm.Irecv([self.array, self.recvType[2*d + 1]], source = self.neighbors[2*d + 1], tag=self.recvTag[2*d + 1]))
 
-        mpi.Request.Waitall(req)
+            req.append(self.comm.Isend([self.array, self.sendType[2*d]], dest = self.neighbors[2*d], tag=self.sendTag[2*d]))
+            req.append(self.comm.Isend([self.array, self.sendType[2*d + 1]], dest = self.neighbors[2*d + 1], tag=self.sendTag[2*d + 1]))
+
+            mpi.Request.Waitall(req)
 
 class SOA(Array):
     """
@@ -224,9 +203,9 @@ class SOA(Array):
         the total size of the array
 
     """
-    def __init__(self, nv, nspace, vmax, dtype=np.double, cartcomm=None):
-        sorder = [i for i in range(len(nspace) + 1)]
-        Array.__init__(self, nv, nspace, vmax, sorder=sorder, dtype=dtype, cartcomm=cartcomm)
+    def __init__(self, nv, gspace_size, vmax, mpi_topo, dtype=np.double):
+        sorder = [i for i in range(len(gspace_size) + 1)]
+        Array.__init__(self, nv, gspace_size, vmax, sorder, mpi_topo, dtype)
 
     def reshape(self):
         return self.array
@@ -261,10 +240,9 @@ class AOS(Array):
         the total size of the array
 
     """
-    def __init__(self, nv, nspace, vmax, dtype=np.double, cartcomm=None):
-        sorder = [len(nspace)] + [i for i in range(len(nspace))]
-        Array.__init__(self, nv, nspace, vmax, sorder=sorder,
-                       dtype=dtype, cartcomm=cartcomm)
+    def __init__(self, nv, gspace_size, vmax, mpi_topo, dtype=np.double):
+        sorder = [len(gspace_size)] + [i for i in range(len(gspace_size))]
+        Array.__init__(self, nv, gspace_size, vmax, sorder, mpi_topo, dtype)
 
     def reshape(self):
         return self.array.reshape((np.prod(self.nspace), self.nv))
@@ -274,6 +252,8 @@ class Array_in(Array):
         self.log = setLogger(__name__)
         self.vmax = array.vmax
         self.consm = array.consm
+        self.gspace_size = array.gspace_size
+        self.mpi_topo = array.mpi_topo
 
         ind = [slice(None)]
         for vmax in array.vmax:
@@ -281,6 +261,30 @@ class Array_in(Array):
         ind = np.asarray(ind)
         self.swaparray = array.swaparray[tuple(ind)]
         self.array = array.array[tuple(ind[array.sorder])]
+        self.region = self.mpi_topo.get_region(*self.gspace_size)
+
+    def get_global_array(self):
+        lx = self.mpi_topo.get_lx(*self.gspace_size)
+        region = self.mpi_topo.get_region(*self.gspace_size)
+
+        #if self.mpi_topo.cartcomm.Get_rank() == 0:
+        n = [l[-1] for l in lx]
+        garray = np.empty([self.nv] + n)
+        
+        
+        nglobal = np.asarray([self.nv] + self.gspace_size, dtype=np.int)
+        nlocal = self.swaparray.shape
+        #start = [0] + [r[0] for r in region]
+        start = [0]*3
+
+        print('global', nglobal, 'local', nlocal, 'start', start)
+        newtype = mpi.DOUBLE.Create_subarray(nglobal, nlocal, start)
+        newtype.Commit()
+        recvbuf = [garray, newtype]
+
+        self.mpi_topo.cartcomm.Gather([np.ascontiguousarray(self.swaparray), mpi.DOUBLE], recvbuf, root=0)
+        return garray
+
 
 def get_directions(dim):
     """
