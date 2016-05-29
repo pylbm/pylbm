@@ -11,7 +11,7 @@ from argparse import ArgumentParser
 from .options import options
 from .logs import setLogger
 
-class Interface(object):
+class MPI_topology(object):
     """
     Interface construction using a MPI topology.
 
@@ -62,7 +62,7 @@ class Interface(object):
         self.set_options()
 
         self.comm = comm
-        # if npx, npy and npz are all the default value (1)
+        # if npx, npy and npz are all set to the default value (1)
         # then Compute_dims performs the splitting of the domain
         if self.npx == self.npy == self.npz == 1:
             size = comm.Get_size()
@@ -72,8 +72,24 @@ class Interface(object):
 
         self.split = np.asarray(split[:self.dim])
         self.cartcomm = comm.Create_cart(self.split, period)
-
+        self.region = None
+        self.lx = None
         self.log = setLogger(__name__)
+
+    def get_lx_(self, n, axes=0):
+        lx = [0]
+        np = self.cartcomm.Get_topo()[0][axes]
+        for i in range(np):
+            lx.append(lx[-1] + n/np + ((n % np) > i))
+        return lx
+
+    def get_lx(self, nx, ny=None, nz=None):
+        lx = [self.get_lx_(nx, 0)]
+        if ny is not None:
+            lx.append(self.get_lx_(ny, 1))
+        if nz is not None:
+            lx.append (self.get_lx_(nz, 2))
+        return lx
 
     def get_coords(self):
         """
@@ -82,6 +98,17 @@ class Interface(object):
         """
         rank = self.cartcomm.Get_rank()
         return np.asarray(self.cartcomm.Get_coords(rank))
+
+    def get_region(self, nx, ny=None, nz=None):
+        lx = self.get_lx(nx, ny, nz)
+
+        coords = self.get_coords()
+        region = []
+        for i in range(coords.size):
+            region.append([lx[i][coords[i]], 
+                           lx[i][coords[i] + 1]
+                         ])
+        return region
 
     def set_options(self):
         """
