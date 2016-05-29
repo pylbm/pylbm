@@ -9,6 +9,7 @@ from __future__ import division
 import numpy as np
 from six.moves import range
 import types
+import collections
 
 from .logs import setLogger
 from .storage import Array
@@ -73,7 +74,7 @@ class Boundary(object):
 
         # build the list of indices for each unique velocity and for each label
         self.bv = {}
-        for label in self.domain.geom.list_of_labels():
+        for label in self.domain.list_of_labels():
             dummy_bv = []
             for k in range(self.domain.stencil.unvtot):
                 dummy_bv.append(Boundary_Velocity(self.domain, label, k))
@@ -83,12 +84,12 @@ class Boundary(object):
         dico_bound = dico.get('boundary_conditions',{})
         stencil = self.domain.stencil
 
-        istore = {}
+        istore = collections.OrderedDict() # important to set the boundary conditions always in the same way !!!
         ilabel = {}
         distance = {}
         value_bc = {}
 
-        for label in self.domain.geom.list_of_labels():
+        for label in self.domain.list_of_labels():
             if label == -1: # periodic conditions
                 pass
             elif label == -2: # interface conditions
