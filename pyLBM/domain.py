@@ -388,8 +388,9 @@ class Domain(object):
                 # take the indices where the distance is lower than 1 
                 # between a fluid cell and the border of the element
                 # with the vk velocity
-                with np.errstate(invalid='ignore'):
-                    indx = np.logical_and(np.logical_and(alpha > 0, ind_fluid), out_cells)
+                indx = np.logical_and(alpha > 0, ind_fluid)
+                if out_cells.size != 0:
+                    indx = np.logical_and(indx, out_cells)
 
                 if elem.isfluid:
                     # take all points in the fluid in the ioo_view
