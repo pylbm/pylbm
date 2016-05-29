@@ -190,36 +190,34 @@ class Simulation(object):
 
         self.log.info('Build arrays')
 
-        self.interface = self.domain.geom.interface
+        self.mpi_topo = self.domain.mpi_topo
 
         nv = self.scheme.stencil.nv_ptr[-1]
-        nspace = self.domain.shape_halo
+        nspace = self.domain.global_size
         vmax = self.domain.stencil.vmax
 
         if sorder is None:
             if isinstance(self.scheme.generator, NumpyGenerator):
-                self._m = SOA(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
-                self._F = SOA(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
+                self._m = SOA(nv, nspace, vmax, self.mpi_topo)
+                self._F = SOA(nv, nspace, vmax, self.mpi_topo)
                 #self._Fold = self._F
                 sorder = [i for i in range(self.dim + 1)]
             else:
-                self._m = AOS(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
-                self._F = AOS(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
-                #self._Fold = AOS(nv, nspace, vmax, cartcomm=self.interface.cartcomm)
+                self._m = AOS(nv, nspace, vmax, self.mpi_topo)
+                self._F = AOS(nv, nspace, vmax, self.mpi_topo)
                 sorder = [self.dim] + [i for i in range(self.dim)]
         else:
-            self._m = Array(nv, nspace, vmax, sorder=sorder, cartcomm=self.interface.cartcomm)
-            self._F = Array(nv, nspace, vmax, sorder=sorder, cartcomm=self.interface.cartcomm)
-            #self._Fold = self._F
-            #self._Fold = Array(nv, nspace, vmax, sorder=sorder, cartcomm=self.interface.cartcomm)
+            self._m = Array(nv, nspace, vmax, sorder, self.mpi_topo)
+            self._F = Array(nv, nspace, vmax, sorder, self.mpi_topo)
+
+        self._m.set_conserved_moments(self.scheme.consm, self.domain.stencil.nv_ptr)
+        self._F.set_conserved_moments(self.scheme.consm, self.domain.stencil.nv_ptr)
 
         if self.scheme.generator.sameF:
             self._Fold = self._F
         else:
-            self._Fold = Array(nv, nspace, vmax, sorder=sorder, cartcomm=self.interface.cartcomm)
-
-        self._m.set_conserved_moments(self.scheme.consm, self.domain.stencil.nv_ptr)
-        self._F.set_conserved_moments(self.scheme.consm, self.domain.stencil.nv_ptr)
+            self._Fold = Array(nv, nspace, vmax, sorder, self.mpi_topo)
+            self._Fold.set_conserved_moments(self.scheme.consm, self.domain.stencil.nv_ptr)
 
         self._m_in = Array_in(self._m)
         self._F_in = Array_in(self._F)
@@ -375,18 +373,6 @@ class Simulation(object):
         # else, it could be distributions
         inittype = dico.get('inittype', 'moments')
         coords = np.meshgrid(*(c for c in self.domain.coords_halo), sparse=True, indexing='ij')
-        # if self.dim == 1:
-        #     x = self.domain.x[0]
-        #     coords = (x,)
-        # elif self.dim == 2:
-        #     x = self.domain.x[0][:, np.newaxis]
-        #     y = self.domain.x[1][np.newaxis, :]
-        #     coords = (x, y)
-        # elif self.dim == 3:
-        #     x = self.domain.x[0][:, np.newaxis, np.newaxis]
-        #     y = self.domain.x[1][np.newaxis, :, np.newaxis]
-        #     z = self.domain.x[2][np.newaxis, np.newaxis, :]
-        #     coords = (x, y, z)
 
         if inittype == 'moments':
             array_to_init = self._m
@@ -475,7 +461,7 @@ class Simulation(object):
         according to the specified boundary conditions.
         """
         t = mpi.Wtime()
-        self.scheme.set_boundary_conditions(self._F, self._m, self.bc, self.interface)
+        self.scheme.set_boundary_conditions(self._F, self._m, self.bc, self.mpi_topo)
         self.cpu_time['boundary_conditions'] += mpi.Wtime() - t
 
     def one_time_step(self):
@@ -512,7 +498,7 @@ class Simulation(object):
         self.t += self.dt
         self.nt += 1
         dummy = self.cpu_time['number_of_iterations']
-        for n in self.domain.Ng:
+        for n in self.domain.global_size:
             dummy *= n
         dummy /= self.cpu_time['total'] * 1.e6
         self.cpu_time['MLUPS'] = dummy
