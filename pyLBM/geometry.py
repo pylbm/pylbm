@@ -18,7 +18,6 @@ import numpy as np
 import mpi4py.MPI as mpi
 
 from .elements import *
-from .interface import Interface
 from .logs import setLogger
 from . import viewer
 from .validate_dictionary import *
@@ -114,7 +113,7 @@ class Geometry(object):
     """
 
     def __init__(self, dico):
-        self.dim, self.globalbounds = get_box(dico)
+        self.dim, self.bounds = get_box(dico)
 
         self.list_elem = []
         self.log = setLogger(__name__)
@@ -129,28 +128,7 @@ class Geometry(object):
         else:
             self.log.error("The labels of the box must be an integer or a list")
 
-        period = [False]*self.dim
-        for i in range(self.dim):
-            if self.box_label[2*i] == self.box_label[2*i+1] == -1: # work only for dim = 2
-                period[i] = True
-
-        self.interface = Interface(self.dim, period, dico.get('comm', mpi.COMM_WORLD))
-
-        self.globalbounds = np.asarray(self.globalbounds, dtype='f8')
-        self.bounds = self.globalbounds.copy()
-
-        t = (self.bounds[:, 1] - self.bounds[:, 0])/self.interface.split
-        coords = self.interface.get_coords()
-        self.bounds[:, 1] = self.bounds[:, 0] + t*(coords + 1)
-        self.bounds[:, 0] = self.bounds[:, 0] + t*coords
-
-        # Modify box_label if the border becomes an interface
-        for i in range(self.dim):
-            voisins = self.interface.cartcomm.Shift(i, 1)
-            if voisins[0] != mpi.PROC_NULL:
-                self.box_label[2*i] = -2
-            if voisins[1] != mpi.PROC_NULL:
-                self.box_label[2*i + 1] = -2
+        self.bounds = np.asarray(self.bounds, dtype='f8')
 
         self.log.debug("Message from geometry.py (box_label):\n {0}".format(self.box_label))
         self.log.debug("Message from geometry.py (bounds):\n {0}".format(self.bounds))
@@ -281,6 +259,13 @@ class Geometry(object):
         Get the list of all the labels used in the geometry.
         """
         L = np.unique(self.box_label)
+        return np.union1d(L, self.list_of_elements_labels())
+
+    def list_of_elements_labels(self):
+        """
+        Get the list of all the labels used in the geometry.
+        """
+        L = np.empty(0)
         for elem in self.list_elem:
             L = np.union1d(L, elem.label)
         return L
