@@ -80,7 +80,7 @@ class MPI_topology(object):
         lx = [0]
         np = self.cartcomm.Get_topo()[0][axes]
         for i in range(np):
-            lx.append(lx[-1] + n/np + ((n % np) > i))
+            lx.append(lx[-1] + n//np + ((n % np) > i))
         return lx
 
     def get_lx(self, nx, ny=None, nz=None):
