@@ -93,15 +93,15 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
         ax2 = fig[1]
         ax2.axis(xmin, xmax, .9*yminb, 1.1*ymaxb)
 
-        x = sol.domain.x[1:-1]
-        l1 = ax1.plot(x, sol.m[ua][1:-1])[0]
-        l2 = ax2.plot(x, sol.m[ub][1:-1])[0]
+        x = sol.domain.x
+        l1 = ax1.plot(x, sol.m[ua])[0]
+        l2 = ax2.plot(x, sol.m[ub])[0]
 
         def update(iframe):
             if sol.t<Tf:
                 sol.one_time_step()
-                l1.set_data(x, sol.m[ua][1:-1])
-                l2.set_data(x, sol.m[ub][1:-1])
+                l1.set_data(x, sol.m[ua])
+                l2.set_data(x, sol.m[ub])
                 ax1.title = r'$u_a$ at $t = {0:f}$'.format(sol.t)
                 ax2.title = r'$u_b$ at $t = {0:f}$'.format(sol.t)
 

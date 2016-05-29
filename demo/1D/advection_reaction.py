@@ -92,14 +92,14 @@ def run(dt, Tf,
         ymin, ymax = -.2, 1.2
         ax.axis(xmin, xmax, ymin, ymax)
 
-        x = sol.domain.x[1:-1]
-        l1 = ax.plot(x, sol.m[u][1:-1], width=2, color='b', label='D1Q2')[0]
+        x = sol.domain.x
+        l1 = ax.plot(x, sol.m[u], width=2, color='b', label='D1Q2')[0]
         l2 = ax.plot(x, solution(sol.t, x, xmin, xmax, c, mu), width=2, color='k', label='exact')[0]
 
         def update(iframe):
             if sol.t < Tf:                 # time loop
                 sol.one_time_step()      # increment the solution of one time step
-                l1.set_data(x, sol.m[u][1:-1])
+                l1.set_data(x, sol.m[u])
                 l2.set_data(x, solution(sol.t, x, xmin, xmax, c, mu))
                 ax.title = 'solution at t = {0:f}'.format(sol.t)
                 ax.legend()
@@ -111,7 +111,7 @@ def run(dt, Tf,
             sol.one_time_step()
 
     sol.time_info()
-    return np.linalg.norm(sol.m[u][1:-1] - solution(sol.t, sol.domain.x[1:-1], xmin, xmax, c, mu), np.inf)
+    return np.linalg.norm(sol.m[u] - solution(sol.t, sol.domain.x, xmin, xmax, c, mu), np.inf)
 
 if __name__ == '__main__':
     Tf = 2.

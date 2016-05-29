@@ -81,13 +81,13 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
         ax.axis(xmin, xmax, ymin, ymax)
 
         x = sol.domain.x
-        l1 = ax.plot(x, sol.m_in[u], width=2, color='b', label='D1Q2')[0]
+        l1 = ax.plot(x, sol.m[u], width=2, color='b', label='D1Q2')[0]
         l2 = ax.plot(x, u0(x-c*sol.t, xmin, xmax), width=2, color='k', label='exact')[0]
 
         def update(iframe):
             if sol.t < Tf:                 # time loop
                 sol.one_time_step()      # increment the solution of one time step
-                l1.set_data(x, sol.m_in[u])
+                l1.set_data(x, sol.m[u])
                 l2.set_data(x, u0(x-c*sol.t, xmin, xmax))
                 ax.title = 'solution at t = {0:f}'.format(sol.t)
                 ax.legend()

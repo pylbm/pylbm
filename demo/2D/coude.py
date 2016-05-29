@@ -25,7 +25,7 @@ def vorticity(sol):
 def norme_q(sol):
     qx_n = sol.m[qx]
     qy_n = sol.m[qy]
-    nv = qx_n[1:-1, 1:-1]**2 + qy_n[1:-1, 1:-1]**2
+    nv = qx_n**2 + qy_n**2
     return nv.T
 
 def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
@@ -95,7 +95,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
         }],
         'boundary_conditions':{
            0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}},
-           1:{'method':{0: pyLBM.bc.Neumann_horizontal}},
+           1:{'method':{0: pyLBM.bc.Neumann_y}},
            2:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}, 'value':(bc_in, (rhoo, uo, ymin, ymax))}
         },
         'generator': generator,

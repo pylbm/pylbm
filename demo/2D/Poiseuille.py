@@ -87,7 +87,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
         'parameters':{'LA':la},
         'boundary_conditions':{
             0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}},
-            1:{'method':{0: pyLBM.bc.Neumann_vertical}},
+            1:{'method':{0: pyLBM.bc.Neumann_x}},
             2:{'method':{0: pyLBM.bc.Bouzidi_bounce_back},
                'value':(bc_in, (width, height, max_velocity, grad_pressure))}
         },
@@ -102,7 +102,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
         fig = viewer.Fig()
         ax = fig[0]
 
-        nt = int(sol.domain.N[0]/2)
+        nt = int(sol.domain.global_size[0]/2)
         y = sol.domain.y
 
         l1 = ax.plot(y, sol.m[qx][nt], color='r', marker='+')[0]

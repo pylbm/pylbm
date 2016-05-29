@@ -117,8 +117,8 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
                          },
             },
             1:{'method':{0: pyLBM.bc.Bouzidi_anti_bounce_back,
-                         1: pyLBM.bc.Neumann_vertical,
-                         2: pyLBM.bc.Neumann_vertical
+                         1: pyLBM.bc.Neumann_x,
+                         2: pyLBM.bc.Neumann_x
                          },
                 'value':(bc_out, (width, grad_pressure, cte))
             },
@@ -139,13 +139,10 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
 
     if withPlot:
         print("*"*50)
-        p_n = sol.m[p][1:-1, 1:-1]
-        ux_n = sol.m[ux][1:-1, 1:-1]
-        uy_n = sol.m[uy][1:-1, 1:-1]
-        x = sol.domain.x[1:-1]
-        y = sol.domain.y[1:-1]
-        x = x[:, np.newaxis]
-        y = y[np.newaxis, :]
+        p_n = sol.m[p]
+        ux_n = sol.m[ux]
+        uy_n = sol.m[uy]
+        x, y = np.meshgrid(*sol.domain.coords, sparse=True, indexing='ij')
         coeff = sol.domain.dx / np.sqrt(width*height)
         Err_p = coeff * np.linalg.norm(p_n - (x-0.5*width) * grad_pressure)
         Err_ux = coeff * np.linalg.norm(ux_n - max_velocity * (1 - 4 * y**2 / height**2))

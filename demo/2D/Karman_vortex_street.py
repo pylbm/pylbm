@@ -98,7 +98,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
         'parameters':{'LA':la},
         'boundary_conditions':{
             0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}, 'value':(bc_rect, (rhoo, uo))},
-            1:{'method':{0: pyLBM.bc.Neumann_vertical}},
+            1:{'method':{0: pyLBM.bc.Neumann_x}},
             2:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}},
         },
         'generator': generator,
