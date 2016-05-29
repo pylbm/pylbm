@@ -10,6 +10,7 @@ import numpy as np
 import sympy as sp
 import sys
 import copy
+import mpi4py.MPI as mpi
 from six.moves import range
 from six import string_types
 
@@ -21,6 +22,7 @@ import matplotlib.pyplot as plt
 from .elements import *
 from .geometry import Geometry
 from .stencil import Stencil
+from .mpi_topology import MPI_topology
 from .validate_dictionary import *
 from .logs import setLogger
 from . import viewer
@@ -169,19 +171,30 @@ class Domain(object):
         self.dx = dico['space_step'] if space_step is None else space_step
         self.dim = self.geom.dim
 
+        self.box_label = copy.copy(self.geom.box_label)
+
+        self.mpi_topo = None
+        self.construct_mpi_topology(dico)
+
+        self.global_size = []
         self.create_coords()
 
-        get_shape = lambda x: int((x[1] - x[0] + .5*self.dx)/self.dx)
-        self.Ng = list(map(get_shape, self.geom.globalbounds))
-        self.N = list(map(get_shape, self.geom.bounds))
-        
+        region = self.mpi_topo.get_region(*self.global_size)
+
+        # Modify box_label if the border becomes an interface
+        for i in range(self.dim):
+            if region[i][0] != 0:
+                self.box_label[2*i] = -2
+            if region[i][1] != self.global_size[i]:
+                self.box_label[2*i + 1] = -2
+
         # distance to the borders
         total_size = [self.stencil.unvtot] + self.shape_halo
         self.in_or_out = self.valin*np.ones(self.shape_halo)
         self.distance = self.valin*np.ones(total_size)
         self.flag = self.valin*np.ones(total_size, dtype = 'int')
 
-        self.__add_init(self.geom.box_label) # compute the distance and the flag for the primary box
+        self.__add_init(self.box_label) # compute the distance and the flag for the primary box
         for elem in self.geom.list_elem: # treat each element of the geometry
             self.__add_elem(elem)
 
@@ -237,29 +250,34 @@ class Domain(object):
                 self.log.error(aff)
                 sys.exit()
 
+    def construct_mpi_topology(self, dico):
+        period = [True]*self.dim
+        # for i in range(self.dim):
+        #     if self.box_label[2*i] == self.box_label[2*i+1] == -1: 
+        #         period[i] = True
+
+        self.mpi_topo = MPI_topology(self.dim, period, dico.get('comm', mpi.COMM_WORLD))
+
     def create_coords(self):
-        phys_box = self.geom.globalbounds # the physical box where the domain lies
+        phys_box = self.geom.bounds # the physical box where the domain lies
 
         # validation of the space step with the physical box size
         for k in range(self.dim):
-            extra_points = (phys_box[k][1] - phys_box[k][0])/self.dx
-            if not extra_points.is_integer():
+            self.global_size.append((phys_box[k][1] - phys_box[k][0])/self.dx)
+            if not self.global_size[-1].is_integer():
                 self.log.error('The length of the box in the direction {0} must be a multiple of the space step'.format(k))
                 sys.exit()
 
-        local_phys_box = self.geom.bounds # the local physical box of the process
-
-        get_shape = lambda x: int((x[1] - x[0] + .5*self.dx)/self.dx)
-        local_phys_box_size = list(map(get_shape, local_phys_box))
+        region = self.mpi_topo.get_region(*self.global_size)
+        region_size = [r[1] - r[0] for r in region]
 
         # spatial mesh
         halo_size = np.asarray(self.stencil.vmax)
         halo_beg = self.dx*(halo_size - 0.5)
-        compute_box_size = np.asarray(local_phys_box_size) + 2*halo_size
 
-        self.coords_halo = [np.linspace(local_phys_box[k][0] - halo_beg[k],
-                                        local_phys_box[k][1] + halo_beg[k],
-                                        compute_box_size[k]) for k in range(self.dim)]
+        self.coords_halo = [np.linspace(phys_box[k][0] + self.dx*region[k][0] - halo_beg[k],
+                                        phys_box[k][0] + self.dx*region[k][1] + halo_beg[k],
+                                        region_size[k] + 2*halo_size[k]) for k in range(self.dim)]
 
         self.coords = [self.coords_halo[k][halo_size[k]:-halo_size[k]] for k in range(self.dim)]
 
@@ -392,10 +410,16 @@ class Domain(object):
                 else:
                     ind3 = np.where(np.logical_or(alpha[ind4] > dist_view[k][ind4], dist_view[k][ind4] == self.valin))[0]
 
-                #import ipdb; ipdb.set_trace()
                 ind = [i[ind3] for i in ind4]
                 dist_view[k][ind] = alpha[ind]
                 flag_view[k][ind] = border[ind]
+
+    def list_of_labels(self):
+        """
+        Get the list of all the labels used in the geometry.
+        """
+        L = np.unique(self.box_label)
+        return np.union1d(L, self.geom.list_of_elements_labels())
 
     def visualize(self, viewer_app=viewer.matplotlibViewer, view_distance=False, view_in=True, view_out=True, view_bound=False, label=None):
         """
