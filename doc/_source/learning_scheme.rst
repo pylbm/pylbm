@@ -420,9 +420,9 @@ the reader can refer to [G14]_.
 Examples in 1D
 ==============================
 
-:download:`script<codes/scheme_D1Q2_shallow_water.py>`
+:download:`script<codes/scheme_D1Q22_shallow_water.py>`
 
-:math:`D_1Q_2` for the shallow water equation
+:math:`D_1Q_{2,2}` for the shallow water equation
 --------------------------------------------------
 
 A constant :math:`g\in{\mathbb R}` being given, the shallow water system reads
@@ -437,13 +437,47 @@ A constant :math:`g\in{\mathbb R}` being given, the shallow water system reads
 
 Taken for instance :math:`g=1`, the following scheme can be used:
 
-.. literalinclude:: codes/scheme_D1Q2_shallow_water.py
+.. literalinclude:: codes/scheme_D1Q22_shallow_water.py
     :lines: 11-
 
 Two elementary schemes have been built, these two schemes are identical
 except for the equilibrium values of the non conserved moment and of the relaxation parameter:
 The first one is used to simulate the equation on :math:`h` and the second one
 to simulate the equation on :math:`q`.
+For each scheme, the equilibrium value of the non conserved moment is equal
+to the flux of the corresponding equation: the equilibrium value of the kth scheme
+can so depend on all the conserved moments (and not only on those of the kth scheme).
+
+Examples in 2D
+==============================
+
+:download:`script<codes/scheme_D2Q444_shallow_water.py>`
+
+:math:`D_2Q_{4,4,4}` for the shallow water equation
+---------------------------------------------------
+
+A constant :math:`g\in{\mathbb R}` being given, the shallow water system reads
+
+.. math::
+  :nowrap:
+
+  \begin{align*}
+  &\partial_t h(t,x,y) + \partial_x q_x(t,x,y) + \partial_y q_y(t,x,y) = 0, &\qquad t>0, x,y\in{\mathbb R},\\
+  &\partial_t q_x(t,x,y) + \partial_x \bigl(q_x^2(t,x,y)/h(t,x,y) + gh^2(t,x,y)/2\bigr) \\
+  & \phantom{\partial_t q_x(t,x,y)} + \partial_y \bigl( q_x(t,x,y)q_y(t,x,y)/h(t,x,y)\bigr) = 0, &\qquad t>0, x,y\in{\mathbb R},\\
+  &\partial_t q_y(t,x,y) + \partial_x \bigl( q_x(t,x,y)q_y(t,x,y)/h(t,x,y)\bigr)\\
+  & \phantom{\partial_t q_y(t,x,y)} + \partial_y \bigl(q_y^2(t,x,y)/h(t,x,y) + gh^2(t,x,y)/2\bigr) = 0, &\qquad t>0, x,y\in{\mathbb R}.
+  \end{align*}
+
+Taken for instance :math:`g=1`, the following scheme can be used:
+
+.. literalinclude:: codes/scheme_D2Q444_shallow_water.py
+    :lines: 11-
+
+Three elementary schemes have been built, these three schemes are identical
+except for the equilibrium values of the non conserved moment and of the relaxation parameter:
+The first one is used to simulate the equation on :math:`h` and the others
+to simulate the equation on :math:`q_x` and :math:`q_y`.
 For each scheme, the equilibrium value of the non conserved moment is equal
 to the flux of the corresponding equation: the equilibrium value of the kth scheme
 can so depend on all the conserved moments (and not only on those of the kth scheme).
