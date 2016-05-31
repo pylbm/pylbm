@@ -129,7 +129,7 @@ class Domain(object):
     stencil :
       the stencil of the velocities (object of the class
       :py:class:`Stencil <pyLBM.stencil.Stencil>`)
-    N : list of int
+    global_size : list of int
       number of points in each direction
     extent : list of int
       number of points to add on each side (max velocities)
@@ -261,7 +261,7 @@ class Domain(object):
     def construct_mpi_topology(self, dico):
         period = [True]*self.dim
         # for i in range(self.dim):
-        #     if self.box_label[2*i] == self.box_label[2*i+1] == -1: 
+        #     if self.box_label[2*i] == self.box_label[2*i+1] == -1:
         #         period[i] = True
 
         self.mpi_topo = MPI_topology(self.dim, period, dico.get('comm', mpi.COMM_WORLD))
@@ -390,10 +390,10 @@ class Domain(object):
                 space_slice = [slice(imin + vk[d], imax + vk[d]) for imin, imax, d in zip(nmin, nmax, range(self.dim))]
                 # check the cells that are out when we move with the vk velocity
                 out_cells = self.in_or_out[space_slice] == self.valout
-                # compute the distance and set the boundary label 
+                # compute the distance and set the boundary label
                 # of each cell and the element with the vk velocity
                 alpha, border = elem.distance(grid, self.dx*vk, 1.)
-                # take the indices where the distance is lower than 1 
+                # take the indices where the distance is lower than 1
                 # between a fluid cell and the border of the element
                 # with the vk velocity
                 indx = np.logical_and(alpha > 0, ind_fluid)
@@ -476,7 +476,7 @@ class Domain(object):
             self.log.error(s)
 
         if self.dim == 1:
-            x = self.coords[0]
+            x = self.coords_halo[0]
             y = np.zeros(x.shape)
             vkmax = self.stencil.vmax[0]
             for k in range(self.stencil.unvtot):
@@ -497,7 +497,7 @@ class Domain(object):
             indout = np.where(self.in_or_out==self.valout)
             view.markers(np.asarray([x[indout],y[indout]]).T, 200*self.dx, symbol='s')
 
-            xmin, xmax = self.bounds[0][:]
+            xmin, xmax = self.geom.bounds[0][:]
             L = xmax-xmin
             h = L/20
             l = L/50
@@ -558,11 +558,11 @@ class Domain(object):
                 view.markers(np.asarray([x[indoutx], y[indouty]]).T, 500*self.dx, symbol='s')
 
         elif self.dim == 3:
-            x, y, z = self.coords[:]
+            x, y, z = self.coords_halo
             dx = self.dx
-            xmin, xmax = self.bounds[0][:]
-            ymin, ymax = self.bounds[1][:]
-            zmin, zmax = self.bounds[2][:]
+            xmin, xmax = self.geom.bounds[0][:]
+            ymin, ymax = self.geom.bounds[1][:]
+            zmin, zmax = self.geom.bounds[2][:]
 
             xpercent = 0.1*(xmax-xmin)
             ypercent = 0.1*(ymax-ymin)

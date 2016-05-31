@@ -273,7 +273,7 @@ class Base_Parallelogram(Base2D):
                               np.logical_and(x<=1, y<=1))
 
     def distance(self, grid, v, dmax, label):
-        x, y = grid        
+        x, y = grid
         p = [[0, 0], [0, 0], [1, 0], [0, 1]]
         vt = [[1, 0], [0, 1], [0, 1], [1, 0]]
         return distance_lines(x, y, v, p, vt, dmax, label)

@@ -75,7 +75,7 @@ class Cylinder(Element):
         x_cyl = self.iA[0,0]*xx + self.iA[0,1]*yy + self.iA[0,2]*zz # the new x coordinates
         y_cyl = self.iA[1,0]*xx + self.iA[1,1]*yy + self.iA[1,2]*zz # the new y coordinates
         z_cyl = self.iA[2,0]*xx + self.iA[2,1]*yy + self.iA[2,2]*zz # the new z coordinates
-        return np.logical_and(self.base.point_inside(x_cyl, y_cyl), np.abs(z_cyl)<=1.)
+        return np.logical_and(self.base.point_inside((x_cyl, y_cyl)), np.abs(z_cyl)<=1.)
 
     def distance(self, grid, v, dmax=None):
         """
@@ -111,7 +111,7 @@ class Cylinder(Element):
         z_cyl = self.iA[2,0]*xx + self.iA[2,1]*yy + self.iA[2,2]*zz # the new z coordinates
 
         # considering the infinite cylinder
-        alpha, border = self.base.distance(x_cyl, y_cyl, v_cyl[:-1], dmax, self.label[:-2])
+        alpha, border = self.base.distance((x_cyl, y_cyl), v_cyl[:-1], dmax, self.label[:-2])
         # indices where the intersection is too high or to low
         alpha[alpha<0] = 1.e16
         ind = np.logical_and(alpha>0, np.abs(z_cyl + alpha*v_cyl[2]) > 1.)
@@ -127,14 +127,14 @@ class Cylinder(Element):
         alpha_top = (1.-z_cyl)/(v_cyl[2] + decal)
         ind = np.logical_or( np.logical_or(alpha_top<0, alpha_top>dmax),
                              np.logical_not(
-                                 dummyf(x_cyl + alpha_top*v_cyl[0],
-                                        y_cyl + alpha_top*v_cyl[1])))
+                                 dummyf((x_cyl + alpha_top*v_cyl[0],
+                                        y_cyl + alpha_top*v_cyl[1]))))
         alpha_top[ind] = 1.e16
         alpha_bot = -(1.+z_cyl)/(v_cyl[2] + decal)
         ind = np.logical_or( np.logical_or(alpha_bot<0, alpha_bot>dmax),
                              np.logical_not(
-                                 dummyf(x_cyl + alpha_bot*v_cyl[0],
-                                        y_cyl + alpha_bot*v_cyl[1])))
+                                 dummyf((x_cyl + alpha_bot*v_cyl[0],
+                                        y_cyl + alpha_bot*v_cyl[1]))))
         alpha_bot[ind] = 1.e16
 
         # considering the first intersection point
