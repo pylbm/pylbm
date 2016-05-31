@@ -102,14 +102,13 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
         fig = viewer.Fig()
         ax = fig[0]
 
-        nt = int(sol.domain.global_size[0]/2)
+        nt = int(sol.domain.shape_in[0]/2)
         y = sol.domain.y
 
-        l1 = ax.plot(y, sol.m[qx][nt], color='r', marker='+')[0]
-        l2 = ax.plot(y, rhoo*max_velocity * (1.-4.*y**2/height**2), color='k')
+        l1 = ax.plot(y, sol.m[qx][nt], color='r', marker='+', label='LBM')[0]
+        l2 = ax.plot(y, rhoo*max_velocity * (1.-4.*y**2/height**2), color='k', label='exact')
         ax.title = 'Velocity at t = {0:f}'.format(sol.t)
         ax.legend()
-        #ax.axis(ymin, ymax, 0., 1.2*max_velocity)
 
         def update(iframe):
             sol.one_time_step()

@@ -116,7 +116,6 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
             nrep = 64
             for i in range(nrep):
                  sol.one_time_step()
-
             image.set_data(norme_q(sol))
             ax.title = "Solution t={0:f}".format(sol.t)
 

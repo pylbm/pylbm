@@ -16,13 +16,18 @@ from __future__ import division
 """
 
 import sympy as sp
+import numpy as np
 import pyLBM
 
 ua, ub, X, LA = sp.symbols('ua, ub, X, LA')
 
-def Riemann_pb(x, xmin, xmax, ug, ud):
+def Riemann_pb(x, xmin, xmax, uL, uR):
     xm = 0.5*(xmin+xmax)
-    return ug*(x<xm) + ud*(x>xm) + 0.5*(ug+ud)*(x==xm)
+    u = np.empty(x.shape)
+    u[x < xm] = uL
+    u[x == xm] = .5*(uL+uR)
+    u[x > xm] = uR
+    return u
 
 def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=True):
     """
@@ -50,7 +55,7 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
     la = 2.              # velocity of the scheme
     s = 1.7              # relaxation parameter
 
-    uag, uad, ubg, ubd = 1.50, 1.25, 1.50, 1.00
+    uaL, uaR, ubL, ubR = 1.50, 1.25, 1.50, 1.00
     ymina, ymaxa, yminb, ymaxb = 1., 1.75, 1., 1.5
 
     dico = {
@@ -64,7 +69,7 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
                 'polynomials':[1, LA*X],
                 'relaxation_parameters':[0, s],
                 'equilibrium':[ua, -ub],
-                'init':{ua:(Riemann_pb, (xmin, xmax, uag, uad))},
+                'init':{ua:(Riemann_pb, (xmin, xmax, uaL, uaR))},
             },
             {
                 'velocities':[1,2],
@@ -72,7 +77,7 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
                 'polynomials':[1, LA*X],
                 'relaxation_parameters':[0, s],
                 'equilibrium':[ub, ua**(-gamma)],
-                'init':{ub:(Riemann_pb, (xmin, xmax, ubg, ubd))},
+                'init':{ub:(Riemann_pb, (xmin, xmax, ubL, ubR))},
             },
         ],
         'boundary_conditions':{

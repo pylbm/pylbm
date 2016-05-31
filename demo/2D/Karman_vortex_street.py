@@ -136,6 +136,6 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     return sol
 
 if __name__ == '__main__':
-    dx = 0.005
+    dx = 0.01
     Tf = 1.
     run(dx, Tf)

@@ -15,13 +15,18 @@ from __future__ import division
  test: True
 """
 import sympy as sp
+import numpy as np
 import pyLBM
 
 h, q, X, LA, g = sp.symbols('h, q, X, LA, g')
 
-def Riemann_pb(x, xmin, xmax, ug, ud):
+def Riemann_pb(x, xmin, xmax, uL, uR):
     xm = 0.5*(xmin+xmax)
-    return ug*(x<xm) + ud*(x>xm) + 0.5*(ug+ud)*(x==xm)
+    u = np.empty(x.shape)
+    u[x < xm] = uL
+    u[x == xm] = .5*(uL+uR)
+    u[x > xm] = uR
+    return u
 
 def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
     """
@@ -48,7 +53,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     la = 2.              # velocity of the scheme
     s = 1.5              # relaxation parameter
 
-    hg, hd, qg, qd = 1., .25, 0.10, 0.10
+    hL, hR, qL, qR = 1., .25, 0.10, 0.10
     ymina, ymaxa, yminb, ymaxb = 0., 1., 0., .5
 
     dico = {
@@ -62,7 +67,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
                 'polynomials':[1, LA*X],
                 'relaxation_parameters':[0, s],
                 'equilibrium':[h, q],
-                'init':{h:(Riemann_pb, (xmin, xmax, hg, hd))},
+                'init':{h:(Riemann_pb, (xmin, xmax, hL, hR))},
             },
             {
                 'velocities':[1,2],
@@ -70,7 +75,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
                 'polynomials':[1, LA*X],
                 'relaxation_parameters':[0, s],
                 'equilibrium':[q, q**2/h+.5*g*h**2],
-                'init':{q:(Riemann_pb, (xmin, xmax, qg, qd))},
+                'init':{q:(Riemann_pb, (xmin, xmax, qL, qR))},
             },
         ],
         'boundary_conditions':{

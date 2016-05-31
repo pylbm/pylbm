@@ -19,7 +19,7 @@ from six.moves import range
 
 import pyLBM
 
-u, X, Y, LA = sp.symbols('u,X,Y,LA')
+u, X, Y, LA = sp.symbols('u, X, Y, LA')
 
 compt = 0
 
@@ -84,15 +84,14 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
         ax = fig[0]
         im = ax.image(sol.m[u].transpose())
         ax.title = 'solution at t = {0:f}'.format(sol.t)
+
         def update(iframe):
-            global compt
-            if sol.t<Tf:                 # time loop
-                sol.one_time_step()      # increment the solution of one time step
-                compt += 1
-                if compt == 128:
-                    compt = 0
-                    im.set_data(sol.m[u].transpose())
-                    ax.title = 'solution at t = {0:f}'.format(sol.t)
+            nrep = 128
+            for i in range(nrep):
+                sol.one_time_step()
+            im.set_data(sol.m[u].transpose())
+            ax.title = 'solution at t = {0:f}'.format(sol.t)
+
         fig.animate(update, interval=1)
         fig.show()
     else:
@@ -102,6 +101,6 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     return sol
 
 if __name__ == '__main__':
-    dx = 1./128
+    dx = 1./256
     Tf = 10.
     run(dx, Tf, generator=pyLBM.generator.CythonGenerator)

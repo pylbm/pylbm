@@ -27,13 +27,18 @@ from __future__ import division
 """
 
 import sympy as sp
+import numpy as np
 import pyLBM
 
 rho, q, E, X, LA = sp.symbols('rho, q, E, X, LA')
 
-def Riemann_pb(x, xmin, xmax, ug, ud):
+def Riemann_pb(x, xmin, xmax, uL, uR):
     xm = 0.5*(xmin+xmax)
-    return ug*(x<xm) + ud*(x>xm) + 0.5*(ug+ud)*(x==xm)
+    u = np.empty(x.shape)
+    u[x < xm] = uL
+    u[x == xm] = .5*(uL+uR)
+    u[x > xm] = uR
+    return u
 
 def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=True):
     """
