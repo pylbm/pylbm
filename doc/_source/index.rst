@@ -68,6 +68,7 @@ Documentation of the code
   The class Scheme <class_scheme>
   The module generator <module_generator>
   The class Simulation <class_simulation>
+  The module bounds <module_bounds>
 
 
 References

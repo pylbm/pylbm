@@ -45,7 +45,7 @@ class Boundary_Velocity(object):
 
 class Boundary(object):
     """
-    Construct the boundary problem by defining the list of indeices on the border and the methods used on each label.
+    Construct the boundary problem by defining the list of indices on the border and the methods used on each label.
 
     Parameters
     ----------
@@ -130,22 +130,21 @@ class Boundary_method(object):
     Attributes
     ----------
     feq : NumPy array
-
+       the equilibrium values of the distribution function on the border
     rhs : NumPy array
-
+       the additional terms to fix the boundary values
     distance : NumPy array
+       distance to the border (needed for Bouzidi type conditions)
     istore : NumPy array
-
     ilabel : NumPy array
-
     iload : list
-
     value_bc : dictionnary
+       the prescribed values on the border
 
     Methods
     -------
     prepare_rhs :
-        compute the distribution function at the equilibrium with the value on the boundary
+        compute the distribution function at the equilibrium with the value on the border
 
     """
     def __init__(self, istore, ilabel, distance, stencil, value_bc):
@@ -204,9 +203,28 @@ class Boundary_method(object):
 
                 self.feq[:, indices[0]] = f.swaparray.reshape((nv, indices[0].size))
 
-class Bounce_back(Boundary_method):
+class bounce_back(Boundary_method):
+    """
+    Boundary condition of type bounce-back
+
+    Notes
+    ------
+
+    .. plot:: codes/bounce_back.py
+
+    Methods
+    -------
+    set_rhs :
+        compute and set the additional terms to fix the boundary values
+    set_iload :
+        compute the indices that are needed (symmertic velocities and space indices)
+    update :
+        update the values of the distribution fonctions ouside the domain
+        according to the bounce back condition
+
+    """
     def __init__(self, istore, ilabel, distance, stencil, value_bc):
-        super(Bounce_back, self).__init__(istore, ilabel, distance, stencil, value_bc)
+        super(bounce_back, self).__init__(istore, ilabel, distance, stencil, value_bc)
 
     def set_iload(self):
         k = self.istore[0]
@@ -224,6 +242,25 @@ class Bounce_back(Boundary_method):
         f[tuple(self.istore)] = f[tuple(self.iload[0])] + self.rhs
 
 class Bouzidi_bounce_back(Boundary_method):
+    """
+    Boundary condition of type Bouzidi bounce-back
+
+    Notes
+    ------
+
+    .. plot:: codes/Bouzidi.py
+
+    Methods
+    -------
+    set_rhs :
+        compute and set the additional terms to fix the boundary values
+    set_iload :
+        compute the indices that are needed (symmertic velocities and space indices)
+    update :
+        update the values of the distribution fonctions ouside the domain
+        according to the Bouzidi bounce back condition
+
+    """
     def __init__(self, istore, ilabel, distance, stencil, value_bc):
         super(Bouzidi_bounce_back, self).__init__(istore, ilabel, distance, stencil, value_bc)
         self.s = np.empty(self.istore.shape[1])
@@ -261,7 +298,26 @@ class Bouzidi_bounce_back(Boundary_method):
     def update(self, f):
         f[tuple(self.istore)] = self.s*f[tuple(self.iload[0])] + (1 - self.s)*f[tuple(self.iload[1])] + self.rhs
 
-class Anti_bounce_back(Bounce_back):
+class anti_bounce_back(bounce_back):
+    """
+    Boundary condition of type anti bounce-back
+
+    Notes
+    ------
+
+    .. plot:: codes/anti_bounce_back.py
+
+    Methods
+    -------
+    set_rhs :
+        compute and set the additional terms to fix the boundary values
+    set_iload :
+        compute the indices that are needed (symmertic velocities and space indices)
+    update :
+        update the values of the distribution fonctions ouside the domain
+        according to the anti bounce back condition
+
+    """
     def set_rhs(self):
         k = self.istore[0]
         ksym = self.stencil.get_symmetric()[k]
@@ -271,6 +327,25 @@ class Anti_bounce_back(Bounce_back):
         f[tuple(self.istore)] = -f[tuple(self.iload[0])] + self.rhs
 
 class Bouzidi_anti_bounce_back(Bouzidi_bounce_back):
+    """
+    Boundary condition of type Bouzidi anti bounce-back
+
+    Notes
+    ------
+
+    .. plot:: codes/Bouzidi.py
+
+    Methods
+    -------
+    set_rhs :
+        compute and set the additional terms to fix the boundary values
+    set_iload :
+        compute the indices that are needed (symmertic velocities and space indices)
+    update :
+        update the values of the distribution fonctions ouside the domain
+        according to the Bouzidi anti bounce back condition
+
+    """
     def set_rhs(self):
         k = self.istore[0]
         ksym = self.stencil.get_symmetric()[k]
@@ -280,6 +355,20 @@ class Bouzidi_anti_bounce_back(Bouzidi_bounce_back):
         f[tuple(self.istore)] = -self.s*f[tuple(self.iload[0])] + (self.s - 1)*f[tuple(self.iload[1])] + self.rhs
 
 class Neumann(Boundary_method):
+    """
+    Boundary condition of type Neumann
+
+    Methods
+    -------
+    set_rhs :
+        compute and set the additional terms to fix the boundary values
+    set_iload :
+        compute the indices that are needed (symmertic velocities and space indices)
+    update :
+        update the values of the distribution fonctions ouside the domain
+        according to the Neumann condition
+
+    """
     def __init__(self, istore, ilabel, distance, stencil, value_bc):
         super(Neumann, self).__init__(istore, ilabel, distance, stencil, value_bc)
 
@@ -296,6 +385,20 @@ class Neumann(Boundary_method):
         f[tuple(self.istore)] = f[tuple(self.iload[0])]
 
 class Neumann_x(Neumann):
+    """
+    Boundary condition of type Neumann along the x direction
+
+    Methods
+    -------
+    set_rhs :
+        compute and set the additional terms to fix the boundary values
+    set_iload :
+        compute the indices that are needed (symmertic velocities and space indices)
+    update :
+        update the values of the distribution fonctions ouside the domain
+        according to the Neumann condition along the x direction
+
+    """
     def set_iload(self):
         k = self.istore[0]
         v = self.stencil.get_all_velocities()
@@ -304,6 +407,20 @@ class Neumann_x(Neumann):
         self.iload.append(np.concatenate([k[np.newaxis, :], indices]))
 
 class Neumann_y(Neumann):
+    """
+    Boundary condition of type Neumann along the y direction
+
+    Methods
+    -------
+    set_rhs :
+        compute and set the additional terms to fix the boundary values
+    set_iload :
+        compute the indices that are needed (symmertic velocities and space indices)
+    update :
+        update the values of the distribution fonctions ouside the domain
+        according to the Neumann condition along the y direction
+
+    """
     def set_iload(self):
         k = self.istore[0]
         v = self.stencil.get_all_velocities()
@@ -312,6 +429,20 @@ class Neumann_y(Neumann):
         self.iload.append(np.concatenate([k[np.newaxis, :], indices]))
 
 class Neumann_z(Neumann):
+    """
+    Boundary condition of type Neumann along the z direction
+
+    Methods
+    -------
+    set_rhs :
+        compute and set the additional terms to fix the boundary values
+    set_iload :
+        compute the indices that are needed (symmertic velocities and space indices)
+    update :
+        update the values of the distribution fonctions ouside the domain
+        according to the Neumann condition along the z direction
+
+    """
     def set_iload(self):
         k = self.istore[0]
         v = self.stencil.get_all_velocities()
