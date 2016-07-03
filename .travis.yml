@@ -10,7 +10,6 @@ addons:
     apt:
         packages:
             - openmpi
-- libatlas-dev
 # command to run tests
 install:
     - python setup.py install
