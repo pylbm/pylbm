@@ -22,7 +22,7 @@ addons:
 #   - sudo apt-get install -y liblapack-dev libatlas-base-dev libatlas-dev mercurial
 # command to run tests
 install:
-    - pip install scipy
-    - pip install -r requirements.txt
-    - python setup.py install
+    - travis_wait pip install scipy
+    - travis_wait pip install -r requirements.txt
+    - travis_wait pip install .
 script: nosetests
