@@ -114,7 +114,7 @@ class Generator(object):
     def compile(self):
         if mpi.COMM_WORLD.Get_rank() == 0:
             self.log.info("*"*30 + "\n" + self.code + "\n" + "*"*30)
-            self.f.write(self.code)
+            self.f.write(self.code.encode("UTF-8"))
             self.f.close()
 
     def get_module(self):
