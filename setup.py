@@ -47,10 +47,7 @@ setup(
                       'mpi4py>=1.3.1',
                       'matplotlib>=1.4.0',
                       'future',
-                      'pyevtk',
-                      ],
-    dependency_links=[
-                      "hg+https://bitbucket.org/pauloh/pyevtk",
+                      'evtk'
                       ],
     extras_require={'pythran': ["pythran>=0.7.1"],
                     'numba': ["numba>=0.19.1"]
