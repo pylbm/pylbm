@@ -9,7 +9,7 @@ python:
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y gfortran libopenmpi-dev openmpi-bin openmpi-common 
-  - sudo apt-get install -y liblapack-dev libatlas-base-dev libatlas-dev
+  - sudo apt-get install -y liblapack-dev libatlas-base-dev libatlas-dev mercurial
 # command to run tests
 install:
     - pip install scipy
