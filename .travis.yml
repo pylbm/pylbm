@@ -13,5 +13,6 @@ before_install:
 # command to run tests
 install:
     - pip install scipy
+    - pip install -r requirements.txt
     - python setup.py install
 script: nosetests
