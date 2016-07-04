@@ -7,6 +7,7 @@ import sympy as sp
 import re
 from six.moves import range
 from six import string_types
+from functools import reduce
 
 from .base import Generator, INDENT
 from .utils import matMult, load_or_store, list_of_numpy_functions, dictionnary_of_translation_numpy
