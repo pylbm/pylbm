@@ -21,7 +21,7 @@ CLASSIFIERS = [
 MAJOR = "0"
 MINOR = "2"
 PATCH = "0"
-VERSION = "{}.{}.{}".format(MAJOR, MINOR, PATCH)
+VERSION = "{0}.{1}.{2}".format(MAJOR, MINOR, PATCH)
 
 README = open("README.rst").readlines()
 
@@ -46,7 +46,8 @@ setup(
                       'Cython>=0.21.1',
                       'mpi4py>=1.3.1',
                       'matplotlib>=1.4.0',
-                      'PyEVTK>=1.0.0',
+                      'future',
+                      'evtk'
                       ],
     extras_require={'pythran': ["pythran>=0.7.1"],
                     'numba': ["numba>=0.19.1"]

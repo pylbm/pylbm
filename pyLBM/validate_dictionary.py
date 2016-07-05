@@ -133,7 +133,7 @@ def is_dico_bc(d, ntab=0):
     return test, ligne
 
 def is_dico_init(d, ntab=0):
-    return is_dico_generic(d, (sp.Symbol, string_types), (tuple, int, float), ntab=ntab)
+    return is_dico_generic(d, (sp.Symbol, string_types, int), (tuple, int, float), ntab=ntab)
 
 def is_dico_sources(d, ntab=0):
     return is_dico_generic(d, (sp.Symbol, string_types), (tuple, int, float, sp.Expr, string_types), ntab=ntab)

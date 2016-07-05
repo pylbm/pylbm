@@ -264,7 +264,11 @@ class Domain(object):
         #     if self.box_label[2*i] == self.box_label[2*i+1] == -1:
         #         period[i] = True
 
-        self.mpi_topo = MPI_topology(self.dim, period, dico.get('comm', mpi.COMM_WORLD))
+        if dico is None:
+            comm = mpi.COMM_WORLD
+        else:
+            comm =dico.get('comm', mpi.COMM_WORLD)
+        self.mpi_topo = MPI_topology(self.dim, period, comm)
 
     def create_coords(self):
         phys_box = self.geom.bounds # the physical box where the domain lies

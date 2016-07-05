@@ -17,12 +17,11 @@ class test_domain1D(object):
         dom1d['box'] = {'x': [0, 1], 'label': [0, 1]}
         dom = pyLBM.Domain(dom1d)
 
-        assert(dom.Ng == [4])
-        assert(dom.N == [4])
+        assert(dom.shape_halo == [6])
+        assert(dom.shape_in == [4])
         assert(dom.dx == .25)
-        assert(np.all(dom.bounds == [[0., 1.]]))
-        #assert(np.all(dom.indbe == [[1, 5]]))
-        assert(np.all(dom.x[0] == np.linspace(-.125, 1.125, 6)))
+        assert(np.all(dom.geom.bounds == [[0., 1.]]))
+        assert(np.all(dom.x_halo == np.linspace(-.125, 1.125, 6)))
 
     def test_with_given_geometry_and_stencil(self):
         geom = pyLBM.Geometry({'box': {'x': [0, 1]}})

@@ -1,6 +1,6 @@
 from six.moves import range
 import numpy as np
-from pyevtk.vtk import VtkFile, VtkRectilinearGrid
+from evtk.vtk import VtkFile, VtkRectilinearGrid
 import mpi4py.MPI as mpi
 import os
 

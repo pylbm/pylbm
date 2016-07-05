@@ -1,0 +1,28 @@
+language: python
+python:
+    - "2.7"
+    - "3.3"
+    - "3.4"
+    - "3.5"
+
+addons:
+  apt:
+    packages:
+      - gfortran
+      - libopenmpi-dev
+      - openmpi-bin
+      - openmpi-common 
+      - liblapack-dev
+      - libatlas-base-dev
+      - libatlas-dev
+      - mercurial
+# before_install:
+#   - sudo apt-get -qq update
+#   - sudo apt-get install -y gfortran libopenmpi-dev openmpi-bin openmpi-common 
+#   - sudo apt-get install -y liblapack-dev libatlas-base-dev libatlas-dev mercurial
+# command to run tests
+install:
+    - travis_wait pip install scipy
+    - travis_wait pip install -r requirements.txt
+    - travis_wait pip install .
+script: nosetests

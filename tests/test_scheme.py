@@ -5,7 +5,7 @@ import sys
 import os
 import pyLBM
 
-path = 'data/scheme'
+path = os.path.dirname(__file__) + '/data/scheme'
 sys.path.insert(0, path)
 
 # list python files in path
