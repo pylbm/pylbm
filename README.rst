@@ -35,4 +35,4 @@ For more information, take a look at the documentation
 `<http://www.math.u-psud.fr/pyLBM>`_
 
 .. |Build Status| image:: https://travis-ci.org/pylbm/pylbm.svg?branch=develop
--   :target: https://travis-ci.org/pylbm/pylbm
+   :target: https://travis-ci.org/pylbm/pylbm
