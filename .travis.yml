@@ -41,5 +41,7 @@ install:
   - travis_wait pip install -r requirements.txt
   - travis_wait pip install .
   - which nosetests
+  - rm -rf $HOME/.cache/matplotlib
+  - rm -rf $HOME/.cache/fontconfig/
 
 script: nosetests
