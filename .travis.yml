@@ -33,12 +33,13 @@ before_install:
   #- sudo ln -s /run/shm /dev/shm
 
 install:
-  - conda create --yes -n pyenv python=$TRAVIS_PYTHON_VERSION numpy
+  - conda create --yes -n pyenv python=$TRAVIS_PYTHON_VERSION numpy nose
   - source activate pyenv
   - python --version
   - pip --version
   - travis_wait pip install scipy
   - travis_wait pip install -r requirements.txt
   - travis_wait pip install .
+  - which nosetests
 
 script: nosetests
