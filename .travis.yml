@@ -33,7 +33,7 @@ before_install:
   #- sudo ln -s /run/shm /dev/shm
 
 install:
-  - conda create --yes -n pyenv python=$TRAVIS_PYTHON_VERSION
+  - conda create --yes -n pyenv python=$TRAVIS_PYTHON_VERSION numpy
   - source activate pyenv
   - python --version
   - pip --version
