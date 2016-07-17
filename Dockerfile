@@ -19,7 +19,8 @@ ENV PATH $HOME/miniconda2/bin:$PATH
 
 RUN conda update --yes conda
 
-RUN pip install -r requirements.txt && \
-    pip install . 
+RUN pip install numpy scipy matplotlib
+RUN pip install -r requirements.txt
+RUN python setup.py install
 
 CMD [ "/bin/bash" ]
