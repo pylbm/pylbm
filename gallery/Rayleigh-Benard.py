@@ -1,0 +1,156 @@
+from __future__ import print_function, division
+from six.moves import range
+import numpy as np
+import sympy as sp
+import pyLBM
+
+"""
+
+Rayleigh-Benard instability simulated by Navier-Stokes solver D2Q9,5
+
+"""
+
+VTK_save = False
+
+X, Y, LA = sp.symbols('X, Y, LA')
+rho, qx, qy, T = sp.symbols('rho, qx, qy, T')
+
+def init_T(x, y):
+    return Td + (Tu-Td)/(ymax-ymin)*(y-ymin)
+
+def bc_up(f, m, x, y):
+    m[qx] = 0.
+    m[qy] = 0.
+    m[T] = Tu
+
+def bc_down(f, m, x, y):
+    np.random.seed(1)
+    m[qx] = 0.
+    m[qy] = 0.
+    m[T] = Td + (Td-Tu) * 5 * (0.1*np.random.random_sample((x.shape[0],1))-0.05)
+
+def plot_field(sol):
+    sol.f2m()
+    f = sol.m[T][1:-1,1:-1]
+    return f.T
+
+def save(x, y, m, num):
+    if num > 0:
+        vtk = pyLBM.VTKFile(filename, path, num)
+    else:
+        vtk = pyLBM.VTKFile(filename, path, num, init_pvd = True)
+    vtk.set_grid(x, y)
+    vtk.add_scalar('rho', m[rho][1:-1,1:-1])
+    vtk.add_scalar('T', m[T][1:-1,1:-1])
+    vtk.add_vector('velocity', [m[qx][1:-1,1:-1], m[qy][1:-1,1:-1]])
+    vtk.save()
+
+# parameters
+Tu = -0.5
+Td =  0.5
+xmin, xmax, ymin, ymax = 0., 2., 0., 1.
+Ra = 2000
+Pr = 0.71
+Ma = 0.01
+alpha = .005
+dx = 1./256 # spatial step
+la = 1. # velocity of the scheme
+rhoo = 1.
+g = 9.81
+
+nu = np.sqrt(Pr*alpha*9.81*(Td-Tu)*(ymax-ymin)/Ra)
+kappa = nu/Pr
+eta = nu
+snu = 1./(.5+3*nu)
+seta = 1./(.5+3*eta)
+sq = 8*(2-snu)/(8-snu)
+se = seta
+sf = [0., 0., 0., seta, se, sq, sq, snu, snu]
+a = .5
+skappa = 1./(.5+10*kappa/(4+a))
+se = 1./(.5+np.sqrt(3)/3)
+snu = se
+sT = [0., skappa, skappa, se, snu]
+
+dico = {
+    'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[-1, -1, 0, 1]},
+    'space_step':dx,
+    'scheme_velocity':la,
+    'schemes':[
+        {
+            'velocities':list(range(9)),
+            'conserved_moments': [rho, qx, qy],
+            'polynomials':[
+                1, X, Y,
+                3*(X**2+Y**2)-4,
+                0.5*(9*(X**2+Y**2)**2-21*(X**2+Y**2)+8),
+                3*X*(X**2+Y**2)-5*X, 3*Y*(X**2+Y**2)-5*Y,
+                X**2-Y**2, X*Y
+            ],
+            'relaxation_parameters':sf,
+            'equilibrium':[
+                rho, qx, qy,
+                -2*rho + 3*(qx**2+qy**2),
+                rho - 3*(qx**2+qy**2),
+                -qx, -qy,
+                qx**2 - qy**2, qx*qy
+            ],
+            'source_terms':{qy: alpha*g * T},
+            'init':{rho: 1., qx: 0., qy: 0.},
+        },
+        {
+            'velocities':list(range(5)),
+            'conserved_moments':T,
+            'polynomials':[1, X, Y, 5*(X**2+Y**2) - 4, (X**2-Y**2)],
+            'equilibrium':[T, T*qx, T*qy, a*T, 0.],
+            'relaxation_parameters':sT,
+            'init':{T:(init_T,)},
+        },
+    ],
+    'boundary_conditions':{
+        0:{
+            'method':{
+                0: pyLBM.bc.Bouzidi_bounce_back,
+                1: pyLBM.bc.Bouzidi_anti_bounce_back
+            },
+            'value':bc_down
+        },
+        1:{
+            'method':{
+                0: pyLBM.bc.Bouzidi_bounce_back,
+                1: pyLBM.bc.Bouzidi_anti_bounce_back
+            },
+            'value':bc_up
+        },
+    },
+    'generator': pyLBM.generator.CythonGenerator,
+}
+
+sol = pyLBM.Simulation(dico)
+
+if VTK_save:
+    filename = 'Rayleigh_Benard'
+    path = './data_Rayleigh_Benard'
+    im = 0
+    save(x, y, sol.m, im)
+    while sol.t<500.:
+        for k in range(64):
+            sol.one_time_step()
+        im += 1
+        save(x, y, sol.m, im)
+else:
+    viewer = pyLBM.viewer.matplotlibViewer
+    fig = viewer.Fig()
+    ax = fig[0]
+    image = ax.image(plot_field(sol), clim=[Tu, Td+.25])
+
+    def update(iframe):
+        nrep = 64
+        for i in xrange(nrep):
+            sol.one_time_step()
+        image.set_data(plot_field(sol))
+        ax.title = "Solution t={0:f}".format(sol.t)
+
+    # run the simulation
+    fig.animate(update, interval=1)
+    fig.show()

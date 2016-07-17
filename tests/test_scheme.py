@@ -5,7 +5,7 @@ import sys
 import os
 import pyLBM
 
-path = 'data/scheme'
+path = os.path.dirname(__file__) + '/data/scheme'
 sys.path.insert(0, path)
 
 # list python files in path
@@ -19,7 +19,7 @@ def test_scheme():
         module = importlib.import_module(stest)
         seq = []
         for e1 in module.eq:
-            seq.append([map(str, e2) for e2 in e1])
+            seq.append([list(map(str, e2)) for e2 in e1])
 
         for pa in module.param:
             for p in module.poly:
@@ -46,3 +46,5 @@ def construct_scheme(module, dico):
     for m1, m2 in zip(s.Mnum, module.Mnum):
         tools.ok_(np.all(m1==m2))
     tools.eq_(s._EQ, module.EQ_result)
+
+test_scheme()

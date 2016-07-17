@@ -3,9 +3,8 @@ the module elements
 
 .. automodule:: pyLBM.elements
 
-.. warning::
-  The geometrical elements are not yet implemented in 3D.
-  Maybe in the next release...
+.. versionadded:: 0.2
+  the geometrical elements are yet implemented in 3D.
 
 The module elements contains all the geometrical shapes that can be used
 to build the geometry.
@@ -16,5 +15,16 @@ The 2D elements are:
   :maxdepth: 2
 
   The class Circle <class_circle>
+  The class Ellipse <class_ellipse>
   The class Parallelogram <class_parallelogram>
   The class Triangle <class_triangle>
+
+The 3D elements are:
+
+.. toctree::
+  :maxdepth: 2
+
+  The class Sphere <class_sphere>
+  The class Ellipsoid <class_ellipsoid>
+  The class Parallelepiped <class_parallelepiped>
+  The classes Cylinder <class_cylinder>

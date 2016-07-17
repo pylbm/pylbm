@@ -6,6 +6,7 @@
 import numpy as np
 import sympy as sp
 import re
+from six.moves import range
 
 from .base import Generator
 from .utils import matMult, load_or_store
@@ -82,7 +83,7 @@ class PythranGenerator(Generator):
           add the transport phase in the attribute ``code``.
         """
         stmp = ''
-        for i in xrange(stencil.dim):
+        for i in range(stencil.dim):
             stmp += ', i{0}'.format(i)
 
         get_f = "def get_f(floc, f{0}):\n".format(stmp)
@@ -128,8 +129,8 @@ class PythranGenerator(Generator):
             return '[:, ' + str(stencil.nv_ptr[i] + j) + ']'
 
         pref = ':'
-        for k in xrange(ns):
-            for i in xrange(stencil.nv[k]):
+        for k in range(ns):
+            for i in range(stencil.nv[k]):
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
                     if eq[k][i] != 0:
                         res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub,
@@ -171,8 +172,8 @@ class PythranGenerator(Generator):
 
             return '[' + str(stencil.nv_ptr[i] + j) + ']'
 
-        for k in xrange(ns):
-            for i in xrange(stencil.nv[k]):
+        for k in range(ns):
+            for i in range(stencil.nv[k]):
                 if str(eq[k][i]) != "m[%d][%d]"%(k,i):
                     if eq[k][i] != 0:
                         res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub,
@@ -285,7 +286,7 @@ def onetimestep(m, f, fnew, in_or_out, valin):
 """.format('[]'*stencil.dim)
 
         s1 = ''
-        for i in xrange(stencil.dim):
+        for i in range(stencil.dim):
             s1 += "\tn{0} = f.shape[{0}]\n".format(i)
         self.code += s1
 
@@ -295,7 +296,7 @@ def onetimestep(m, f, fnew, in_or_out, valin):
         tab = '\t'
         s1 = ''
         ext = ''
-        for i in xrange(stencil.dim):
+        for i in range(stencil.dim):
             s1 += tab + 'for i{0} in xrange(n{0}):\n'.format(i)
             ext += 'i{0},'.format(i)
             tab += '\t'

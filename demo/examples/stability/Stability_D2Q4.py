@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -7,6 +9,7 @@
 """
 Stability of the D2Q4
 """
+from six.moves import range
 import numpy as np
 import pylab as plt
 import sympy as sp
@@ -22,7 +25,7 @@ def scheme_constructor(ux, uy, s, s3):
         'parameters':{LA:la},
         'schemes':[
             {
-            'velocities':range(1, 5),
+            'velocities':list(range(1, 5)),
             'conserved_moments':u,
             'polynomials':[1, LA*X, LA*Y, LA**2*(X**2-Y**2)],
             'relaxation_parameters':[0., s, s, s3],
@@ -56,13 +59,13 @@ def vp_plot(ux, uy, s, s3):
             rloc = max(np.abs(vp))
             if rloc > R+1.e-14:
                 R = rloc
-                print "Spectral radius for theta = {0:5.3f}: {1:10.3e}".format(theta, rloc)
+                print("Spectral radius for theta = {0:5.3f}: {1:10.3e}".format(theta, rloc))
             plt.plot(vp.real, vp.imag, 'ko')
         i += 1
         plt.hold(False)
         plt.title('eigenvalues for $\Theta = {0:5.3f}$'.format(theta))
         plt.pause(1.e-1)
-    print "Maximal spectral radius: {0:10.3e}".format(R)
+    print("Maximal spectral radius: {0:10.3e}".format(R))
 
 def stability_array_in_u(s, s3):
     plt.figure(1)
@@ -76,7 +79,7 @@ def stability_array_in_u(s, s3):
     nb_calcul = 0
     mR, nb_calcul = stability_array_in_u_recur(s, s3, vux, vuy, mR, [0,N,0,N], nb_calcul)
     plt.hold(False)
-    print "Number of stability computations: {0:d}".format(nb_calcul)
+    print("Number of stability computations: {0:d}".format(nb_calcul))
     plt.show()
 
 def stability_array_in_u_recur(s, s3, vux, vuy, mR, l, nb_calcul):
@@ -86,7 +89,7 @@ def stability_array_in_u_recur(s, s3, vux, vuy, mR, l, nb_calcul):
             if (mR[i, j] == 0) & (mR[j, i] == 0):
                 S = scheme_constructor(vux[i], vuy[j], s, s3)
                 nb_calcul += 1
-                if S.is_stable_L2(Nk = 51):
+                if S.is_L2_stable(Nk = 51):
                     plt.scatter([vux[i], vux[i], -vux[i], -vux[i]],
                                 [vuy[j], -vuy[j], vuy[j], -vuy[j]],
                                 c = 'b', marker = 'o')
@@ -129,7 +132,7 @@ def stability_array_in_s(ux, uy):
     nb_calcul = 0
     mR, nb_calcul = stability_array_in_s_recur(vs, vs3, ux, uy, mR, [0,N,0,N], nb_calcul)
     plt.hold(False)
-    print "Number of stability computations: {0:d}".format(nb_calcul)
+    print("Number of stability computations: {0:d}".format(nb_calcul))
     plt.show()
 
 def stability_array_in_s_recur(vs, vs3, ux, uy, mR, l, nb_calcul):
@@ -139,7 +142,7 @@ def stability_array_in_s_recur(vs, vs3, ux, uy, mR, l, nb_calcul):
             if mR[i, j] == 0:
                 S = scheme_constructor(ux, uy, vs[i], vs3[j])
                 nb_calcul += 1
-                if S.is_stable_L2(Nk = 51):
+                if S.is_L2_stable(Nk = 51):
                     plt.scatter(vs[i], vs3[j], c = 'b', marker = 'o')
                     mR[i, j] = 1
                 else:

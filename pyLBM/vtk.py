@@ -1,11 +1,12 @@
+from six.moves import range
 import numpy as np
-from pyevtk.vtk import VtkFile, VtkRectilinearGrid
+from evtk.vtk import VtkFile, VtkRectilinearGrid
 import mpi4py.MPI as mpi
 import os
 
 from .logs import setLogger
 
-class VTKFile:
+class VTKFile(object):
     def __init__(self, filename, path='', timestep=0, npx=1, npy=1, npz=1, init_pvd=False):
         self.timestep = timestep
         prefix = '_{0}_{1}'.format(timestep, mpi.COMM_WORLD.Get_rank())
@@ -104,12 +105,12 @@ class VTKFile:
                             to save the vtkfile""")
 
         # Point data
-        self.vtkfile.openData("Point", scalars = self.scalars.keys(),
-                               vectors = self.vectors.keys())
+        self.vtkfile.openData("Point", scalars = list(self.scalars.keys()),
+                               vectors = list(self.vectors.keys()))
 
-        for k, v in self.scalars.items():
+        for k, v in list(self.scalars.items()):
             self.vtkfile.addData(k, v)
-        for k, v in self.vectors.items():
+        for k, v in list(self.vectors.items()):
             self.vtkfile.addData(k, v)
 
         self.vtkfile.closeData("Point")
@@ -128,9 +129,9 @@ class VTKFile:
         self.vtkfile.closePiece()
         self.vtkfile.closeGrid()
 
-        for k, v in self.scalars.items():
+        for k, v in list(self.scalars.items()):
             self.vtkfile.appendData(data = v)
-        for k, v in self.vectors.items():
+        for k, v in list(self.vectors.items()):
             self.vtkfile.appendData(data = v)
         if self.y is not None and self.z is not None:
             self.vtkfile.appendData(self.x).appendData(self.y).appendData(self.z)
@@ -151,24 +152,26 @@ class VTKFile:
             pvd = """<VTKFile type="Collection" version="0.1" byte_order="LittleEndian">
 <Collection>
 """
-            for i in xrange(size):
+            for i in range(size):
                 pvd += "<DataSet timestep=\"{2}\" part=\"{0}\" file=\"./{1}_{2}_{0}.vtr\"/>\n".format(i, self.filename, self.timestep)
             pvd +="""</Collection>
 </VTKFile>
 """
             f = open(self.path + '/' + self.filename + '.pvd', 'w')
+            self._init_pvd = False
             f.write(pvd)
+            f.close()
         else:
-            oldlines = open(self.path + '/' + self.filename + '.pvd', 'r').readlines()
+            oldlines = open(self.path + '/' + self.filename + '.pvd').readlines()
 
             pvd = ''
-            for i in xrange(size):
+            for i in range(size):
                 pvd += "<DataSet timestep=\"{2}\" part=\"{0}\" file=\"./{1}_{2}_{0}.vtr\"/>\n".format(i, self.filename, self.timestep)
             pvd +="""</Collection>
 </VTKFile>
 """
             f = open(self.path + '/' + self.filename + '.pvd', 'w')
+
             f.writelines(oldlines[:-2])
             f.write(pvd)
-
-        f.close()
+            f.close()

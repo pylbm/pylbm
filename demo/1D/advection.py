@@ -1,74 +1,106 @@
-##############################################################################
-#
-# Solver D1Q2 for the advection equation on the 1D-torus
-#
-# d_t(u) + c d_x(u) = 0, t > 0, 0 < x < 1, (c=1/4)
-# u(t=0,x) = u0(x),
-# u(t,x=0) = u(t,x=1)
-#
-# the solution is
-# u(t,x) = u0(x-ct).
-#
-##############################################################################
+from __future__ import print_function
+from __future__ import division
+"""
+ Solver D1Q2 for the advection equation on the 1D-torus
 
+ d_t(u) + c d_x(u) = 0, t > 0, 0 < x < 1, (c=1/4)
+ u(t=0,x) = u0(x),
+ u(t,x=0) = u(t,x=1)
+
+ the solution is
+ u(t,x) = u0(x-ct).
+
+ test: True
+"""
+import numpy as np
 import sympy as sp
 import pyLBM
 
 X, LA, u = sp.symbols('X, LA, u')
 
-def u0(x):
+def u0(x, xmin, xmax):
     milieu = 0.5*(xmin+xmax)
     largeur = 0.1*(xmax-xmin)
     return 1.0/largeur**10 * (x%1-milieu-largeur)**5 * (milieu-x%1-largeur)**5 * (abs(x%1-milieu)<=largeur)
 
-# parameters
-xmin, xmax = 0., 1.   # bounds of the domain
-dx = 1./128           # spatial step
-la = 1.               # scheme velocity (la = dx/dt)
-c = 0.25              # velocity of the advection
-Tf = 4.               # final time
-s = 1.99              # relaxation parameter
+def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
+    """
+    Parameters
+    ----------
 
-# dictionary of the simulation
-dico = {
-    'box':{'x':[xmin, xmax], 'label':-1},
-    'space_step':dx,
-    'scheme_velocity':la,
-    'schemes':[
+    dx: double
+        spatial step
+
+    Tf: double
+        final time
+
+    generator: pyLBM generator
+
+    store: list
+        storage order
+
+    withPlot: boolean
+        if True plot the solution otherwise just compute the solution
+
+    """
+    # parameters
+    xmin, xmax = 0., 1.   # bounds of the domain
+    la = 1.               # scheme velocity (la = dx/dt)
+    c = 0.25              # velocity of the advection
+    s = 1.99              # relaxation parameter
+
+    # dictionary of the simulation
+    dico = {
+        'box':{'x':[xmin, xmax], 'label':-1},
+        'space_step':dx,
+        'scheme_velocity':LA,
+        'schemes':[
         {
             'velocities':[1,2],
             'conserved_moments':u,
             'polynomials':[1,LA*X],
             'relaxation_parameters':[0., s],
             'equilibrium':[u, c*u],
-            'init':{u:(u0,)},
+            'init':{u:(u0,(xmin, xmax))},
         },
-    ],
-    'parameters': {LA: la},
-}
+        ],
+        'generator': generator,
+        'split_pattern': ['transport', 'relaxation'],
+        'parameters': {LA: la},
+    }
 
-# simulation
-sol = pyLBM.Simulation(dico) # build the simulation
+    # simulation
+    sol = pyLBM.Simulation(dico, sorder=sorder) # build the simulation
 
-# create the viewer to plot the solution
-viewer = pyLBM.viewer.matplotlibViewer
-fig = viewer.Fig()
-ax = fig[0]
-ymin, ymax = -.2, 1.2
-ax.axis(xmin, xmax, ymin, ymax)
+    if withPlot:
+        # create the viewer to plot the solution
+        viewer = pyLBM.viewer.matplotlibViewer
+        fig = viewer.Fig()
+        ax = fig[0]
+        ymin, ymax = -.2, 1.2
+        ax.axis(xmin, xmax, ymin, ymax)
 
-x = sol.domain.x[0][1:-1]
-l1 = ax.plot(x, sol.m[0][0][1:-1], width=2, color='b', label='D1Q2')[0]
-l2 = ax.plot(x, u0(x-c*sol.t), width=2, color='k', label='exact')[0]
+        x = sol.domain.x
+        l1 = ax.plot(x, sol.m[u], width=2, color='b', label='D1Q2')[0]
+        l2 = ax.plot(x, u0(x-c*sol.t, xmin, xmax), width=2, color='k', label='exact')[0]
 
-def update(iframe):
-    if sol.t<Tf:                 # time loop
-        sol.one_time_step()      # increment the solution of one time step
-        sol.f2m()
-        l1.set_data(x, sol.m[0][0][1:-1])
-        l2.set_data(x, u0(x-c*sol.t))
-        ax.title = 'solution at t = {0:f}'.format(sol.t)
-        ax.legend()
+        def update(iframe):
+            if sol.t < Tf:                 # time loop
+                sol.one_time_step()      # increment the solution of one time step
+                l1.set_data(x, sol.m[u])
+                l2.set_data(x, u0(x-c*sol.t, xmin, xmax))
+                ax.title = 'solution at t = {0:f}'.format(sol.t)
+                ax.legend()
 
-fig.animate(update)
-fig.show()
+        fig.animate(update)
+        fig.show()
+    else:
+        while sol.t < Tf:
+            sol.one_time_step()
+
+    return sol
+
+if __name__ == '__main__':
+    dx = 1./128
+    Tf = 1.
+    sol = run(dx, Tf, generator = pyLBM.generator.NumpyGenerator)

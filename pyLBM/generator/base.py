@@ -5,13 +5,17 @@
 # License: BSD 3 clause
 import tempfile
 import atexit
+import shutil
 import sys
 import os
 import importlib
+import mpi4py.MPI as mpi
 
 from ..logs import setLogger
 
-class Generator:
+INDENT = ' '*4
+
+class Generator(object):
     """
     the generic class to generate the code
 
@@ -68,6 +72,8 @@ class Generator:
     """
     def __init__(self, build_dir=None, suffix='.py'):
         self.log = setLogger(__name__)
+        self.inv = None
+        self.inspace = None
         self.build_dir = build_dir
         self.modulename = None
         self.importmodule = None
@@ -75,16 +81,17 @@ class Generator:
 
         self.build_dir = build_dir
         if build_dir is None:
-            self.build_dir = tempfile.mkdtemp(suffix='LBM') + '/'
-        self.f = tempfile.NamedTemporaryFile(suffix=suffix, prefix=self.build_dir + 'LBM', delete=False)
-        self.modulename = self.f.name.replace(self.build_dir, "").split('.')[0]
+            lbm_tmp_dir = os.path.expanduser("~") + '/.pylbm/'
+            if not os.path.exists(lbm_tmp_dir):
+                os.mkdir(lbm_tmp_dir)
+            self.build_dir = tempfile.mkdtemp(dir=lbm_tmp_dir) +'/'
+            self.f = tempfile.NamedTemporaryFile(dir=self.build_dir, suffix=suffix, delete=False)
+            self.modulename = self.f.name.replace(self.build_dir, "").split('.')[0]
 
-        sys.path.append(self.build_dir)
-
-        atexit.register(self.exit)
+        self.build_dir = mpi.COMM_WORLD.bcast(self.build_dir, root=0)
+        self.modulename = mpi.COMM_WORLD.bcast(self.modulename, root=0)
 
         self.log.info("Temporary file use for code generator :\n{0}".format(self.modulename))
-        #print self.f.name
 
     def setup(self):
         pass
@@ -105,15 +112,19 @@ class Generator:
         pass
 
     def compile(self):
-        self.log.info("*"*30 + "\n" + self.code + "\n" + "*"*30)
-        self.f.write(self.code)
-        self.f.close()
+        if mpi.COMM_WORLD.Get_rank() == 0:
+            self.log.info("*"*30 + "\n" + self.code + "\n" + "*"*30)
+            self.f.write(self.code.encode("UTF-8"))
+            self.f.close()
 
     def get_module(self):
         if self.importmodule is None:
+            sys.path.append(self.build_dir)
             self.importmodule = importlib.import_module(self.modulename)
+            sys.path.remove(self.build_dir)
         return self.importmodule
 
-    def exit(self):
+    def __del__(self):
         self.log.info("delete generator")
-        os.unlink(self.f.name)
+        if mpi.COMM_WORLD.Get_rank() == 0:
+            shutil.rmtree(self.build_dir)

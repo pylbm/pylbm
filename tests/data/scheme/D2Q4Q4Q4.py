@@ -1,12 +1,13 @@
+from six.moves import range
 import numpy as np
 import sympy as sp
 from sympy import Matrix
 
 X, Y, Z, LA, g = sp.symbols('X,Y,Z,LA,g')
 rho, qx, qy = sp.symbols('rho, qx, qy')
-m = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in xrange(25)] for i in xrange(10)]
+m = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in range(25)] for i in range(10)]
 
-velocity = range(1, 5)
+velocity = list(range(1, 5))
 
 relax = [0]*4
 
