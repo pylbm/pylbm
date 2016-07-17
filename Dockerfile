@@ -7,7 +7,8 @@ ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 RUN apt-get -y update && \
     apt-get -y upgrade && \
     apt-get -y install gfortran libopenmpi-dev openmpi-bin openmpi-common \
-                       liblapack-dev libatlas-base-dev libatlas-dev mercurial
+                       liblapack-dev libatlas-base-dev libatlas-dev mercurial \
+                       libfreetype6
 
 USER main
 
