@@ -9,11 +9,13 @@ RUN apt-get -y update && \
     apt-get -y install gfortran libopenmpi-dev openmpi-bin openmpi-common \
                        liblapack-dev libatlas-base-dev libatlas-dev mercurial
 
+USER main
+
 RUN wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
-    /bin/bash ~/miniconda.sh -b -p /opt/conda && \
+    /bin/bash ~/miniconda.sh -b && \
     rm ~/miniconda.sh
 
-ENV PATH /opt/conda/bin:$PATH
+ENV PATH $HOME/miniconda2/bin:$PATH
 
 RUN conda update --yes conda
 
