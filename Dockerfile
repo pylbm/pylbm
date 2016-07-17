@@ -17,9 +17,7 @@ ENV PATH /opt/conda/bin:$PATH
 
 RUN conda update --yes conda
 
-RUN conda create --yes -n pyenv python=3.5 numpy scipy matplotlib nose && \
-    source activate pyenv && \\
-    pip install -r requirements.txt && \
+RUN pip install -r requirements.txt && \
     pip install . 
 
 CMD [ "/bin/bash" ]
