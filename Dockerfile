@@ -8,7 +8,7 @@ RUN apt-get -y update && \
     apt-get -y upgrade && \
     apt-get -y install gfortran libopenmpi-dev openmpi-bin openmpi-common \
                        liblapack-dev libatlas-base-dev libatlas-dev mercurial \
-                       libfreetype6 libfreetype6-dev pkg-config
+                       libfreetype6 libfreetype6-dev pkg-config libx11-dev
 
 USER main
 
