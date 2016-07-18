@@ -8,7 +8,7 @@ RUN apt-get -y update && \
     apt-get -y upgrade && \
     apt-get -y install gfortran libopenmpi-dev openmpi-bin openmpi-common \
                        liblapack-dev libatlas-base-dev libatlas-dev mercurial \
-                       libfreetype6 libfreetype6-dev
+                       libfreetype6 libfreetype6-dev pkg-config
 
 USER main
 
@@ -20,7 +20,7 @@ ENV PATH $HOME/miniconda2/bin:$PATH
 
 RUN conda update --yes conda
 
-RUN pip install --upgrade pip
+RUN pip install numpy
 RUN pwd
 RUN ls
 RUN pip install -r requirements.txt
