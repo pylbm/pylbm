@@ -20,7 +20,7 @@ ENV PATH $HOME/miniconda2/bin:$PATH
 
 RUN conda update --yes conda
 
-RUN pip install numpy scipy
+RUN pip install --upgrade pip
 RUN pwd
 RUN ls
 RUN pip install -r requirements.txt
