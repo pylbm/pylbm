@@ -13,7 +13,7 @@ Installation
 
 To install pyLBM, you have several ways. You can clone the project
 
-  git clone https://gitlab.com/gouarin/pylbm
+  git clone https://github.com/pylbm/pylbm
 
 and then use the command
 

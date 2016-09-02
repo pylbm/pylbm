@@ -10,7 +10,7 @@ Von Karman vortex street simulated by Navier-Stokes solver D2Q9
 
 """
 
-VTK_save = True
+VTK_save = False
 
 X, Y, LA = sp.symbols('X, Y, LA')
 rho, qx, qy = sp.symbols('rho, qx, qy')
@@ -33,19 +33,22 @@ def save(x, y, m, num):
     else:
         vtk = pyLBM.VTKFile(filename, path, num, init_pvd = True)
     vtk.set_grid(x, y)
-    vtk.add_scalar('rho', m[rho][1:-1,1:-1])
-    vtk.add_vector('velocity', [m[qx][1:-1,1:-1], m[qy][1:-1,1:-1]])
+    vtk.add_scalar('rho', m[rho])
+    vtk.add_vector('velocity', [m[qx], m[qy]])
     vtk.save()
 
 # parameters
-dim = 2 # spatial dimension
 xmin, xmax, ymin, ymax = 0., 2., 0., 1.
 radius = 0.125
-dx = 1./512 # spatial step
+if VTK_save:
+    dx = 1./512 # spatial step
+else:
+    dx = 1./128
 la = 1. # velocity of the scheme
 rhoo = 1.
 uo = 0.05
-mu   = 5.e-6 #0.00185
+#mu = 5.e-6
+mu = 1.e-5
 zeta = 10*mu
 dummy = 3.0/(la*rhoo*dx)
 s1 = 1.0/(0.5+zeta*dummy)
@@ -89,7 +92,7 @@ dico = {
     'parameters':{LA:la},
     'boundary_conditions':{
         0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}, 'value':(bc_rect, (rhoo, uo))},
-        1:{'method':{0: pyLBM.bc.Neumann_vertical}},
+        1:{'method':{0: pyLBM.bc.Neumann_x}},
         2:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}},
     },
     'generator': pyLBM.generator.CythonGenerator,
@@ -100,7 +103,7 @@ sol = pyLBM.Simulation(dico)
 Re = rhoo*uo*2*radius/mu
 print("Reynolds number {0:10.3e}".format(Re))
 
-x, y = sol.domain.x[1:-1], sol.domain.y[1:-1]
+x, y = sol.domain.x, sol.domain.y
 
 if VTK_save:
     filename = 'Karman'

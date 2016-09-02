@@ -49,14 +49,14 @@ def save(x, y, z, m, num):
 T0 = .5
 Tin = -.5
 xmin, xmax, ymin, ymax, zmin, zmax = 0., 1., 0., 1., 0., 1.
-Ra, Pr, alpha = 1e5, 0.71, 0.01
+Ra, Pr, alpha = 1e5, 0.71, 0.001
 dx = 1./128 # spatial step
 la = 1. # velocity of the scheme
 rhoo = 1.
 g = 9.81
 uo = 0.05
 
-nu = np.sqrt(Pr*alpha*g*abs(T0-Tin)*(xmax-xmin)**3/Ra)
+nu = np.sqrt(Pr*g*abs(T0-Tin)*(xmax-xmin)**3/Ra)
 kappa = nu/Pr
 eta = nu
 #print(nu, kappa)
@@ -155,7 +155,6 @@ sol = pyLBM.Simulation(dico)
 #sol.domain.geom.visualize(viewlabel=True)
 #sol.domain.visualize(view_distance=False, view_bound=True, label=[1,2], view_in=False, view_out=False)
 
-"""
 if VTK_save:
     filename = 'Air_Conditioning'
     path = './data_Air_Conditioning_3D'
@@ -182,4 +181,3 @@ else:
     # run the simulation
     fig.animate(update, interval=1)
     fig.show()
-"""

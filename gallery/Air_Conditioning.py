@@ -13,12 +13,12 @@ def init_T(x, y):
     return T0
 
 def bc_in(f, m, x, y):
-    m[qx] = rhoo*uo
+    m[qx] = rhoo*uo/0.05**2*(0.9-y)*(y-0.8)
     m[qy] = 0.
     m[T] = Tin
 
 def bc_out(f, m, x, y):
-    m[qx] = rhoo*uo
+    m[qx] = rhoo*uo/0.05**2*(0.2-y)*(y-0.1)
     m[qy] = 0.
 
 def update(iframe):
@@ -29,7 +29,7 @@ def update(iframe):
     ax.title = "Solution t={0:f}".format(sol.t)
 
 def plot_field(sol):
-    return sol.m[T][1:-1,1:-1].T
+    return sol.m[T].T
 
 def save(x, y, m, num):
     if num > 0:
@@ -37,38 +37,35 @@ def save(x, y, m, num):
     else:
         vtk = pyLBM.VTKFile(filename, path, num, init_pvd = True)
     vtk.set_grid(x, y)
-    vtk.add_scalar('T', m[T][1:-1,1:-1])
-    #vtk.add_vector('velocity', [m[qx][1:-1,1:-1], m[qy][1:-1,1:-1]])
+    vtk.add_scalar('T', m[T])
+    #vtk.add_vector('velocity', [m[qx], m[qy]])
     vtk.save()
 
 # parameters
 T0 = .5
 Tin = -.5
 xmin, xmax, ymin, ymax = 0., 1., 0., 1.
-Ra, Pr, Ma, alpha = 1.e7, 0.71, 0.01, 1.e-2
+alpha = 1.e-3
 dx = 1./128 # spatial step
 la = 1. # velocity of the scheme
 rhoo = 1.
 g = 9.81
-uo = 0.1
+uo = 0.05
 
-nu = np.sqrt(Pr*alpha*g*abs(T0-Tin)*(xmax-xmin)**3/Ra)
-kappa = nu/Pr
-eta = nu
-#print(nu, kappa)
+nu = 1.e-4
+kappa = nu/10
+eta = 10*nu
 dummy = 3./(la*rhoo*dx)
 snu = 1./(.5+dummy*nu)
 seta = 1./(.5+dummy*eta)
 sq = 8*(2-snu)/(8-snu)
 se = seta
 sf = [0., 0., 0., seta, se, sq, sq, snu, snu]
-#print(sf)
 a = .5
 skappa = 1./(.5+10/(la*rhoo*dx)*kappa/(4+a))
 se = 1./(.5+np.sqrt(3)/3)
 snu = se
 sT = [0., skappa, skappa, se, snu]
-#print(sT)
 
 xb, yb, l, e = 0.5*(xmin+xmax), 0.9*ymin+0.1*ymax, 0.125*(xmax-xmin), 0.01
 banc = pyLBM.Parallelogram([xb-l, yb-e], [2*l, 0], [0, 2*e], label=0)
@@ -76,8 +73,8 @@ banc = pyLBM.Parallelogram([xb-l, yb-e], [2*l, 0], [0, 2*e], label=0)
 dico = {
     'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[0, 0, 0, 0]},
     'elements':[
-        pyLBM.Parallelogram([xmin, 0.8], [ .01, 0], [0, .1], label=1),
-        pyLBM.Parallelogram([xmax, 0.8], [-.01, 0], [0, .1], label=2),
+        pyLBM.Parallelogram([xmin, 0.8*ymax+0.2*ymin], [ .01, 0], [0, .1], label=1),
+        pyLBM.Parallelogram([xmax, 0.1*ymax+0.9*ymin], [ -dx, 0], [0, .1], label=2),
         banc,
     ],
     'space_step':dx,
@@ -114,21 +111,20 @@ dico = {
         },
     ],
     'boundary_conditions':{
-        0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back, 1: pyLBM.bc.Neumann}, 'value':None},
-        1:{'method':{0: pyLBM.bc.Bouzidi_bounce_back, 1: pyLBM.bc.Bouzidi_anti_bounce_back}, 'value':bc_in},
-        2:{'method':{0: pyLBM.bc.Bouzidi_bounce_back, 1: pyLBM.bc.Neumann_x}, 'value':bc_out},
+        0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back, 1: pyLBM.bc.Neumann}, 'value': None},
+        1:{'method':{0: pyLBM.bc.Bouzidi_bounce_back, 1: pyLBM.bc.Bouzidi_anti_bounce_back}, 'value': bc_in},
+        2:{'method':{0: pyLBM.bc.Bouzidi_bounce_back, 1: pyLBM.bc.Neumann_x}, 'value': bc_out},
     },
     'generator': pyLBM.generator.CythonGenerator,
 }
 
 sol = pyLBM.Simulation(dico)
-#sol.domain.geom.visualize(viewlabel=True)
 
 if VTK_save:
     filename = 'Air_Conditioning'
     path = './data_Air_Conditioning'
     im = 0
-    x, y = sol.domain.x[1:-1], sol.domain.y[1:-1]
+    x, y = sol.domain.x, sol.domain.y
     save(x, y, sol.m, im)
     while sol.t<200.:
         for k in range(128):
@@ -143,7 +139,7 @@ else:
     Tmin, Tmax = min(Tin, T0), max(Tin, T0)
     image = ax.image(plot_field(sol), clim=[Tmin, Tmax])
     ax.polygon(-0.5+np.asarray([[0, .01/dx, .01/dx, 0], [.8/dx, .8/dx, .9/dx, .9/dx]]).T, color='b')
-    ax.polygon(-0.5+np.asarray([[1./dx, .99/dx, .99/dx, 1./dx], [.8/dx, .8/dx, .9/dx, .9/dx]]).T, color='b')
+    ax.polygon(-0.5+np.asarray([[1./dx, .99/dx, .99/dx, 1./dx], [.1/dx, .1/dx, .2/dx, .2/dx]]).T, color='b')
     ax.polygon(-0.5+np.asarray([[(xb-l)/dx, (xb-l)/dx, (xb+l)/dx, (xb+l)/dx], [(yb-e)/dx, (yb+e)/dx, (yb+e)/dx, (yb-e)/dx]]).T, color='b')
     # run the simulation
     fig.animate(update, interval=1)

@@ -1,4 +1,13 @@
 from __future__ import print_function, division
+# Authors:
+#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Benjamin Graille <benjamin.graille@math.u-psud.fr>
+#
+# License: BSD 3 clause
+
+"""
+D2Q5 to solve the stationary state of the heat equation in 2D
+"""
 from six.moves import range
 import numpy as np
 import sympy as sp
@@ -8,11 +17,11 @@ u, X, Y = sp.symbols('u, X, Y')
 
 # parameters
 xmin, xmax, ymin, ymax = 0., 1., 0., 1.
-N = 128
+N = 256
 mu = 1.
 Tf = .1
 dx = (xmax-xmin)/N # spatial step
-la = 1.#/dx
+la = 1.
 s1 = 2./(1+4*mu)
 s2 = 1.
 
@@ -55,30 +64,29 @@ dico = {
         }
     ],
     'boundary_conditions': {
-        0: {'method': {0: pyLBM.bc.Neumann,}, 'value':None},
-        1: {'method': {0: pyLBM.bc.Bouzidi_anti_bounce_back,}, 'value':bc_stove},
-        2: {'method': {0: pyLBM.bc.Bouzidi_anti_bounce_back,}, 'value':None},
+        0: {'method': {0: pyLBM.bc.Neumann,}, 'value': None},
+        1: {'method': {0: pyLBM.bc.Bouzidi_anti_bounce_back,}, 'value': bc_stove},
+        2: {'method': {0: pyLBM.bc.Bouzidi_anti_bounce_back,}, 'value': None},
     },
     'generator': pyLBM.generator.CythonGenerator,
 }
 
 sol = pyLBM.Simulation(dico)
 
-x = sol.domain.x[1:-1]
-y = sol.domain.y[1:-1]
+x = sol.domain.x
+y = sol.domain.y
 
 viewer = pyLBM.viewer.matplotlibViewer
 fig = viewer.Fig()
 
 ax = fig[0]
-#ax.ellipse([.3/dx, 0.5*(ymin+ymax)/dx+2], [radius/dx, radius/dx], 'r')
-image = ax.image(sol.m[u][1:-1,1:-1].T, cmap='cubehelix', clim=[0, 1.])
+image = ax.image(sol.m[u].T, cmap='cubehelix', clim=[0, 1.])
 
 def update(iframe):
-    nrep = 1
+    nrep = 32
     for i in range(nrep):
          sol.one_time_step()
-    image.set_data(sol.m[u][1:-1,1:-1].T)
+    image.set_data(sol.m[u].T)
     ax.title = "Solution t={0:f}".format(sol.t)
 
 # run the simulation
