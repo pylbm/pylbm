@@ -18,7 +18,7 @@ by using the Lattice Boltzmann method.
 
 To install pyLBM, you have several ways. You can clone the project::
 
-    git clone https://gitlab.com/gouarin/pylbm
+    git clone https://github.com/pylbm/pylbm
 
 and install the module by the command::
 
@@ -80,10 +80,12 @@ References
 .. [D08] F. DUBOIS, *Equivalent partial differential equations of a lattice Boltzmann scheme*,
          Computers and Mathematics with Applications, **55**, pp. 1441-1449 (2008).
 .. [G14] B. GRAILLE, *Approximation of mono-dimensional hyperbolic systems: a lattice Boltzmann scheme as a relaxation method*,
-         Journal of Comutational Physics, **266** (3179757), pp. 74-88 (2014).
+         Journal of Computational Physics, **266** (3179757), pp. 74-88 (2014).
 .. [QdHL92] Y.H. QIAN, D. D'HUMIERES, and P. LALLEMAND,
             *Lattice BGK Models for Navier-Stokes Equation*, Europhys. Lett., **17** (6), pp. 479-484 (1992).
-
+.. [BFL01] M. BOUZIDI, M. FIRDAOUSS, and P. LALLEMAND,
+           *Momentum transfer of a Boltzmann-lattice fluid with boundaries*,
+           Physics of Fluids, **13** number 11, pp. 3452-3459 (2001).
 
 Indices and tables
 ---------------------------

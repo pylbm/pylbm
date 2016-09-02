@@ -243,7 +243,7 @@ class bounce_back(Boundary_method):
 
 class Bouzidi_bounce_back(Boundary_method):
     """
-    Boundary condition of type Bouzidi bounce-back
+    Boundary condition of type Bouzidi bounce-back [BFL01]
 
     Notes
     ------
