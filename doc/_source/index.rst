@@ -61,14 +61,15 @@ Documentation of the code
 .. toctree::
   :maxdepth: 2
 
-  The class Geometry <class_geometry>
-  The module elements <module_elements>
-  The module stencil <module_stencil>
-  The class Domain <class_domain>
-  The class Scheme <class_scheme>
-  The module generator <module_generator>
-  The class Simulation <class_simulation>
-  The module bounds <module_bounds>
+  The class Geometry <class/class_geometry>
+  The module elements <module/module_elements>
+  The module stencil <module/module_stencil>
+  The class Domain <class/class_domain>
+  The class Scheme <class/class_scheme>
+  The module generator <module/module_generator>
+  The module storage <module/module_storage>
+  The class Simulation <class/class_simulation>
+  The module bounds <module/module_bounds>
 
 
 References
