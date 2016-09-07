@@ -266,7 +266,6 @@ p{
 .code.python.highlight-python pre{
     font-family: Source Code Pro;
     background-color: #F9FAFF;
-    color: #197395;
 }
 
 .output.highlight-python *{
