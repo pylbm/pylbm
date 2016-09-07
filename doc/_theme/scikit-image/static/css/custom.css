@@ -263,13 +263,22 @@ p{
   text-align: justify;
 }
 
-code, pre {
+.code.python.highlight-python pre{
     font-family: Source Code Pro;
     background-color: #F9FAFF;
+    color: #197395;
 }
 
-code{
-  color: #197395;
+.output.highlight-python *{
+    font-family: Source Code Pro, sans-serif;
+    background-color: #FFF !important;
+    color: #000 !important;
+}
+
+.output.highlight-python pre{
+    padding: 0px;
+    margin-left: 20px;
+    border: none;
 }
 
 .nav {
