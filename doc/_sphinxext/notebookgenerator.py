@@ -47,15 +47,13 @@ def main():
     notebooks = list(get_notebook_filenames(SRC_DIR))
     notebooks.sort(key=lambda x: x[1])
     NOTEBOOKS = copy.copy(notebooks)
-    print(NOTEBOOKS)
+
     create_notebooks(notebooks)
 
     # Get tutorial notebooks
     notebooks = list(get_notebook_filenames(OUTPUT_TUTO_DIR))
     notebooks.sort(key=lambda x: x[1])
     create_tutorial_rst(notebooks)
-    # create_examples_list(examples)
-
 
 def get_notebook_filenames(notebooks_dir):
     """ Yield (filename, name) elements for all examples. The examples
@@ -75,8 +73,14 @@ def create_notebooks(notebooks):
 
     for filename, name in notebooks:
         head, tail = os.path.split(filename)
-        command = ipy_cmd +'nbconvert --to rst {0} --output {1}.rst --template myrst.tpl'.format(filename, SRC_DIR + name)
-        get_output_error_code(command)
+        print("\tgenerate {0}.rst".format(name))
+        #command = ipy_cmd +'nbconvert --to rst --execute {0} --output {1}.rst --template myrst.tpl'.format(filename, SRC_DIR + name)
+        command = ipy_cmd +'nbconvert --to rst {0} --output-dir {1} --template myrst.tpl'.format(filename, head)
+        out, err, return_code = get_output_error_code(command)
+        if return_code != 0:
+            print(err)
+            clean()
+            sys.exit()
 
 def create_tutorial_rst(notebooks):
     export = os.path.join(SRC_DIR, './tutorial.rst')
