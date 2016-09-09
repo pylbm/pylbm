@@ -23,7 +23,15 @@ MINOR = "2"
 PATCH = "0"
 VERSION = "{0}.{1}.{2}".format(MAJOR, MINOR, PATCH)
 
+def write_version_py(filename='pyLBM/version.py'):
+    a = open(filename, 'w')
+    try:
+        a.write("version = '{}'".format(VERSION))
+    finally:
+        a.close()  
+
 README = open("README.rst").readlines()
+write_version_py()
 
 setup(
     name           = "pyLBM",
