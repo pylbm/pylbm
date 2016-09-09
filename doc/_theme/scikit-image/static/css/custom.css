@@ -280,6 +280,16 @@ p{
     border: none;
 }
 
+.xref.py.py-obj.docutils.literal{
+    background-color: #FFF;
+    color: #CE5C00;
+    border: none;
+}
+
+code {
+    color: #CE5C00;
+}
+
 .nav {
   background-color: #F9FAFF;
 }
