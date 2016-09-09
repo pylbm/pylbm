@@ -28,9 +28,10 @@ def write_version_py(filename='pyLBM/version.py'):
     try:
         a.write("version = '{}'".format(VERSION))
     finally:
-        a.close()  
+        a.close()
 
 README = open("README.rst").readlines()
+
 write_version_py()
 
 setup(
