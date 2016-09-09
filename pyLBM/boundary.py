@@ -123,9 +123,11 @@ class Boundary(object):
 
 class Boundary_method(object):
     """
-
+    Set boundary method.
+    
     Parameters
     ----------
+    None
 
     Attributes
     ----------

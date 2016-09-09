@@ -52,24 +52,34 @@ Documentation for users
    The domain of the simulation <learning_domain>
    The scheme <learning_scheme>
    The boundary conditions <learning_bounds>
+   The storage of moments and distribution functions <storage>
    Learning by examples <tutorial>
-
 
 Documentation of the code
 ---------------------------
 
-.. toctree::
-  :maxdepth: 2
+.. currentmodule:: pyLBM
 
-  The class Geometry <class/class_geometry>
-  The module elements <module/module_elements>
-  The module stencil <module/module_stencil>
-  The class Domain <class/class_domain>
-  The class Scheme <class/class_scheme>
-  The module generator <module/module_generator>
-  The module storage <module/module_storage>
-  The class Simulation <class/class_simulation>
-  The module bounds <module/module_bounds>
+The most important classes 
+
+.. autosummary::
+  :toctree: generated/
+  
+  Geometry
+  Domain
+  Scheme
+  Simulation
+
+The modules
+
+.. toctree::
+   :maxdepth: 1
+   
+  elements <module/module_elements>
+  stencil <module/module_stencil>
+  generator <module/module_generator>
+  storage <module/module_storage>
+  bounds <module/module_bounds>
 
 
 References

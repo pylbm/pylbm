@@ -48,12 +48,10 @@ class Circle(Element):
 
     Methods
     -------
-    get_bounds :
-      return the bounds of the circle
-    point_inside :
-      return True or False if the points are in or out the circle
-    distance :
-      get the distance of a point to the circle
+    get_bounds
+    point_inside
+    distance
+
     """
     number_of_bounds = 1 # number of edges
 
@@ -108,7 +106,7 @@ class Circle(Element):
         Compute the distance in the v direction between
         the circle and the points defined by (x, y).
 
-        .. image:: figures/Circle.png
+        .. image:: ../figures/Circle.png
             :width: 100%
 
         Parameters

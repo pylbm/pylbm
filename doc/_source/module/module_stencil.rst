@@ -1,11 +1,11 @@
 the module stencil
 ======================
 
-.. automodule:: pyLBM.stencil
+.. currentmodule:: pyLBM.stencil
 
-.. toctree::
-   :maxdepth: 2
+.. autosummary::
+   :toctree: generated/
 
-   the class Stencil <../class/class_stencil>
-   the class OneStencil <../class/class_onestencil>
-   the class Velocity <../class/class_velocity>
+   Stencil
+   OneStencil
+   Velocity

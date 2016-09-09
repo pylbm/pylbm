@@ -49,12 +49,9 @@ class Sphere(Element):
 
     Methods
     -------
-    get_bounds :
-      return the bounds of the sphere
-    point_inside :
-      return True or False if the points are in or out the sphere
-    distance :
-      get the distance of a point to the sphere
+    get_bounds
+    point_inside
+    distance
     """
     number_of_bounds = 1 # number of edges
 
@@ -110,7 +107,7 @@ class Sphere(Element):
         Compute the distance in the v direction between
         the sphere and the points defined by (x, y, z).
 
-        .. image:: figures/Sphere.png
+        .. image:: ../figures/Sphere.png
             :width: 100%
 
         Parameters

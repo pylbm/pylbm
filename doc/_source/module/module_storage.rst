@@ -1,11 +1,11 @@
 the module storage
 ======================
 
-.. automodule:: pyLBM.storage
+.. currentmodule:: pyLBM.storage
 
-.. toctree::
-   :maxdepth: 2
+.. autosummary::
+   :toctree: generated/
 
-   the class Array <../class/class_array>
-   the class SOA <../class/class_SOA>
-   the class AOS <../class/class_AOS>
+   Array
+   SOA
+   AOS
