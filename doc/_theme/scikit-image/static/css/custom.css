@@ -263,13 +263,31 @@ p{
   text-align: justify;
 }
 
-code, pre {
+.code.python.highlight-python pre{
     font-family: Source Code Pro;
     background-color: #F9FAFF;
 }
 
-code{
-  color: #197395;
+.output.highlight-python *{
+    font-family: Source Code Pro, sans-serif;
+    background-color: #FFF !important;
+    color: #000 !important;
+}
+
+.output.highlight-python pre{
+    padding: 0px;
+    margin-left: 20px;
+    border: none;
+}
+
+.xref.py.py-obj.docutils.literal{
+    background-color: #FFF;
+    color: #CE5C00;
+    border: none;
+}
+
+code {
+    color: #CE5C00;
 }
 
 .nav {

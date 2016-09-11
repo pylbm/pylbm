@@ -57,12 +57,9 @@ class Triangle(Element):
 
     Methods
     -------
-    get_bounds :
-      return the bounds of the triangle
-    point_inside :
-      return True or False if the points are in or out the triangle
-    distance :
-      get the distance of a point to the triangle
+    get_bounds
+    point_inside
+    distance
     """
 
     number_of_bounds = 3 # number of edges
@@ -127,7 +124,7 @@ class Triangle(Element):
         Compute the distance in the v direction between the triangle
         and the points defined by (x, y).
 
-        .. image:: figures/Triangle.png
+        .. image:: ../figures/Triangle.png
             :width: 100%
 
         Parameters

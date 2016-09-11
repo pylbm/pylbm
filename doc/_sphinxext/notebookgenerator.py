@@ -3,6 +3,7 @@ from __future__ import print_function, division
 import os
 import sys
 import shutil
+import copy
 
 import IPython.nbformat as nbformat
 from IPython.nbconvert import RSTExporter
@@ -16,33 +17,43 @@ except ImportError:
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 DOC_DIR = os.path.abspath(os.path.join(THIS_DIR, '..'))
-NOTEBOOKS_DIR = os.path.abspath(os.path.join(DOC_DIR, '..', 'notebooks'))
-OUTPUT_DIR = os.path.join(DOC_DIR, '_source/notebooks')
+TUTORIAL_DIR = os.path.abspath(os.path.join(DOC_DIR, '..', 'notebooks'))
+SRC_DIR = os.path.join(DOC_DIR, '_source/')
+OUTPUT_TUTO_DIR = os.path.join(SRC_DIR, 'notebooks')
+NOTEBOOKS = []
 
 ipy_cmd = get_ipython_cmd(as_string=True) + " "
 
 def clean():
-    # Clear notebooks dir
-    if os.path.isdir(OUTPUT_DIR):
-        shutil.rmtree(OUTPUT_DIR)
     # Clean tutorial file
-    fname = os.path.join(DOC_DIR, './_source/tutorial.rst')
+    fname = os.path.join(SRC_DIR, './tutorial.rst')
     if os.path.isfile(fname):
         os.remove(fname)
 
-def main():
+    for fname in NOTEBOOKS:
+        os.remove(SRC_DIR + '/' + fname[1] + '.rst')
 
+    # Clear tutorial notebooks dir
+    if os.path.isdir(OUTPUT_TUTO_DIR):
+        shutil.rmtree(OUTPUT_TUTO_DIR)
+
+def main():
+    global NOTEBOOKS
     clean()
 
-    shutil.copytree(NOTEBOOKS_DIR, OUTPUT_DIR)
+    shutil.copytree(TUTORIAL_DIR, OUTPUT_TUTO_DIR)
 
     # Get notebooks
-    notebooks = list(get_notebook_filenames(OUTPUT_DIR))
+    notebooks = list(get_notebook_filenames(SRC_DIR))
     notebooks.sort(key=lambda x: x[1])
+    NOTEBOOKS = copy.copy(notebooks)
 
     create_notebooks(notebooks)
-    # create_examples_list(examples)
 
+    # Get tutorial notebooks
+    notebooks = list(get_notebook_filenames(OUTPUT_TUTO_DIR))
+    notebooks.sort(key=lambda x: x[1])
+    create_tutorial_rst(notebooks)
 
 def get_notebook_filenames(notebooks_dir):
     """ Yield (filename, name) elements for all examples. The examples
@@ -62,10 +73,17 @@ def create_notebooks(notebooks):
 
     for filename, name in notebooks:
         head, tail = os.path.split(filename)
-        command = 'cd {0}; '.format(head) + ipy_cmd +'nbconvert --to rst {0}'.format(tail)
-        get_output_error_code(command)
+        print("\tgenerate {0}.rst".format(name))
+        #command = ipy_cmd +'nbconvert --to rst --execute {0} --output {1}.rst --template myrst.tpl'.format(filename, SRC_DIR + name)
+        command = ipy_cmd +'nbconvert --to rst {0} --output-dir {1} --template myrst.tpl'.format(filename, head)
+        out, err, return_code = get_output_error_code(command)
+        if return_code != 0:
+            print(err)
+            clean()
+            sys.exit()
 
-    export = os.path.join(OUTPUT_DIR, '..', 'tutorial.rst')
+def create_tutorial_rst(notebooks):
+    export = os.path.join(SRC_DIR, './tutorial.rst')
     with open(export, 'w') as f:
         f.write('Tutorial\n')
         f.write('========\n')

@@ -5,6 +5,7 @@ def init():
     notebookgenerator.main()
 
 def clean(app, *args):
+    print('Remove rst notebook files.')
     notebookgenerator.clean()
 
 def setup(app):

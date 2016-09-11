@@ -57,12 +57,9 @@ class Parallelogram(Element):
 
     Methods
     -------
-    get_bounds :
-      return the bounds of the parallelogram
-    point_inside :
-      return True or False if the points are in or out the parallelogram
-    distance :
-      get the distance of a point to the parallelogram
+    get_bounds
+    point_inside
+    distance
     """
 
     number_of_bounds = 4 # number of edges
@@ -128,7 +125,7 @@ class Parallelogram(Element):
         Compute the distance in the v direction between the parallelogram
         and the points defined by (x, y).
 
-        .. image:: figures/Parallelogram.png
+        .. image:: ../figures/Parallelogram.png
             :width: 100%
 
         Parameters

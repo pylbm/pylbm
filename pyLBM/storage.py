@@ -13,6 +13,36 @@ class Array(object):
     distribution functions in pyLBM.
 
     It sets the storage in memory and how to access.
+
+    Parameters
+    ----------
+    nv: int
+        number of velocities
+    gspace_size: list of int
+        number of points in each direction including the fictitious point
+    vmax: list of int
+        the size of the fictitious points in each direction
+    sorder: list of int
+        the order of nv, nx, ny and nz
+        Default is None which mean [nv, nx, ny, nz]
+    mpi_topo:
+        the mpi topology
+    dtype: type
+        the type of the array. Default is numpy.double
+
+    Attributes
+    ----------
+    array
+    nspace
+    nv
+    shape
+    size
+
+    Methods
+    -------
+    set_conserved_moments
+    update
+
     """
     def __init__(self, nv, gspace_size, vmax, sorder=None, mpi_topo=None, dtype=np.double):
         self.log = setLogger(__name__)
@@ -73,24 +103,52 @@ class Array(object):
             self.swaparray[key] = values
 
     def set_conserved_moments(self, consm, nv_ptr):
+        """
+        add conserved moments information to have a direct access.
+
+        Parameters
+        ----------
+        consm : dict
+            set the name and the location of the conserved moments.
+            The format is
+                - key: the conserved moment (sympy symbol or string)
+                - value: list of 2 integers
+                    - first item: the scheme number
+                    - second item: the index of the conserved moment in this scheme
+        nv_ptr : list of int
+            store the location of the schemes
+
+        """
         self.consm = {}
         for k, v in consm.items():
             self.consm[k] = nv_ptr[v[0]] + v[1]
 
     @property
     def nspace(self):
+        """
+        the space size.
+        """
         return self.swaparray.shape[1:]
 
     @property
     def nv(self):
+        """
+        the number of velocities.
+        """
         return self.swaparray.shape[0]
 
     @property
     def shape(self):
+        """
+        the shape of the array that stores the data.
+        """
         return self.array.shape
 
     @property
     def size(self):
+        """
+        the size of the array that stores the data.
+        """       
         return self.array.size
 
     def _set_subarray(self):
@@ -176,31 +234,33 @@ class Array(object):
 class SOA(Array):
     """
     This class defines a structure of arrays to store the
-    unknowns in the lattice Boltzmann schemes.
+    unknowns of the lattice Boltzmann schemes.
 
     Parameters
     ----------
-
     nv: int
         number of velocities
-    nspace: list of int
-        number of points in each direction
+    gspace_size: list of int
+        number of points in each direction including the fictitious point
+    vmax: list of int
+        the size of the fictitious points in each direction
+    mpi_topo:
+        the mpi topology
     dtype: type
         the type of the array. Default is numpy.double
 
     Attributes
     ----------
+    array
+    nspace
+    nv
+    shape
+    size
 
-    array: NumPy array
-        the array that stores the solution
-    nspace: list of int
-        the space dimension
-    nv: int
-        the number of velocities
-    shape:
-        the shape of array
-    size:
-        the total size of the array
+    Methods
+    -------
+    set_conserved_moments
+    update
 
     """
     def __init__(self, nv, gspace_size, vmax, mpi_topo, dtype=np.double):
@@ -208,36 +268,41 @@ class SOA(Array):
         Array.__init__(self, nv, gspace_size, vmax, sorder, mpi_topo, dtype)
 
     def reshape(self):
+        """
+        reshape.
+        """
         return self.array
 
 class AOS(Array):
     """
     This class defines an array of structures to store the
-    unknowns in the lattice Boltzmann schemes.
+    unknowns of the lattice Boltzmann schemes.
 
     Parameters
     ----------
-
     nv: int
         number of velocities
-    nspace: list of int
-        number of points in each direction
+    gspace_size: list of int
+        number of points in each direction including the fictitious point
+    vmax: list of int
+        the size of the fictitious points in each direction
+    mpi_topo:
+        the mpi topology
     dtype: type
         the type of the array. Default is numpy.double
 
     Attributes
     ----------
+    array
+    nspace
+    nv
+    shape
+    size
 
-    array: NumPy array
-        the array that stores the solution
-    nspace: list of int
-        the space dimension
-    nv: int
-        the number of velocities
-    shape:
-        the shape of array
-    size:
-        the total size of the array
+    Methods
+    -------
+    set_conserved_moments
+    update
 
     """
     def __init__(self, nv, gspace_size, vmax, mpi_topo, dtype=np.double):
@@ -245,6 +310,9 @@ class AOS(Array):
         Array.__init__(self, nv, gspace_size, vmax, sorder, mpi_topo, dtype)
 
     def reshape(self):
+        """
+        reshape
+        """
         return self.array.reshape((np.prod(self.nspace), self.nv))
 
 class Array_in(Array):
