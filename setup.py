@@ -8,8 +8,11 @@ CLASSIFIERS = [
     "Programming Language :: Cython",
     "Programming Language :: Python",
     "Programming Language :: Python :: 2",
-    "Programming Language :: Python :: 2.6",
     "Programming Language :: Python :: 2.7",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.3",
+    "Programming Language :: Python :: 3.4",
+    "Programming Language :: Python :: 3.5",
     "Topic :: Software Development",
     "Topic :: Scientific/Engineering",
     "Operating System :: Microsoft :: Windows",
@@ -56,8 +59,11 @@ setup(
                       'mpi4py>=1.3.1',
                       'matplotlib>=1.4.0',
                       'future',
-                      'evtk'
+                      'pyevtk>=1.0.0'
                       ],
+    dependency_links=[
+        "hg+https://bitbucket.org/pauloh/pyevtk"
+    ],
     extras_require={'pythran': ["pythran>=0.7.1"],
                     'numba': ["numba>=0.19.1"]
                     },
