@@ -5,6 +5,32 @@ body {
 a {
     color: #CE5C00;
 }
+
+div.gallery{
+  display: flex;
+  flex-wrap: wrap;
+}
+
+/*div.gallery::before, div.gallery::after {
+    display: table;
+    line-height: 0;
+    content: "";
+}
+*/
+a.gallery {
+    width: calc(50% - 16px);
+    border: 1px solid #d4d4d4;
+    border-radius: 4px;
+    text-align: center;
+    margin-bottom: 8px;
+    margin-right: 8px;
+}
+
+a.gallery video {
+    border-radius: 4px;
+    width: 90%;
+}
+
 input,
 button,
 select,
@@ -224,10 +250,10 @@ p.admonition-title {
 
 /* example gallery */
 
-.gallery {
-    height: 200px;
+/*.gallery {
+    height: 250px;
 }
-
+*/
 .figure {
     /*float: left;*/
     /*width: 40%;*/

@@ -95,7 +95,6 @@ References
 .. [QdHL92] Y.H. QIAN, D. D'HUMIERES, and P. LALLEMAND,
             *Lattice BGK Models for Navier-Stokes Equation*, Europhys. Lett., **17** (6), pp. 479-484 (1992).
 
-
 Indices and tables
 ---------------------------
 
