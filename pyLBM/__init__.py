@@ -16,3 +16,4 @@ from .elements import *
 from .geometry import Geometry
 from . import viewer
 from .vtk import VTKFile
+from .version import version as __version__

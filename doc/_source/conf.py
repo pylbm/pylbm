@@ -36,16 +36,16 @@ extensions = ['sphinx.ext.autodoc',
               #'sphinx.ext.intersphinx',
               #'sphinx.ext.coverage',
               #'sphinx.ext.doctest',
-              #'sphinx.ext.autosummary',
+              'sphinx.ext.autosummary',
               #'sphinxarg.ext',
               #'sphinx.ext.viewcode',
               ]
-#mathjax_path="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
-mathjax_path="/Users/graille/.ipython/nbextensions/mathjax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+mathjax_path="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+#mathjax_path="/Users/graille/.ipython/nbextensions/mathjax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 #mathjax_path="/home/gouarin/.ipython/nbextensions/mathjax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 autodoc_member_order = 'bysource'
-numpydoc_show_class_members = True
-numpydoc_class_members_toctree = False
+#numpydoc_show_class_members = True
+#numpydoc_class_members_toctree = False
 
 
 # Add any paths that contain templates here, relative to this directory.
@@ -88,7 +88,7 @@ release = 'v0.1'
 exclude_patterns = ['../_build']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
-#default_role = None
+default_role = "autolink"
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 #add_function_parentheses = True
@@ -339,3 +339,7 @@ epub_copyright = u'2013, Benjamin Graille, Loïc Gouarin'
 
 # Allow duplicate toc entries.
 #epub_tocdup = True
+
+import glob
+autosummary_generate = glob.glob("**/*.rst") + glob.glob("*.rst")
+

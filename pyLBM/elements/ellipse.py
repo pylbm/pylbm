@@ -54,12 +54,9 @@ class Ellipse(Element):
 
     Methods
     -------
-    get_bounds :
-      return the bounds of the ellipse
-    point_inside :
-      return True or False if the points are in or out the ellipse
-    distance :
-      get the distance of a point to the ellipse
+    get_bounds
+    point_inside
+    distance
     """
     number_of_bounds = 1 # number of edges
 

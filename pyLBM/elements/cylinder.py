@@ -82,7 +82,7 @@ class Cylinder(Element):
         Compute the distance in the v direction between
         the cylinder and the points defined by (x, y, z).
 
-        .. image:: figures/Cylinder.png
+        .. image:: ../figures/Cylinder.png
             :width: 100%
 
         Parameters
@@ -222,12 +222,9 @@ class Cylinder_Circle(Cylinder):
 
     Methods
     -------
-    get_bounds :
-      return the bounds of the cylinder
-    point_inside :
-      return True or False if the points are in or out the cylinder
-    distance :
-      get the distance of a point to the cylinder
+    get_bounds
+    point_inside
+    distance
     """
     number_of_bounds = 3 # number of edges
 
@@ -304,12 +301,9 @@ class Cylinder_Ellipse(Cylinder):
 
     Methods
     -------
-    get_bounds :
-      return the bounds of the cylinder
-    point_inside :
-      return True or False if the points are in or out the cylinder
-    distance :
-      get the distance of a point to the cylinder
+    get_bounds
+    point_inside
+    distance
     """
     number_of_bounds = 3 # number of edges
 
@@ -380,12 +374,9 @@ class Cylinder_Triangle(Cylinder):
 
     Methods
     -------
-    get_bounds :
-      return the bounds of the cylinder
-    point_inside :
-      return True or False if the points are in or out the cylinder
-    distance :
-      get the distance of a point to the cylinder
+    get_bounds
+    point_inside
+    distance
     """
     number_of_bounds = 5 # number of edges
 
