@@ -117,6 +117,6 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     return sol
 
 if __name__ == '__main__':
-    dx = 1./1024
-    Tf = 1.
+    dx = 1./256
+    Tf = .25
     run(dx, Tf, generator=pyLBM.generator.CythonGenerator)

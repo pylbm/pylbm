@@ -31,6 +31,7 @@ def clean():
         os.remove(fname)
 
     for fname in NOTEBOOKS:
+        #print(fname)
         os.remove(SRC_DIR + '/' + fname[1] + '.rst')
 
     # Clear tutorial notebooks dir
