@@ -342,4 +342,3 @@ epub_copyright = u'2013, Benjamin Graille, Loïc Gouarin'
 
 import glob
 autosummary_generate = glob.glob("**/*.rst") + glob.glob("*.rst")
-
