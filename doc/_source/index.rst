@@ -16,19 +16,23 @@ Getting started
 pyLBM can be a simple way to make numerical simulations
 by using the Lattice Boltzmann method.
 
-To install pyLBM, you have several ways. You can clone the project::
-
-    git clone https://gitlab.com/gouarin/pylbm
-
-and install the module by the command::
-
-    python setup.py install
-
-You can also install the last version on Pypi::
+To install pyLBM, you have several ways. You can install the last version on Pypi ::
 
     pip install pyLBM
 
-Once the module is installed
+You can also clone the project ::
+
+    git clone https://github.com/pylbm/pylbm
+
+and then use the command ::
+
+    python setup.py install
+
+or ::
+
+    python setup.py install --user
+
+Once the package is installed
 you just have to understand how build a dictionary that will be
 understood by pyLBM to perform the simulation.
 The dictionary should contain all the needed informations as

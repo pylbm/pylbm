@@ -11,7 +11,11 @@ pyLBM performs the numerical scheme using Cython, Pythran or Numba from the sche
 Installation
 ============
 
-To install pyLBM, you have several ways. You can clone the project
+You can install the last version on Pypi
+
+  pip install pyLBM
+
+You can also clone the project
 
   git clone https://github.com/pylbm/pylbm
 
@@ -19,9 +23,10 @@ and then use the command
 
   python setup.py install
 
-You can also install the last version on Pypi
+or
 
-  pip install pyLBM
+  python setup.py install --user
+
 
 Getting started
 ================
