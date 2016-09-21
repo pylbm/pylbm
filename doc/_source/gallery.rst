@@ -9,7 +9,7 @@ Gallery
   <figure>
   <video control autoplay loop="loop" alt="Suni">
     <source src="https://raw.githubusercontent.com/pylbm/pylbm_gallery/master/Karman_vortex_street/Re%3D250/Karman_vortex_street.mp4" type="video/mp4">
-    <source src="https://raw.githubusercontent.com/pylbm/pylbm_gallery/master/Karman_vortex_street/Re%3D250/Karman_vortex_street.ogv" type="video/ogv">
+    <source src="https://raw.githubusercontent.com/pylbm/pylbm_gallery/master/Karman_vortex_street/Re%3D250/Karman_vortex_street.ogv" type="video/ogg">
     Your browser does not support the video tag.
   </video>
   </figure>
@@ -20,7 +20,7 @@ Gallery
   <figure>
   <video control autoplay loop="loop" alt="Suni">
     <source src="https://raw.githubusercontent.com/pylbm/pylbm_gallery/master/Karman_vortex_street/Re%3D2500/Karman_vortex_street.mp4" type="video/mp4">
-    <source src="https://raw.githubusercontent.com/pylbm/pylbm_gallery/master/Karman_vortex_street/Re%3D2500/Karman_vortex_street.ogv" type="video/ogv">
+    <source src="https://raw.githubusercontent.com/pylbm/pylbm_gallery/master/Karman_vortex_street/Re%3D2500/Karman_vortex_street.ogv" type="video/ogg">
     Your browser does not support the video tag.    
   </video>
   </figure>
@@ -31,7 +31,7 @@ Gallery
   <figure>
   <video control autoplay loop="loop" alt="Suni"> 
     <source src="https://raw.githubusercontent.com/pylbm/pylbm_gallery/master/Rayleigh_Benard/Rayleigh_Benard.mp4" type="video/mp4">
-    <source src="https://raw.githubusercontent.com/pylbm/pylbm_gallery/master/Rayleigh_Benard/Rayleigh_Benard.ogv" type="video/ogv">
+    <source src="https://raw.githubusercontent.com/pylbm/pylbm_gallery/master/Rayleigh_Benard/Rayleigh_Benard.ogv" type="video/ogg">
     Your browser does not support the video tag.
   </video>
   </figure>
@@ -42,7 +42,7 @@ Gallery
   <figure>
   <video control autoplay loop="loop" alt="Suni">
     <source src="https://raw.githubusercontent.com/pylbm/pylbm_gallery/master/shallow_water/shallow_water.mp4" type="video/mp4">
-    <source src="https://raw.githubusercontent.com/pylbm/pylbm_gallery/master/shallow_water/shallow_water.ogv" type="video/ogv">
+    <source src="https://raw.githubusercontent.com/pylbm/pylbm_gallery/master/shallow_water/shallow_water.ogv" type="video/ogg">
     Your browser does not support the video tag.
   </video>
   </figure>
