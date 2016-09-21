@@ -5,6 +5,32 @@ body {
 a {
     color: #CE5C00;
 }
+
+div.gallery{
+  display: flex;
+  flex-wrap: wrap;
+}
+
+/*div.gallery::before, div.gallery::after {
+    display: table;
+    line-height: 0;
+    content: "";
+}
+*/
+a.gallery {
+    width: calc(50% - 16px);
+    border: 1px solid #d4d4d4;
+    border-radius: 4px;
+    text-align: center;
+    margin-bottom: 8px;
+    margin-right: 8px;
+}
+
+a.gallery video {
+    border-radius: 4px;
+    width: 90%;
+}
+
 input,
 button,
 select,
@@ -224,10 +250,10 @@ p.admonition-title {
 
 /* example gallery */
 
-.gallery {
-    height: 200px;
+/*.gallery {
+    height: 250px;
 }
-
+*/
 .figure {
     /*float: left;*/
     /*width: 40%;*/
@@ -263,13 +289,31 @@ p{
   text-align: justify;
 }
 
-code, pre {
+.code.python.highlight-python pre{
     font-family: Source Code Pro;
     background-color: #F9FAFF;
 }
 
-code{
-  color: #197395;
+.output.highlight-python *{
+    font-family: Source Code Pro, sans-serif;
+    background-color: #FFF !important;
+    color: #000 !important;
+}
+
+.output.highlight-python pre{
+    padding: 0px;
+    margin-left: 20px;
+    border: none;
+}
+
+.xref.py.py-obj.docutils.literal{
+    background-color: #FFF;
+    color: #CE5C00;
+    border: none;
+}
+
+code {
+    color: #CE5C00;
 }
 
 .nav {

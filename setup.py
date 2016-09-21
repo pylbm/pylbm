@@ -8,8 +8,11 @@ CLASSIFIERS = [
     "Programming Language :: Cython",
     "Programming Language :: Python",
     "Programming Language :: Python :: 2",
-    "Programming Language :: Python :: 2.6",
     "Programming Language :: Python :: 2.7",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.3",
+    "Programming Language :: Python :: 3.4",
+    "Programming Language :: Python :: 3.5",
     "Topic :: Software Development",
     "Topic :: Scientific/Engineering",
     "Operating System :: Microsoft :: Windows",
@@ -20,10 +23,19 @@ CLASSIFIERS = [
 
 MAJOR = "0"
 MINOR = "2"
-PATCH = "0"
+PATCH = "1"
 VERSION = "{0}.{1}.{2}".format(MAJOR, MINOR, PATCH)
 
+def write_version_py(filename='pyLBM/version.py'):
+    a = open(filename, 'w')
+    try:
+        a.write("version = '{}'".format(VERSION))
+    finally:
+        a.close()
+
 README = open("README.rst").readlines()
+
+write_version_py()
 
 setup(
     name           = "pyLBM",
@@ -47,8 +59,11 @@ setup(
                       'mpi4py>=1.3.1',
                       'matplotlib>=1.4.0',
                       'future',
-                      'evtk'
+                      'pyevtk>=1.0.0'
                       ],
+    dependency_links=[
+        "hg+https://bitbucket.org/pauloh/pyevtk"
+    ],
     extras_require={'pythran': ["pythran>=0.7.1"],
                     'numba': ["numba>=0.19.1"]
                     },

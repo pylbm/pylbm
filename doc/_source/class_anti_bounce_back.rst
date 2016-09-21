@@ -4,7 +4,7 @@ the classes for anti bounce back
 
 Two classes are given for anti bounce back conditions: the classical one
 antibounce_back and a second one that is more accurate to take into account
-the geometry (Bouzidi type conditions).
+the geometry (Bouzidi type conditions) [BFL01].
 
 If the bound is located exactly in the middle of two mesh points, the two
 conditions are equivalent (but in that case, anti_bounce_back is probably more efficient).
