@@ -1,5 +1,10 @@
+from __future__ import print_function
+from __future__ import division
+"""
+test: True
+"""
 import sys
-
+from six.moves import range
 import numpy as np
 import sympy as sp
 
@@ -11,8 +16,6 @@ import matplotlib.cm as cm
 X, Y, LA = sp.symbols('X, Y, LA')
 rho, qx, qy = sp.symbols('rho, qx, qy')
 
-def initialization_rho(x,y):
-    return rhoo * np.ones((x.size, y.size), dtype='float64') + deltarho * ((x-0.5*(xmin+xmax))**2+(y-0.5*(ymin+ymax))**2 < 0.25**2)
 
 def plot_init(num = 0):
     plt.ion()
@@ -22,19 +25,32 @@ def plot_init(num = 0):
     l = ax.imshow([], origin='lower', cmap=cm.gray, interpolation='nearest')[0]
     return l
 
-def update(iframe):
-    for k in xrange(32):
-        sol.one_time_step()      # increment the solution of one time step
-    im.set_data(sol.m[0][0].transpose())
-    ax.title = 'solution at t = {0:f}'.format(sol.t)
 
-if __name__ == "__main__":
+def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
+    """
+    Parameters
+    ----------
+
+    dx: double
+        spatial step
+
+    Tf: double
+        final time
+
+    generator: pyLBM generator
+
+    sorder: list
+        storage order
+
+    withPlot: boolean
+        if True plot the solution otherwise just compute the solution
+
+    """
     rhoo = 1.
     deltarho = 1.
     Taille = 2.
     xmin, xmax, ymin, ymax = -0.5*Taille, 0.5*Taille, -0.5*Taille, 0.5*Taille
     # parameters
-    dx = 1./128 # spatial step
     la = 4 # velocity of the scheme
     g = 1.
     sigma = 1.e-4
@@ -45,8 +61,11 @@ if __name__ == "__main__":
     s0  = [0., s_0qx, s_0qx, s_0xy]
     s1  = [0., s_1qx, s_1qx, s_1xy]
 
-    vitesse = range(1,5)
+    vitesse = list(range(1,5))
     polynomes = [1, LA*X, LA*Y, X**2-Y**2]
+
+    def initialization_rho(x,y):
+        return rhoo * np.ones((x.size, y.size)) + deltarho * ((x-0.5*(xmin+xmax))**2+(y-0.5*(ymin+ymax))**2 < 0.25**2)
 
     dico   = {
         'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':-1},
@@ -79,17 +98,34 @@ if __name__ == "__main__":
                 'init':{qy:0.},
             },
         ],
-        'generator': pyLBM.generator.CythonGenerator,
+        'generator': generator,
         }
 
-    sol = pyLBM.Simulation(dico)
+    sol = pyLBM.Simulation(dico, sorder=sorder)
 
-    viewer = pyLBM.viewer.matplotlibViewer
-    fig = viewer.Fig()
-    ax = fig[0]
+    if withPlot:
+        viewer = pyLBM.viewer.matplotlibViewer
+        fig = viewer.Fig()
+        ax = fig[0]
 
-    im = ax.image(sol.m[0][0].transpose(), clim=[rhoo-.5*deltarho, rhoo+1.5*deltarho])
-    ax.title = 'solution at t = {0:f}'.format(sol.t)
+        im = ax.image(sol.m[rho].transpose(), clim=[rhoo-.5*deltarho, rhoo+1.5*deltarho])
+        ax.title = 'solution at t = {0:f}'.format(sol.t)
 
-    fig.animate(update, interval=1)
-    fig.show()
+        def update(iframe):
+            for k in range(32):
+                sol.one_time_step()      # increment the solution of one time step
+            im.set_data(sol.m[rho].transpose())
+            ax.title = 'solution at t = {0:f}'.format(sol.t)
+
+        fig.animate(update, interval=1)
+        fig.show()
+    else:
+        while sol.t < Tf:
+            sol.one_time_step()
+
+    return sol
+
+if __name__ == '__main__':
+    dx = 1./128
+    Tf = 20
+    run(dx, Tf)

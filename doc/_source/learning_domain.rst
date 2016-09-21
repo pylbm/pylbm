@@ -10,7 +10,7 @@ and put in a object of the class :py:class:`Domain <pyLBM.domain.Domain>`.
 The domain is built from three types of informations:
 
 * a geometry (class :py:class:`Geometry <pyLBM.geometry.Geometry>`),
-* a stencil (class :py:class:`Stencil <pyLBM.geometry.Stencil>`),
+* a stencil (class :py:class:`Stencil <pyLBM.stencil.Stencil>`),
 * a space step (a float for the grid step of the simulation).
 
 The domain is a uniform cartesian discretization of the geometry with a grid step
@@ -19,6 +19,9 @@ the domain of the computation.
 The stencil is necessary in order to know the maximal velocity in each direction
 so that the corresponding number of phantom cells are added at the borders of
 the domain (for the treatment of the boundary conditions).
+The user can get the coordinates of the points in the domain by the fields
+``x``, ``y``, and ``z``.
+By convention, if the spatial dimension is one, ``y=z=None``; and if it is two, ``z=None``.
 
 Several examples of domains can be found in
 demo/examples/domain/
@@ -28,11 +31,11 @@ Examples in 1D
 
 :download:`script<codes/domain_D1Q3_segment.py>`
 
-The segment :math:`[0, 1]` with a :math:`D1Q3`
-==============================================
+The segment :math:`[0, 1]` with a :math:`D_1Q_3`
+================================================
 
 .. literalinclude:: codes/domain_D1Q3_segment.py
-    :lines: 11-
+    :lines: 12-
 
 .. plot:: codes/domain_D1Q3_segment.py
 
@@ -47,11 +50,11 @@ by using the method
 
 :download:`script<codes/domain_D1Q5_segment.py>`
 
-The segment :math:`[0, 1]` with a :math:`D1Q5`
-==============================================
+The segment :math:`[0, 1]` with a :math:`D_1Q_5`
+================================================
 
 .. literalinclude:: codes/domain_D1Q5_segment.py
-    :lines: 11-
+    :lines: 12-
 
 .. plot:: codes/domain_D1Q5_segment.py
 
@@ -71,11 +74,11 @@ Examples in 2D
 
 :download:`script<codes/domain_D2Q9_square.py>`
 
-The square :math:`[0,1]^2` with a :math:`D2Q9`
-===============================================
+The square :math:`[0,1]^2` with a :math:`D_2Q_9`
+================================================
 
 .. literalinclude:: codes/domain_D2Q9_square.py
-    :lines: 11-
+    :lines: 12-
 
 .. plot::  codes/domain_D2Q9_square.py
 
@@ -103,8 +106,8 @@ for a given velocity in one time step, the distance to the border is computed.
 
 :download:`script 1<codes/domain_D2Q13_square_hole.py>`
 
-A square with a hole with a :math:`D2Q13`
-=========================================
+A square with a hole with a :math:`D_2Q_{13}`
+=============================================
 
 The unit square :math:`[0,1]^2` can be holed with a circle.
 In this example,
@@ -113,35 +116,36 @@ a :py:class:`circle <pyLBM.elements.Circle>`
 with a center of (0.5, 0.5) and a radius of 0.125
 
 .. literalinclude:: codes/domain_D2Q13_square_hole.py
-    :lines: 11-
+    :lines: 12-
 
 .. plot:: codes/domain_D2Q13_square_hole.py
 
 
 :download:`script <codes/domain_D2Q9_step.py>`
 
-A step with a :math:`D2Q9`
+A step with a :math:`D_2Q_9`
 ==============================
 
 A step can be build by removing a rectangle in the left corner.
-For a :math:`D2Q9`, it gives the following domain.
+For a :math:`D_2Q_9`, it gives the following domain.
 
 .. literalinclude:: codes/domain_D2Q9_step.py
-    :lines: 11-
+    :lines: 12-
 
 .. plot:: codes/domain_D2Q9_step.py
 
+Note that the distance with the bound is visible only for the specified labels.
 
 Examples in 3D
 ******************************
 
 :download:`script<codes/domain_D3Q19_cube.py>`
 
-The cube :math:`[0,1]^3` with a :math:`D3Q19`
-=============================================
+The cube :math:`[0,1]^3` with a :math:`D_3Q_{19}`
+=================================================
 
 .. literalinclude:: codes/domain_D3Q19_cube.py
-    :lines: 11-
+    :lines: 12-
 
 .. plot::  codes/domain_D3Q19_cube.py
 
@@ -149,3 +153,11 @@ The cube :math:`[0,1]^3` is created by the dictionary with the key ``box``
 and the first 19th  velocities.
 The result is then visualized by using the method
 :py:meth:`visualize <pyLBM.domain.Domain.visualize>`.
+
+The cube with a hole with a :math:`D_3Q_{19}`
+=================================================
+
+.. literalinclude:: codes/domain_D3Q19_cube_hole.py
+    :lines: 12-
+
+.. plot::  codes/domain_D3Q19_cube_hole.py

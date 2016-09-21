@@ -10,16 +10,29 @@ Lattice Boltzmann solvers.
 pyLBM is licensed under the BSD license,
 enabling reuse with few restrictions.
 
-First steps
+Getting started
 ---------------------------
 
 pyLBM can be a simple way to make numerical simulations
 by using the Lattice Boltzmann method.
 
-Once the module is installed by the command::
+To install pyLBM, you have several ways. You can install the last version on Pypi ::
+
+    pip install pyLBM
+
+You can also clone the project ::
+
+    git clone https://github.com/pylbm/pylbm
+
+and then use the command ::
 
     python setup.py install
 
+or ::
+
+    python setup.py install --user
+
+Once the package is installed
 you just have to understand how build a dictionary that will be
 understood by pyLBM to perform the simulation.
 The dictionary should contain all the needed informations as
@@ -29,6 +42,9 @@ The dictionary should contain all the needed informations as
 - the boundary conditions (see :doc:`here<learning_bounds>` for documentation)
 - another informations like the space step, the scheme velocity, the generator
   of the functions...
+
+To understand how to use pyLBM, you have a lot of Python notebooks
+in the `tutorial <tutorial.html>`_.
 
 Documentation for users
 ---------------------------
@@ -40,21 +56,35 @@ Documentation for users
    The domain of the simulation <learning_domain>
    The scheme <learning_scheme>
    The boundary conditions <learning_bounds>
-   
+   The storage of moments and distribution functions <storage>
+   Learning by examples <tutorial>
 
 Documentation of the code
 ---------------------------
 
-.. toctree::
-  :maxdepth: 2
+.. currentmodule:: pyLBM
 
-  The class Geometry <class_geometry>
-  The module elements <module_elements>
-  The module stencil <module_stencil>
-  The class Domain <class_domain>
-  The class Scheme <class_scheme>
-  The module generator <module_generator>
-  The class Simulation <class_simulation>
+The most important classes 
+
+.. autosummary::
+  :toctree: generated/
+  
+  Geometry
+  Domain
+  Scheme
+  Simulation
+
+The modules
+
+.. toctree::
+   :maxdepth: 1
+   
+  elements <module/module_elements>
+  stencil <module/module_stencil>
+  generator <module/module_generator>
+  storage <module/module_storage>
+  bounds <module/module_bounds>
+
 
 References
 ---------------------------
@@ -68,7 +98,6 @@ References
          Journal of Comutational Physics, **266** (3179757), pp. 74-88 (2014).
 .. [QdHL92] Y.H. QIAN, D. D'HUMIERES, and P. LALLEMAND,
             *Lattice BGK Models for Navier-Stokes Equation*, Europhys. Lett., **17** (6), pp. 479-484 (1992).
-
 
 Indices and tables
 ---------------------------

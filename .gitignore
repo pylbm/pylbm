@@ -10,3 +10,4 @@ dist
 *.vtr
 *.pvd
 .ipynb_checkpoints
+generated

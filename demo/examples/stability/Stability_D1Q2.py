@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -20,7 +22,7 @@ def scheme_constructor(ux, s):
         'scheme_velocity':1.,
         'schemes':[
             {
-            'velocities':range(1, 3),
+            'velocities':[1, 2],
             'conserved_moments':u,
             'polynomials':[1, X],
             'relaxation_parameters':[0., s],
@@ -54,7 +56,7 @@ def vp_plot(ux):
             if rloc>R+1.e-14:
                 R = rloc
         if R>1+1.e-14:
-            print "instable scheme for s={0:5.3f}".format(s)
+            print("instable scheme for s={0:5.3f}".format(s))
         plt.hold(False)
         plt.title('eigenvalues for $s = {0:5.3f}$'.format(s))
         plt.pause(1.e-1)
@@ -72,7 +74,7 @@ def stability_array():
     nb_calcul = 0
     mR, nb_calcul = stability_array_recur(vs, vux, mR, [0,Nu,0,Ns], nb_calcul)
     plt.hold(False)
-    print "Number of stability computations: {0:d}".format(nb_calcul)
+    print("Number of stability computations: {0:d}".format(nb_calcul))
     plt.show()
 
 def stability_array_recur(vs, vux, mR, l, nb_calcul):
@@ -82,7 +84,7 @@ def stability_array_recur(vs, vux, mR, l, nb_calcul):
             if (mR[i, j] == 0):
                 S = scheme_constructor(vux[i], vs[j])
                 nb_calcul += 1
-                if S.is_stable_Linfinity():
+                if S.is_monotonically_stable():
                     plt.scatter([vux[i], -vux[i]], [vs[j], vs[j]], c = 'b', marker = 'o')
                     mR[i, j] = 1
                 else:

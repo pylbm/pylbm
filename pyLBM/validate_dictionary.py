@@ -1,15 +1,19 @@
+from __future__ import print_function
+# Authors:
+#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Benjamin Graille <benjamin.graille@math.u-psud.fr>
+#
+# License: BSD 3 clause
+
+from six.moves import range
+from six import string_types
 import types
 import sympy as sp
 import numpy as np
 import pyLBM
 
-"""
-TODO
 
-- faire les tests de compatiblites et mettre un message en rouge dans le cas contraire
-
-"""
-class PrintInColor:
+class PrintInColor(object):
     RED = '\033[91m'
     GREEN = '\033[92m'
     YELLOW = '\033[93m'
@@ -46,10 +50,10 @@ def debut(b):
         return PrintInColor.error("\n>>>|")
 
 def is_dico_generic(d, ltk, ltv, ntab=0):
-    test = isinstance(d, types.DictionaryType)
+    test = isinstance(d, dict)
     if test:
         ligne = ''
-        for k, v in d.items():
+        for k, v in list(d.items()):
             test_k = True
             if isinstance(k, ltk):
                 ligne_k = PrintInColor.correct(k)
@@ -63,12 +67,13 @@ def is_dico_generic(d, ltk, ltv, ntab=0):
                 test_k = False
                 ligne_k += PrintInColor.error(v)
             ligne += debut(test_k) + space(ntab) + ligne_k
+            test = test and test_k
     else:
         ligne = ''
     return test, ligne
 
 def is_list_generic(l, lte, size=None):
-    test = isinstance(l, (types.ListType, types.TupleType))
+    test = isinstance(l, (list, tuple))
     ligne = ''
     if test:
         ligne += '['
@@ -91,27 +96,30 @@ def is_list_generic(l, lte, size=None):
     return test, ligne
 
 def is_dico_sp_float(d, ntab=0):
-    return is_dico_generic(d, (sp.Symbol, types.StringType), (types.IntType, types.FloatType), ntab=ntab)
+    return is_dico_generic(d, (sp.Symbol, string_types), (int, float), ntab=ntab)
+
+def is_dico_sp_sporfloat(d, ntab=0):
+    return is_dico_generic(d, (sp.Symbol, string_types), (int, float, sp.Symbol, string_types), ntab=ntab)
 
 def is_dico_int_func(d, ntab=0):
-    return is_dico_generic(d, types.IntType, types.FunctionType, ntab=ntab)
+    return is_dico_generic(d, int, types.FunctionType, ntab=ntab)
 
 def is_dico_box(d, ntab=0):
     return test_dico_prototype(d, pyLBM.geometry.proto_box, ntab=ntab)
 
 def is_dico_bc(d, ntab=0):
-    test = isinstance(d, types.DictionaryType)
+    test = isinstance(d, dict)
     ligne = ''
     if test:
-        for label, dico_bc_label in d.items():
-            if not isinstance(label, (types.IntType, types.StringType)):
+        for label, dico_bc_label in list(d.items()):
+            if not isinstance(label, (int, string_types)):
                 test = False
                 debut_l = debut(False) + space(ntab)
                 ligne_l = PrintInColor.error(label) + ": "
             else:
                 debut_l = debut(True) + space(ntab)
                 ligne_l = PrintInColor.correct(label) + ": "
-                if isinstance(dico_bc_label, types.DictionaryType):
+                if isinstance(dico_bc_label, dict):
                     test_lk, ligne_lk = test_dico_prototype(dico_bc_label, pyLBM.boundary.proto_bc, ntab=ntab+1)
                     if not test_lk:
                         debut_l = debut(False) + space(ntab)
@@ -125,18 +133,51 @@ def is_dico_bc(d, ntab=0):
     return test, ligne
 
 def is_dico_init(d, ntab=0):
-    return is_dico_generic(d, (sp.Symbol, types.StringType), (types.TupleType, types.IntType, types.FloatType), ntab=ntab)
+    return is_dico_generic(d, (sp.Symbol, string_types, int), (tuple, int, float), ntab=ntab)
+
+def is_dico_sources(d, ntab=0):
+    return is_dico_generic(d, (sp.Symbol, string_types), (tuple, int, float, sp.Expr, string_types), ntab=ntab)
 
 def is_dico_stab(d, ntab=0):
     return test_dico_prototype(d, pyLBM.scheme.proto_stab, ntab=ntab)
 
+def is_dico_cons(d, ntab=0):
+    return test_dico_prototype(d, pyLBM.scheme.proto_cons, ntab=ntab)
+
+def is_dico_bcmethod(d, ntab=0):
+    test = isinstance(d, dict)
+    ligne = ''
+    if test:
+        for label, value in list(d.items()):
+            if not isinstance(label, int):
+                test_l = False
+                debut_l = debut(False) + space(ntab)
+                ligne_l = PrintInColor.error(label) + ": "
+            else:
+                test_l = True
+                debut_l = debut(True) + space(ntab)
+                ligne_l = PrintInColor.correct(label) + ": "
+                try:
+                    if issubclass(value, pyLBM.boundary.Boundary_method):
+                        test_l = True
+                        ligne_l = PrintInColor.correct(value)
+                    else:
+                        test_l = False
+                        ligne_l = PrintInColor.error(value)
+                except:
+                    test_l = False
+                    ligne_l = PrintInColor.error(value)
+            test = test and test_l
+            ligne += debut_l + ligne_l + "\n"
+    return test, ligne
+
 def is_list_sch(l, ntab=0):
-    test = isinstance(l, (types.ListType, types.TupleType))
+    test = isinstance(l, (list, tuple))
     ligne = ''
     if test:
         compt = 0
         for sch in l:
-            if isinstance(sch, types.DictionaryType):
+            if isinstance(sch, dict):
                 test_l, ligne_l = test_dico_prototype(sch, pyLBM.scheme.proto_sch, ntab=ntab+1)
             else:
                 test_l = False
@@ -147,17 +188,37 @@ def is_list_sch(l, ntab=0):
             test = test and test_l
     return test, ligne
 
+def is_list_sch_dom(l, ntab=0):
+    test = isinstance(l, (list, tuple))
+    ligne = ''
+    if test:
+        compt = 0
+        for sch in l:
+            if isinstance(sch, dict):
+                test_l, ligne_l = test_dico_prototype(sch, pyLBM.scheme.proto_sch_dom, ntab=ntab+1)
+            else:
+                test_l = False
+                ligne_l = PrintInColor.error(sch)
+            ligne += debut(test_l)
+            ligne += space(ntab) + '{0}:'.format(compt) + ligne_l
+            compt += 1
+            test = test and test_l
+    return test, ligne
+
 def is_list_int(l, ntab=None):
-    return is_list_generic(l, types.IntType)
+    return is_list_generic(l, int)
 
 def is_list_int_or_string(l, ntab=None):
-    return is_list_generic(l, (types.IntType, types.StringType))
+    return is_list_generic(l, (int, string_types))
 
 def is_list_float(l, ntab=None):
-    return is_list_generic(l, (types.IntType, types.FloatType))
+    return is_list_generic(l, (int, float))
 
 def is_2_list_int_or_float(l, ntab=None):
-    return is_list_generic(l, (types.IntType, types.FloatType), size=2)
+    return is_list_generic(l, (int, float), size=2)
+
+def is_list_string_or_tuple(l, ntab=None):
+    return is_list_generic(l, (tuple, string_types))
 
 def is_generator(d, ntab=None):
     try:
@@ -166,22 +227,29 @@ def is_generator(d, ntab=None):
         test = False
     return test, PrintInColor.unknown(d, test)
 
+def is_ode_solver(d, ntab=None):
+    try:
+        test = issubclass(d, pyLBM.generator.ode_schemes.ode_solver)
+    except:
+        test = False
+    return test, PrintInColor.unknown(d, test)
+
 def is_list_elem(l, ntab=None):
-    return is_list_generic(l, pyLBM.elements.Element)
+    return is_list_generic(l, pyLBM.elements.base.Element)
 
 def is_list_sp(l, ntab=None):
-    return is_list_generic(l, (sp.Expr, types.StringType))
+    return is_list_generic(l, (sp.Expr, string_types))
 
 def is_list_sp_or_nb(l, ntab=None):
-    return is_list_generic(l, (types.IntType, types.FloatType, sp.Expr, types.StringType))
+    return is_list_generic(l, (int, float, sp.Expr, string_types))
 
 def is_list_symb(l, ntab=None):
-    return is_list_generic(l, (sp.Symbol, types.StringType))
+    return is_list_generic(l, (sp.Symbol, string_types))
 
 def test_dico_prototype(dico, proto, ntab=0):
     test_g = True
     aff = ''
-    for key, value in dico.items():
+    for key, value in list(dico.items()):
         value_p = proto.get(key, None)
         test_loc = False
         if value_p is None:
@@ -201,13 +269,13 @@ def test_dico_prototype(dico, proto, ntab=0):
                         test_loc = True
                         break
                 else:
-                    print "\n\n" + "*"*50 + "\nUnknown type\n" + "*"*50
+                    print("\n\n" + "*"*50 + "\nUnknown type:", vpk, "\n" + "*"*50)
         aff += debut(test_loc) + space(ntab) + aff_k
         test_g = test_g and test_loc
-    for key_p, value_p in proto.items():
+    for key_p, value_p in list(proto.items()):
         value = dico.get(key_p, None)
         if value is None:
-            if value_p[0] == types.NoneType:
+            if value_p[0] == type(None):
                 aff += debut(True) + space(ntab) + PrintInColor.correct(key_p) + ': None'
             else:
                 aff += debut(False) + space(ntab) + PrintInColor.missing(str(key_p) + ': ???')
@@ -274,23 +342,23 @@ def test_compatibility_schemes(dico):
             if (inittype == 'moments') and (dsi is not None):
                 for cmk in cm:
                     test_init = False
-                    for ki, vi in dsi.items():
+                    for ki, vi in list(dsi.items()):
                         if cmk == ki:
                             test_init = True
-                            if not isinstance(vi, (types.FloatType, types.IntType, types.TupleType)):
+                            if not isinstance(vi, (float, int, tuple)):
                                 aff += PrintInColor.error("Bad initialisation of " + str(cmk) + ".")
                     if not test_init:
-                        print "Warning: the moment " + str(cmk) + " is not initialized.\n"
+                        print("Warning: the moment " + str(cmk) + " is not initialized.\n")
             # test if the conserved moments are initialized
             dsi = ds.get('init', None)
             if (inittype == 'moments') and (dsi is not None):
-                for ki in dsi.keys():
+                for ki in list(dsi.keys()):
                     test_init = False
                     for cmk in cm:
                         if cmk == ki:
                             test_init = True
                     if not test_init:
-                        print "Warning: the initialization of " + str(ki) + " is not valid.\n"
+                        print("Warning: the initialization of " + str(ki) + " is not valid.\n")
     return test, aff
 
 def test_compatibility_bc(dico):
@@ -310,19 +378,19 @@ def test_compatibility_bc(dico):
                     aff += PrintInColor.error("No boundary condition given in the dictionary.\n")
                     test = False
                 for l in labels:
-                    test_l = (l==-1) or any(k==l for k in dbc.keys())
+                    test_l = (l==-1) or any(k==l for k in list(dbc.keys()))
                     if not test_l:
                         test = False
                         aff += PrintInColor.error("The label {0} has no corresponding boundary condition.\n".format(l))
     return test, aff
 
-def validate(dico, proto):
+def validate(dico, proto, test_comp = True):
     aff = "\n" + "*"*75
     aff += "\nTest of the dictionary\n"
     aff += "*"*75
     test, aff_d = test_dico_prototype(dico, proto)
     aff += aff_d
-    if test:
+    if test and test_comp:
         test_c1, aff_c1 = test_compatibility_dim(dico)
         test_c2, aff_c2 = test_compatibility_schemes(dico)
         test_c3, aff_c3 = test_compatibility_bc(dico)
@@ -335,6 +403,8 @@ def validate(dico, proto):
             aff += '-'*60 + '\n'
         else:
             aff += '\n'
+    else:
+        aff += '\n'
     aff += "*"*75 + '\n'
     return test, aff
 
@@ -354,7 +424,7 @@ if __name__ == "__main__":
         'generator':pyLBM.generator.CythonGenerator,
         'scheme_velocity':1.,
         'schemes':[{
-            'velocities':range(1,5),
+            'velocities':list(range(1,5)),
             'conserved_moments':rho,
             'polynomials':[1, X, Y, X**2-Y**2, 2],
             'equilibrium':[rho, ux*rho, uy*rho, 0.],
@@ -374,4 +444,4 @@ if __name__ == "__main__":
     }
 
     test, aff = validate(dico, pyLBM.simulation.proto_simu)
-    print aff
+    print(aff)

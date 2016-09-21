@@ -23,7 +23,7 @@ def setLogger(name):
         return loggers.get(name)
     else:
         formatter = ColoredFormatter(
-        "%(log_color)s[{0}] %(levelname)-8s%(reset)s %(blue)s%(name)s in function %(funcName)s\n%(black)s%(message)s".format(mpi.COMM_WORLD.Get_rank()),
+        "%(log_color)s[{0}] %(levelname)-8s%(reset)s %(blue)s%(name)s in function %(funcName)s line %(lineno)s\n%(black)s%(message)s".format(mpi.COMM_WORLD.Get_rank()),
         datefmt=None,
         reset=True,
         log_colors={

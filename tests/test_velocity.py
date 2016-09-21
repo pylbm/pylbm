@@ -1,3 +1,5 @@
+
+from six.moves import range
 from pyLBM.stencil import Velocity
 import nose.tools as tools
 import random
@@ -6,7 +8,7 @@ import random
 def test_velocity_argument():
     Velocity()
 
-class test_velocity_1D:
+class test_velocity_1D(object):
     num = [0, 1, 2, 3, 4, 5, 6, 7]
     vx = [0, 1, -1, 2, -2, 3, -3, 4]
 
@@ -35,8 +37,8 @@ class test_velocity_1D:
         v = Velocity(dim=1, num=random.randint(0,1000))
         vs = v.get_symmetric(axis=1).get_symmetric(axis=1)
 
-class test_velocity_2D:
-    num = range(9)
+class test_velocity_2D(object):
+    num = list(range(9))
     snum = [0, 3, 4, 1, 2, 7, 8, 5, 6]
     vx = [0, 1, 0, -1,  0, 1, -1, -1,  1]
     vy = [0, 0, 1,  0, -1, 1,  1, -1, -1]
@@ -53,21 +55,21 @@ class test_velocity_2D:
             assert(v.num == n and v.dim == 2)
 
     def test_symmetry1(self):
-        for i in xrange(self.nrep):
+        for i in range(self.nrep):
             n = random.randint(0,1000)
             v = Velocity(dim=2, num=n)
             vs = v.get_symmetric().get_symmetric()
             assert(vs.vx == v.vx and vs.vy == v.vy and vs.num == v.num)
 
     def test_symmetry2(self):
-        for i in xrange(self.nrep):
+        for i in range(self.nrep):
             n = random.randint(0,1000)
             v = Velocity(dim=2, num=n)
             vs = v.get_symmetric(axis=0).get_symmetric(axis=0)
             assert(vs.vx == v.vx and vs.vy == v.vy and vs.num == v.num)
 
     def test_symmetry3(self):
-        for i in xrange(self.nrep):
+        for i in range(self.nrep):
             n = random.randint(0,1000)
             v = Velocity(dim=2, num=n)
             vs = v.get_symmetric(axis=0).get_symmetric(axis=1)
@@ -85,8 +87,8 @@ class test_velocity_2D:
         v = Velocity(dim=2, num=0)
         vs = v.get_symmetric(axis=2).get_symmetric(axis=2)
 
-class test_velocity_3D:
-    num = range(27)
+class test_velocity_3D(object):
+    num = list(range(27))
     nrep = 10
     vx = [0, 0, 0, 0, 0, 1,-1, 0, 0, 0, 0, 1, 1,-1,-1, 1, 1,-1,-1, 1, 1, 1, 1,-1,-1,-1,-1]
     vy = [0, 0, 0, 1,-1, 0, 0, 1, 1,-1,-1, 0, 0, 0, 0, 1,-1, 1,-1, 1, 1,-1,-1, 1, 1,-1,-1]
@@ -103,7 +105,7 @@ class test_velocity_3D:
             assert(v.num == n and v.dim == 3)
 
     def test_symmetry1(self):
-        for i in xrange(self.nrep):
+        for i in range(self.nrep):
             n = random.randint(0,1000)
             v = Velocity(dim=3, num=n)
             vs = v.get_symmetric().get_symmetric()
@@ -111,7 +113,7 @@ class test_velocity_3D:
                    and vs.vz == v.vz and vs.num == v.num)
 
     def test_symmetry2(self):
-        for i in xrange(self.nrep):
+        for i in range(self.nrep):
             n = random.randint(0,1000)
             v = Velocity(dim=3, num=n)
             vs = v.get_symmetric(axis=0).get_symmetric(axis=0)
@@ -119,7 +121,7 @@ class test_velocity_3D:
                    vs.vz == v.vz and vs.num == v.num)
 
     def test_symmetry3(self):
-        for i in xrange(self.nrep):
+        for i in range(self.nrep):
             n = random.randint(0,1000)
             v = Velocity(dim=3, num=n)
             vs = v.get_symmetric(axis=0).get_symmetric(axis=1).get_symmetric(axis=2)

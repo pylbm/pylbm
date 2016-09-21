@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -7,6 +8,7 @@
 """
 Example of a D2Q9 for Navier-Stokes
 """
+from six.moves import range
 import sympy as sp
 import pyLBM
 rho, qx, qy, X, Y = sp.symbols('rho, qx, qy, X, Y')
@@ -20,7 +22,7 @@ d = {
     'dim':2,
     'scheme_velocity':1.,
     'schemes':[{
-        'velocities':range(9),
+        'velocities':list(range(9)),
         'conserved_moments':[rho, qx, qy],
         'polynomials':[
             1, X, Y,

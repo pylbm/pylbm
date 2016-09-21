@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -15,7 +16,7 @@ d = {
   'dim':2,
   'scheme_velocity':1.,
   'schemes':[{
-    'velocities': range(1,5),
+    'velocities': [1, 2, 3, 4],
     'conserved_moments':u,
     'polynomials': [1, X, Y, X**2-Y**2],
     'equilibrium': [u, .1*u, .2*u, 0.],

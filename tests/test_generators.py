@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import division
+from six.moves import range
 import sympy as sp
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
@@ -55,9 +58,9 @@ if __name__ == "__main__":
         'boundary_conditions':{
             0:{
                 'method':{
-                    0: pyLBM.bc.neumann,
-                    1: pyLBM.bc.neumann,
-                    2: pyLBM.bc.neumann
+                    0: pyLBM.bc.Neumann,
+                    1: pyLBM.bc.Neumann,
+                    2: pyLBM.bc.Neumann
                 },
                 'value':None
             },
@@ -99,9 +102,9 @@ if __name__ == "__main__":
         'boundary_conditions':{
             0:{
                 'method':{
-                    0: pyLBM.bc.neumann,
-                    1: pyLBM.bc.neumann,
-                    2: pyLBM.bc.neumann
+                    0: pyLBM.bc.Neumann,
+                    1: pyLBM.bc.Neumann,
+                    2: pyLBM.bc.Neumann
                 },
                 'value':None
             },
@@ -114,32 +117,32 @@ if __name__ == "__main__":
 
     sol1 = pyLBM.Simulation(dico1)
     x = sol1.domain.x[0][1:-1]
-    for k in xrange(N):
+    for k in range(N):
         sol1.one_time_step()
     sol1.f2m()
-    rho1 = sol1.m[0][0][1:-1]
-    q1 = sol1.m[1][0][1:-1]
-    E1 = sol1.m[2][0][1:-1]
+    rho1 = sol1.m[rho][1:-1]
+    q1 = sol1.m[q][1:-1]
+    E1 = sol1.m[E][1:-1]
     u1 = q1/rho1
     p1 = (gamma-1.)*(E1 - .5*rho1*u1**2)
     e1 = E1/rho1 - .5*u1**2
 
     sol2 = pyLBM.Simulation(dico2)
-    for k in xrange(N):
+    for k in range(N):
         sol2.one_time_step()
     sol2.f2m()
-    rho2 = sol2.m[0][0][1:-1]
-    q2 = sol2.m[1][0][1:-1]
-    E2 = sol2.m[2][0][1:-1]
+    rho2 = sol2.m[rho][1:-1]
+    q2 = sol2.m[q][1:-1]
+    E2 = sol2.m[E][1:-1]
     u2 = q2/rho2
     p2 = (gamma-1.)*(E2 - .5*rho2*u2**2)
     e2 = E2/rho2 - .5*u2**2
 
     if sol1.t != sol2.t:
-        print "Problem of time !!!"
+        print("Problem of time !!!")
 
-    print sol1.scheme.generator.code
-    print sol2.scheme.generator.code
+    print(sol1.scheme.generator.code)
+    print(sol2.scheme.generator.code)
 
     f, ax = plt.subplots(2, 3)
     ax[0,0].plot(x, rho1-rho2)

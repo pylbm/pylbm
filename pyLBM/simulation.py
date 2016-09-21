@@ -1,9 +1,13 @@
+from __future__ import print_function
+from __future__ import division
 # Authors:
 #     Loic Gouarin <loic.gouarin@math.u-psud.fr>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
 
+from six.moves import range
+from six import string_types
 import sys
 import types
 import cmath
@@ -22,27 +26,33 @@ from .scheme import Scheme
 from .geometry import Geometry
 from .stencil import Stencil
 from .boundary import Boundary
+from . import utils
 from .validate_dictionary import *
 
-from pyLBM import utils
-
 from .logs import setLogger
+from .storage import Array, Array_in, AOS, SOA
+from .generator import NumpyGenerator
+
 
 proto_simu = {
+    'name':(type(None),) + string_types,
     'box':(is_dico_box,),
-    'elements':(types.NoneType, is_list_elem),
-    'dim':(types.NoneType, types.IntType),
-    'space_step':(types.FloatType,),
-    'scheme_velocity':(types.IntType, types.FloatType),
-    'parameters':(types.NoneType, is_dico_sp_float),
+    'elements':(type(None), is_list_elem),
+    'dim':(type(None), int),
+    'space_step':(int, float, sp.Symbol),
+    'scheme_velocity':(int, float, sp.Symbol),
+    'parameters':(type(None), is_dico_sp_sporfloat),
     'schemes':(is_list_sch,),
-    'boundary_conditions':(types.NoneType, is_dico_bc),
-    'generator':(types.NoneType, is_generator),
-    'stability':(types.NoneType, is_dico_stab),
-    'inittype':(types.NoneType, types.StringType),
+    'boundary_conditions':(type(None), is_dico_bc),
+    'generator':(type(None), is_generator),
+    'ode_solver':(type(None), is_ode_solver),
+    'split_pattern': (type(None), is_list_string_or_tuple),
+    'stability':(type(None), is_dico_stab),
+    'consistency':(type(None), is_dico_cons),
+    'inittype':(type(None),) + string_types,
 }
 
-class Simulation:
+class Simulation(object):
     """
     create a class simulation
 
@@ -134,19 +144,21 @@ class Simulation:
     are just call of the methods of the class
     :py:class:`Scheme<pyLBM.scheme.Scheme>`.
     """
-    def __init__(self, dico, domain=None, scheme=None, dtype='float64'):
+    def __init__(self, dico, domain=None, scheme=None, sorder=None, dtype='float64'):
         self.log = setLogger(__name__)
         self.type = dtype
         self.order = 'C'
         self._update_m = True
 
-        self.log.info('Check the dictionary')
+        self.log.info('Check the dictionary (by Simulation)')
         test, aff = validate(dico, proto_simu)
         if test:
             self.log.info(aff)
         else:
             self.log.error(aff)
             sys.exit()
+
+        self.name = dico.get('name', None)
 
         self.log.info('Build the domain')
         try:
@@ -170,7 +182,7 @@ class Simulation:
 
         self.t = 0.
         self.nt = 0
-        self.dt = self.domain.dx / self.scheme.la
+        self.dt = self.domain.dx/self.scheme.la
         try:
             assert self.domain.dim == self.scheme.dim
         except:
@@ -179,110 +191,113 @@ class Simulation:
 
         self.dim = self.domain.dim
 
-
         self.log.info('Build arrays')
-        #self.nv_on_beg = nv_on_beg
-        self.nv_on_beg = self.scheme.nv_on_beg
 
-        if self.nv_on_beg:
-            msize = [self.scheme.stencil.nv_ptr[-1]] + self.domain.shape
-            self._m = np.empty(msize, dtype=self.type, order=self.order)
-            self._F = np.empty(msize, dtype=self.type, order=self.order)
+        self.mpi_topo = self.domain.mpi_topo
+
+        nv = self.scheme.stencil.nv_ptr[-1]
+        nspace = self.domain.global_size
+        vmax = self.domain.stencil.vmax
+
+        if sorder is None:
+            if isinstance(self.scheme.generator, NumpyGenerator):
+                self._m = SOA(nv, nspace, vmax, self.mpi_topo)
+                self._F = SOA(nv, nspace, vmax, self.mpi_topo)
+                #self._Fold = self._F
+                sorder = [i for i in range(self.dim + 1)]
+            else:
+                self._m = AOS(nv, nspace, vmax, self.mpi_topo)
+                self._F = AOS(nv, nspace, vmax, self.mpi_topo)
+                sorder = [self.dim] + [i for i in range(self.dim)]
         else:
-            msize = self.domain.shape + [self.scheme.stencil.nv_ptr[-1]]
-            self._m = np.empty(msize, dtype=self.type, order=self.order)
-            self._F = np.empty(msize, dtype=self.type, order=self.order)
-            self._Fold = np.empty(msize, dtype=self.type, order=self.order)
+            self._m = Array(nv, nspace, vmax, sorder, self.mpi_topo)
+            self._F = Array(nv, nspace, vmax, sorder, self.mpi_topo)
 
-        self.interface = self.domain.geom.interface
-        self.interface.set_subarray(self._F.shape, self.domain.stencil.vmax, self.nv_on_beg)
+        self._m.set_conserved_moments(self.scheme.consm, self.domain.stencil.nv_ptr)
+        self._F.set_conserved_moments(self.scheme.consm, self.domain.stencil.nv_ptr)
+
+        if self.scheme.generator.sameF:
+            self._Fold = self._F
+        else:
+            self._Fold = Array(nv, nspace, vmax, sorder, self.mpi_topo)
+            self._Fold.set_conserved_moments(self.scheme.consm, self.domain.stencil.nv_ptr)
+
+        self._m_in = Array_in(self._m)
+        self._F_in = Array_in(self._F)
+
+        self.scheme.generate(sorder)
+        # be sure that process 0 generate the code
 
         self.log.info('Build boundary conditions')
+
         self.bc = Boundary(self.domain, dico)
+        for method in self.bc.methods:
+            method.prepare_rhs(self)
+            method.set_rhs()
+            method.set_iload()
 
         self.log.info('Initialization')
         self.initialization(dico)
 
         #computational time measurement
-        self.cpu_time = {'relaxation':0.,
-                         'transport':0.,
-                         'f2m_m2f':0.,
-                         'boundary_conditions':0.,
-                         'total':0.,
-                         'number_of_iterations':0,
-                         'MLUPS':0.,
-                         }
+        self.cpu_time = {
+            'relaxation':0.,
+            'source_term':0.,
+            'transport':0.,
+            'f2m_m2f':0.,
+            'boundary_conditions':0.,
+            'total':0.,
+            'number_of_iterations':0,
+            'MLUPS':0.,
+        }
 
-    @utils.item2property
-    def m(self, i, j):
+    @utils.itemproperty
+    def m_halo(self, i):
         if self._update_m:
             self._update_m = False
             self.f2m()
-        if type(j) is slice:
-            jstart, jstop = j.start, j.stop
-            if j.start is None:
-                jstart = 0
-            if j.stop is None:
-                jstop = self.scheme.stencil.nv[i] - 1
-            jj = slice(self.scheme.stencil.nv_ptr[i] + jstart,
-                       self.scheme.stencil.nv_ptr[i] + jstop)
-            if self.nv_on_beg:
-                return self._m[jj]
-            else:
-                if self.dim == 1:
-                    return self._m[:, jj]
-                elif self.dim == 2:
-                    return self._m[:, :, jj]
-                elif self.dim == 3:
-                    return self._m[:, :, :, jj]
-                else:
-                    self.log.error('Bad value of spatial dimension dim = {0}'.format(self.dim))
-        if self.nv_on_beg:
-            return self._m[self.scheme.stencil.nv_ptr[i] + j]
-        else:
-            if self.dim == 1:
-                return self._m[:, self.scheme.stencil.nv_ptr[i] + j]
-            elif self.dim == 2:
-                return self._m[:, :, self.scheme.stencil.nv_ptr[i] + j]
-            elif self.dim == 3:
-                return self._m[:, :, :, self.scheme.stencil.nv_ptr[i] + j]
-            else:
-                self.log.error('Bad value of spatial dimension dim = {0}'.format(self.dim))
+        return self._m[i]
+
+    @m_halo.setter
+    def m_halo(self, i, value):
+        self._update_m = False
+        self._m[i] = value
+
+    @utils.itemproperty
+    def m(self, i):
+        if self._update_m:
+            self._update_m = False
+            self.f2m()
+        return self._m_in[i]
 
     @m.setter
-    def m(self, i, j, value):
-        """
-        TODO: fix dimension
-        """
+    def m(self, i, value):
         self._update_m = False
-        if self.nv_on_beg:
-            self._m[self.scheme.stencil.nv_ptr[i] + j] = value
-        else:
-            self._m[:, :, self.scheme.stencil.nv_ptr[i] + j] = value
+        self._m_in[i] = value
 
-    @utils.item2property
-    def F(self, i, j):
-        if self.nv_on_beg:
-            return self._F[self.scheme.stencil.nv_ptr[i] + j]
-        else:
-            return self._F[:, :, self.scheme.stencil.nv_ptr[i] + j]
+    @utils.itemproperty
+    def F_halo(self, i):
+        return self._F[i]
 
-    @property
-    def mglobal(self):
-        return self.interface.get_full(self._m, self.domain, self.nv_on_beg)
+    @F_halo.setter
+    def F_halo(self, i, value):
+        self._update_m = True
+        self._F[i] = value
+
+    @utils.itemproperty
+    def F(self, i):
+        return self._F_in[i]
 
     @F.setter
-    def F(self, i, j, value):
-        """
-        TODO: fix dimension
-        """
-        if self.nv_on_beg:
-            self._F[self.scheme.stencil.nv_ptr[i] + j] = value
-        else:
-            self._F[:, :, self.scheme.stencil.nv_ptr[i] + j] = value
+    def F(self, i, value):
+        self._update_m = True
+        self._F_in[i] = value
 
     def __str__(self):
-        s = "Simulation informations\n"
+        s = "Simulation informations: "
+        if self.name is not None:
+            s += "[ " + self.name + " ]"
+        s += '\n'
         s += self.domain.__str__()
         s += self.scheme.__str__()
         return s
@@ -300,7 +315,7 @@ class Simulation:
         unity_name = ['d', 'h', 'm', 's']
         tcut = []
         for u in unity:
-            tcut.append(ttot / u)
+            tcut.append(ttot//u)
             ttot -= tcut[-1]*u
         #computational time measurement
         s = '*'*50
@@ -316,8 +331,8 @@ class Simulation:
                 s += ' '*4
             else:
                 test_dummy = False
-                s += '{0:2d}{1} '.format(tcut[k], unity_name[k])
-        s += '{0:2d}{1} '.format(tcut[-1], unity_name[-1])
+                s += '{0:2d}{1} '.format(int(tcut[k]), unity_name[k])
+        s += '{0:2d}{1} '.format(int(tcut[-1]), unity_name[-1])
         if test_dummy:
             s += '{0:3d}ms'.format(tms) + ' '*13 + '*'
         else:
@@ -329,6 +344,8 @@ class Simulation:
         s += '\n* ' + '-'*46 + ' *'
         s += '\n* relaxation         : {0:2d}%'.format(int(100*t['relaxation']/ttotal))
         s += ' '*23 + '*'
+        s += '\n* source term        : {0:2d}%'.format(int(100*t['source_term']/ttotal))
+        s += ' '*23 + '*'
         s += '\n* transport          : {0:2d}%'.format(int(100*t['transport']/ttotal))
         s += ' '*23 + '*'
         s += '\n* f2m_m2f            : {0:2d}%'.format(int(100*t['f2m_m2f']/ttotal))
@@ -336,7 +353,7 @@ class Simulation:
         s += '\n* boundary conditions: {0:2d}%'.format(int(100*t['boundary_conditions']/ttotal))
         s += ' '*23 + '*'
         s += '\n' + '*'*50
-        print s
+        print(s)
 
     def initialization(self, dico):
         """
@@ -365,18 +382,7 @@ class Simulation:
         # by default, the initialization is on the moments
         # else, it could be distributions
         inittype = dico.get('inittype', 'moments')
-        if self.dim == 1:
-            x = self.domain.x[0]
-            coords = (x,)
-        elif self.dim == 2:
-            x = self.domain.x[0][:, np.newaxis]
-            y = self.domain.x[1][np.newaxis, :]
-            coords = (x, y)
-        elif self.dim == 3:
-            x = self.domain.x[0][:, np.newaxis, np.newaxis]
-            y = self.domain.x[1][np.newaxis, :, np.newaxis]
-            z = self.domain.x[2][np.newaxis, np.newaxis, :]
-            coords = (x, y, z)
+        coords = np.meshgrid(*(c for c in self.domain.coords_halo), sparse=True, indexing='ij')
 
         if inittype == 'moments':
             array_to_init = self._m
@@ -388,33 +394,22 @@ class Simulation:
             self.log.error(sss)
             sys.exit()
 
-        for k, v in self.scheme.init.iteritems():
+        for k, v in self.scheme.init.items():
             ns = self.scheme.stencil.nv_ptr[k[0]] + k[1]
 
             if isinstance(v, tuple):
                 f = v[0]
                 extraargs = v[1] if len(v) == 2 else ()
-                fargs = coords + extraargs
-                if self.nv_on_beg:
-                    array_to_init[ns] = f(*fargs)
-                else:
-                    array_to_init[..., ns] = f(*fargs)
+                fargs = tuple(coords) + extraargs
+                array_to_init[ns] = f(*fargs)
             else:
-                if self.nv_on_beg:
-                    array_to_init[ns] = v
-                else:
-                    array_to_init[..., ns] = v
-
-
+                array_to_init[ns] = v
 
         if inittype == 'moments':
             self.scheme.equilibrium(self._m)
             self.scheme.m2f(self._m, self._F)
         elif inittype == 'distributions':
             self.scheme.f2m(self._F, self._m)
-
-        if not self.nv_on_beg:
-            self._Fold[:] = self._F[:]
 
     def transport(self):
         """
@@ -433,6 +428,15 @@ class Simulation:
         t = mpi.Wtime()
         self.scheme.relaxation(self._m)
         self.cpu_time['relaxation'] += mpi.Wtime() - t
+
+    def source_term(self, fraction_of_time_step = 1.):
+        """
+        compute the source term phase on moments
+        (the array _m is modified)
+        """
+        t = mpi.Wtime()
+        self.scheme.source_term(self._m, self.t, fraction_of_time_step * self.dt, *self.domain.coords)
+        self.cpu_time['source_term'] += mpi.Wtime() - t
 
     def f2m(self):
         """
@@ -476,7 +480,7 @@ class Simulation:
         according to the specified boundary conditions.
         """
         t = mpi.Wtime()
-        self.scheme.set_boundary_conditions(self._F, self._m, self.bc, self.interface, self.nv_on_beg)
+        self.scheme.set_boundary_conditions(self._F, self._m, self.bc, self.mpi_topo)
         self.cpu_time['boundary_conditions'] += mpi.Wtime() - t
 
     def one_time_step(self):
@@ -500,18 +504,15 @@ class Simulation:
         t1 = mpi.Wtime()
         self.boundary_condition()
 
-        if self.nv_on_beg:
-            self.transport()
-            self.f2m()
-            self.relaxation()
-            self.m2f()
-        else:
-            tloci = mpi.Wtime()
-            self.scheme.onetimestep(self._m, self._F, self._Fold, self.domain.in_or_out, self.domain.valin)
-            self._F, self._Fold = self._Fold, self._F
-            tlocf = mpi.Wtime()
-            self.cpu_time['transport'] += 0.5*(tlocf-tloci)
-            self.cpu_time['relaxation'] += 0.5*(tlocf-tloci)
+        tloci = mpi.Wtime()
+
+        self.scheme.onetimestep(self._m, self._F, self._Fold, self.domain.in_or_out, self.domain.valin, self.t, self.dt,
+            *self.domain.coords)
+        self._F, self._Fold = self._Fold, self._F
+        tlocf = mpi.Wtime()
+        self.cpu_time['transport'] += 0.2*(tlocf-tloci)
+        self.cpu_time['relaxation'] += 0.4*(tlocf-tloci)
+        self.cpu_time['relaxation'] += 0.4*(tlocf-tloci)
         t2 = mpi.Wtime()
         self.cpu_time['total'] += t2 - t1
         self.cpu_time['number_of_iterations'] += 1
@@ -519,32 +520,10 @@ class Simulation:
         self.t += self.dt
         self.nt += 1
         dummy = self.cpu_time['number_of_iterations']
-        for n in self.domain.Ng:
+        for n in self.domain.global_size:
             dummy *= n
         dummy /= self.cpu_time['total'] * 1.e6
         self.cpu_time['MLUPS'] = dummy
-
-    def affiche_2D(self):
-        fig = plt.figure(0,figsize=(8, 8))
-        fig.clf()
-        plt.ion()
-        plt.imshow(np.float32(self.m[0][0][1:-1,1:-1].transpose()), origin='lower', cmap=cm.gray, interpolation='nearest')
-        plt.title("Solution",fontsize=14)
-        plt.draw()
-        plt.hold(False)
-        plt.ioff()
-        plt.show()
-
-    def affiche_1D(self):
-        fig = plt.figure(0,figsize=(8, 8))
-        fig.clf()
-        plt.ion()
-        plt.plot(self.domain.x[0][1:-1],self.m[0][0][1:-1])
-        plt.title("Solution",fontsize=14)
-        plt.draw()
-        plt.hold(False)
-        plt.ioff()
-        #plt.show()
 
 if __name__ == "__main__":
     pass
