@@ -9,6 +9,7 @@ import re
 from six.moves import range
 from six import string_types
 import mpi4py.MPI as mpi
+import functools
 
 from .base import Generator, INDENT
 from .utils import matMult, load_or_store, list_of_cython_functions, dictionnary_of_translation_cython
@@ -280,7 +281,7 @@ from libc.stdlib cimport malloc, free
                     if eq[k][i] != 0:
                         str2input = str(eq[k][i])
                         res = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", sub_pow, str2input)
-                        res = reduce(lambda x, y: x.replace(y, dictionnary_of_translation_cython[y]),
+                        res = functools.reduce(lambda x, y: x.replace(y, dictionnary_of_translation_cython[y]),
                                      dictionnary_of_translation_cython, res)
                         res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub_slices, res)
                         self.code += indent + "m[%s] = %s\n"%(', '.join(slices), res)
@@ -339,7 +340,7 @@ from libc.stdlib cimport malloc, free
                     if eq[k][i] != 0:
                         str2input = str(eq[k][i])
                         res = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", sub_pow, str2input)
-                        res = reduce(lambda x, y: x.replace(y, dictionnary_of_translation_cython[y]),
+                        res = functools.reduce(lambda x, y: x.replace(y, dictionnary_of_translation_cython[y]),
                                      dictionnary_of_translation_cython, res)
                         res = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub_slices, res)
                         code_relaxation += INDENT + "m[{0:d}] += {1:.16f}*({2} - m[{0:d}])\n".format(stencil.nv_ptr[k] + i, s[k][i], res)
@@ -421,7 +422,7 @@ from libc.stdlib cimport malloc, free
                 ode_solver.parameters(indices_m, f, var_time, dt='k', indent=INDENT, add_copy='')
                 code_source_term = ode_solver.cpt_code()
                 code_source_term = re.sub("(?P<m>\w*\[\d\]\[\d\])\*\*(?P<pow>\d)", sub_pow, code_source_term)
-                code_source_term = reduce(lambda x, y: x.replace(y, dictionnary_of_translation_cython[y]),
+                code_source_term = functools.reduce(lambda x, y: x.replace(y, dictionnary_of_translation_cython[y]),
                                           dictionnary_of_translation_cython, code_source_term)
                 code_source_term = re.sub("\[(?P<i>\d)\]\[(?P<j>\d)\]", sub_slices, code_source_term)
                 code_source_term = re.sub(str(var_time), 'tn', code_source_term)
