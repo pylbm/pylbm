@@ -54,6 +54,8 @@ class NumpyGenerator(Generator):
     f2m :
       generate the code to compute the moments
       from the distribution functions
+    source_term :
+      generate the code to integrate the source term
     """
     def __init__(self, build_dir=None):
         Generator.__init__(self, build_dir)
