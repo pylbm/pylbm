@@ -1,5 +1,8 @@
 # Makefile for Sphinx documentation
 #
+# WARNING
+# the package numpydoc is required
+# install it with `pip install numpydoc`
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
