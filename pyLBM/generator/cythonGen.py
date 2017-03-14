@@ -8,7 +8,6 @@ import sympy as sp
 import re
 from six.moves import range
 from six import string_types
-from functools import reduce
 import mpi4py.MPI as mpi
 
 from .base import Generator, INDENT
