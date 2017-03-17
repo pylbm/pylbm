@@ -13,9 +13,18 @@ from six.moves import range
 
 import numpy as np
 import sympy as sp
+from sympy import *
 from sympy.parsing.sympy_parser import parse_expr, standard_transformations
 import copy
 from textwrap import dedent
+import sys
+
+PY3 = sys.version_info >= (3,)
+
+if PY3:
+    from inspect import getfullargspec as getargspec
+else:
+    from inspect import getargspec
 
 from .stencil import Stencil
 from .generator import *
@@ -23,6 +32,7 @@ from .validate_dictionary import *
 
 from .logs import setLogger
 import mpi4py.MPI as mpi
+from .context import queue
 
 
 proto_sch = {
@@ -229,21 +239,25 @@ class Scheme(object):
             self.log.warning(s)
         self.dt = self.dx / self.la
 
+        # set relative velocity
+        self.rel_vel = dico.get('relative_velocity', None)
+        self.backend = dico.get('backend', "cython").upper()
+
         # fix the variables of time and space
-        self.vart, self.varx, self.vary, self.varz = None, None, None, None
+        self.vart, self.varX = None, [None, None, None]
         if self.param is not None:
             self.vart = self.param.get('time', None)
-            self.varx = self.param.get('space_x', None)
-            self.vary = self.param.get('space_y', None)
-            self.varz = self.param.get('space_z', None)
+            self.varX[0] = self.param.get('space_x', None)
+            self.varX[1] = self.param.get('space_y', None)
+            self.varX[2] = self.param.get('space_z', None)
         if self.vart is None:
             self.vart = sp.Symbol('t')
-        if self.varx is None:
-            self.varx = sp.Symbol('X')
-        if self.vary is None:
-            self.vary = sp.Symbol('Y')
-        if self.varz is None:
-            self.varz = sp.Symbol('Z')
+        if self.varX[0] is None:
+            self.varX[0] = sp.Symbol('X')
+        if self.varX[1] is None:
+            self.varX[1] = sp.Symbol('Y')
+        if self.varX[2] is None:
+            self.varX[2] = sp.Symbol('Z')
 
         self.nscheme = self.stencil.nstencils
         scheme = dico['schemes']
@@ -332,10 +346,16 @@ class Scheme(object):
         else:
             self._source_terms = None
             self.ode_solver = None
-        self.M, self.invM = [], []
-        self.Mnum, self.invMnum = [], []
+
+        self.M = []
+        self.Tu = None
 
         self.create_moments_matrices()
+
+        for cm, icm in self.consm.items():
+            for i in range(self.Tu.shape[0]):
+                for j in range(self.Tu.shape[1]):
+                    self.Tu[i, j] = self.Tu[i, j].replace(cm, m[icm[0]][icm[1]])
 
         # generate the code
         if self._source_terms is None:
@@ -343,7 +363,7 @@ class Scheme(object):
         else:
             dummypattern = ['transport', ('source_term', 0.5), 'relaxation', ('source_term', 0.5)]
         self.pattern = dico.get('split_pattern', dummypattern)
-        self.generator = dico.get('generator', NumpyGenerator)()
+        self.generator = dico.get('generator', "CYTHON").upper()
         ssss = "Generator used for the scheme functions:\n{0}\n".format(self.generator)
         ssss += "with the pattern " + self.pattern.__str__() + "\n"
         self.log.info(ssss)
@@ -414,7 +434,6 @@ class Scheme(object):
             s += "    s[{0:d}]=".format(k) + self.s[k].__str__() + "\n"
         s += "\t moments matrices\n"
         s += "M = " + self.M.__str__() + "\n"
-        s += "invM = " + self.invM.__str__() + "\n"
         return s
 
     def create_moments_matrices(self):
@@ -428,37 +447,47 @@ class Scheme(object):
           - a global numerical version MnumGlob and invMnumGlob for all the schemes
         """
         compt=0
+        M = []
+        Mu = []
+        Tu = []
+        Mmu = []
+        Tmu = []
+
         for v, p in zip(self.stencil.v, self.P):
             compt+=1
             lv = len(v)
-            self.M.append(sp.zeros(lv, lv))
+            M.append(sp.zeros(lv, lv))
+            Mu.append(sp.zeros(lv, lv))
+            Mmu.append(sp.zeros(lv, lv))
             for i in range(lv):
                 for j in range(lv):
-                    self.M[-1][i, j] = p[i].subs([(str(self.varx), v[j].vx), (str(self.vary), v[j].vy), (str(self.varz), v[j].vz)])
-            try:
-                self.invM.append(self.M[-1].inv())
-            except:
-                s = 'Function create_moments_matrices: M is not invertible\n'
-                s += 'The choice of polynomials is odd in the elementary scheme number {0:d}'.format(compt)
-                self.log.error(s)
-                sys.exit()
+                    sublist = [(str(self.varX[d]), v[j].v[d]) for d in range(self.dim)]
+                    M[-1][i, j] = p[i].subs(sublist)
 
-        self.MnumGlob = np.zeros((self.stencil.nv_ptr[-1], self.stencil.nv_ptr[-1]))
-        self.invMnumGlob = np.zeros((self.stencil.nv_ptr[-1], self.stencil.nv_ptr[-1]))
-
-        pk, pv = param_to_tuple(self.param)
+                    if self.rel_vel is not None:
+                        sublist = [(str(self.varX[d]), v[j].v[d] - self.rel_vel[d]) for d in range(self.dim)]
+                        Mu[-1][i, j] = p[i].subs(sublist)
+                        sublist = [(str(self.varX[d]), v[j].v[d] + self.rel_vel[d]) for d in range(self.dim)]
+                        Mmu[-1][i, j] = p[i].subs(sublist)
+            invM = M[-1].inv()
+            Tu.append(Mu[-1]*invM)
+            Tmu.append(Mmu[-1]*invM)
+        gshape = (self.stencil.nv_ptr[-1], self.stencil.nv_ptr[-1])
+        self.Tu = sp.eye(gshape[0])
+        self.Tmu = sp.eye(gshape[0])
+        self.M = sp.zeros(*gshape)
 
         try:
             for k in range(self.nscheme):
                 nvk = self.stencil.nv[k]
-                self.Mnum.append(np.empty((nvk, nvk)))
-                self.invMnum.append(np.empty((nvk, nvk)))
                 for i in range(nvk):
                     for j in range(nvk):
-                        self.Mnum[k][i, j] = sp.N(self.M[k][i, j].subs(list(zip(pk, pv))))
-                        self.invMnum[k][i, j] = sp.N(self.invM[k][i, j].subs(list(zip(pk, pv))))
-                        self.MnumGlob[self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j] = self.Mnum[k][i, j]
-                        self.invMnumGlob[self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j] = self.invMnum[k][i, j]
+                        index = self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j
+                        self.M[index] = M[k][i, j]
+
+                        if self.rel_vel is not None:
+                            self.Tu[index] = Tu[k][i, j]
+                            self.Tmu[index] = Tmu[k][i, j]
         except TypeError:
             self.log.error("Unable to convert to float the expression {0} or {1}.\nCheck the 'parameters' entry.".format(self.M[k][i, j], self.invM[k][i, j]))
             sys.exit()
@@ -627,7 +656,7 @@ class Scheme(object):
         else:
             return source_terms
 
-    def generate(self, sorder):
+    def generate(self, backend, sorder, valin):
         """
         Generate the code by using the appropriated generator
 
@@ -639,9 +668,6 @@ class Scheme(object):
         >>> print(S.generator.code)
         """
         pk, pv = param_to_tuple(self.param)
-        EQ = []
-        for e in self._EQ:
-            EQ.append(e.subs(list(zip(pk, pv))))
 
         if self._source_terms is not None:
             ST = copy.deepcopy(self._source_terms)
@@ -651,50 +677,212 @@ class Scheme(object):
                         ST[i][j] = stij.subs(list(zip(pk, pv)))
             dicoST = {'ST':ST,
                       'vart':self.vart,
-                      'varx':self.varx,
-                      'vary':self.vary,
-                      'varz':self.varz,
+                      'varx':self.varX[0],
+                      'vary':self.varX[1],
+                      'varz':self.varX[2],
                       'ode_solver':self.ode_solver}
         else:
             dicoST = None
 
-        self.generator.sorder = sorder
-        self.generator.setup()
-        self.generator.m2f(self.invMnumGlob, 0, self.dim)
-        self.generator.f2m(self.MnumGlob, 0, self.dim)
-        self.generator.onetimestep(self.stencil, self.pattern)
+        ns = int(self.stencil.nv_ptr[-1])
+        f = sp.MatrixSymbol('f', ns, 1)
+        floc = sp.MatrixSymbol('floc', ns, 1)
+        m = sp.MatrixSymbol('m', ns, 1)
 
-        self.generator.transport(self.nscheme, self.stencil)
-        self.generator.equilibrium(self.nscheme, self.stencil, EQ)
-        self.generator.relaxation(self.nscheme, self.stencil, self.s, EQ)
-        if dicoST is not None:
-            self.generator.source_term(self.nscheme, self.stencil, dicoST)
-        #print(self.generator.code)
-        self.generator.compile()
+        mtmp = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in range(self.stencil.unvtot)] for i in range(len(self.EQ))]
+        for cm, icm in self.consm.items():
+            for i, eq in enumerate(self._EQ):
+                for j, e in enumerate(eq):
+                    self._EQ[i][j] = e.replace(mtmp[icm[0]][icm[1]], m[int(self.stencil.nv_ptr[icm[0]]+icm[1])])
 
-        mpi.COMM_WORLD.Barrier()
-        self.generator.get_module()
+        M = self.M.subs(list(zip(pk, pv)))
+        invM = self.M.inv().subs(list(zip(pk, pv)))
+        Tu = self.Tu.subs(list(zip(pk, pv)))
+        Tmu = self.Tmu.subs(list(zip(pk, pv)))
 
-    def m2f(self, m, f):
+        for cm, icm in self.consm.items():
+            for i in range(self.Tu.shape[0]):
+                for j in range(self.Tu.shape[1]):
+                    Tu[i, j] = Tu[i, j].replace(mtmp[icm[0]][icm[1]], m[int(self.stencil.nv_ptr[icm[0]]+icm[1])])
+                    Tmu[i, j] = Tmu[i, j].replace(mtmp[icm[0]][icm[1]], m[int(self.stencil.nv_ptr[icm[0]]+icm[1])])
+                    M[i, j] = M[i, j].replace(mtmp[icm[0]][icm[1]], m[int(self.stencil.nv_ptr[icm[0]]+icm[1])])
+                    invM[i, j] = invM[i, j].replace(mtmp[icm[0]][icm[1]], m[int(self.stencil.nv_ptr[icm[0]]+icm[1])])
+
+        # # set permutations to keep conserved moments at the begining
+        # permutations = []
+        # index = 0
+        # for cm, icm in self.consm.items():
+        #     permutations.append([index, int(self.stencil.nv_ptr[icm[0]]+icm[1])])
+        #     index += 1
+
+        # # mnew = mnew.permuteBkwd(permutations)
+        # # dummy = sp.Matrix(Tu*M*fnew).applyfunc(sp.simplify)
+
+        # # dummy = dummy.subs(list(zip(m, mnew)))
+        # # dummy = dummy.permuteBkwd(permutations)
+        # # print(dummy)
+
+        from generator import make_routine, autowrap, For, If
+
+        def set_order(array, remove_nv=False):
+            out = [-1]*len(sorder)
+            for i, s in enumerate(sorder):
+                out[s] = array[i]
+            if remove_nv:
+                out.pop(sorder[0])
+            return out
+
+        nx, ny, nz = sp.symbols('nx, ny, nz', integer=True)
+        shape = set_order([ns, nx, ny, nz])
+        mi = sp.IndexedBase('m', shape)
+        fi = sp.IndexedBase('f', shape)
+        fi_new = sp.IndexedBase('f_new', shape)
+        mv = sp.MatrixSymbol('m', ns, 1)
+
+        routines = []
+        i = sp.Idx('i', (0, nx))
+        j = sp.Idx('j', (0, ny))
+        k = sp.Idx('k', (0, nz))
+        iloop = set_order([0, i, j, k], remove_nv=True)
+
+        m = sp.Matrix([mi[set_order([kk, i, j, k])] for kk in range(ns)])
+        f = sp.Matrix([fi[set_order([kk, i, j, k])] for kk in range(ns)])
+        
+        routines += make_routine(('f2m', For(iloop, Eq(m, M*f))), settings={"prefetch":[f[0]]})
+        routines += make_routine(('m2f', For(iloop, Eq(f, invM*m))), settings={"prefetch":[m[0]]})
+
+        eq = Matrix([sublist for l in self._EQ for sublist in l]).subs(list(zip(pk, pv)))
+        s = Matrix([sublist for l in self.s for sublist in l]).subs(list(zip(pk, pv)))
+
+        dummy = eq.subs(list(zip(mv, m)))
+        routines += make_routine(('equilibrium', For(iloop, Eq(m, dummy))))
+
+        i = sp.Idx('i', (1, nx-1))
+        j = sp.Idx('j', (1, ny-1))
+        k = sp.Idx('k', (1, nz-1))
+        iloop = set_order([0, i, j, k], remove_nv=True)
+
+        v = self.stencil.get_all_velocities()
+
+        dummy = []
+        ind = [i, j, k]
+        for kk, vv in enumerate(v):
+            tmp = []
+            for iv, vvv in enumerate(vv):
+                tmp.append(ind[iv] - int(vvv))
+            dummy.append(set_order([kk, *tmp]))
+
+        f = sp.Matrix([fi[d] for d in dummy])
+        f_new = sp.Matrix([fi_new[set_order([kk, i, j, k])] for kk in range(len(v))])
+        in_or_out = sp.IndexedBase('in_or_out', [nx, ny, nz][:self.dim])
+        in_ind = [i, j, k][:self.dim]
+
+        if backend.upper() == "NUMPY":
+            m = sp.Matrix([mi[set_order([kk, i, j, k])] for kk in range(ns)])
+            dummy = eq.subs(list(zip(mv, m)))
+            routines += make_routine(('one_time_step', For(iloop, 
+                                                        
+                                                            [
+                                                                Eq(m, M*f),  # transport + f2m
+                                                                Eq(m, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(m)) + s.multiply_elementwise(dummy)), # relaxation
+                                                                Eq(f_new, invM*m), # m2f + update f
+                                                            ]
+                                                            )
+                                                        ))
+        else:
+            routines += make_routine(('one_time_step', For(iloop, 
+                                                        If((Eq(in_or_out[in_ind], valin), 
+                                                            [
+                                                                Eq(mv, M*f),  # transport + f2m
+                                                                Eq(mv, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(mv)) + s.multiply_elementwise(eq)), # relaxation
+                                                                Eq(f_new, invM*mv), # m2f + update f_new
+                                                            ]
+                                                            )
+                                                        ))), local_vars=[mv], settings={"prefetch":[f[0]]})
+            # routines += make_routine(('one_time_step', For(iloop, 
+            #                                             If((Eq(in_or_out[in_ind], valin), 
+            #                                                 [   Eq(floc, f),
+            #                                                     Eq(mv, M*floc),  # transport + f2m
+            #                                                     Eq(mv, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(mv)) + s.multiply_elementwise(eq)), # relaxation
+            #                                                     Eq(floc, invM*mv), # m2f + update f_new
+            #                                                     Eq(f_new, floc), # m2f + update f_new
+            #                                                 ]
+            #                                                 )
+            #                                             ))), local_vars=[mv, floc], settings={"prefetch":[f[0]]})
+
+        self.mod = autowrap(routines, backend=backend)
+
+    def m2f(self, mm, ff):
         """ Compute the distribution functions f from the moments m """
-        mod = self.generator.get_module()
-        mod.m2f(m.array, f.array)
 
-    def f2m(self, f, m):
+        nx = mm.nspace[0]
+        if self.dim > 1:
+            ny = mm.nspace[1]
+        if self.dim > 2:
+            nz = mm.nspace[2]
+
+        m = mm.array
+        f = ff.array
+        function = self.mod.m2f
+        dummy = locals()
+        try:
+            args = function.arg_dict.keys()
+            d = {k:dummy[k] for k in args}
+            d['queue'] = queue
+        except:
+            args = getargspec(function).args
+            d = {k:dummy[k] for k in args}
+        function(**d)
+        #self.mod.m2f(m.array, *m.nspace, f.array)
+
+    def f2m(self, ff, mm):
         """ Compute the moments m from the distribution functions f """
-        mod = self.generator.get_module()
-        mod.f2m(f.array, m.array)
+        nx = mm.nspace[0]
+        if self.dim > 1:
+            ny = mm.nspace[1]
+        if self.dim > 2:
+            nz = mm.nspace[2]
+
+        m = mm.array
+        f = ff.array
+        function = self.mod.f2m
+        dummy = locals()
+        try:
+            args = function.arg_dict.keys()
+            d = {k:dummy[k] for k in args}
+            d['queue'] = queue
+        except:
+            args = getargspec(function).args
+            d = {k:dummy[k] for k in args}
+        function(**d)
+        #self.mod.f2m(f.array, *m.nspace, m.array)
 
     def transport(self, f):
         """ The transport phase on the distribution functions f """
-        mod = self.generator.get_module()
         mod.transport(f.array)
 
-    def equilibrium(self, m):
+    def equilibrium(self, mm):
         """ Compute the equilibrium """
-        mod = self.generator.get_module()
-        func = getattr(mod, "equilibrium")
-        func(m.array)
+
+        nx = mm.nspace[0]
+        if self.dim > 1:
+            ny = mm.nspace[1]
+        if self.dim > 2:
+            nz = mm.nspace[2]
+
+        m = mm.array
+
+        function = self.mod.equilibrium
+        dummy = locals()
+        try:
+            args = function.arg_dict.keys()
+            d = {k:dummy[k] for k in args}
+            d['queue'] = queue
+        except:
+            args = getargspec(function).args
+            d = {k:dummy[k] for k in args}
+        function(**d)
+        #self.mod.equilibrium(**space, m=m.array)
 
     def relaxation(self, m):
         """ The relaxation phase on the moments m """
@@ -706,10 +894,28 @@ class Scheme(object):
         mod = self.generator.get_module()
         mod.source_term(m.array, tn, dt, x, y, z)        
 
-    def onetimestep(self, m, fold, fnew, in_or_out, valin, tn=0., dt=0., x=0., y=0., z=0.):
+    def onetimestep(self, mm, ff, ff_new, in_or_out, valin, tn=0., dt=0., x=0., y=0., z=0.):
         """ Compute one time step of the Lattice Boltzmann method """
-        mod = self.generator.get_module()
-        mod.onetimestep(m.array, fold.array, fnew.array, in_or_out, valin, tn, dt, x, y, z)
+        nx = mm.nspace[0]
+        if self.dim > 1:
+            ny = mm.nspace[1]
+        if self.dim > 2:
+            nz = mm.nspace[2]
+
+        m = mm.array
+        f = ff.array
+        f_new = ff_new.array
+        function = self.mod.one_time_step
+        dummy = locals()
+        try:
+            args = function.arg_dict.keys()
+            d = {k:dummy[k] for k in args}
+            d['queue'] = queue
+        except:
+            args = getargspec(function).args
+            d = {k:dummy[k] for k in args}
+        function(**d)
+        # #self.mod.one_time_step(fold.array, in_or_out, *m.nspace, fnew.array)
 
     def set_boundary_conditions(self, f, m, bc, interface):
         """

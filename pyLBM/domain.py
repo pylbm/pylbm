@@ -36,6 +36,7 @@ proto_domain = {
     'scheme_velocity':(type(None), int, float, sp.Symbol),
     'parameters':(type(None), is_dico_sp_sporfloat),
     'schemes':(is_list_sch_dom,),
+    'relative_velocity': (type(None), is_list_sp_or_nb,),
     'boundary_conditions':(type(None), is_dico_bc),
     'generator':(type(None), is_generator),
     'ode_solver':(type(None), is_ode_solver),
