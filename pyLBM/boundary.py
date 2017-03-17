@@ -10,10 +10,20 @@ import numpy as np
 from six.moves import range
 import types
 import collections
+from sympy import *
+import sys
+
+PY3 = sys.version_info >= (3,)
+
+if PY3:
+    from inspect import getfullargspec as getargspec
+else:
+    from inspect import getargspec
 
 from .logs import setLogger
 from .storage import Array
 from .validate_dictionary import *
+from .context import queue
 
 proto_bc = {
     'method':(is_dico_bcmethod, ),
@@ -84,6 +94,7 @@ class Boundary(object):
         dico_bound = dico.get('boundary_conditions',{})
         stencil = self.domain.stencil
 
+
         istore = collections.OrderedDict() # important to set the boundary conditions always in the same way !!!
         ilabel = {}
         distance = {}
@@ -118,8 +129,9 @@ class Boundary(object):
 
         # for each method create the instance associated
         self.methods = []
+        backend = dico.get("generator", "cython").upper()
         for k in list(istore.keys()):
-            self.methods.append(k(istore[k], ilabel[k], distance[k], stencil, value_bc))
+            self.methods.append(k(istore[k], ilabel[k], distance[k], stencil, value_bc, domain.distance.shape, backend))
 
 class Boundary_method(object):
     """
@@ -149,7 +161,7 @@ class Boundary_method(object):
         compute the distribution function at the equilibrium with the value on the border
 
     """
-    def __init__(self, istore, ilabel, distance, stencil, value_bc):
+    def __init__(self, istore, ilabel, distance, stencil, value_bc, nspace, backend):
         self.log = setLogger(__name__)
         self.istore = istore
         self.feq = np.zeros((stencil.nv_ptr[-1], istore.shape[1]))
@@ -161,12 +173,22 @@ class Boundary_method(object):
         self.value_bc = {}
         for k in np.unique(self.ilabel):
             self.value_bc[k] = value_bc[k]
+        self.nspace = nspace
+        self.backend = backend
+
+    def fix_iload(self):
+        # Fixme : store in a good way and in the right type istore and iload 
+        for i in range(len(self.iload)):
+            self.iload[i] = np.ascontiguousarray(self.iload[i].T, dtype=np.int32)
+        self.istore = np.ascontiguousarray(self.istore.T, dtype=np.int32)
 
     def prepare_rhs(self, simulation):
         nv = simulation._m.nv
         sorder = simulation._m.sorder
         nspace = [1]*(len(sorder)-1)
         v = self.stencil.get_all_velocities()
+
+        gpu_support = True if self.backend == "LOOPY" else False
 
         for key, value in self.value_bc.items():
             if value is not None:
@@ -185,10 +207,10 @@ class Boundary_method(object):
                         x = x[:, np.newaxis]
                     coords += (x,)
 
-                m = Array(nv, nspace , 0, sorder)
+                m = Array(nv, nspace , 0, sorder, gpu_support=gpu_support)
                 m.set_conserved_moments(simulation.scheme.consm, self.stencil.nv_ptr)
 
-                f = Array(nv, nspace , 0, sorder)
+                f = Array(nv, nspace , 0, sorder, gpu_support=gpu_support)
                 f.set_conserved_moments(simulation.scheme.consm, self.stencil.nv_ptr)
 
                 #TODO add error message and more tests
@@ -202,8 +224,22 @@ class Boundary_method(object):
                     value[0](f, m, *args)
                 simulation.scheme.equilibrium(m)
                 simulation.scheme.m2f(m, f)
-
+                
+                if self.backend.upper() == "LOOPY":
+                    f.array_cpu[...] = f.array.get()
                 self.feq[:, indices[0]] = f.swaparray.reshape((nv, indices[0].size))
+
+    def move2gpu(self):
+        if self.backend.upper() == "LOOPY":
+            import pyopencl as cl
+            import pyopencl.array
+
+            self.rhs = cl.array.to_device(queue, self.rhs)
+            if hasattr(self, 's'):
+                self.s = cl.array.to_device(queue, self.s)
+            self.istore = cl.array.to_device(queue, self.istore)
+            for i in range(len(self.iload)):
+                self.iload[i] = cl.array.to_device(queue, self.iload[i])
 
 class bounce_back(Boundary_method):
     """
@@ -225,9 +261,6 @@ class bounce_back(Boundary_method):
         according to the bounce back condition
 
     """
-    def __init__(self, istore, ilabel, distance, stencil, value_bc):
-        super(bounce_back, self).__init__(istore, ilabel, distance, stencil, value_bc)
-
     def set_iload(self):
         k = self.istore[0]
         ksym = self.stencil.get_symmetric()[k][np.newaxis, :]
@@ -240,8 +273,66 @@ class bounce_back(Boundary_method):
         ksym = self.stencil.get_symmetric()[k]
         self.rhs[:] = self.feq[k, np.arange(k.size)] - self.feq[ksym, np.arange(k.size)]
 
-    def update(self, f):
-        f[tuple(self.istore)] = f[tuple(self.iload[0])] + self.rhs
+    def update(self, ff):
+        dim = len(ff.nspace)
+        nx = ff.nspace[0]
+        if dim > 1:
+            ny = ff.nspace[1]
+        if dim > 2:
+            nz = ff.nspace[2]
+
+        f = ff.array
+        iload = self.iload[0]
+        istore = self.istore
+        rhs = self.rhs
+
+        ncond = istore.shape[0]
+        function = self.mod.bounce_back
+
+        dummy = locals()
+        try:
+            args = function.arg_dict.keys()
+            d = {k:dummy[k] for k in args}
+            d['queue'] = queue
+        except:
+            args = getargspec(function).args
+            d = {k:dummy[k] for k in args}
+        function(**d)
+        #f[tuple(self.istore)] = f[tuple(self.iload[0])] + self.rhs
+
+    def generate(self, sorder):
+        from generator import make_routine, autowrap, For, If, IndexedIntBase
+
+        def set_order(array, remove_nv=False):
+            out = [-1]*len(sorder)
+            for i, s in enumerate(sorder):
+                out[s] = array[i]
+            if remove_nv:
+                out.pop(sorder[0])
+            return out
+
+        ns = int(self.stencil.nv_ptr[-1])
+        dim = self.stencil.dim
+        ncond = symbols('ncond', integer=True)
+
+        i = Idx('i', (0, ncond))
+        nx, ny, nz = symbols('nx, ny, nz', integer=True)
+        nspace = [ns, nx, ny, nz][:dim+1]
+        fi = IndexedBase('f', set_order(nspace))
+
+        istore = symbols('istore', integer=True)
+        iload = symbols('iload', integer=True)
+
+        istore = IndexedBase(istore, [ncond, dim+1])
+        iload = IndexedBase(iload, [ncond, dim+1])
+
+        fstore = fi[set_order([istore[i, k] for k in range(dim+1)])]
+        fload = fi[set_order([iload[i, k] for k in range(dim+1)])]
+
+        rhs = IndexedBase('rhs', [ncond])
+        
+        routine = make_routine(('bounce_back', For(i, Eq(fstore, fload + rhs[i]))))
+        self.mod = autowrap(routine, backend=self.backend)
 
 class Bouzidi_bounce_back(Boundary_method):
     """
@@ -263,8 +354,8 @@ class Bouzidi_bounce_back(Boundary_method):
         according to the Bouzidi bounce back condition
 
     """
-    def __init__(self, istore, ilabel, distance, stencil, value_bc):
-        super(Bouzidi_bounce_back, self).__init__(istore, ilabel, distance, stencil, value_bc)
+    def __init__(self, istore, ilabel, distance, stencil, value_bc, nspace, backend):
+        super(Bouzidi_bounce_back, self).__init__(istore, ilabel, distance, stencil, value_bc, nspace, backend)
         self.s = np.empty(self.istore.shape[1])
 
     def set_iload(self):
@@ -297,8 +388,72 @@ class Bouzidi_bounce_back(Boundary_method):
         ksym = self.stencil.get_symmetric()[k]
         self.rhs[:] = self.feq[k, np.arange(k.size)] - self.feq[ksym, np.arange(k.size)]
 
-    def update(self, f):
-        f[tuple(self.istore)] = self.s*f[tuple(self.iload[0])] + (1 - self.s)*f[tuple(self.iload[1])] + self.rhs
+    def update(self, ff):
+        dim = len(ff.nspace)
+        nx = ff.nspace[0]
+        if dim > 1:
+            ny = ff.nspace[1]
+        if dim > 2:
+            nz = ff.nspace[2]
+
+        f = ff.array
+        rhs = self.rhs
+        iload0 = self.iload[0]
+        iload1 = self.iload[1]
+        istore = self.istore
+        rhs = self.rhs
+        dist = self.s
+        ncond = istore.shape[0]
+        function = self.mod.Bouzidi_bounce_back
+
+        dummy = locals()
+        try:
+            args = function.arg_dict.keys()
+            d = {k:dummy[k] for k in args}
+            d['queue'] = queue
+        except:
+            args = getargspec(function).args
+            d = {k:dummy[k] for k in args}
+        function(**d)
+        #f[tuple(self.istore)] = self.s*f[tuple(self.iload[0])] + (1 - self.s)*f[tuple(self.iload[1])] + self.rhs
+
+    def generate(self, sorder):
+        from generator import make_routine, autowrap, For, If, IndexedIntBase
+
+        def set_order(array, remove_nv=False):
+            out = [-1]*len(sorder)
+            for i, s in enumerate(sorder):
+                out[s] = array[i]
+            if remove_nv:
+                out.pop(sorder[0])
+            return out
+
+        ns = int(self.stencil.nv_ptr[-1])
+        dim = self.stencil.dim
+        ncond = symbols('ncond', integer=True)
+
+        i = Idx('i', (0, ncond))
+        nx, ny, nz = symbols('nx, ny, nz', integer=True)
+        nspace = [ns, nx, ny, nz][:dim+1]
+        fi = IndexedBase('f', set_order(nspace))
+
+        istore = symbols('istore', integer=True)
+        iload0 = symbols('iload0', integer=True)
+        iload1 = symbols('iload1', integer=True)
+
+        istore = IndexedBase(istore, [ncond, dim+1])
+        iload0 = IndexedBase(iload0, [ncond, dim+1])
+        iload1 = IndexedBase(iload1, [ncond, dim+1])
+
+        fstore = fi[set_order([istore[i, k] for k in range(dim+1)])]
+        fload0 = fi[set_order([iload0[i, k] for k in range(dim+1)])]
+        fload1 = fi[set_order([iload1[i, k] for k in range(dim+1)])]
+
+        rhs = IndexedBase('rhs', [ncond])
+        dist = IndexedBase('dist', [ncond])
+        
+        routine = make_routine(('Bouzidi_bounce_back', For(i, Eq(fstore, dist[i]*fload0 + (1-dist[i])*fload1 + rhs[i]))))
+        self.mod = autowrap(routine, backend=self.backend)
 
 class anti_bounce_back(bounce_back):
     """
@@ -325,8 +480,67 @@ class anti_bounce_back(bounce_back):
         ksym = self.stencil.get_symmetric()[k]
         self.rhs[:] = self.feq[k, np.arange(k.size)] + self.feq[ksym, np.arange(k.size)]
 
-    def update(self, f):
-        f[tuple(self.istore)] = -f[tuple(self.iload[0])] + self.rhs
+    def update(self, ff):
+        dim = len(ff.nspace)
+        nx = ff.nspace[0]
+        if dim > 1:
+            ny = ff.nspace[1]
+        if dim > 2:
+            nz = ff.nspace[2]
+
+        f = ff.array
+        iload = self.iload[0]
+        istore = self.istore
+        rhs = self.rhs
+
+        ncond = istore.shape[0]
+        function = self.mod.anti_bounce_back
+
+        dummy = locals()
+        try:
+            args = function.arg_dict.keys()
+            d = {k:dummy[k] for k in args}
+            d['queue'] = queue
+        except:        
+            args = getargspec(function).args
+            #d = {k:v for k,v in locals().items() if k in args}
+            d = {k:dummy[k] for k in args}
+        function(**d)
+        #f[tuple(self.istore)] = -f[tuple(self.iload[0])] + self.rhs
+
+    def generate(self, sorder):
+        from generator import make_routine, autowrap, For, If, IndexedIntBase
+
+        def set_order(array, remove_nv=False):
+            out = [-1]*len(sorder)
+            for i, s in enumerate(sorder):
+                out[s] = array[i]
+            if remove_nv:
+                out.pop(sorder[0])
+            return out
+
+        ns = int(self.stencil.nv_ptr[-1])
+        dim = self.stencil.dim
+        ncond = symbols('ncond', integer=True)
+
+        i = Idx('i', (0, ncond))
+        nx, ny, nz = symbols('nx, ny, nz', integer=True)
+        nspace = [ns, nx, ny, nz][:dim+1]
+        fi = IndexedBase('f', set_order(nspace))
+
+        istore = symbols('istore', integer=True)
+        iload = symbols('iload', integer=True)
+
+        istore = IndexedBase(istore, [ncond, dim+1])
+        iload = IndexedBase(iload, [ncond, dim+1])
+
+        fstore = fi[set_order([istore[i, k] for k in range(dim+1)])]
+        fload = fi[set_order([iload[i, k] for k in range(dim+1)])]
+
+        rhs = IndexedBase('rhs', [ncond])
+        
+        routine = make_routine(('anti_bounce_back', For(i, Eq(fstore, -fload + rhs[i]))))
+        self.mod = autowrap(routine, backend=self.backend)
 
 class Bouzidi_anti_bounce_back(Bouzidi_bounce_back):
     """
@@ -353,8 +567,73 @@ class Bouzidi_anti_bounce_back(Bouzidi_bounce_back):
         ksym = self.stencil.get_symmetric()[k]
         self.rhs[:] = self.feq[k, np.arange(k.size)] + self.feq[ksym, np.arange(k.size)]
 
-    def update(self, f):
-        f[tuple(self.istore)] = -self.s*f[tuple(self.iload[0])] + (self.s - 1)*f[tuple(self.iload[1])] + self.rhs
+    def update(self, ff):
+        dim = len(ff.nspace)
+        nx = ff.nspace[0]
+        if dim > 1:
+            ny = ff.nspace[1]
+        if dim > 2:
+            nz = ff.nspace[2]
+
+        f = ff.array
+        rhs = self.rhs
+        iload0 = self.iload[0]
+        iload1 = self.iload[1]
+        istore = self.istore
+        rhs = self.rhs
+        dist = self.s
+        ncond = istore.shape[0]
+        function = self.mod.Bouzidi_anti_bounce_back
+
+        dummy = locals()
+        try:
+            args = function.arg_dict.keys()
+            d = {k:dummy[k] for k in args}
+            d['queue'] = queue
+        except:
+            args = getargspec(function).args
+            d = {k:dummy[k] for k in args}
+        function(**d)
+        #f[tuple(self.istore)] = -self.s*f[tuple(self.iload[0])] + (self.s - 1)*f[tuple(self.iload[1])] + self.rhs
+
+    def generate(self, sorder):
+        from generator import make_routine, autowrap, For, If, IndexedIntBase
+
+        def set_order(array, remove_nv=False):
+            out = [-1]*len(sorder)
+            for i, s in enumerate(sorder):
+                out[s] = array[i]
+            if remove_nv:
+                out.pop(sorder[0])
+            return out
+
+        ns = int(self.stencil.nv_ptr[-1])
+        dim = self.stencil.dim
+        ncond = symbols('ncond', integer=True)
+
+        i = Idx('i', (0, ncond))
+        nx, ny, nz = symbols('nx, ny, nz', integer=True)
+        nspace = [ns, nx, ny, nz][:dim+1]
+        fi = IndexedBase('f', set_order(nspace))
+
+        istore = symbols('istore', integer=True)
+        iload0 = symbols('iload0', integer=True)
+        iload1 = symbols('iload1', integer=True)
+
+        istore = IndexedBase(istore, [ncond, dim+1])
+        iload0 = IndexedBase(iload0, [ncond, dim+1])
+        iload1 = IndexedBase(iload1, [ncond, dim+1])
+
+        fstore = fi[set_order([istore[i, k] for k in range(dim+1)])]
+        fload0 = fi[set_order([iload0[i, k] for k in range(dim+1)])]
+        fload1 = fi[set_order([iload1[i, k] for k in range(dim+1)])]
+
+        rhs = IndexedBase('rhs', [ncond])
+        dist = IndexedBase('dist', [ncond])
+        
+        routine = make_routine(('Bouzidi_anti_bounce_back', For(i, Eq(fstore, -dist[i]*fload0 + (-1+dist[i])*fload1 + rhs[i]))))
+        self.mod = autowrap(routine, backend=self.backend)
+
 
 class Neumann(Boundary_method):
     """
@@ -371,8 +650,8 @@ class Neumann(Boundary_method):
         according to the Neumann condition
 
     """
-    def __init__(self, istore, ilabel, distance, stencil, value_bc):
-        super(Neumann, self).__init__(istore, ilabel, distance, stencil, value_bc)
+    def __init__(self, istore, ilabel, distance, stencil, value_bc, nspace, backend):
+        super(Neumann, self).__init__(istore, ilabel, distance, stencil, value_bc, nspace, backend)
 
     def set_rhs(self):
         pass
@@ -383,8 +662,62 @@ class Neumann(Boundary_method):
         indices = self.istore[1:] + v[k].T
         self.iload.append(np.concatenate([k[np.newaxis, :], indices]))
 
-    def update(self, f):
-        f[tuple(self.istore)] = f[tuple(self.iload[0])]
+    def update(self, ff):
+        dim = len(ff.nspace)
+        nx = ff.nspace[0]
+        if dim > 1:
+            ny = ff.nspace[1]
+        if dim > 2:
+            nz = ff.nspace[2]
+
+        f = ff.array
+        iload = self.iload[0]
+        istore = self.istore
+
+        ncond = istore.shape[0]
+        function = self.mod.neumann
+        dummy = locals()
+        try:
+            args = function.arg_dict.keys()
+            d = {k:dummy[k] for k in args}
+            d['queue'] = queue
+        except:
+            args = getargspec(function).args
+            d = {k:v for k,v in locals().items() if k in args}
+        function(**d)
+
+        #f[tuple(self.istore)] = f[tuple(self.iload[0])]
+
+    def generate(self, sorder):
+        from generator import make_routine, autowrap, For, If, IndexedIntBase
+
+        def set_order(array, remove_nv=False):
+            out = [-1]*len(sorder)
+            for i, s in enumerate(sorder):
+                out[s] = array[i]
+            if remove_nv:
+                out.pop(sorder[0])
+            return out
+        ns = int(self.stencil.nv_ptr[-1])
+        dim = self.stencil.dim
+        ncond = symbols('ncond', integer=True)
+
+        i = Idx('i', (0, ncond))
+        nx, ny, nz = symbols('nx, ny, nz', integer=True)
+        nspace = [ns, nx, ny, nz][:dim+1]
+        fi = IndexedBase('f', set_order(nspace))
+
+        istore = symbols('istore', integer=True)
+        iload = symbols('iload', integer=True)
+
+        istore = IndexedBase(istore, [ncond, dim+1])
+        iload = IndexedBase(iload, [ncond, dim+1])
+
+        fstore = fi[set_order([istore[i, k] for k in range(dim+1)])]
+        fload = fi[set_order([iload[i, k] for k in range(dim+1)])]
+
+        routine = make_routine(('neumann', For(i, Eq(fstore, fload))))
+        self.mod = autowrap(routine, backend=self.backend)
 
 class Neumann_x(Neumann):
     """
