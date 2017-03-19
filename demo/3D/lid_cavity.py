@@ -27,7 +27,7 @@ def save(x, y, z, m, im):
     vtk.add_vector('velocity', [qx_n, qy_n, qz_n])
     vtk.save()
 
-def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     """
     Parameters
     ----------
@@ -128,6 +128,6 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     return sol
 
 if __name__ == '__main__':
-    dx = 1./64
+    dx = 1./128
     Tf= 5.
-    run(dx, Tf)
+    run(dx, Tf, generator="loopy")
