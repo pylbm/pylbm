@@ -17,14 +17,6 @@ from sympy import *
 from sympy.parsing.sympy_parser import parse_expr, standard_transformations
 import copy
 from textwrap import dedent
-import sys
-
-PY3 = sys.version_info >= (3,)
-
-if PY3:
-    from inspect import getfullargspec as getargspec
-else:
-    from inspect import getargspec
 
 from .stencil import Stencil
 from .generator import *
@@ -32,8 +24,6 @@ from .validate_dictionary import *
 
 from .logs import setLogger
 import mpi4py.MPI as mpi
-from .context import queue
-
 
 proto_sch = {
     'velocities': (is_list_int,),
@@ -723,62 +713,30 @@ class Scheme(object):
         # # print(dummy)
 
         from generator import make_routine, autowrap, For, If
+        from .symbolic import nx, ny, nz, nv, indexed, space_loop
 
-        def set_order(array, remove_nv=False):
-            out = [-1]*len(sorder)
-            for i, s in enumerate(sorder):
-                out[s] = array[i]
-            if remove_nv:
-                out.pop(sorder[0])
-            return out
-
-        nx, ny, nz = sp.symbols('nx, ny, nz', integer=True)
-        shape = set_order([ns, nx, ny, nz])
-        mi = sp.IndexedBase('m', shape)
-        fi = sp.IndexedBase('f', shape)
-        fi_new = sp.IndexedBase('f_new', shape)
-        mv = sp.MatrixSymbol('m', ns, 1)
+        iloop = space_loop([(0, nx), (0, ny), (0, nz)], permutation=sorder)
+        m = indexed('m', [ns, nx, ny, nz], index=[nv, *iloop], ranges=range(ns), permutation=sorder)
+        f = indexed('f', [ns, nx, ny, nz], index=[nv, *iloop], ranges=range(ns), permutation=sorder)
 
         routines = []
-        i = sp.Idx('i', (0, nx))
-        j = sp.Idx('j', (0, ny))
-        k = sp.Idx('k', (0, nz))
-        iloop = set_order([0, i, j, k], remove_nv=True)
-
-        m = sp.Matrix([mi[set_order([kk, i, j, k])] for kk in range(ns)])
-        f = sp.Matrix([fi[set_order([kk, i, j, k])] for kk in range(ns)])
-        
         routines += make_routine(('f2m', For(iloop, Eq(m, M*f))), settings={"prefetch":[f[0]]})
         routines += make_routine(('m2f', For(iloop, Eq(f, invM*m))), settings={"prefetch":[m[0]]})
 
         eq = Matrix([sublist for l in self._EQ for sublist in l]).subs(list(zip(pk, pv)))
         s = Matrix([sublist for l in self.s for sublist in l]).subs(list(zip(pk, pv)))
 
+        mv = sp.MatrixSymbol('m', ns, 1)
         dummy = eq.subs(list(zip(mv, m)))
         routines += make_routine(('equilibrium', For(iloop, Eq(m, dummy))))
 
-        i = sp.Idx('i', (1, nx-1))
-        j = sp.Idx('j', (1, ny-1))
-        k = sp.Idx('k', (1, nz-1))
-        iloop = set_order([0, i, j, k], remove_nv=True)
-
-        v = self.stencil.get_all_velocities()
-
-        dummy = []
-        ind = [i, j, k]
-        for kk, vv in enumerate(v):
-            tmp = []
-            for iv, vvv in enumerate(vv):
-                tmp.append(ind[iv] - int(vvv))
-            dummy.append(set_order([kk, *tmp]))
-
-        f = sp.Matrix([fi[d] for d in dummy])
-        f_new = sp.Matrix([fi_new[set_order([kk, i, j, k])] for kk in range(len(v))])
-        in_or_out = sp.IndexedBase('in_or_out', [nx, ny, nz][:self.dim])
-        in_ind = [i, j, k][:self.dim]
+        iloop = space_loop([(1, nx-1), (1, ny-1), (1, nz-1)], permutation=sorder)
+        f = indexed('f', [ns, nx, ny, nz], index=[nv, *iloop], list_ind=self.stencil.get_all_velocities(), permutation=sorder)
+        f_new = indexed('f_new', [ns, nx, ny, nz], index=[nv, *iloop], ranges=range(ns), permutation=sorder)
+        in_or_out = indexed('in_or_out', [ns, nx, ny, nz], permutation=sorder, remove_ind=[0])
 
         if backend.upper() == "NUMPY":
-            m = sp.Matrix([mi[set_order([kk, i, j, k])] for kk in range(ns)])
+            m = indexed('m', [ns, nx, ny, nz], index=[nv, *iloop], ranges=range(ns), permutation=sorder)
             dummy = eq.subs(list(zip(mv, m)))
             routines += make_routine(('one_time_step', For(iloop, 
                                                         
@@ -791,7 +749,7 @@ class Scheme(object):
                                                         ))
         else:
             routines += make_routine(('one_time_step', For(iloop, 
-                                                        If((Eq(in_or_out[in_ind], valin), 
+                                                        If((Eq(in_or_out, valin), 
                                                             [
                                                                 Eq(mv, M*f),  # transport + f2m
                                                                 Eq(mv, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(mv)) + s.multiply_elementwise(eq)), # relaxation
@@ -799,21 +757,12 @@ class Scheme(object):
                                                             ]
                                                             )
                                                         ))), local_vars=[mv], settings={"prefetch":[f[0]]})
-            # routines += make_routine(('one_time_step', For(iloop, 
-            #                                             If((Eq(in_or_out[in_ind], valin), 
-            #                                                 [   Eq(floc, f),
-            #                                                     Eq(mv, M*floc),  # transport + f2m
-            #                                                     Eq(mv, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(mv)) + s.multiply_elementwise(eq)), # relaxation
-            #                                                     Eq(floc, invM*mv), # m2f + update f_new
-            #                                                     Eq(f_new, floc), # m2f + update f_new
-            #                                                 ]
-            #                                                 )
-            #                                             ))), local_vars=[mv, floc], settings={"prefetch":[f[0]]})
 
         self.mod = autowrap(routines, backend=backend)
 
     def m2f(self, mm, ff):
         """ Compute the distribution functions f from the moments m """
+        from .symbolic import call_genfunction
 
         nx = mm.nspace[0]
         if self.dim > 1:
@@ -823,20 +772,14 @@ class Scheme(object):
 
         m = mm.array
         f = ff.array
-        function = self.mod.m2f
-        dummy = locals()
-        try:
-            args = function.arg_dict.keys()
-            d = {k:dummy[k] for k in args}
-            d['queue'] = queue
-        except:
-            args = getargspec(function).args
-            d = {k:dummy[k] for k in args}
-        function(**d)
-        #self.mod.m2f(m.array, *m.nspace, f.array)
+
+        args = locals()
+        call_genfunction(self.mod.m2f, args)
 
     def f2m(self, ff, mm):
         """ Compute the moments m from the distribution functions f """
+        from .symbolic import call_genfunction
+
         nx = mm.nspace[0]
         if self.dim > 1:
             ny = mm.nspace[1]
@@ -845,17 +788,9 @@ class Scheme(object):
 
         m = mm.array
         f = ff.array
-        function = self.mod.f2m
-        dummy = locals()
-        try:
-            args = function.arg_dict.keys()
-            d = {k:dummy[k] for k in args}
-            d['queue'] = queue
-        except:
-            args = getargspec(function).args
-            d = {k:dummy[k] for k in args}
-        function(**d)
-        #self.mod.f2m(f.array, *m.nspace, m.array)
+
+        args = locals()
+        call_genfunction(self.mod.f2m, args)
 
     def transport(self, f):
         """ The transport phase on the distribution functions f """
@@ -863,6 +798,7 @@ class Scheme(object):
 
     def equilibrium(self, mm):
         """ Compute the equilibrium """
+        from .symbolic import call_genfunction
 
         nx = mm.nspace[0]
         if self.dim > 1:
@@ -872,17 +808,8 @@ class Scheme(object):
 
         m = mm.array
 
-        function = self.mod.equilibrium
-        dummy = locals()
-        try:
-            args = function.arg_dict.keys()
-            d = {k:dummy[k] for k in args}
-            d['queue'] = queue
-        except:
-            args = getargspec(function).args
-            d = {k:dummy[k] for k in args}
-        function(**d)
-        #self.mod.equilibrium(**space, m=m.array)
+        args = locals()
+        call_genfunction(self.mod.equilibrium, args)
 
     def relaxation(self, m):
         """ The relaxation phase on the moments m """
@@ -896,6 +823,8 @@ class Scheme(object):
 
     def onetimestep(self, mm, ff, ff_new, in_or_out, valin, tn=0., dt=0., x=0., y=0., z=0.):
         """ Compute one time step of the Lattice Boltzmann method """
+        from .symbolic import call_genfunction
+
         nx = mm.nspace[0]
         if self.dim > 1:
             ny = mm.nspace[1]
@@ -905,17 +834,9 @@ class Scheme(object):
         m = mm.array
         f = ff.array
         f_new = ff_new.array
-        function = self.mod.one_time_step
-        dummy = locals()
-        try:
-            args = function.arg_dict.keys()
-            d = {k:dummy[k] for k in args}
-            d['queue'] = queue
-        except:
-            args = getargspec(function).args
-            d = {k:dummy[k] for k in args}
-        function(**d)
-        # #self.mod.one_time_step(fold.array, in_or_out, *m.nspace, fnew.array)
+
+        args = locals()
+        call_genfunction(self.mod.one_time_step, args)
 
     def set_boundary_conditions(self, f, m, bc, interface):
         """

@@ -32,7 +32,6 @@ from .validate_dictionary import *
 from .logs import setLogger
 from .storage import Array, Array_in, AOS, SOA
 from .generator import NumpyGenerator
-from .context import queue
 
 proto_simu = {
     'name':(type(None),) + string_types,
@@ -236,6 +235,8 @@ class Simulation(object):
         if self.gpu_support:
             import pyopencl as cl
             import pyopencl.array
+            from .context import queue
+
             self.domain.in_or_out = cl.array.to_device(queue, self.domain.in_or_out)  
 
         self.bc = Boundary(self.domain, dico)

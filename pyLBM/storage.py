@@ -4,11 +4,8 @@ import numpy as np
 import sympy as sp
 import copy
 import mpi4py.MPI as mpi
-import pyopencl as cl
-import pyopencl.array
 
 from .logs import setLogger
-from .context import queue
 
 class Array(object):
     """
@@ -87,6 +84,10 @@ class Array(object):
         self.array = self.array_cpu
 
         if self.gpu_support:
+            import pyopencl as cl
+            import pyopencl.array
+            from .context import queue
+
             self.array = cl.array.to_device(queue, self.array_cpu)
 
         self.swaparray = self.array_cpu
@@ -116,6 +117,10 @@ class Array(object):
         else:
             self.swaparray[key] = values
         if self.gpu_support:
+            import pyopencl as cl
+            import pyopencl.array
+            from .context import queue
+            
             self.array = cl.array.to_device(queue, self.array_cpu)            
 
     def _in(self, key):
@@ -250,6 +255,8 @@ class Array(object):
         update ghost points on the interface with the datas of the neighbors.
         """
         if self.gpu_support:
+            from .symbolic import call_genfunction
+
             dim = len(self.nspace)
             nx = self.nspace[0]
             if dim > 1:
@@ -262,16 +269,13 @@ class Array(object):
 
             function = self.mod.update_x
 
-            dummy = locals()
-            args = function.arg_dict.keys()
-            d = {k:dummy[k] for k in args}
-            d['queue'] = queue
-            
-            self.mod.update_x(**d)
+            args = locals()
+            call_genfunction(self.mod.update_x, args)
+
             if dim > 1:
-                self.mod.update_y(**d)
+                call_genfunction(self.mod.update_y, args)
             if dim > 2:
-                self.mod.update_z(**d)
+                call_genfunction(self.mod.update_z, args)
 
         else:
             for d in range(self.dim):
