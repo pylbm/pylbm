@@ -31,7 +31,6 @@ from .validate_dictionary import *
 
 from .logs import setLogger
 from .storage import Array, Array_in, AOS, SOA
-from .generator import NumpyGenerator
 
 proto_simu = {
     'name':(type(None),) + string_types,

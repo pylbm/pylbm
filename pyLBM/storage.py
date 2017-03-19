@@ -291,7 +291,7 @@ class Array(object):
 
     def generate(self):
         import sympy as sp
-        from generator import make_routine, autowrap, For, If
+        from .generator import make_routine, autowrap, For, If
 
         def set_order(array, remove_index=None):
             out = [-1]*len(self.sorder)

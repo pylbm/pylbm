@@ -270,7 +270,7 @@ class Boundary_method(object):
             import pyopencl as cl
             import pyopencl.array
             from .context import queue
-            
+
             self.rhs = cl.array.to_device(queue, self.rhs)
             if hasattr(self, 's'):
                 self.s = cl.array.to_device(queue, self.s)
@@ -311,7 +311,7 @@ class bounce_back(Boundary_method):
         self.rhs[:] = self.feq[k, np.arange(k.size)] - self.feq[ksym, np.arange(k.size)]
 
     def generate(self, sorder):
-        from generator import make_routine, autowrap, For, If, IndexedIntBase
+        from .generator import make_routine, autowrap, For, If, IndexedIntBase
         from .symbolic import nx, ny, nz, nv, indexed, space_loop, ix
 
         ns = int(self.stencil.nv_ptr[-1])
@@ -383,7 +383,7 @@ class Bouzidi_bounce_back(Boundary_method):
         self.rhs[:] = self.feq[k, np.arange(k.size)] - self.feq[ksym, np.arange(k.size)]
 
     def generate(self, sorder):
-        from generator import make_routine, autowrap, For, If, IndexedIntBase
+        from .generator import make_routine, autowrap, For, If, IndexedIntBase
         from .symbolic import nx, ny, nz, nv, indexed, space_loop, ix
 
         ns = int(self.stencil.nv_ptr[-1])
@@ -427,7 +427,7 @@ class anti_bounce_back(bounce_back):
         self.rhs[:] = self.feq[k, np.arange(k.size)] + self.feq[ksym, np.arange(k.size)]
 
     def generate(self, sorder):
-        from generator import make_routine, autowrap, For, If, IndexedIntBase
+        from .generator import make_routine, autowrap, For, If, IndexedIntBase
         from .symbolic import nx, ny, nz, nv, indexed, space_loop, ix
 
         ns = int(self.stencil.nv_ptr[-1])
@@ -470,7 +470,7 @@ class Bouzidi_anti_bounce_back(Bouzidi_bounce_back):
         self.rhs[:] = self.feq[k, np.arange(k.size)] + self.feq[ksym, np.arange(k.size)]
 
     def generate(self, sorder):
-        from generator import make_routine, autowrap, For, If, IndexedIntBase
+        from .generator import make_routine, autowrap, For, If, IndexedIntBase
         from .symbolic import nx, ny, nz, nv, indexed, space_loop, ix
 
         ns = int(self.stencil.nv_ptr[-1])
@@ -516,7 +516,7 @@ class Neumann(Boundary_method):
         self.iload.append(np.concatenate([k[np.newaxis, :], indices]))
 
     def generate(self, sorder):
-        from generator import make_routine, autowrap, For, If, IndexedIntBase
+        from .generator import make_routine, autowrap, For, If, IndexedIntBase
         from .symbolic import nx, ny, nz, nv, indexed, space_loop, ix
 
         ns = int(self.stencil.nv_ptr[-1])

@@ -19,7 +19,6 @@ import copy
 from textwrap import dedent
 
 from .stencil import Stencil
-from .generator import *
 from .validate_dictionary import *
 
 from .logs import setLogger
@@ -712,7 +711,7 @@ class Scheme(object):
         # # dummy = dummy.permuteBkwd(permutations)
         # # print(dummy)
 
-        from generator import make_routine, autowrap, For, If
+        from .generator import make_routine, autowrap, For, If
         from .symbolic import nx, ny, nz, nv, indexed, space_loop
 
         iloop = space_loop([(0, nx), (0, ny), (0, nz)], permutation=sorder)
