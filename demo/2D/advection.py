@@ -27,7 +27,7 @@ def u0(x, y, xmin, xmax, ymin, ymax):
     return np.ones((x.shape[0], y.shape[0]), dtype='float64') \
            + .5 * ((x-0.25*(xmin+xmax))**2+(y-0.5*(ymin+ymax))**2 < 0.01)
 
-def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     """
     Parameters
     ----------
@@ -103,4 +103,4 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
 if __name__ == '__main__':
     dx = 1./256
     Tf = 10.
-    run(dx, Tf, generator=pyLBM.generator.CythonGenerator)
+    run(dx, Tf)

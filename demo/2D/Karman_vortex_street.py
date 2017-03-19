@@ -24,7 +24,7 @@ def vorticity(sol):
                   - qy_n[2:, 1:-1] + qy_n[:-2, 1:-1])
     return vort.T
 
-def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     """
     Parameters
     ----------
@@ -116,13 +116,13 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
 
         ax = fig[0]
         ax.ellipse([.3/dx, 0.5*(ymin+ymax)/dx+2], [radius/dx, radius/dx], 'r')
-        image = ax.image(vorticity(sol), cmap='cubehelix', clim=[0, .05])
+        image = ax.image(vorticity(sol), cmap='jet', clim=[0, .05])
 
         def update(iframe):
             nrep = 100
             for i in range(nrep):
                  sol.one_time_step()
-            #print sol.time_info()
+
             image.set_data(vorticity(sol))
             ax.title = "Solution t={0:f}".format(sol.t)
 

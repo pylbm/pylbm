@@ -44,17 +44,17 @@ p, ux, uy, uz = sp.symbols('p,ux,uy,uz')
 
 def plot(x, y, z, m, num):
     init_pvd = False
-    if im == 1:
+    if num == 1:
         init_pvd = True
 
-    vtk = pyLBM.VTKFile('poiseuille', './data', im, init_pvd=init_pvd)
+    vtk = pyLBM.VTKFile('poiseuille', './data', num, init_pvd=init_pvd)
     vtk.set_grid(x, y, z)
     vtk.add_scalar('pressure', m[p])
     qx_n, qy_n, qz_n = m[ux], m[uy], m[uz]
     vtk.add_vector('velocity', [qx_n, qy_n, qz_n])
     vtk.save()
 
-def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     """
     Parameters
     ----------
@@ -146,9 +146,9 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
                          },
             },
             1:{'method':{0: pyLBM.bc.Bouzidi_anti_bounce_back,
-                         1: pyLBM.bc.Neumann_vertical,
-                         2: pyLBM.bc.Neumann_vertical,
-                         3: pyLBM.bc.Neumann_vertical,
+                         1: pyLBM.bc.Neumann_x,
+                         2: pyLBM.bc.Neumann_x,
+                         3: pyLBM.bc.Neumann_x,
                          },
                 'value':bc_out,
             },
@@ -168,19 +168,23 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
 
     x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
 
+    import mpi4py.MPI as mpi
     im = 0
-    c = 0
     while sol.t < Tf:
-        sol.one_time_step()
-        c += 1
-        if c == 16 and withPlot:
+        nrep = 100
+        t1 = mpi.Wtime()
+        for i in range(nrep):
+                 sol.one_time_step()
+        t2 = mpi.Wtime()
+        print(sol._F.size*100/1e6/(t2-t1))
+
+        if withPlot:
             im += 1
             plot(x, y, z, sol.m, im)
-            c = 0
 
     return sol
 
 if __name__ == '__main__':
-    dx = 1./64
+    dx = 1./256
     Tf= 50.
     run(dx, Tf)
