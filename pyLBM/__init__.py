@@ -9,8 +9,6 @@ from .domain import Domain
 from .stencil import Stencil
 from .simulation import Simulation
 from . import boundary as bc
-from . import generator
-from .generator import *
 from .scheme import Scheme
 from .elements import *
 from .geometry import Geometry
