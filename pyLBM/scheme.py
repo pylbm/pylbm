@@ -715,8 +715,8 @@ class Scheme(object):
         from .symbolic import nx, ny, nz, nv, indexed, space_loop
 
         iloop = space_loop([(0, nx), (0, ny), (0, nz)], permutation=sorder)
-        m = indexed('m', [ns, nx, ny, nz], index=[nv, *iloop], ranges=range(ns), permutation=sorder)
-        f = indexed('f', [ns, nx, ny, nz], index=[nv, *iloop], ranges=range(ns), permutation=sorder)
+        m = indexed('m', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
+        f = indexed('f', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
 
         routines = []
         routines += make_routine(('f2m', For(iloop, Eq(m, M*f))), settings={"prefetch":[f[0]]})
@@ -730,12 +730,12 @@ class Scheme(object):
         routines += make_routine(('equilibrium', For(iloop, Eq(m, dummy))))
 
         iloop = space_loop([(1, nx-1), (1, ny-1), (1, nz-1)], permutation=sorder)
-        f = indexed('f', [ns, nx, ny, nz], index=[nv, *iloop], list_ind=self.stencil.get_all_velocities(), permutation=sorder)
-        f_new = indexed('f_new', [ns, nx, ny, nz], index=[nv, *iloop], ranges=range(ns), permutation=sorder)
+        f = indexed('f', [ns, nx, ny, nz], index=[nv] + iloop, list_ind=self.stencil.get_all_velocities(), permutation=sorder)
+        f_new = indexed('f_new', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
         in_or_out = indexed('in_or_out', [ns, nx, ny, nz], permutation=sorder, remove_ind=[0])
 
         if backend.upper() == "NUMPY":
-            m = indexed('m', [ns, nx, ny, nz], index=[nv, *iloop], ranges=range(ns), permutation=sorder)
+            m = indexed('m', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
             dummy = eq.subs(list(zip(mv, m)))
             routines += make_routine(('one_time_step', For(iloop, 
                                                         
