@@ -1,5 +1,8 @@
-import pyopencl as cl
-import pyopencl.array
+try:
+    import pyopencl as cl
+    import pyopencl.array
 
-ctx = cl.create_some_context()
-queue = cl.CommandQueue(ctx)
+    ctx = cl.create_some_context()
+    queue = cl.CommandQueue(ctx)
+except:
+    queue = None
