@@ -1,13 +1,6 @@
 import sympy as sp
-import sys
-
-PY3 = sys.version_info >= (3,)
-
 import inspect
-if PY3:
-    from inspect import getfullargspec as getargspec
-else:
-    from inspect import getargspec
+import sys
 
 nx, ny, nz, nv = sp.symbols("nx, ny, nz, nv", integer=True)
 ix, iy, iz, iv = sp.symbols("ix, iy, iz, iv", integer=True)
@@ -79,6 +72,13 @@ def getargspec_permissive(func):
     args, varargs, varkw = inspect.getargs(func.func_code)
     return inspect.ArgSpec(args, varargs, varkw, func.func_defaults)
 
+PY3 = sys.version_info >= (3,)
+
+if PY3:
+    from inspect import getfullargspec as getargspec
+else:
+    getargspec = getargspec_permissive
+
 def call_genfunction(function, args):
     from .context import queue
     try:
@@ -86,7 +86,7 @@ def call_genfunction(function, args):
         d = {k:args[k] for k in func_args}
         d['queue'] = queue
     except:
-        func_args = getargspec_permissive(function).args
+        func_args = getargspec(function).args
         d = {k:args[k] for k in func_args}
     function(**d)
     
