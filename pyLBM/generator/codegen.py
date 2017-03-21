@@ -1,4 +1,4 @@
-from sympy.utilities.codegen import CodeGen, ResultBase, Result, InputArgument, InOutArgument, OutputArgument
+from sympy.utilities.codegen import CodeGen, CodeGenError, ResultBase, Result, InputArgument, InOutArgument, OutputArgument
 from sympy.core import Symbol, S, Expr, Tuple, Equality, Function, sympify
 from sympy.core.compatibility import is_sequence, StringIO, string_types
 from sympy.printing.codeprinter import AssignmentError
@@ -132,8 +132,10 @@ def get_dims_and_symbol(expr):
         # todo: regarder si le symbole est toujours le meme dans le terme de gauche (expr)
         for i in range(expr.shape[0]):
             symbol = expr[i].base.label
-
             dims = tuple([ (S.Zero, dim - 1) for dim in expr[i].base.shape if dim != 1])
+    elif isinstance(expr, MatrixSlice):
+        symbol = expr.parent
+        dims = tuple([ (S.Zero, dim - 1) for dim in symbol.shape if dim != 1])
     else:
         raise CodeGenError("Only Indexed, Symbol, or MatrixSymbol "
                             "can define output arguments.")    

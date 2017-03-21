@@ -303,13 +303,13 @@ class LoopyCodePrinter(CodePrinter):
     def _print_Assignment(self, expr):
         from sympy.functions.elementary.piecewise import Piecewise
         from sympy.matrices.expressions.matexpr import MatrixSymbol
-        from sympy.matrices import MatrixBase
+        from sympy.matrices import MatrixBase, MatrixSlice
         from sympy.tensor.indexed import IndexedBase
         lhs = expr.lhs
         rhs = expr.rhs
 
         # We special case assignments that take multiple lines
-        if isinstance(lhs, (MatrixBase, MatrixSymbol)):
+        if isinstance(lhs, (MatrixBase, MatrixSymbol, MatrixSlice)):
             # Here we form an Assignment for each element in the array,
             # printing each one.
             lines = []
@@ -317,7 +317,7 @@ class LoopyCodePrinter(CodePrinter):
                 if lhs[i, j] != rhs[i, j]:
                     temp = Assignment(lhs[i, j], rhs[i, j])
                     code0 = self._print(temp)
-                    lines.append(code0)
+                    lines.append(code0)# + self.get_dep())
             return "\n".join(lines)
         else:
             lhs_code = self._print(lhs)
@@ -325,7 +325,15 @@ class LoopyCodePrinter(CodePrinter):
             # hack to avoid the printing of m[i] = m[i]
             if lhs_code == rhs_code:
                 return ""
-            return self._get_statement("%s = %s" % (lhs_code, rhs_code))
+            return self._get_statement("%s = %s" % (lhs_code, rhs_code))#, self.get_dep()))
+
+    def get_dep(self):
+        if self.instr == 0:
+            output = " {id_prefix=inst_%d}"%self.instr
+        else:
+            output = " {id_prefix=inst_%d, dep=inst_%d}"%(self.instr, self.instr-1)
+        self.instr += 1
+        return output
 
     def _print_AssignmentIf(self, expr):
         from sympy.functions.elementary.piecewise import Piecewise
@@ -404,7 +412,7 @@ class LoopyCodePrinter(CodePrinter):
         _print_MutableDenseMatrix = \
         _print_ImmutableMatrix = \
         _print_ImmutableDenseMatrix = \
-        _print_MatrixBase
+        _print_MatrixBase 
 
 def loopy_code(expr, assign_to=None, **settings):
     return LoopyCodePrinter(settings).doprint(expr, assign_to)
