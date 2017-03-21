@@ -28,6 +28,7 @@ from .stencil import Stencil
 from .boundary import Boundary
 from . import utils
 from .validate_dictionary import *
+from .context import set_queue
 
 from .logs import setLogger
 from .storage import Array, Array_in, AOS, SOA
@@ -199,6 +200,7 @@ class Simulation(object):
         vmax = self.domain.stencil.vmax
 
         self.generator = dico.get('generator', "CYTHON").upper()
+        set_queue(self.generator)
         self.gpu_support = True if self.generator=="LOOPY" else False
 
         if sorder is None:
