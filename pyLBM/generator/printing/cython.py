@@ -345,7 +345,7 @@ class CythonCodePrinter(CodePrinter):
     def _print_Assignment(self, expr):
         from sympy.functions.elementary.piecewise import Piecewise
         from sympy.matrices.expressions.matexpr import MatrixSymbol
-        from sympy.matrices import MatrixBase
+        from sympy.matrices import MatrixBase, MatrixSlice
         from sympy.tensor.indexed import IndexedBase
         lhs = expr.lhs
         rhs = expr.rhs
@@ -361,7 +361,7 @@ class CythonCodePrinter(CodePrinter):
             temp = Piecewise(*zip(expressions, conditions))
             return self._print(temp)
         #elif isinstance(lhs, MatrixSymbol):
-        elif isinstance(lhs, (MatrixBase, MatrixSymbol)):
+        elif isinstance(lhs, (MatrixBase, MatrixSymbol, MatrixSlice)):
             # Here we form an Assignment for each element in the array,
             # printing each one.
             lines = []

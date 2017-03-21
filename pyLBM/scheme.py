@@ -229,7 +229,7 @@ class Scheme(object):
         self.dt = self.dx / self.la
 
         # set relative velocity
-        self.rel_vel = dico.get('relative_velocity', None)
+        self.rel_vel = dico.get('relative_velocity', [0]*self.dim)
         self.backend = dico.get('backend', "cython").upper()
 
         # fix the variables of time and space
@@ -292,34 +292,40 @@ class Scheme(object):
 
         self._check_entry_size(scheme, 'polynomials')
         self._check_entry_size(scheme, 'equilibrium')
-        self.P = [create_matrix(s['polynomials']) for s in scheme]
-        self.EQ = [create_matrix(s['equilibrium']) for s in scheme]
-
-        self.consm = self._get_conserved_moments(scheme)
-        self.ind_cons, self.ind_noncons = self._get_indices_cons_noncons()
-
-        # rename conserved moments with the notation m[x][y]
-        # needed to generate the code
-        # where x is the number of the scheme
-        #       y is the index in equilibrium corresponding to the conserved moment
-        self._EQ = copy.deepcopy(self.EQ)
-
-        m = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in range(self.stencil.unvtot)] for i in range(len(self.EQ))]
-        for cm, icm in self.consm.items():
-            for i, eq in enumerate(self._EQ):
-                for j, e in enumerate(eq):
-                    self._EQ[i][j] = e.replace(cm, m[icm[0]][icm[1]])
-
         self._check_entry_size(scheme, 'relaxation_parameters')
-        self.s_symb = [s['relaxation_parameters'] for s in scheme]
-        self.s = [copy.deepcopy(s['relaxation_parameters']) for s in scheme]
-        for k in range(len(self.s)):
-            for l in range(len(self.s[k])):
-                if not isinstance(self.s[k][l], (int, float)):
-                    try:
-                        self.s[k][l] = sp.N(self.s[k][l].subs(list(zip(pk, pv))))
-                    except:
-                        self.log.error('cannot evaluate relaxation parameter')
+
+        self.P = sp.Matrix([p for s in scheme for p in s['polynomials']])
+        self.EQ = sp.Matrix([e for s in scheme for e in s['equilibrium']])
+        self.s = sp.Matrix([r for s in scheme for r in s['relaxation_parameters']])
+
+        self.M = None
+        self.invM = None
+        self.Tu = None
+
+        self.create_moments_matrices()
+
+        # put conserved moments at the beginning of P, EQ and s
+        self.consm = self._get_conserved_moments(scheme)
+
+        permutations = []
+        for ic, c in enumerate(self.consm.values()):
+            permutations.append([ic, c])
+
+        for p in permutations:
+            self.EQ.row_swap(p[0], p[1])
+            self.s.row_swap(p[0], p[1])
+            self.M.row_swap(p[0], p[1])
+            self.invM.col_swap(p[0], p[1])
+            self.Tu.row_swap(p[0], p[1])
+            self.Tu.col_swap(p[0], p[1])
+            #Tmu.row_swap(p[0], p[1])
+            #Tmu.col_swap(p[0], p[1])
+
+        index = len(self.consm)
+        self.Tu[:index, :index] = sp.Matrix.eye(index)
+
+        for ic, c in enumerate(self.consm.keys()):
+            self.consm[c] = ic
 
         self.init = self.set_initialization(scheme)
 
@@ -330,21 +336,11 @@ class Scheme(object):
                 for i, eq in enumerate(self._source_terms):
                     for j, e in enumerate(eq):
                         if e is not None:
-                            self._source_terms[i][j] = e.replace(cm, m[icm[0]][icm[1]])
+                            self._source_terms[i][j] = e.subs(cm, m[icm])
             self.ode_solver = dico.get('ode_solver', basic)()
         else:
             self._source_terms = None
             self.ode_solver = None
-
-        self.M = []
-        self.Tu = None
-
-        self.create_moments_matrices()
-
-        for cm, icm in self.consm.items():
-            for i in range(self.Tu.shape[0]):
-                for j in range(self.Tu.shape[1]):
-                    self.Tu[i, j] = self.Tu[i, j].replace(cm, m[icm[0]][icm[1]])
 
         # generate the code
         if self._source_terms is None:
@@ -437,34 +433,43 @@ class Scheme(object):
         """
         compt=0
         M = []
+        invM = []
         Mu = []
         Tu = []
-        Mmu = []
-        Tmu = []
+        #Mmu = []
+        #Tmu = []
 
-        for v, p in zip(self.stencil.v, self.P):
+        u_tild = MatrixSymbol('u_tild', self.dim, 1)
+
+        for iv, v in enumerate(self.stencil.v):
+            p = self.P[self.stencil.nv_ptr[iv] : self.stencil.nv_ptr[iv+1]]
             compt+=1
             lv = len(v)
             M.append(sp.zeros(lv, lv))
             Mu.append(sp.zeros(lv, lv))
-            Mmu.append(sp.zeros(lv, lv))
+            #Mmu.append(sp.zeros(lv, lv))
             for i in range(lv):
                 for j in range(lv):
                     sublist = [(str(self.varX[d]), v[j].v[d]) for d in range(self.dim)]
                     M[-1][i, j] = p[i].subs(sublist)
 
                     if self.rel_vel is not None:
-                        sublist = [(str(self.varX[d]), v[j].v[d] - self.rel_vel[d]) for d in range(self.dim)]
+                        sublist = [(str(self.varX[d]), v[j].v[d] - u_tild[d, 0]) for d in range(self.dim)]
                         Mu[-1][i, j] = p[i].subs(sublist)
-                        sublist = [(str(self.varX[d]), v[j].v[d] + self.rel_vel[d]) for d in range(self.dim)]
-                        Mmu[-1][i, j] = p[i].subs(sublist)
-            invM = M[-1].inv()
-            Tu.append(Mu[-1]*invM)
-            Tmu.append(Mmu[-1]*invM)
+                        #sublist = [(str(self.varX[d]), v[j].v[d] - self.rel_vel[d]) for d in range(self.dim)]
+                        #Mu[-1][i, j] = p[i].subs(sublist)
+                        #sublist = [(str(self.varX[d]), v[j].v[d] + self.rel_vel[d]) for d in range(self.dim)]
+                        #Mmu[-1][i, j] = p[i].subs(sublist)
+
+            invM.append(M[-1].inv())
+            Tu.append(Mu[-1]*invM[-1])
+            #Tmu.append(Mmu[-1]*invM)
+
         gshape = (self.stencil.nv_ptr[-1], self.stencil.nv_ptr[-1])
         self.Tu = sp.eye(gshape[0])
-        self.Tmu = sp.eye(gshape[0])
+        #self.Tmu = sp.eye(gshape[0])
         self.M = sp.zeros(*gshape)
+        self.invM = sp.zeros(*gshape)
 
         try:
             for k in range(self.nscheme):
@@ -473,10 +478,11 @@ class Scheme(object):
                     for j in range(nvk):
                         index = self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j
                         self.M[index] = M[k][i, j]
+                        self.invM[index] = invM[k][i, j]
 
                         if self.rel_vel is not None:
                             self.Tu[index] = Tu[k][i, j]
-                            self.Tmu[index] = Tmu[k][i, j]
+                            #self.Tmu[index] = Tmu[k][i, j]
         except TypeError:
             self.log.error("Unable to convert to float the expression {0} or {1}.\nCheck the 'parameters' entry.".format(self.M[k][i, j], self.invM[k][i, j]))
             sys.exit()
@@ -496,30 +502,57 @@ class Scheme(object):
         consm : dictionnary where the keys are the conserved moments and
                 the values their indices in the LBM schemes.
         """
+        from collections import OrderedDict
         consm_tmp = [s.get('conserved_moments', None) for s in scheme]
-        consm = {}
+        consm = OrderedDict()
 
-        def find_indices(ieq, list_eq, c):
-            if [c] in leq:
-                ic = (ieq, leq.index([c]))
-                if isinstance(c, str):
-                    cm = parse_expr(c)
-                else:
-                    cm = c
-                return ic, cm
-
-        # find the indices of the conserved moments in the equilibrium equations
-        for ieq, eq in enumerate(self.EQ):
-            leq = eq.tolist()
-            cm_ieq = consm_tmp[ieq]
+        for i in range(len(self.stencil.nv_ptr)-1):
+            leq = self.EQ[self.stencil.nv_ptr[i]:self.stencil.nv_ptr[i+1]]
+            cm_ieq = consm_tmp[i]
             if cm_ieq is not None:
                 if isinstance(cm_ieq, sp.Symbol):
-                    ic, cm = find_indices(ieq, leq, cm_ieq)
-                    consm[cm] = ic
+                    consm[cm_ieq] = self.stencil.nv_ptr[i] + leq.index(cm_ieq)
                 else:
                     for c in cm_ieq:
-                        ic, cm = find_indices(ieq, leq, c)
-                        consm[cm] = ic
+                        consm[c] = self.stencil.nv_ptr[i] + leq.index(c)
+
+        # for s in scheme:
+        #     tmp = s.get('conserved_moments', None)
+        #     if s.get('conserved_moments', None):
+        #         if isinstance(tmp, (list, tuple)):
+        #             consm_tmp += tmp
+        #         else:
+        #             consm_tmp.append(tmp)
+
+        # leq = self.EQ.tolist()
+
+        # consm = {}
+        # for c in consm_tmp:
+        #     consm[c] = leq.index([c])
+
+        # consm_tmp = [s.get('conserved_moments', None) for s in scheme]
+
+        # def find_indices(ieq, list_eq, c):
+        #     if [c] in leq:
+        #         ic = (ieq, leq.index([c]))
+        #         if isinstance(c, str):
+        #             cm = parse_expr(c)
+        #         else:
+        #             cm = c
+        #         return ic, cm
+
+        # # find the indices of the conserved moments in the equilibrium equations
+        # for ieq, eq in enumerate(self.EQ):
+        #     leq = eq.tolist()
+        #     cm_ieq = consm_tmp[ieq]
+        #     if cm_ieq is not None:
+        #         if isinstance(cm_ieq, sp.Symbol):
+        #             ic, cm = find_indices(ieq, leq, cm_ieq)
+        #             consm[cm] = ic
+        #         else:
+        #             for c in cm_ieq:
+        #                 ic, cm = find_indices(ieq, leq, c)
+        #                 consm[cm] = ic
         return consm
 
     def _get_indices_cons_noncons(self):
@@ -674,43 +707,23 @@ class Scheme(object):
             dicoST = None
 
         ns = int(self.stencil.nv_ptr[-1])
-        f = sp.MatrixSymbol('f', ns, 1)
-        floc = sp.MatrixSymbol('floc', ns, 1)
-        m = sp.MatrixSymbol('m', ns, 1)
+        mv = sp.MatrixSymbol('m', ns, 1)
 
-        mtmp = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in range(self.stencil.unvtot)] for i in range(len(self.EQ))]
-        for cm, icm in self.consm.items():
-            for i, eq in enumerate(self._EQ):
-                for j, e in enumerate(eq):
-                    self._EQ[i][j] = e.replace(mtmp[icm[0]][icm[1]], m[int(self.stencil.nv_ptr[icm[0]]+icm[1])])
+        subs = list(zip(self.consm.keys(), [mv[int(i),0] for i in self.consm.values()])) + list(zip(pk, pv))
+        M = self.M.subs(subs)
+        invM = self.M.inv().subs(subs)
+        eq = self.EQ.subs(subs)
+        s = self.s.subs(subs)
 
-        M = self.M.subs(list(zip(pk, pv)))
-        invM = self.M.inv().subs(list(zip(pk, pv)))
-        Tu = self.Tu.subs(list(zip(pk, pv)))
-        Tmu = self.Tmu.subs(list(zip(pk, pv)))
+        u_tild = MatrixSymbol('u_tild', self.dim, 1)
+        rel_vel = sp.Matrix(self.rel_vel).subs(subs)
+        Tu = self.Tu.subs(subs + list(zip(u_tild, rel_vel)))
+        Tu.simplify()
 
-        for cm, icm in self.consm.items():
-            for i in range(self.Tu.shape[0]):
-                for j in range(self.Tu.shape[1]):
-                    Tu[i, j] = Tu[i, j].replace(mtmp[icm[0]][icm[1]], m[int(self.stencil.nv_ptr[icm[0]]+icm[1])])
-                    Tmu[i, j] = Tmu[i, j].replace(mtmp[icm[0]][icm[1]], m[int(self.stencil.nv_ptr[icm[0]]+icm[1])])
-                    M[i, j] = M[i, j].replace(mtmp[icm[0]][icm[1]], m[int(self.stencil.nv_ptr[icm[0]]+icm[1])])
-                    invM[i, j] = invM[i, j].replace(mtmp[icm[0]][icm[1]], m[int(self.stencil.nv_ptr[icm[0]]+icm[1])])
-
-        # # set permutations to keep conserved moments at the begining
-        # permutations = []
-        # index = 0
-        # for cm, icm in self.consm.items():
-        #     permutations.append([index, int(self.stencil.nv_ptr[icm[0]]+icm[1])])
-        #     index += 1
-
-        # # mnew = mnew.permuteBkwd(permutations)
-        # # dummy = sp.Matrix(Tu*M*fnew).applyfunc(sp.simplify)
-
-        # # dummy = dummy.subs(list(zip(m, mnew)))
-        # # dummy = dummy.permuteBkwd(permutations)
-        # # print(dummy)
-
+        rel_vel = -sp.Matrix(self.rel_vel).subs(subs)
+        Tmu = self.Tu.subs(subs + list(zip(u_tild, rel_vel)))
+        Tmu.simplify()
+      
         from .generator import make_routine, autowrap, For, If
         from .symbolic import nx, ny, nz, nv, indexed, space_loop
 
@@ -718,21 +731,28 @@ class Scheme(object):
         m = indexed('m', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
         f = indexed('f', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
 
+        Mu = Tu.subs(list(zip(mv, m)))*M
+        invMu = invM*Tmu.subs(list(zip(mv, m)))
+        Mu.simplify()
+        invMu.simplify()
+
         routines = []
-        routines += make_routine(('f2m', For(iloop, Eq(m, M*f))), settings={"prefetch":[f[0]]})
-        routines += make_routine(('m2f', For(iloop, Eq(f, invM*m))), settings={"prefetch":[m[0]]})
+        routines += make_routine(('f2m', For(iloop, Eq(m, Mu*f))), settings={"prefetch":[f[0]]})
+        routines += make_routine(('m2f', For(iloop, Eq(f, invMu*m))), settings={"prefetch":[m[0]]})
 
-        eq = Matrix([sublist for l in self._EQ for sublist in l]).subs(list(zip(pk, pv)))
-        s = Matrix([sublist for l in self.s for sublist in l]).subs(list(zip(pk, pv)))
-
-        mv = sp.MatrixSymbol('m', ns, 1)
-        dummy = eq.subs(list(zip(mv, m)))
+        dummy = Tu.subs(list(zip(mv, m)))*eq.subs(list(zip(mv, m)))
         routines += make_routine(('equilibrium', For(iloop, Eq(m, dummy))))
 
+        # fix: set loop with vmax
         iloop = space_loop([(1, nx-1), (1, ny-1), (1, nz-1)], permutation=sorder)
         f = indexed('f', [ns, nx, ny, nz], index=[nv] + iloop, list_ind=self.stencil.get_all_velocities(), permutation=sorder)
         f_new = indexed('f_new', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
         in_or_out = indexed('in_or_out', [ns, nx, ny, nz], permutation=sorder, remove_ind=[0])
+
+        Mu = Tu*M
+        invMu = invM*Tmu
+        Mu.simplify()
+        invMu.simplify()
 
         if backend.upper() == "NUMPY":
             m = indexed('m', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
@@ -740,19 +760,21 @@ class Scheme(object):
             routines += make_routine(('one_time_step', For(iloop, 
                                                         
                                                             [
-                                                                Eq(m, M*f),  # transport + f2m
+                                                                Eq(m, Mu*f),  # transport + f2m
                                                                 Eq(m, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(m)) + s.multiply_elementwise(dummy)), # relaxation
-                                                                Eq(f_new, invM*m), # m2f + update f
+                                                                Eq(f_new, invMu*m), # m2f + update f
                                                             ]
                                                             )
                                                         ))
         else:
+            nconsm = len(self.consm)
             routines += make_routine(('one_time_step', For(iloop, 
                                                         If((Eq(in_or_out, valin), 
                                                             [
-                                                                Eq(mv, M*f),  # transport + f2m
-                                                                Eq(mv, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(mv)) + s.multiply_elementwise(eq)), # relaxation
-                                                                Eq(f_new, invM*mv), # m2f + update f_new
+                                                                Eq(mv[:nconsm, 0], sp.Matrix((Mu*f)[:nconsm])),  # transport + f2m
+                                                                Eq(mv[nconsm:, 0], sp.Matrix((Mu*f)[nconsm:])),  # transport + f2m
+                                                                Eq(mv, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(mv)) + s.multiply_elementwise(Tu*eq)), # relaxation
+                                                                Eq(f_new, invMu*mv), # m2f + update f_new
                                                             ]
                                                             )
                                                         ))), local_vars=[mv], settings={"prefetch":[f[0]]})

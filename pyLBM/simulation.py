@@ -408,15 +408,13 @@ class Simulation(object):
             sys.exit()
 
         for k, v in self.scheme.init.items():
-            ns = self.scheme.stencil.nv_ptr[k[0]] + k[1]
-
             if isinstance(v, tuple):
                 f = v[0]
                 extraargs = v[1] if len(v) == 2 else ()
                 fargs = tuple(coords) + extraargs
-                array_to_init[ns] = f(*fargs)
+                array_to_init[k] = f(*fargs)
             else:
-                array_to_init[ns] = v
+                array_to_init[k] = v
 
         if inittype == 'moments':
             self.scheme.equilibrium(self._m)

@@ -155,7 +155,7 @@ class Array(object):
         """
         self.consm = {}
         for k, v in consm.items():
-            self.consm[k] = nv_ptr[v[0]] + v[1]
+            self.consm[k] = v
 
     @property
     def nspace(self):
