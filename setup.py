@@ -59,7 +59,8 @@ setup(
                       'mpi4py>=1.3.1',
                       'matplotlib>=1.4.0',
                       'future',
-                      'pyevtk>=1.0.0'
+                      'pyevtk>=1.0.0',
+                      'h5py'
                       ],
     dependency_links=[
         "hg+https://bitbucket.org/pauloh/pyevtk"
