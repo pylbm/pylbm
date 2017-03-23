@@ -424,6 +424,8 @@ class Simulation(object):
         elif inittype == 'distributions':
             self.scheme.f2m(self._F, self._m)
 
+        self._Fold.array[:] = self._F.array[:]
+        
     def transport(self):
         """
         compute the transport phase on distribution functions
