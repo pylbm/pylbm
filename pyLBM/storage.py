@@ -90,13 +90,7 @@ class Array(object):
 
             self.array = cl.array.to_device(queue, self.array_cpu)
 
-        self.swaparray = self.array_cpu
-        for i in range(self.dim + 1):
-            if i != ind[i]:
-                j = ind.index(i)
-                self.swaparray = self.swaparray.swapaxes(i, ind[i])
-                ind[j] = ind[i]
-                ind[i] = i
+        self.swaparray = np.transpose(self.array_cpu, self.index)
 
         if mpi_topo is not None:
             self._set_subarray()
