@@ -1,4 +1,3 @@
-hg+https://bitbucket.org/pauloh/pyevtk
 sympy>=0.7.6
 colorlog>=2.4.0
 Cython>=0.21.1
