@@ -11,3 +11,5 @@ dist
 *.pvd
 .ipynb_checkpoints
 generated
+*.h5
+*.xdmf
