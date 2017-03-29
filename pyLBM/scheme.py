@@ -13,23 +13,23 @@ from six.moves import range
 
 import numpy as np
 import sympy as sp
+from sympy import *
 from sympy.parsing.sympy_parser import parse_expr, standard_transformations
 import copy
 from textwrap import dedent
 
 from .stencil import Stencil
-from .generator import *
 from .validate_dictionary import *
 
 from .logs import setLogger
 import mpi4py.MPI as mpi
 
-
 proto_sch = {
     'velocities': (is_list_int,),
     'conserved_moments': (sp.Symbol, is_list_symb) + string_types,
     'polynomials': (is_list_sp_or_nb,),
-    'equilibrium': (is_list_sp_or_nb,),
+    'equilibrium': (type(None), is_list_sp_or_nb,),
+    'feq': (type(None), tuple),
     'relaxation_parameters': (is_list_sp_or_nb,),
     'source_terms': (type(None), is_dico_sources),
     'init':(type(None), is_dico_init),
@@ -40,6 +40,7 @@ proto_sch_dom = {
     'conserved_moments': (type(None), sp.Symbol, is_list_symb) + string_types,
     'polynomials': (type(None), is_list_sp_or_nb,),
     'equilibrium': (type(None), is_list_sp_or_nb,),
+    'feq': (type(None), tuple),
     'relaxation_parameters': (type(None), is_list_sp_or_nb,),
     'source_terms': (type(None), is_dico_sources),
     'init':(type(None), is_dico_init),
@@ -229,21 +230,25 @@ class Scheme(object):
             self.log.warning(s)
         self.dt = self.dx / self.la
 
+        # set relative velocity
+        self.rel_vel = dico.get('relative_velocity', [0]*self.dim)
+        self.backend = dico.get('backend', "cython").upper()
+
         # fix the variables of time and space
-        self.vart, self.varx, self.vary, self.varz = None, None, None, None
+        self.vart, self.varX = None, [None, None, None]
         if self.param is not None:
             self.vart = self.param.get('time', None)
-            self.varx = self.param.get('space_x', None)
-            self.vary = self.param.get('space_y', None)
-            self.varz = self.param.get('space_z', None)
+            self.varX[0] = self.param.get('space_x', None)
+            self.varX[1] = self.param.get('space_y', None)
+            self.varX[2] = self.param.get('space_z', None)
         if self.vart is None:
             self.vart = sp.Symbol('t')
-        if self.varx is None:
-            self.varx = sp.Symbol('X')
-        if self.vary is None:
-            self.vary = sp.Symbol('Y')
-        if self.varz is None:
-            self.varz = sp.Symbol('Z')
+        if self.varX[0] is None:
+            self.varX[0] = sp.Symbol('X')
+        if self.varX[1] is None:
+            self.varX[1] = sp.Symbol('Y')
+        if self.varX[2] is None:
+            self.varX[2] = sp.Symbol('Z')
 
         self.nscheme = self.stencil.nstencils
         scheme = dico['schemes']
@@ -288,35 +293,56 @@ class Scheme(object):
 
 
         self._check_entry_size(scheme, 'polynomials')
-        self._check_entry_size(scheme, 'equilibrium')
-        self.P = [create_matrix(s['polynomials']) for s in scheme]
-        self.EQ = [create_matrix(s['equilibrium']) for s in scheme]
-
-        self.consm = self._get_conserved_moments(scheme)
-        self.ind_cons, self.ind_noncons = self._get_indices_cons_noncons()
-
-        # rename conserved moments with the notation m[x][y]
-        # needed to generate the code
-        # where x is the number of the scheme
-        #       y is the index in equilibrium corresponding to the conserved moment
-        self._EQ = copy.deepcopy(self.EQ)
-
-        m = [[sp.Symbol("m[%d][%d]"%(i,j)) for j in range(self.stencil.unvtot)] for i in range(len(self.EQ))]
-        for cm, icm in self.consm.items():
-            for i, eq in enumerate(self._EQ):
-                for j, e in enumerate(eq):
-                    self._EQ[i][j] = e.replace(cm, m[icm[0]][icm[1]])
-
+        #self._check_entry_size(scheme, 'equilibrium')
         self._check_entry_size(scheme, 'relaxation_parameters')
-        self.s_symb = [s['relaxation_parameters'] for s in scheme]
-        self.s = [copy.deepcopy(s['relaxation_parameters']) for s in scheme]
-        for k in range(len(self.s)):
-            for l in range(len(self.s[k])):
-                if not isinstance(self.s[k][l], (int, float)):
-                    try:
-                        self.s[k][l] = sp.N(self.s[k][l].subs(list(zip(pk, pv))))
-                    except:
-                        self.log.error('cannot evaluate relaxation parameter')
+
+        self.P = sp.Matrix([p for s in scheme for p in s['polynomials']])
+        self.M = None
+        self.invM = None
+        self.Tu = None
+
+        self.create_moments_matrices()
+
+        # self.EQ = sp.Matrix([e for s in scheme for e in s['equilibrium']])
+        self.s = sp.Matrix([r for s in scheme for r in s['relaxation_parameters']])
+
+        eq = []
+        for i, s in enumerate(scheme):
+            feq = s.get('feq', None)
+            meq = s.get('equilibrium', None)
+            if feq and meq:
+                self.log.error("Error in the creation of the scheme %d: you can have only 'feq' or 'equilibrium'"%i)
+                sys.exit()
+            if meq:
+                eq.append(meq)
+            if feq:
+                meq_tmp = self.M*feq[0](self.stencil.get_all_velocities(), *feq[1])
+                meq_tmp.simplify()
+                eq.append([e for e in meq_tmp])
+        self.EQ = sp.Matrix([e for sublist in eq for e in sublist])
+        print(self.EQ, self.M, self.M.inv())
+        # put conserved moments at the beginning of P, EQ and s
+        self.consm = self._get_conserved_moments(scheme)
+
+        permutations = []
+        for ic, c in enumerate(self.consm.values()):
+            permutations.append([ic, c])
+
+        for p in permutations:
+            self.EQ.row_swap(p[0], p[1])
+            self.s.row_swap(p[0], p[1])
+            self.M.row_swap(p[0], p[1])
+            self.invM.col_swap(p[0], p[1])
+            self.Tu.row_swap(p[0], p[1])
+            self.Tu.col_swap(p[0], p[1])
+            #Tmu.row_swap(p[0], p[1])
+            #Tmu.col_swap(p[0], p[1])
+
+        index = len(self.consm)
+        self.Tu[:index, :index] = sp.Matrix.eye(index)
+
+        for ic, c in enumerate(self.consm.keys()):
+            self.consm[c] = ic
 
         self.init = self.set_initialization(scheme)
 
@@ -327,15 +353,11 @@ class Scheme(object):
                 for i, eq in enumerate(self._source_terms):
                     for j, e in enumerate(eq):
                         if e is not None:
-                            self._source_terms[i][j] = e.replace(cm, m[icm[0]][icm[1]])
+                            self._source_terms[i][j] = e.subs(cm, m[icm])
             self.ode_solver = dico.get('ode_solver', basic)()
         else:
             self._source_terms = None
             self.ode_solver = None
-        self.M, self.invM = [], []
-        self.Mnum, self.invMnum = [], []
-
-        self.create_moments_matrices()
 
         # generate the code
         if self._source_terms is None:
@@ -343,7 +365,7 @@ class Scheme(object):
         else:
             dummypattern = ['transport', ('source_term', 0.5), 'relaxation', ('source_term', 0.5)]
         self.pattern = dico.get('split_pattern', dummypattern)
-        self.generator = dico.get('generator', NumpyGenerator)()
+        self.generator = dico.get('generator', "CYTHON").upper()
         ssss = "Generator used for the scheme functions:\n{0}\n".format(self.generator)
         ssss += "with the pattern " + self.pattern.__str__() + "\n"
         self.log.info(ssss)
@@ -414,7 +436,6 @@ class Scheme(object):
             s += "    s[{0:d}]=".format(k) + self.s[k].__str__() + "\n"
         s += "\t moments matrices\n"
         s += "M = " + self.M.__str__() + "\n"
-        s += "invM = " + self.invM.__str__() + "\n"
         return s
 
     def create_moments_matrices(self):
@@ -428,40 +449,69 @@ class Scheme(object):
           - a global numerical version MnumGlob and invMnumGlob for all the schemes
         """
         compt=0
-        for v, p in zip(self.stencil.v, self.P):
+        M = []
+        invM = []
+        Mu = []
+        Tu = []
+        #Mmu = []
+        #Tmu = []
+
+        u_tild = MatrixSymbol('u_tild', self.dim, 1)
+
+        if self.la_symb is not None:
+            LA = self.la_symb
+        else:
+            LA = self.la
+
+        for iv, v in enumerate(self.stencil.v):
+            p = self.P[self.stencil.nv_ptr[iv] : self.stencil.nv_ptr[iv+1]]
             compt+=1
             lv = len(v)
-            self.M.append(sp.zeros(lv, lv))
+            M.append(sp.zeros(lv, lv))
+            Mu.append(sp.zeros(lv, lv))
+            #Mmu.append(sp.zeros(lv, lv))
             for i in range(lv):
                 for j in range(lv):
-                    self.M[-1][i, j] = p[i].subs([(str(self.varx), v[j].vx), (str(self.vary), v[j].vy), (str(self.varz), v[j].vz)])
-            try:
-                self.invM.append(self.M[-1].inv())
-            except:
-                s = 'Function create_moments_matrices: M is not invertible\n'
-                s += 'The choice of polynomials is odd in the elementary scheme number {0:d}'.format(compt)
-                self.log.error(s)
-                sys.exit()
+                    sublist = [(str(self.varX[d]), v[j].v[d]*LA) for d in range(self.dim)]
+                    M[-1][i, j] = p[i].subs(sublist)
 
-        self.MnumGlob = np.zeros((self.stencil.nv_ptr[-1], self.stencil.nv_ptr[-1]))
-        self.invMnumGlob = np.zeros((self.stencil.nv_ptr[-1], self.stencil.nv_ptr[-1]))
+                    if self.rel_vel is not None:
+                        sublist = [(str(self.varX[d]), v[j].v[d]*LA - u_tild[d, 0]) for d in range(self.dim)]
+                        Mu[-1][i, j] = p[i].subs(sublist)
+                        #sublist = [(str(self.varX[d]), v[j].v[d] - self.rel_vel[d]) for d in range(self.dim)]
+                        #Mu[-1][i, j] = p[i].subs(sublist)
+                        #sublist = [(str(self.varX[d]), v[j].v[d] + self.rel_vel[d]) for d in range(self.dim)]
+                        #Mmu[-1][i, j] = p[i].subs(sublist)
 
-        pk, pv = param_to_tuple(self.param)
+            invM.append(M[-1].inv())
+            Tu.append(Mu[-1]*invM[-1])
+            #Tmu.append(Mmu[-1]*invM)
+
+        gshape = (self.stencil.nv_ptr[-1], self.stencil.nv_ptr[-1])
+        self.Tu = sp.eye(gshape[0])
+        #self.Tmu = sp.eye(gshape[0])
+        self.M = sp.zeros(*gshape)
+        self.invM = sp.zeros(*gshape)
 
         try:
             for k in range(self.nscheme):
                 nvk = self.stencil.nv[k]
-                self.Mnum.append(np.empty((nvk, nvk)))
-                self.invMnum.append(np.empty((nvk, nvk)))
                 for i in range(nvk):
                     for j in range(nvk):
-                        self.Mnum[k][i, j] = sp.N(self.M[k][i, j].subs(list(zip(pk, pv))))
-                        self.invMnum[k][i, j] = sp.N(self.invM[k][i, j].subs(list(zip(pk, pv))))
-                        self.MnumGlob[self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j] = self.Mnum[k][i, j]
-                        self.invMnumGlob[self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j] = self.invMnum[k][i, j]
+                        index = self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j
+                        self.M[index] = M[k][i, j]
+                        self.invM[index] = invM[k][i, j]
+
+                        if self.rel_vel is not None:
+                            self.Tu[index] = Tu[k][i, j]
+                            #self.Tmu[index] = Tmu[k][i, j]
         except TypeError:
             self.log.error("Unable to convert to float the expression {0} or {1}.\nCheck the 'parameters' entry.".format(self.M[k][i, j], self.invM[k][i, j]))
             sys.exit()
+
+        self.Tu.simplify()
+        self.M.simplify()
+        self.invM.simplify()
 
     def _get_conserved_moments(self, scheme):
         """
@@ -478,30 +528,57 @@ class Scheme(object):
         consm : dictionnary where the keys are the conserved moments and
                 the values their indices in the LBM schemes.
         """
+        from collections import OrderedDict
         consm_tmp = [s.get('conserved_moments', None) for s in scheme]
-        consm = {}
+        consm = OrderedDict()
 
-        def find_indices(ieq, list_eq, c):
-            if [c] in leq:
-                ic = (ieq, leq.index([c]))
-                if isinstance(c, str):
-                    cm = parse_expr(c)
-                else:
-                    cm = c
-                return ic, cm
-
-        # find the indices of the conserved moments in the equilibrium equations
-        for ieq, eq in enumerate(self.EQ):
-            leq = eq.tolist()
-            cm_ieq = consm_tmp[ieq]
+        for i in range(len(self.stencil.nv_ptr)-1):
+            leq = self.EQ[self.stencil.nv_ptr[i]:self.stencil.nv_ptr[i+1]]
+            cm_ieq = consm_tmp[i]
             if cm_ieq is not None:
                 if isinstance(cm_ieq, sp.Symbol):
-                    ic, cm = find_indices(ieq, leq, cm_ieq)
-                    consm[cm] = ic
+                    consm[cm_ieq] = self.stencil.nv_ptr[i] + leq.index(cm_ieq)
                 else:
                     for c in cm_ieq:
-                        ic, cm = find_indices(ieq, leq, c)
-                        consm[cm] = ic
+                        consm[c] = self.stencil.nv_ptr[i] + leq.index(c)
+
+        # for s in scheme:
+        #     tmp = s.get('conserved_moments', None)
+        #     if s.get('conserved_moments', None):
+        #         if isinstance(tmp, (list, tuple)):
+        #             consm_tmp += tmp
+        #         else:
+        #             consm_tmp.append(tmp)
+
+        # leq = self.EQ.tolist()
+
+        # consm = {}
+        # for c in consm_tmp:
+        #     consm[c] = leq.index([c])
+
+        # consm_tmp = [s.get('conserved_moments', None) for s in scheme]
+
+        # def find_indices(ieq, list_eq, c):
+        #     if [c] in leq:
+        #         ic = (ieq, leq.index([c]))
+        #         if isinstance(c, str):
+        #             cm = parse_expr(c)
+        #         else:
+        #             cm = c
+        #         return ic, cm
+
+        # # find the indices of the conserved moments in the equilibrium equations
+        # for ieq, eq in enumerate(self.EQ):
+        #     leq = eq.tolist()
+        #     cm_ieq = consm_tmp[ieq]
+        #     if cm_ieq is not None:
+        #         if isinstance(cm_ieq, sp.Symbol):
+        #             ic, cm = find_indices(ieq, leq, cm_ieq)
+        #             consm[cm] = ic
+        #         else:
+        #             for c in cm_ieq:
+        #                 ic, cm = find_indices(ieq, leq, c)
+        #                 consm[cm] = ic
         return consm
 
     def _get_indices_cons_noncons(self):
@@ -627,7 +704,7 @@ class Scheme(object):
         else:
             return source_terms
 
-    def generate(self, sorder):
+    def generate(self, backend, sorder, valin):
         """
         Generate the code by using the appropriated generator
 
@@ -639,9 +716,6 @@ class Scheme(object):
         >>> print(S.generator.code)
         """
         pk, pv = param_to_tuple(self.param)
-        EQ = []
-        for e in self._EQ:
-            EQ.append(e.subs(list(zip(pk, pv))))
 
         if self._source_terms is not None:
             ST = copy.deepcopy(self._source_terms)
@@ -651,50 +725,161 @@ class Scheme(object):
                         ST[i][j] = stij.subs(list(zip(pk, pv)))
             dicoST = {'ST':ST,
                       'vart':self.vart,
-                      'varx':self.varx,
-                      'vary':self.vary,
-                      'varz':self.varz,
+                      'varx':self.varX[0],
+                      'vary':self.varX[1],
+                      'varz':self.varX[2],
                       'ode_solver':self.ode_solver}
         else:
             dicoST = None
 
-        self.generator.sorder = sorder
-        self.generator.setup()
-        self.generator.m2f(self.invMnumGlob, 0, self.dim)
-        self.generator.f2m(self.MnumGlob, 0, self.dim)
-        self.generator.onetimestep(self.stencil, self.pattern)
+        ns = int(self.stencil.nv_ptr[-1])
+        mv = sp.MatrixSymbol('m', ns, 1)
 
-        self.generator.transport(self.nscheme, self.stencil)
-        self.generator.equilibrium(self.nscheme, self.stencil, EQ)
-        self.generator.relaxation(self.nscheme, self.stencil, self.s, EQ)
-        if dicoST is not None:
-            self.generator.source_term(self.nscheme, self.stencil, dicoST)
-        #print(self.generator.code)
-        self.generator.compile()
+        subs_param = list(zip(pk, pv))
+        subs_moments = list(zip(self.consm.keys(), [mv[int(i),0] for i in self.consm.values()]))
+        #M = self.M.subs(subs)
+        #invM = self.M.inv().subs(subs)
+        eq = self.EQ.subs(subs_moments)
+        s = self.s.subs(subs_moments + subs_param)
+        eq.simplify()
+        s.simplify()
 
-        mpi.COMM_WORLD.Barrier()
-        self.generator.get_module()
+        u_tild = MatrixSymbol('u_tild', self.dim, 1)
+        
+        rel_vel = sp.Matrix(self.rel_vel).subs(subs_moments)
+        Tu = self.Tu.subs(list(zip(u_tild, rel_vel)))
+        Tu.simplify()
 
-    def m2f(self, m, f):
+        rel_vel = -sp.Matrix(self.rel_vel).subs(subs_moments)
+        Tmu = self.Tu.subs(list(zip(u_tild, rel_vel)))
+        Tmu.simplify()
+      
+        from .generator import make_routine, autowrap, For, If
+        from .symbolic import nx, ny, nz, nv, indexed, space_loop
+
+        iloop = space_loop([(0, nx), (0, ny), (0, nz)], permutation=sorder)
+        m = indexed('m', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
+        f = indexed('f', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
+
+        Mu = Tu.subs(list(zip(mv, m))).expand()*self.M.expand()
+        invMu = self.M.inv().expand()*Tmu.subs(list(zip(mv, m))).expand()
+        Mu.simplify()
+        Mu = Mu.subs(subs_param)
+        invMu.simplify()
+        invMu = invMu.subs(subs_param)
+
+        #import ipdb; ipdb.set_trace()
+
+        routines = []
+        routines += make_routine(('f2m', For(iloop, Eq(m, Mu*f))), settings={"prefetch":[f[0]]})
+        routines += make_routine(('m2f', For(iloop, Eq(f, invMu*m))), settings={"prefetch":[m[0]]})
+
+        dummy = Tu.subs(list(zip(mv, m))).expand()*eq.subs(list(zip(mv, m))).expand()
+        dummy = dummy.subs(subs_param)
+        dummy.simplify()
+        routines += make_routine(('equilibrium', For(iloop, Eq(m, dummy))))
+
+        # fix: set loop with vmax
+        iloop = space_loop([(1, nx-1), (1, ny-1), (1, nz-1)], permutation=sorder)
+        f = indexed('f', [ns, nx, ny, nz], index=[nv] + iloop, list_ind=self.stencil.get_all_velocities(), permutation=sorder)
+        f_new = indexed('f_new', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
+        in_or_out = indexed('in_or_out', [ns, nx, ny, nz], permutation=sorder, remove_ind=[0])
+
+        Mu = Mu.subs(list(zip(m, mv)))
+        invMu = invMu.subs(list(zip(m, mv)))
+        dummy = dummy.subs(list(zip(m, mv)))
+        # invMu = invM*Tmu
+        # Mu.simplify()
+        # invMu.simplify()
+
+        if backend.upper() == "NUMPY":
+            m = indexed('m', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
+            dummy = eq.subs(list(zip(mv, m)))
+            routines += make_routine(('one_time_step', For(iloop, 
+                                                        
+                                                            [
+                                                                Eq(m, Mu*f),  # transport + f2m
+                                                                Eq(m, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(m)) + s.multiply_elementwise(dummy)), # relaxation
+                                                                Eq(f_new, invMu*m), # m2f + update f
+                                                            ]
+                                                            )
+                                                        ))
+        else:
+            nconsm = len(self.consm)
+            routines += make_routine(('one_time_step', For(iloop, 
+                                                        If((Eq(in_or_out, valin), 
+                                                            [
+                                                                Eq(mv[:nconsm, 0], sp.Matrix((Mu*f)[:nconsm])),  # transport + f2m
+                                                                Eq(mv[nconsm:, 0], sp.Matrix((Mu*f)[nconsm:])),  # transport + f2m
+                                                                Eq(mv, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(mv)) + s.multiply_elementwise(dummy)), # relaxation
+                                                                Eq(f_new, invMu*mv), # m2f + update f_new
+                                                            ]
+                                                            )
+                                                        ))), local_vars=[mv], settings={"prefetch":[f[0]]})
+            # nconsm = len(self.consm)
+            # routines += make_routine(('one_time_step', For(iloop, 
+            #                                             If((Eq(in_or_out, valin), 
+            #                                                 [
+            #                                                     Eq(mv[:nconsm, 0], sp.Matrix((M*f)[:nconsm])),  # transport + f2m
+            #                                                     Eq(mv[nconsm:, 0], sp.Matrix((M*f)[nconsm:])),  # transport + f2m
+            #                                                     Eq(mv, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(mv)) + s.multiply_elementwise(eq)), # relaxation
+            #                                                     Eq(f_new, invM*mv), # m2f + update f_new
+            #                                                 ]
+            #                                                 )
+            #                                             ))), local_vars=[mv], settings={"prefetch":[f[0]]})
+
+        self.mod = autowrap(routines, backend=backend)
+
+    def m2f(self, mm, ff):
         """ Compute the distribution functions f from the moments m """
-        mod = self.generator.get_module()
-        mod.m2f(m.array, f.array)
+        from .symbolic import call_genfunction
 
-    def f2m(self, f, m):
+        nx = mm.nspace[0]
+        if self.dim > 1:
+            ny = mm.nspace[1]
+        if self.dim > 2:
+            nz = mm.nspace[2]
+
+        m = mm.array
+        f = ff.array
+
+        args = locals()
+        call_genfunction(self.mod.m2f, args)
+
+    def f2m(self, ff, mm):
         """ Compute the moments m from the distribution functions f """
-        mod = self.generator.get_module()
-        mod.f2m(f.array, m.array)
+        from .symbolic import call_genfunction
+
+        nx = mm.nspace[0]
+        if self.dim > 1:
+            ny = mm.nspace[1]
+        if self.dim > 2:
+            nz = mm.nspace[2]
+
+        m = mm.array
+        f = ff.array
+
+        args = locals()
+        call_genfunction(self.mod.f2m, args)
 
     def transport(self, f):
         """ The transport phase on the distribution functions f """
-        mod = self.generator.get_module()
         mod.transport(f.array)
 
-    def equilibrium(self, m):
+    def equilibrium(self, mm):
         """ Compute the equilibrium """
-        mod = self.generator.get_module()
-        func = getattr(mod, "equilibrium")
-        func(m.array)
+        from .symbolic import call_genfunction
+
+        nx = mm.nspace[0]
+        if self.dim > 1:
+            ny = mm.nspace[1]
+        if self.dim > 2:
+            nz = mm.nspace[2]
+
+        m = mm.array
+
+        args = locals()
+        call_genfunction(self.mod.equilibrium, args)
 
     def relaxation(self, m):
         """ The relaxation phase on the moments m """
@@ -706,10 +891,22 @@ class Scheme(object):
         mod = self.generator.get_module()
         mod.source_term(m.array, tn, dt, x, y, z)        
 
-    def onetimestep(self, m, fold, fnew, in_or_out, valin, tn=0., dt=0., x=0., y=0., z=0.):
+    def onetimestep(self, mm, ff, ff_new, in_or_out, valin, tn=0., dt=0., x=0., y=0., z=0.):
         """ Compute one time step of the Lattice Boltzmann method """
-        mod = self.generator.get_module()
-        mod.onetimestep(m.array, fold.array, fnew.array, in_or_out, valin, tn, dt, x, y, z)
+        from .symbolic import call_genfunction
+
+        nx = mm.nspace[0]
+        if self.dim > 1:
+            ny = mm.nspace[1]
+        if self.dim > 2:
+            nz = mm.nspace[2]
+
+        m = mm.array
+        f = ff.array
+        f_new = ff_new.array
+
+        args = locals()
+        call_genfunction(self.mod.one_time_step, args)
 
     def set_boundary_conditions(self, f, m, bc, interface):
         """

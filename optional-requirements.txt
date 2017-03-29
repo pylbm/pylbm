@@ -1,0 +1,2 @@
+pyopencl
+git+https://github.com/inducer/loopy

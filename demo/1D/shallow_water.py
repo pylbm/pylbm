@@ -28,7 +28,7 @@ def Riemann_pb(x, xmin, xmax, uL, uR):
     u[x > xm] = uR
     return u
 
-def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator="numpy", sorder=None, withPlot=True):
     """
     Parameters
     ----------
@@ -119,4 +119,4 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
 if __name__ == '__main__':
     dx = 1./256
     Tf = .25
-    run(dx, Tf, generator=pyLBM.generator.CythonGenerator)
+    run(dx, Tf)

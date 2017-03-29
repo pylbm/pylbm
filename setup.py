@@ -22,7 +22,7 @@ CLASSIFIERS = [
 
 
 MAJOR = "0"
-MINOR = "2"
+MINOR = "3"
 PATCH = "0"
 VERSION = "{0}.{1}.{2}".format(MAJOR, MINOR, PATCH)
 
@@ -59,7 +59,8 @@ setup(
                       'mpi4py>=1.3.1',
                       'matplotlib>=1.4.0',
                       'future',
-                      'pyevtk>=1.0.0'
+                      'pyevtk>=1.0.0',
+                      'h5py'
                       ],
     dependency_links=[
         "hg+https://bitbucket.org/pauloh/pyevtk"

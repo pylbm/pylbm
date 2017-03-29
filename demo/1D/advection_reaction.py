@@ -84,6 +84,8 @@ def run(dt, Tf,
     # simulation
     sol = pyLBM.Simulation(dico, sorder=sorder) # build the simulation
 
+    print(sol.scheme.generator.code)
+
     if withPlot:
         # create the viewer to plot the solution
         viewer = pyLBM.viewer.matplotlibViewer

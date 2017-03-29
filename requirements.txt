@@ -1,8 +1,9 @@
-sympy>=0.7.6
+numpy>=1.9.2
 colorlog>=2.4.0
 Cython>=0.21.1
 mpi4py>=1.3.1
 matplotlib>=1.4.0
 future
-numpy>=1.9.2
-hg+https://bitbucket.org/pauloh/pyevtk 
+h5py
+hg+https://bitbucket.org/pauloh/pyevtk
+git+https://github.com/sympy/sympy

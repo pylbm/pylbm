@@ -31,7 +31,7 @@ def save(x, y, z, m, im):
     vtk.add_scalar('u', m[u])
     vtk.save()
 
-def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     """
     Parameters
     ----------
