@@ -6,4 +6,4 @@ matplotlib>=1.4.0
 future
 h5py
 hg+https://bitbucket.org/pauloh/pyevtk
-git+https://github.com/sympy/sympy
+git+https://github.com/sympy/sympy.git@f4c5a7457f887bdfb188ac956a3e4eff1b44b87b
