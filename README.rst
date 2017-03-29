@@ -31,6 +31,7 @@ You can also clone the project
 and then use the command
 
   pip install -r requirements.txt
+  
   python setup.py install
 
 Getting started
