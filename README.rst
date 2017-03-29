@@ -41,3 +41,8 @@ For more information, take a look at the documentation
 
 .. |Build Status| image:: https://travis-ci.org/pylbm/pylbm.svg?branch=develop
    :target: https://travis-ci.org/pylbm/pylbm
+
+
+.. image:: https://badges.gitter.im/pylbm/pylbm.svg
+   :alt: Join the chat at https://gitter.im/pylbm/pylbm
+   :target: https://gitter.im/pylbm/pylbm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
