@@ -44,7 +44,7 @@ def bc_in(f, m, x, y, width, height, max_velocity, grad_pressure, cte):
 def bc_out(f, m, x, y, width, grad_pressure, cte):
     m[p] = (x-0.5*width) * grad_pressure * cte
 
-def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     """
     Parameters
     ----------

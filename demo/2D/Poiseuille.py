@@ -20,7 +20,7 @@ def bc_out(f, m, x, y, width, grad_pressure):
     m[rho] = (x-0.5*width) * grad_pressure
 
 
-def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     """
     Parameters
     ----------
@@ -127,4 +127,4 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
 if __name__ == '__main__':
     dx = 1./128
     Tf = 20
-    run(dx, Tf, generator=pyLBM.generator.NumpyGenerator)
+    run(dx, Tf)

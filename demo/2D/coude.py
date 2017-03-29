@@ -28,7 +28,7 @@ def norme_q(sol):
     nv = qx_n**2 + qy_n**2
     return nv.T
 
-def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     """
     Parameters
     ----------
@@ -131,4 +131,4 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
 if __name__ == '__main__':
     dx = 1./512
     Tf = 1.
-    run(dx, Tf, generator=pyLBM.generator.CythonGenerator)
+    run(dx, Tf)

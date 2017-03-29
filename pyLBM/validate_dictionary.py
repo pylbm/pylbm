@@ -222,7 +222,7 @@ def is_list_string_or_tuple(l, ntab=None):
 
 def is_generator(d, ntab=None):
     try:
-        test = issubclass(d, pyLBM.generator.base.Generator)
+        test = d.upper() in ["NUMPY", "CYTHON", "LOOPY"]
     except:
         test = False
     return test, PrintInColor.unknown(d, test)

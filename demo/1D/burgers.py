@@ -48,7 +48,7 @@ def solution(t, x, xmin, xmax, uL, uR): # solution
         u[x > xR] = uR
     return u
 
-def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator="numpy", sorder=None, withPlot=True):
     """
     Parameters
     ----------

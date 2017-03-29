@@ -28,11 +28,10 @@ from .stencil import Stencil
 from .boundary import Boundary
 from . import utils
 from .validate_dictionary import *
+from .context import set_queue
 
 from .logs import setLogger
 from .storage import Array, Array_in, AOS, SOA
-from .generator import NumpyGenerator
-
 
 proto_simu = {
     'name':(type(None),) + string_types,
@@ -43,6 +42,7 @@ proto_simu = {
     'scheme_velocity':(int, float, sp.Symbol),
     'parameters':(type(None), is_dico_sp_sporfloat),
     'schemes':(is_list_sch,),
+    'relative_velocity': (type(None), is_list_sp_or_nb,),
     'boundary_conditions':(type(None), is_dico_bc),
     'generator':(type(None), is_generator),
     'ode_solver':(type(None), is_ode_solver),
@@ -199,42 +199,55 @@ class Simulation(object):
         nspace = self.domain.global_size
         vmax = self.domain.stencil.vmax
 
+        self.generator = dico.get('generator', "CYTHON").upper()
+        set_queue(self.generator)
+        self.gpu_support = True if self.generator=="LOOPY" else False
+
         if sorder is None:
-            if isinstance(self.scheme.generator, NumpyGenerator):
-                self._m = SOA(nv, nspace, vmax, self.mpi_topo)
-                self._F = SOA(nv, nspace, vmax, self.mpi_topo)
+            if self.generator == "NUMPY":
+                self._m = SOA(nv, nspace, vmax, self.mpi_topo, gpu_support=self.gpu_support)
+                self._F = SOA(nv, nspace, vmax, self.mpi_topo, gpu_support=self.gpu_support)
                 #self._Fold = self._F
                 sorder = [i for i in range(self.dim + 1)]
             else:
-                self._m = AOS(nv, nspace, vmax, self.mpi_topo)
-                self._F = AOS(nv, nspace, vmax, self.mpi_topo)
+                self._m = AOS(nv, nspace, vmax, self.mpi_topo, gpu_support=self.gpu_support)
+                self._F = AOS(nv, nspace, vmax, self.mpi_topo, gpu_support=self.gpu_support)
                 sorder = [self.dim] + [i for i in range(self.dim)]
         else:
-            self._m = Array(nv, nspace, vmax, sorder, self.mpi_topo)
-            self._F = Array(nv, nspace, vmax, sorder, self.mpi_topo)
+            self._m = Array(nv, nspace, vmax, sorder, self.mpi_topo, gpu_support=self.gpu_support)
+            self._F = Array(nv, nspace, vmax, sorder, self.mpi_topo, gpu_support=self.gpu_support)
 
         self._m.set_conserved_moments(self.scheme.consm, self.domain.stencil.nv_ptr)
         self._F.set_conserved_moments(self.scheme.consm, self.domain.stencil.nv_ptr)
 
-        if self.scheme.generator.sameF:
+        if self.generator == "NUMPY":
             self._Fold = self._F
         else:
-            self._Fold = Array(nv, nspace, vmax, sorder, self.mpi_topo)
+            self._Fold = Array(nv, nspace, vmax, sorder, self.mpi_topo, gpu_support=self.gpu_support)
             self._Fold.set_conserved_moments(self.scheme.consm, self.domain.stencil.nv_ptr)
 
-        self._m_in = Array_in(self._m)
-        self._F_in = Array_in(self._F)
+        #self._m_in = Array_in(self._m)
+        #self._F_in = Array_in(self._F)
 
-        self.scheme.generate(sorder)
-        # be sure that process 0 generate the code
+        self.scheme.generate(self.generator, sorder, self.domain.valin)
 
         self.log.info('Build boundary conditions')
+
+        if self.gpu_support:
+            import pyopencl as cl
+            import pyopencl.array
+            from .context import queue
+
+            self.domain.in_or_out = cl.array.to_device(queue, self.domain.in_or_out)  
 
         self.bc = Boundary(self.domain, dico)
         for method in self.bc.methods:
             method.prepare_rhs(self)
             method.set_rhs()
             method.set_iload()
+            method.fix_iload()
+            method.move2gpu()
+            method.generate(sorder)
 
         self.log.info('Initialization')
         self.initialization(dico)
@@ -268,7 +281,8 @@ class Simulation(object):
         if self._update_m:
             self._update_m = False
             self.f2m()
-        return self._m_in[i]
+        #return self._m_in[i]
+        return self._m._in(i)
 
     @m.setter
     def m(self, i, value):
@@ -286,7 +300,8 @@ class Simulation(object):
 
     @utils.itemproperty
     def F(self, i):
-        return self._F_in[i]
+        return self._F._in(i)
+        #return self._F_in[i]
 
     @F.setter
     def F(self, i, value):
@@ -395,15 +410,13 @@ class Simulation(object):
             sys.exit()
 
         for k, v in self.scheme.init.items():
-            ns = self.scheme.stencil.nv_ptr[k[0]] + k[1]
-
             if isinstance(v, tuple):
                 f = v[0]
                 extraargs = v[1] if len(v) == 2 else ()
                 fargs = tuple(coords) + extraargs
-                array_to_init[ns] = f(*fargs)
+                array_to_init[k] = f(*fargs)
             else:
-                array_to_init[ns] = v
+                array_to_init[k] = v
 
         if inittype == 'moments':
             self.scheme.equilibrium(self._m)
@@ -411,6 +424,8 @@ class Simulation(object):
         elif inittype == 'distributions':
             self.scheme.f2m(self._F, self._m)
 
+        self._Fold.array[:] = self._F.array[:]
+        
     def transport(self):
         """
         compute the transport phase on distribution functions
@@ -501,29 +516,14 @@ class Simulation(object):
         """
         self._update_m = True # we recompute f so m will be not correct
 
-        t1 = mpi.Wtime()
         self.boundary_condition()
-
-        tloci = mpi.Wtime()
 
         self.scheme.onetimestep(self._m, self._F, self._Fold, self.domain.in_or_out, self.domain.valin, self.t, self.dt,
             *self.domain.coords)
         self._F, self._Fold = self._Fold, self._F
-        tlocf = mpi.Wtime()
-        self.cpu_time['transport'] += 0.2*(tlocf-tloci)
-        self.cpu_time['relaxation'] += 0.4*(tlocf-tloci)
-        self.cpu_time['relaxation'] += 0.4*(tlocf-tloci)
-        t2 = mpi.Wtime()
-        self.cpu_time['total'] += t2 - t1
-        self.cpu_time['number_of_iterations'] += 1
 
         self.t += self.dt
         self.nt += 1
-        dummy = self.cpu_time['number_of_iterations']
-        for n in self.domain.global_size:
-            dummy *= n
-        dummy /= self.cpu_time['total'] * 1.e6
-        self.cpu_time['MLUPS'] = dummy
 
 if __name__ == "__main__":
     pass
