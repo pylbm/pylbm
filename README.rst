@@ -1,4 +1,13 @@
-|build status|
+pyLBM
+=====
+
+|build status| |Gitter Badge|
+
+.. |Build Status| image:: https://travis-ci.org/pylbm/pylbm.svg?branch=develop
+   :target: https://travis-ci.org/pylbm/pylbm
+.. |Gitter Badge| image:: https://badges.gitter.im/pylbm/pylbm.svg
+   :alt: Join the chat at https://gitter.im/pylbm/pylbm
+   :target: https://gitter.im/pylbm/pylbm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
 pyLBM is an all-in-one package for numerical simulations using Lattice Boltzmann solvers.
 
@@ -21,12 +30,8 @@ You can also clone the project
 
 and then use the command
 
+  pip install -r requirements.txt
   python setup.py install
-
-or
-
-  python setup.py install --user
-
 
 Getting started
 ================
@@ -39,10 +44,3 @@ For more information, take a look at the documentation
 
 `<http://www.math.u-psud.fr/pyLBM>`_
 
-.. |Build Status| image:: https://travis-ci.org/pylbm/pylbm.svg?branch=develop
-   :target: https://travis-ci.org/pylbm/pylbm
-
-
-.. image:: https://badges.gitter.im/pylbm/pylbm.svg
-   :alt: Join the chat at https://gitter.im/pylbm/pylbm
-   :target: https://gitter.im/pylbm/pylbm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
