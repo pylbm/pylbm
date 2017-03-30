@@ -1,5 +1,3 @@
-|build status|
-
 pyLBM is an all-in-one package for numerical simulations using Lattice Boltzmann solvers.
 
 This package gives all the tools to describe your lattice Boltzmann scheme in 1D, 2D and 3D problems.
