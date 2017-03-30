@@ -40,8 +40,8 @@ class Fig(object):
         self._plot_widgets += [pw]
         return pw
 
-    def animate(self, func, interval=50):
-        self.animation = animation.FuncAnimation(self.fig, func, interval=interval)
+    def animate(self, func, interval=50, fargs=None):
+        self.animation = animation.FuncAnimation(self.fig, func, interval=interval, fargs = fargs)
 
     def show(self):
         plt.show()
