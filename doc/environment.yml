@@ -12,6 +12,7 @@ dependencies:
   - notebook
   - nbconvert
   - h5py
+  - numpydoc
   - pip
   - pip:
      - colorlog
