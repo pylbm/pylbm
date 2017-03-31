@@ -116,17 +116,17 @@ class Velocity(with_metaclass(Singleton, object)):
     Attributes
     ----------
 
-    dim : The dimension of the velocity.
-    num : The number of the velocity in the numbering convention of Lattice-Boltzmann scheme.
-    vx : The x component of the velocity vector.
-    vy : The y component of the velocity vector.
-    vz : The z component of the velocity vector.
-
-    Methods
-    -------
-
-    get_symmetric :
-      get the symmetric velocity for a given direction
+    dim : int
+        The dimension of the velocity.
+    num
+        The number of the velocity in the numbering convention of Lattice-Boltzmann scheme.
+    vx : int
+        The x component of the velocity vector.
+    vy : int
+        The y component of the velocity vector.
+    vz : int
+        The z component of the velocity vector.
+    v : list
 
     Examples
     --------
@@ -183,6 +183,9 @@ class Velocity(with_metaclass(Singleton, object)):
 
     @property
     def v(self):
+        """
+        velocity
+        """
         return [self.vx, self.vy, self.vz][:self.dim]
 
     def __str__(self):
@@ -232,6 +235,9 @@ class Velocity(with_metaclass(Singleton, object)):
             return Velocity(vx=svx, vy=svy, vz=self.vz)
 
     def set_symmetric(self):
+        """
+        create the symetric velocity.
+        """
         self.numsym = [self.get_symmetric().num,]
         for i in range(self.dim):
             self.numsym.append(self.get_symmetric(i).num)
@@ -335,24 +341,13 @@ class OneStencil(object):
     num2index : list of integers
       link between the velocity number and its position in the unique
       velocities array
-
-    Methods
-    -------
-
-    num :
+    num
       the numbering of the velocities
-    vx :
+    vx
       the x component of the velocities
-    vy :
+    vy
       the y component of the velocities
-    vz :
-      the z component of the velocities
-
-    Notes
-    -----
-
-    The member methods num, vx, vy, and vz are just the properties of the velocities
-    that are called by using decorators.
+    vz
     """
 
     def __init__(self, v, nv, num2index, nv_ptr):
@@ -364,7 +359,7 @@ class OneStencil(object):
     @property
     def num(self):
         """
-        get the numbering of the velocities
+        the numbering of the velocities.
         """
         vectorize = np.vectorize(lambda obj: obj.num)
         return vectorize(self.v)
@@ -372,7 +367,7 @@ class OneStencil(object):
     @property
     def vx(self):
         """
-        get the x component of the velocities
+        the x component of the velocities.
         """
         vectorize = np.vectorize(lambda obj: obj.vx)
         return vectorize(self.v)
@@ -380,7 +375,7 @@ class OneStencil(object):
     @property
     def vy(self):
         """
-        get the y component of the velocities
+        the y component of the velocities.
         """
         vectorize = np.vectorize(lambda obj: obj.vy)
         return vectorize(self.v)
@@ -388,7 +383,7 @@ class OneStencil(object):
     @property
     def vz(self):
         """
-        get the z component of the velocities
+        the z component of the velocities.
         """
         vectorize = np.vectorize(lambda obj: obj.vz)
         return vectorize(self.v)
@@ -417,17 +412,14 @@ class Stencil(list):
     unique_velocities : NumPy array
         array of all velocities involved in the stencils.
         Each unique velocity appeared only once.
-    uvx :
+    uvx : NumPy array
         the x component of the unique velocities.
-    uvy :
+    uvy : NumPy array
         the y component of the unique velocities.
-    uvz :
+    uvz : NumPy array
         the z component of the unique velocities.
-    unum :
+    unum : NumPy array
         the numbering of the unique velocities.
-    unvtot : int
-        the number of unique velocities involved in the stencils.
-        unvtot = size(unique_velocties)
     vmax : int
         the maximal velocity in norm for each spatial direction.
     vmin : int
@@ -438,26 +430,20 @@ class Stencil(list):
         the number of velocities for each elementary stencil.
     v : list of velocities
         list of all the velocities for each elementary stencil.
-    vx[k] : NumPy array
+    vx : NumPy array
         the x component of the velocities for the stencil k.
-    vy[k] : NumPy array
+    vy : NumPy array
         the y component of the velocities for the stencil k.
-    vz[k] : NumPy array
+    vz : NumPy array
         the z component of the velocities for the stencil k.
-    num[k] : NumPy array
+    num : NumPy array
         the numbering of the velocities for the stencil k.
     nv_ptr : list of integers
         used to obtain the list of the velocities involved in a stencil.
         For instance, the list for the kth stencil is
             v[nv_ptr[k]:nv_ptr[k+1]]
-
-    Methods
-    -------
-
-    get_all_velocities :
-        get all the velocities for all the stencils in one array
-    visualize :
-        plot the stencil of velocities
+    unvtot : int 
+        the number of unique velocities involved in the stencils.
 
     Notes
     -----
@@ -586,80 +572,69 @@ class Stencil(list):
         self.log.debug(self.__str__())
         self.is_symmetric()
 
-    @property
     def unvtot(self):
+        """the number of unique velocities involved in the stencils."""
         return self.unique_velocities.size
+
+    unvtot = property(unvtot)
 
     @property
     def vmax(self):
+        """the maximal velocity in norm for each spatial direction."""
         tmp = np.asarray([self.uvx, self.uvy, self.uvz])
         return np.max(tmp[:self.dim], axis=1)
 
     @property
     def vmin(self):
+        """the minimal velocity in norm for each spatial direction."""
         tmp = np.asarray([self.uvx, self.uvy, self.uvz])
         return np.min(tmp[:self.dim], axis=1)
 
     @property
     def uvx(self):
-        """
-        get the x component of the unique velocities
-        """
+        """the x component of the unique velocities."""
         vectorize = np.vectorize(lambda obj: obj.vx)
         return vectorize(self.unique_velocities)
 
     @itemproperty
     def vx(self, k):
-        """
-        get the x component of the velocities for the stencil k
-        """
+        """vx[k] the x component of the velocities for the stencil k."""
         vectorize = np.vectorize(lambda obj: obj.vx)
         return vectorize(self[k])
 
     @property
     def uvy(self):
-        """
-        get the y component of the unique velocities
-        """
+        """the y component of the unique velocities."""
         vectorize = np.vectorize(lambda obj: obj.vy)
         return vectorize(self.unique_velocities)
 
     @itemproperty
     def vy(self, k):
-        """
-        get the y component of the velocities for the stencil k
-        """
+        """vy[k] the y component of the velocities for the stencil k."""
         vectorize = np.vectorize(lambda obj: obj.vy)
         return vectorize(self[k])
 
     @property
     def uvz(self):
-        """
-        get the z component of the unique velocities
-        """
+        """the z component of the unique velocities."""
         vectorize = np.vectorize(lambda obj: obj.vz)
         return vectorize(self.unique_velocities)
 
     @itemproperty
     def vz(self, k):
-        """
-        get the z component of the velocities for the stencil k
-        """
+        """vz[k] the z component of the velocities for the stencil k."""
         vectorize = np.vectorize(lambda obj: obj.vz)
         return vectorize(self[k])
 
     @property
     def unum(self):
-        """
-        get the numbering of the unique velocities
-        """
+        """the numbering of the unique velocities."""
         vectorize = np.vectorize(lambda obj: obj.num)
         return vectorize(self.unique_velocities)
 
     @itemproperty
     def num(self, k):
-        """
-        get the numbering of the velocities for the stencil k
+        """num[k] the numbering of the velocities for the stencil k.
         """
         vectorize = np.vectorize(lambda obj: obj.num)
         return vectorize(self.v[k])
@@ -678,6 +653,9 @@ class Stencil(list):
         return allv
 
     def get_symmetric(self, axis=None):
+        """
+        get the symetrics velocities.
+        """
         ksym = np.empty(self.nv_ptr[-1], dtype=np.int32)
 
         k = 0
@@ -718,6 +696,9 @@ class Stencil(list):
         return self.__str__()
 
     def is_symmetric(self):
+        """
+        check if all the velocities have their symetric.
+        """
         for n in range(self.nstencils):
             a = True
             A = np.array(self.num[n])

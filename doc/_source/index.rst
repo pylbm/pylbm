@@ -24,12 +24,14 @@ You can also clone the project ::
 
     git clone https://github.com/pylbm/pylbm
 
-and then use the command ::
+and then use the commands ::
 
+    pip install -r requirements.txt
     python setup.py install
 
 or ::
 
+    pip install -r requirements.txt
     python setup.py install --user
 
 Once the package is installed
@@ -77,13 +79,15 @@ The most important classes
 The modules
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    
-  elements <module/module_elements>
-  stencil <module/module_stencil>
-  generator <module/module_generator>
-  storage <module/module_storage>
-  bounds <module/module_bounds>
+   stencil <module/module_stencil>
+   elements <module/module_elements>
+   geometry <module/module_geometry>
+   domain <module/module_domain>
+   generator <module/module_generator>
+   storage <module/module_storage>
+   bounds <module/module_bounds>
 
 
 References

@@ -43,10 +43,7 @@ extensions = ['sphinx.ext.autodoc',
 mathjax_path="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 #mathjax_path="/Users/graille/.ipython/nbextensions/mathjax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 #mathjax_path="/home/gouarin/.ipython/nbextensions/mathjax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
-autodoc_member_order = 'bysource'
-#numpydoc_show_class_members = True
-#numpydoc_class_members_toctree = False
-
+#autodoc_member_order = 'bysource'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['../_templates']
@@ -92,7 +89,7 @@ exclude_patterns = ['../_build']
 default_role = "autolink"
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
-#add_function_parentheses = True
+add_function_parentheses = False
 
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).
@@ -232,7 +229,26 @@ latex_elements = {
 #'pointsize': '10pt',
 
 # Additional stuff for the LaTeX preamble.
-#'preamble': '',
+'preamble': '''
+\\usepackage{amssymb}
+\\newcommand{\\DdQq}[2]{{\\mathrm D}_{#1}{\\mathrm Q}_{#2}}
+\\newcommand{\\drondt}{\\partial_t}
+\\newcommand{\\drondtt}{\\partial_{tt}}
+\\newcommand{\\drondx}{\\partial_x}
+\\newcommand{\\drondxx}{\\partial_{xx}}
+\\newcommand{\\drondy}{\\partial_y}
+\\newcommand{\\drondyy}{\\partial_{yy}}
+\\newcommand{\\dx}{\\Delta x}
+\\newcommand{\\dt}{\\Delta t}
+\\newcommand{\\grandO}{{\\mathcal O}}
+\\newcommand{\\density}[2]{\\,f_{#1}^{#2}}
+\\newcommand{\\fk}[1]{\\density{#1}{\\vphantom{\\star}}}
+\\newcommand{\\fks}[1]{\\density{#1}{\\star}}
+\\newcommand{\\moment}[2]{\\,m_{#1}^{#2}}
+\\newcommand{\\mk}[1]{\\moment{#1}{\\vphantom{\\star}}}
+\\newcommand{\\mke}[1]{\\moment{#1}{e}}
+\\newcommand{\\mks}[1]{\\moment{#1}{\\star}}
+''',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
@@ -340,4 +356,4 @@ epub_copyright = u'2013, Benjamin Graille, Loïc Gouarin'
 #epub_tocdup = True
 
 import glob
-autosummary_generate = glob.glob("**/*.rst") + glob.glob("*.rst")
+autosummary_generate = glob.glob("module/*.rst") + glob.glob("*.rst")
