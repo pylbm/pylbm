@@ -77,13 +77,15 @@ The most important classes
 The modules
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    
-  elements <module/module_elements>
-  stencil <module/module_stencil>
-  generator <module/module_generator>
-  storage <module/module_storage>
-  bounds <module/module_bounds>
+   stencil <module/module_stencil>
+   elements <module/module_elements>
+   geometry <module/module_geometry>
+   domain <module/module_domain>
+   generator <module/module_generator>
+   storage <module/module_storage>
+   bounds <module/module_bounds>
 
 
 References

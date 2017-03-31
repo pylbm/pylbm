@@ -794,7 +794,7 @@ class Scheme(object):
 
         if backend.upper() == "NUMPY":
             m = indexed('m', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
-            dummy = eq.subs(list(zip(mv, m)))
+            dummy = dummy.subs(list(zip(mv, m)))
             routines += make_routine(('one_time_step', For(iloop, 
                                                         
                                                             [

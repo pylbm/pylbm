@@ -1,0 +1,17 @@
+name: pylbm
+dependencies:
+  - python=2.7
+  - mercurial
+  - numpy=1.9.*
+  - mpi4py
+  - sympy
+  - Cython
+  - matplotlib
+  - future
+  - ipython
+  - notebook
+  - nbconvert
+  - pip
+  - pip:
+     - colorlog
+     - hg+https://bitbucket.org/pauloh/pyevtk

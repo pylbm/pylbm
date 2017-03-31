@@ -38,11 +38,6 @@ class Array(object):
     shape
     size
 
-    Methods
-    -------
-    set_conserved_moments
-    update
-
     """
     def __init__(self, nv, gspace_size, vmax, sorder=None, mpi_topo=None, dtype=np.double, gpu_support=False):
         self.log = setLogger(__name__)
@@ -139,10 +134,11 @@ class Array(object):
         consm : dict
             set the name and the location of the conserved moments.
             The format is
-                - key: the conserved moment (sympy symbol or string)
-                - value: list of 2 integers
-                    - first item: the scheme number
-                    - second item: the index of the conserved moment in this scheme
+            key : the conserved moment (sympy symbol or string)
+            value : list of 2 integers
+                first item : the scheme number
+                second item : the index of the conserved moment in this scheme
+
         nv_ptr : list of int
             store the location of the schemes
 
@@ -284,6 +280,9 @@ class Array(object):
                 mpi.Request.Waitall(req)
 
     def generate(self):
+        """
+        generate periodic conditions functions for loo.py backend.
+        """
         import sympy as sp
         from .generator import make_routine, autowrap, For, If
 
@@ -351,11 +350,6 @@ class SOA(Array):
     shape
     size
 
-    Methods
-    -------
-    set_conserved_moments
-    update
-
     """
     def __init__(self, nv, gspace_size, vmax, mpi_topo, dtype=np.double, gpu_support=False):
         sorder = [i for i in range(len(gspace_size) + 1)]
@@ -392,11 +386,6 @@ class AOS(Array):
     nv
     shape
     size
-
-    Methods
-    -------
-    set_conserved_moments
-    update
 
     """
     def __init__(self, nv, gspace_size, vmax, mpi_topo, dtype=np.double, gpu_support=False):

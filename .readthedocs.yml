@@ -1,0 +1,8 @@
+conda:
+    file: doc/environment.yml
+
+requirements_file: requirements.txt
+
+python:
+    setup_py_install: true
+
