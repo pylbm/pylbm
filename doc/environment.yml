@@ -14,6 +14,7 @@ dependencies:
   - h5py
   - numpydoc
   - pip
+  - sphinx>1.4.3
   - pip:
      - colorlog
      - hg+https://bitbucket.org/pauloh/pyevtk
