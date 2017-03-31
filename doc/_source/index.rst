@@ -24,12 +24,14 @@ You can also clone the project ::
 
     git clone https://github.com/pylbm/pylbm
 
-and then use the command ::
+and then use the commands ::
 
+    pip install -r requirements.txt
     python setup.py install
 
 or ::
 
+    pip install -r requirements.txt
     python setup.py install --user
 
 Once the package is installed
