@@ -3,6 +3,9 @@ the module stencil
 
 .. currentmodule:: pyLBM.stencil
 
+.. index::
+   single: Stencil
+
 .. autosummary::
    :toctree: generated/
 

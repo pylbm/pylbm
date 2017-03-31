@@ -13,21 +13,21 @@ The 2D elements are:
 
 .. autosummary::
    :toctree: generated/
-
-  Circle
-  Ellipse
-  Parallelogram
-  Triangle
+   
+   Circle
+   Ellipse
+   Parallelogram
+   Triangle
 
 The 3D elements are:
 
 .. autosummary::
    :toctree: generated/
 
-  Sphere
-  Ellipsoid
-  Parallelepiped
-  Cylinder_Circle
-  Cylinder_Ellipse
-  Cylinder_Triangle
+   Sphere
+   Ellipsoid
+   Parallelepiped
+   Cylinder_Circle
+   Cylinder_Ellipse
+   Cylinder_Triangle
   
