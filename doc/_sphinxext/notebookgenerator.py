@@ -5,16 +5,6 @@ import sys
 import shutil
 import copy
 
-import IPython.nbformat as nbformat
-from IPython.nbconvert import RSTExporter
-from IPython.utils.process import get_output_error_code
-from IPython.testing.tools import get_ipython_cmd
-
-try:
-    from urllib2 import urlopen
-except ImportError:
-    from urllib.request import urlopen  # Py3k
-
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 DOC_DIR = os.path.abspath(os.path.join(THIS_DIR, '..'))
 TUTORIAL_DIR = os.path.abspath(os.path.join(DOC_DIR, '..', 'notebooks'))
@@ -22,7 +12,7 @@ SRC_DIR = os.path.join(DOC_DIR, '_source/')
 OUTPUT_TUTO_DIR = os.path.join(SRC_DIR, 'notebooks')
 NOTEBOOKS = []
 
-ipy_cmd = get_ipython_cmd(as_string=True) + " "
+#ipy_cmd = get_ipython_cmd(as_string=True) + " "
 
 def clean():
     # Clean tutorial file
@@ -71,19 +61,17 @@ def get_notebook_filenames(notebooks_dir):
             yield filename, name
 
 def create_notebooks(notebooks):
-    # from IPython.nbconvert import TemplateExporter
-    # print(TemplateExporter().environment.loader.list_templates())
-    
+    from nbconvert import RSTExporter
+    import nbformat
+    rst_exporter = RSTExporter() 
+
     for filename, name in notebooks:
         head, tail = os.path.split(filename)
         print("\tgenerate {0}.rst".format(name))
-        #command = ipy_cmd +'nbconvert --to rst {0} --output-dir {1} --template=notebook.tpl'.format(filename, head)
-        command = ipy_cmd +'nbconvert --to rst {0} --output-dir {1} '.format(filename, head)
-        out, err, return_code = get_output_error_code(command)
-        if return_code != 0:
-            print(err)
-            clean()
-            sys.exit()
+        f = open(filename)
+        notebook = nbformat.reads(f.read(), as_version=4)
+        (body, resources) = rst_exporter.from_notebook_node(notebook)
+        open(filename.replace('.ipynb', '.rst'), "w").write(body)
 
 def create_tutorial_rst(notebooks):
     export = os.path.join(SRC_DIR, './tutorial.rst')
