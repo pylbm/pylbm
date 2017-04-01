@@ -69,7 +69,7 @@ def create_notebooks(notebooks):
         head, tail = os.path.split(filename)
         print("\tgenerate {0}.rst".format(name))
         f = open(filename)
-        notebook = nbformat.reads(f.read(), as_version=4)
+        notebook = nbformat.reads(f.read().decode(), as_version=4)
         (body, resources) = rst_exporter.from_notebook_node(notebook)
         open(filename.replace('.ipynb', '.rst'), "w").write(body)
 
