@@ -88,9 +88,13 @@ The stencil is composed by the nine velocities
 .. math::
     :nowrap:
 
+    \begin{equation}
+    \begin{gathered}
     v_0=(0,0),\\
     v_1=(1,0), v_2=(0,1), v_3=(-1,0), v_4=(0,-1),\\
     v_5=(1,1), v_6=(-1,1), v_7=(-1,-1), v_8=(1,-1).
+    \end{gathered}
+    \end{equation}
 
 One phantom cell is then added all around the square.
 The space step :math:`dx` is taken to :math:`0.1` to allow the visualization.

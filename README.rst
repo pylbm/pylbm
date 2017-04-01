@@ -1,14 +1,16 @@
 pyLBM
 =====
 
-|build status| |Gitter Badge|
+|build status| |Doc badge| |Gitter Badge|
 
 .. |Build Status| image:: https://travis-ci.org/pylbm/pylbm.svg?branch=develop
    :target: https://travis-ci.org/pylbm/pylbm
 .. |Gitter Badge| image:: https://badges.gitter.im/pylbm/pylbm.svg
    :alt: Join the chat at https://gitter.im/pylbm/pylbm
    :target: https://gitter.im/pylbm/pylbm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
-
+.. |Doc badge| image:: https://readthedocs.org/projects/pylbm/badge/?version=develop
+   :target: http://pylbm.readthedocs.io/en/develop/
+   
 pyLBM is an all-in-one package for numerical simulations using Lattice Boltzmann solvers.
 
 This package gives all the tools to describe your lattice Boltzmann scheme in 1D, 2D and 3D problems.
