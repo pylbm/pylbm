@@ -71,16 +71,16 @@ def get_notebook_filenames(notebooks_dir):
             yield filename, name
 
 def create_notebooks(notebooks):
-
+    
     for filename, name in notebooks:
         head, tail = os.path.split(filename)
         print("\tgenerate {0}.rst".format(name))
-        #command = ipy_cmd +'nbconvert --to rst --execute {0} --output {1}.rst --template myrst.tpl'.format(filename, SRC_DIR + name)
         command = ipy_cmd +'nbconvert --to rst {0} --output-dir {1} --template=_templates/myrst.tpl'.format(filename, head)
-        #command = ipy_cmd +'nbconvert --to rst {0} --output-dir {1}'.format(filename, head)
         out, err, return_code = get_output_error_code(command)
         if return_code != 0:
             print(err)
+            from IPython.nbconvert import TemplateExporter
+            print(TemplateExporter().environment.loader.list_templates())
             clean()
             sys.exit()
 
