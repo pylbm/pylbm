@@ -68,10 +68,10 @@ def create_notebooks(notebooks):
     for filename, name in notebooks:
         head, tail = os.path.split(filename)
         print("\tgenerate {0}.rst".format(name))
-        f = open(filename)
-        notebook = nbformat.reads(f.read().decode(), as_version=4)
+        f = open(filename, encoding='utf-8')
+        notebook = nbformat.reads(f.read(), as_version=4)
         (body, resources) = rst_exporter.from_notebook_node(notebook)
-        open(filename.replace('.ipynb', '.rst'), "w").write(body)
+        open(filename.replace('.ipynb', '.rst'), "w", encoding='utf-8').write(body)
 
 def create_tutorial_rst(notebooks):
     export = os.path.join(SRC_DIR, './tutorial.rst')
