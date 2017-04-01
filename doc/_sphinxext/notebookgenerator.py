@@ -71,6 +71,8 @@ def get_notebook_filenames(notebooks_dir):
             yield filename, name
 
 def create_notebooks(notebooks):
+    from IPython.nbconvert import TemplateExporter
+    print(TemplateExporter().environment.loader.list_templates())
     
     for filename, name in notebooks:
         head, tail = os.path.split(filename)
@@ -79,8 +81,6 @@ def create_notebooks(notebooks):
         out, err, return_code = get_output_error_code(command)
         if return_code != 0:
             print(err)
-            from IPython.nbconvert import TemplateExporter
-            print(TemplateExporter().environment.loader.list_templates())
             clean()
             sys.exit()
 
