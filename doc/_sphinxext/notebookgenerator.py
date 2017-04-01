@@ -62,16 +62,18 @@ def get_notebook_filenames(notebooks_dir):
 
 def create_notebooks(notebooks):
     from nbconvert import RSTExporter
+    import io
     import nbformat
     rst_exporter = RSTExporter() 
 
     for filename, name in notebooks:
         head, tail = os.path.split(filename)
         print("\tgenerate {0}.rst".format(name))
-        f = open(filename, encoding='utf-8')
-        notebook = nbformat.reads(f.read(), as_version=4)
-        (body, resources) = rst_exporter.from_notebook_node(notebook)
-        open(filename.replace('.ipynb', '.rst'), "w", encoding='utf-8').write(body)
+        with io.open(filename, encoding='utf-8') as source:
+            notebook = nbformat.reads(source.read(), as_version=4)
+            (body, resources) = rst_exporter.from_notebook_node(notebook)
+            with io.open(filename.replace('.ipynb', '.rst'), "w", encoding='utf-8') as target:
+                target.write(body)
 
 def create_tutorial_rst(notebooks):
     export = os.path.join(SRC_DIR, './tutorial.rst')
