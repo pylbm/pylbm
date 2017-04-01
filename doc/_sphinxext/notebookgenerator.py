@@ -72,8 +72,14 @@ def create_notebooks(notebooks):
         with io.open(filename, encoding='utf-8') as source:
             notebook = nbformat.reads(source.read(), as_version=4)
             (body, resources) = rst_exporter.from_notebook_node(notebook)
+            body = body.replace(".. code:: python", ".. code-block:: python")
             with io.open(filename.replace('.ipynb', '.rst'), "w", encoding='utf-8') as target:
                 target.write(body)
+            path = os.path.split(filename)[0]
+            print(path)
+            for k, v in resources['outputs'].items():
+                with io.open(path + '/' + k, "wb") as target:
+                    target.write(v)
 
 def create_tutorial_rst(notebooks):
     export = os.path.join(SRC_DIR, './tutorial.rst')
