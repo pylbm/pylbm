@@ -32,7 +32,9 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.mathjax',
               'numpydoc',
               'matplotlib.sphinxext.plot_directive',
-              'lbm_ext',
+              #'lbm_ext',
+              'nbsphinx',
+              'IPython.sphinxext.ipython_console_highlighting',
               #'sphinx.ext.intersphinx',
               #'sphinx.ext.coverage',
               #'sphinx.ext.doctest',
@@ -40,6 +42,7 @@ extensions = ['sphinx.ext.autodoc',
               #'sphinxarg.ext',
               #'sphinx.ext.viewcode',
               ]
+nbsphinx_execute = 'auto'              
 mathjax_path="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 #mathjax_path="/Users/graille/.ipython/nbextensions/mathjax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 #mathjax_path="/home/gouarin/.ipython/nbextensions/mathjax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
@@ -83,7 +86,7 @@ release = pyLBM.__version__
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['../_build']
+exclude_patterns = ['../_build', '**.ipynb_checkpoints']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 default_role = "autolink"

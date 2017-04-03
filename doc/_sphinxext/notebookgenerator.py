@@ -39,7 +39,7 @@ def main():
     notebooks.sort(key=lambda x: x[1])
     NOTEBOOKS = copy.copy(notebooks)
 
-    create_notebooks(notebooks)
+    #create_notebooks(notebooks)
 
     # Get tutorial notebooks
     notebooks = list(get_notebook_filenames(OUTPUT_TUTO_DIR))
