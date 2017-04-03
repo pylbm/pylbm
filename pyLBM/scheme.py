@@ -21,6 +21,7 @@ from textwrap import dedent
 
 from .stencil import Stencil
 from .validate_dictionary import *
+from .generator import generator
 
 from .logs import setLogger
 import mpi4py.MPI as mpi
@@ -339,7 +340,6 @@ class Scheme(object):
         ssss = "Generator used for the scheme functions:\n{0}\n".format(self.generator)
         ssss += "with the pattern " + self.pattern.__str__() + "\n"
         self.log.info(ssss)
-
 
         self.bc_compute = True
 
@@ -765,7 +765,7 @@ class Scheme(object):
         # fix execution time
         #self._check_inverse(Mu, invMu, 'Mu')
 
-        from .generator import make_routine, autowrap, For, If
+        from .generator import For, If
         from .symbolic import nx, ny, nz, nv, indexed, space_loop
 
         iloop = space_loop([(0, nx), (0, ny), (0, nz)], permutation=sorder) # loop over all spatial points
@@ -780,13 +780,13 @@ class Scheme(object):
         # are the real moments even if the scheme uses a relative velocity
 
         # add the function f2m as m = M f
-        routines += make_routine(('f2m', For(iloop, Eq(m, M*f))), settings={"prefetch":[f[0]]})
+        generator.add_routine(('f2m', For(iloop, Eq(m, M*f))), settings={"prefetch":[f[0]]})
         # add the function m2f as f = M^(-1) m
-        routines += make_routine(('m2f', For(iloop, Eq(f, invM*m))), settings={"prefetch":[m[0]]})
+        generator.add_routine(('m2f', For(iloop, Eq(f, invM*m))), settings={"prefetch":[m[0]]})
         # add the function equilibrium
         dummy = eq.subs(list(zip(mv, m)) + subs_param).expand()
         alltogether(dummy)
-        routines += make_routine(('equilibrium', For(iloop, Eq(m, dummy))))
+        generator.add_routine(('equilibrium', For(iloop, Eq(m, dummy))))
 
         # fix: set loop with vmax -> DONE ?
         vmax = [0]*3
@@ -803,7 +803,7 @@ class Scheme(object):
             self.log.error("NUMPY generator not allowed in this version with relative velocities")
             m = indexed('m', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
             dummy = dummy.subs(list(zip(mv, m)))
-            routines += make_routine(('one_time_step', For(iloop,
+            generator.add_routine(('one_time_step', For(iloop, 
                                                             [
                                                                 Eq(m, Mu*f),  # transport + f2m
                                                                 Eq(m, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(m)) + s.multiply_elementwise(dummy)), # relaxation
@@ -811,6 +811,7 @@ class Scheme(object):
                                                             ]
                                                             )
                                                         ))
+            
         else:
             # build the equations defining the relative velocities
             rel_vel = sp.Matrix(self.rel_vel).subs(subs_moments)
@@ -822,7 +823,7 @@ class Scheme(object):
             dummy = self.Tu.subs(L + subs_param)*eq.subs(subs_param).expand()
             alltogether(dummy)
 
-            routines += make_routine(('one_time_step',
+            generator.add_routine(('one_time_step',
                                       For(iloop,
                                           If( (Eq(in_or_out, valin),
                                               brv + # build relative velocity
@@ -833,7 +834,6 @@ class Scheme(object):
                                               ]) )
                                           )
                                       ), local_vars = [mv] + list_rel_vel, settings={"prefetch":[f[0]]})
-        self.mod = autowrap(routines, backend=backend)
 
     def m2f(self, mm, ff):
         """ Compute the distribution functions f from the moments m """
@@ -849,7 +849,7 @@ class Scheme(object):
         f = ff.array
 
         args = locals()
-        call_genfunction(self.mod.m2f, args)
+        call_genfunction(generator.module.m2f, args)
 
     def f2m(self, ff, mm):
         """ Compute the moments m from the distribution functions f """
@@ -865,7 +865,7 @@ class Scheme(object):
         f = ff.array
 
         args = locals()
-        call_genfunction(self.mod.f2m, args)
+        call_genfunction(generator.module.f2m, args)
 
     def transport(self, f):
         """ The transport phase on the distribution functions f """
@@ -884,8 +884,8 @@ class Scheme(object):
         m = mm.array
 
         args = locals()
-        call_genfunction(self.mod.equilibrium, args)
-
+        call_genfunction(generator.module.equilibrium, args)
+        
     def relaxation(self, m):
         """ The relaxation phase on the moments m """
         mod = self.generator.get_module()
@@ -911,7 +911,7 @@ class Scheme(object):
         f_new = ff_new.array
 
         args = locals()
-        call_genfunction(self.mod.one_time_step, args)
+        call_genfunction(generator.module.one_time_step, args)
 
     def set_boundary_conditions(self, f, m, bc, interface):
         """

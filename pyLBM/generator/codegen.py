@@ -600,7 +600,6 @@ class LoopyCodeGen(LBMCodeGen):
 
         # add type
         dim = len(routine.idx_vars)
-        print(dim, routine.idx_vars)
         if dim == 1:
             block_size = [256]
         if dim == 2:

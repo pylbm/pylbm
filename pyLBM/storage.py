@@ -6,6 +6,7 @@ import copy
 import mpi4py.MPI as mpi
 
 from .logs import setLogger
+from .generator import generator
 
 class Array(object):
     """
@@ -261,15 +262,13 @@ class Array(object):
 
             f = self.array
 
-            function = self.mod.update_x
-
             args = locals()
-            call_genfunction(self.mod.update_x, args)
+            call_genfunction(generator.module.update_x, args)
 
             if dim > 1:
-                call_genfunction(self.mod.update_y, args)
+                call_genfunction(generator.module.update_y, args)
             if dim > 2:
-                call_genfunction(self.mod.update_z, args)
+                call_genfunction(generator.module.update_z, args)
 
         else:
             for d in range(self.dim):
@@ -288,7 +287,7 @@ class Array(object):
         generate periodic conditions functions for loo.py backend.
         """
         import sympy as sp
-        from .generator import make_routine, autowrap, For, If
+        from .generator import generator, For, If
 
         def set_order(array, remove_index=None):
             out = [-1]*len(self.sorder)
@@ -306,27 +305,23 @@ class Array(object):
         k = sp.Idx('k', (0, nz))
         s = sp.Idx('s', (0, nv))
 
-        routines = []
-
         fi = sp.IndexedBase('f', shape)
         f_store = sp.Matrix([fi[set_order([s, 0, j, k])], fi[set_order([s, nx-1, j, k])]]) 
         f_load = sp.Matrix([fi[set_order([s, nx-2, j, k])], fi[set_order([s, 1, j, k])]]) 
         iloop = set_order([s, i, j, k], remove_index=1)
-        routines += make_routine(('update_x', For(iloop, sp.Eq(f_store, f_load))))
+        generator.add_routine(('update_x', For(iloop, sp.Eq(f_store, f_load))))
 
         if len(self.sorder) > 2:
             f_store = sp.Matrix([fi[set_order([s, i, 0, k])], fi[set_order([s, i, ny-1, k])]]) 
             f_load = sp.Matrix([fi[set_order([s, i, ny-2, k])], fi[set_order([s, i, 1, k])]]) 
             iloop = set_order([s, i, j, k], remove_index=2)        
-            routines += make_routine(('update_y', For(iloop, sp.Eq(f_store, f_load))))
+            generator.add_routine(('update_y', For(iloop, sp.Eq(f_store, f_load))))
 
         if len(self.sorder) > 3:
             f_store = sp.Matrix([fi[set_order([s, i, j, 0])], fi[set_order([s, i, j, nz-1])]]) 
             f_load = sp.Matrix([fi[set_order([s, i, j, nz-2])], fi[set_order([s, i, j, 1])]]) 
             iloop = set_order([s, i, j, k], remove_index=3)        
-            routines += make_routine(('update_z', For(iloop, sp.Eq(f_store, f_load))))
-
-        self.mod = autowrap(routines, backend="loopy")
+            generator.add_routine(('update_z', For(iloop, sp.Eq(f_store, f_load))))
 
 class SOA(Array):
     """
