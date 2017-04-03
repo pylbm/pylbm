@@ -29,6 +29,7 @@ from .boundary import Boundary
 from . import utils
 from .validate_dictionary import *
 from .context import set_queue
+from .generator import generator
 
 from .logs import setLogger
 from .storage import Array, Array_in, AOS, SOA
@@ -230,6 +231,7 @@ class Simulation(object):
             method.move2gpu()
             method.generate(sorder)
 
+        generator.compile(backend=self.generator)
         self.log.info('Initialization')
         self.initialization(dico)
 
