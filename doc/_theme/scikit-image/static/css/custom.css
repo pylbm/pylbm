@@ -332,6 +332,10 @@ a.download{
   border-radius: 50px;
 }
 
+div.nbinput div.prompt{
+    display: none;
+}
+
 /*a.download{
   display: flex;
   flex-direction: column;
