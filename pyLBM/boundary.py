@@ -163,8 +163,6 @@ class Boundary_method(object):
         self.nspace = nspace
         self.backend = backend
 
-        self.function = None
-
     def fix_iload(self):
         """
         Transpose iload and istore. 
