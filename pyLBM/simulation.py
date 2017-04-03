@@ -224,16 +224,17 @@ class Simulation(object):
 
         self.bc = Boundary(self.domain, dico)
         for method in self.bc.methods:
-            method.prepare_rhs(self)
-            method.set_rhs()
             method.set_iload()
-            method.fix_iload()
-            method.move2gpu()
             method.generate(sorder)
 
         generator.compile(backend=self.generator)
         self.log.info('Initialization')
         self.initialization(dico)
+        for method in self.bc.methods:
+            method.prepare_rhs(self)
+            method.set_rhs()
+            method.fix_iload()
+            method.move2gpu()
 
         #computational time measurement
         self.cpu_time = {
