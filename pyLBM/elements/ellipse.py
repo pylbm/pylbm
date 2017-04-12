@@ -40,6 +40,8 @@ class Ellipse(Element):
     isfluid : boolean
       True if the ellipse is added
       and False if the ellipse is deleted
+    number_of_bounds : int
+        number of edges (1)
 
     Examples
     --------
@@ -52,16 +54,10 @@ class Ellipse(Element):
     >>> Ellipse(center, v1, v2)
         Ellipse([0 0], [2 0], [0 1]) (solid)
 
-    Methods
-    -------
-    get_bounds
-    point_inside
-    distance
     """
-    number_of_bounds = 1 # number of edges
-
     def __init__(self, center, v1, v2, label = 0, isfluid = False):
         self.log = setLogger(__name__)
+        self.number_of_bounds = 1 # number of edges
         self.center = np.asarray(center)
         if abs(v1[0]*v2[0] + v1[1]*v2[1]) > 1.e-14:
             self.log.error('The vectors of the ellipse are not orthogonal')

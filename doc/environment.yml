@@ -19,3 +19,4 @@ dependencies:
   - pip:
      - colorlog
      - hg+https://bitbucket.org/pauloh/pyevtk
+     - git+https://github.com/spatialaudio/nbsphinx

@@ -152,13 +152,15 @@ class Domain(object):
     flag : numpy array
       NumPy array that defines the flag of the border reached with the
       specified velocity
-
-
-    Methods
-    -------
-
-    visualize :
-      Visualize the domain by creating a plot
+    valin : int
+        value in the fluid domain
+    valout : int
+        value in the fluid domain
+    x_halo
+    y_halo
+    z_halo
+    shape_halo
+    shape_in
 
     Examples
     --------
@@ -167,11 +169,12 @@ class Domain(object):
 
 
     """
-    valin = 999  # value in the fluid domain
-    valout = -1   # value in the solid domain
 
     def __init__(self, dico=None, geometry=None, stencil=None, space_step=None, verif=True):
         self.log = setLogger(__name__)
+
+        self.valin = 999  # value in the fluid domain
+        self.valout = -1   # value in the solid domain
 
         self.check_dictionary(dico)
 
@@ -211,34 +214,58 @@ class Domain(object):
 
     @property
     def shape_halo(self):
+        """
+        shape of the whole domain with the halo points.
+        """
         return [c.size for c in self.coords_halo]
 
     @property
     def shape_in(self):
+        """
+        shape of the interior domain.
+        """
         return [c.size for c in self.coords]
 
     @property
     def x(self):
+        """
+        x component of the coordinates in the interior domain.
+        """
         return self.coords[0]
 
     @property
     def y(self):
+        """
+        y component of the coordinates in the interior domain.
+        """
         return self.coords[1]
 
     @property
     def z(self):
+        """
+        z component of the coordinates in the interior domain.
+        """
         return self.coords[2]
 
     @property
     def x_halo(self):
+        """
+        x component of the coordinates of the whole domain (halo points included).
+        """        
         return self.coords_halo[0]
 
     @property
     def y_halo(self):
+        """
+        y component of the coordinates of the whole domain (halo points included).
+        """        
         return self.coords_halo[1]
 
     @property
     def z_halo(self):
+        """
+        z component of the coordinates of the whole domain (halo points included).
+        """        
         return self.coords_halo[2]
 
     def __str__(self):
@@ -250,6 +277,15 @@ class Domain(object):
         return s
 
     def check_dictionary(self, dico):
+        """
+        Check the validity of the dictionnary which define the domain.
+
+        Parameter
+        ---------
+
+        dico : dictionary
+
+        """
         if dico is not None:
             self.log.info('Check the dictionary')
             test, aff = validate(dico, proto_domain, test_comp = False)
@@ -260,18 +296,21 @@ class Domain(object):
                 sys.exit()
 
     def construct_mpi_topology(self, dico):
+        """
+        Create the mpi topology
+        """
         period = [True]*self.dim
-        # for i in range(self.dim):
-        #     if self.box_label[2*i] == self.box_label[2*i+1] == -1:
-        #         period[i] = True
 
         if dico is None:
             comm = mpi.COMM_WORLD
         else:
-            comm =dico.get('comm', mpi.COMM_WORLD)
+            comm = dico.get('comm', mpi.COMM_WORLD)
         self.mpi_topo = MPI_topology(self.dim, period, comm)
 
     def create_coords(self):
+        """
+        Create the coordinates of the interior domain and the whole domain with halo points.
+        """
         phys_box = self.geom.bounds # the physical box where the domain lies
 
         # validation of the space step with the physical box size
@@ -295,11 +334,19 @@ class Domain(object):
         self.coords = [self.coords_halo[k][halo_size[k]:-halo_size[k]] for k in range(self.dim)]
 
     def get_bounds_halo(self):
+        """
+        Return the coordinates of the bottom right and upper left corner of the 
+        whole domain with halo points.
+        """
         bottom_right = np.asarray([self.coords_halo[k][0] for k in range(self.dim)])
         upper_left = np.asarray([self.coords_halo[k][-1] for k in range(self.dim)])
         return bottom_right, upper_left
 
     def get_bounds(self):
+        """
+        Return the coordinates of the bottom right and upper left corner of the 
+        interior domain.
+        """
         bottom_right = np.asarray([self.coords[k][0] for k in range(self.dim)])
         upper_left = np.asarray([self.coords[k][-1] for k in range(self.dim)])
         return bottom_right, upper_left
