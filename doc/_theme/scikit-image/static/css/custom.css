@@ -11,6 +11,10 @@ div.gallery{
   flex-wrap: wrap;
 }
 
+div.prompt{
+    display: none;
+}
+
 /*div.gallery::before, div.gallery::after {
     display: table;
     line-height: 0;
@@ -265,17 +269,22 @@ p.admonition-title {
     margin-left: auto;
     margin-right: auto;
     /*max-height: 150px;*/
-    max-width: 40%;/*200px;*/
+    max-width: 60%;/*200px;*/
 }
 
 .section img {
     display: block;
     margin-left: auto;
     margin-right: auto;
-    width: 40%;
+    width: 60%;
 }
 
 .figure .caption {
+    /*width: 200px;*/
+    text-align: center !important;
+}
+
+.figure .caption .caption-text{
     width: 200px;
     text-align: center !important;
 }
@@ -330,6 +339,10 @@ a.download{
   float: right;
   color: #197395;
   border-radius: 50px;
+}
+
+div.nbinput div.prompt{
+    display: none;
 }
 
 /*a.download{

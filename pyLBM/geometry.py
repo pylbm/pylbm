@@ -96,16 +96,6 @@ class Geometry(object):
     list_elem : list of elements
       a list that contains each element added or deleted in the box
 
-    Methods
-    -------
-
-    add_elem :
-      function that adds an element in the box
-    visualize :
-      function to visualize the box
-    list_of_labels :
-      return a list of all the unique labels of the geometry
-
     Examples
     --------
 

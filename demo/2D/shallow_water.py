@@ -62,7 +62,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     s1  = [0., s_1qx, s_1qx, s_1xy]
 
     vitesse = list(range(1,5))
-    polynomes = [1, LA*X, LA*Y, X**2-Y**2]
+    polynomes = [1, X, Y, (X**2-Y**2)/LA**2]
 
     def initialization_rho(x,y):
         return rhoo * np.ones((x.size, y.size)) + deltarho * ((x-0.5*(xmin+xmax))**2+(y-0.5*(ymin+ymax))**2 < 0.25**2)
@@ -128,4 +128,4 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
 if __name__ == '__main__':
     dx = 1./128
     Tf = 20
-    run(dx, Tf)
+    run(dx, Tf, generator="loopy")
