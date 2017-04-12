@@ -15,8 +15,13 @@ class Element(object):
     Class Element
 
     generic class for the elements
+
+    Attributes
+    ----------
+    number_of_bounds : int
+        number of edges
     """
-    number_of_bounds = 0
+    #number_of_bounds = 0
     def __init__(self):
         self.log = setLogger(__name__)
         self.isfluid = False
@@ -44,6 +49,9 @@ class Element(object):
         pass
 
     def test_label(self):
+        """
+        test if the number of labels is equal to the number of bounds.
+        """
         return len(self.label) == self.number_of_bounds
 
 

@@ -54,18 +54,12 @@ class Parallelogram(Element):
     isfluid : boolean
       True if the parallelogram is added
       and False if the parallelogram is deleted
-
-    Methods
-    -------
-    get_bounds
-    point_inside
-    distance
+    number_of_bounds : int
+        number of edges (4)
     """
-
-    number_of_bounds = 4 # number of edges
-
     def __init__(self, point, vecta, vectb, label = 0, isfluid = False):
         self.log = setLogger(__name__)
+        self.number_of_bounds = 4 # number of edges
         self.point = np.asarray(point)
         self.v0 = np.asarray(vecta)
         self.v1 = np.asarray(vectb)

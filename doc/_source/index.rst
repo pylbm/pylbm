@@ -60,7 +60,8 @@ Documentation for users
    The boundary conditions <learning_bounds>
    The storage of moments and distribution functions <storage>
    Learning by examples <tutorial>
-
+   Gallery <gallery>
+   
 Documentation of the code
 ---------------------------
 
@@ -85,7 +86,6 @@ The modules
    elements <module/module_elements>
    geometry <module/module_geometry>
    domain <module/module_domain>
-   generator <module/module_generator>
    storage <module/module_storage>
    bounds <module/module_bounds>
 

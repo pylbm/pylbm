@@ -36,6 +36,8 @@ class Sphere(Element):
     isfluid : boolean
       True if the sphere is added
       and False if the sphere is deleted
+    number_of_bounds : int
+        number of edges (1)
 
     Examples
     --------
@@ -47,16 +49,10 @@ class Sphere(Element):
     >>> Sphere(center, radius)
         Sphere([0 0 0],1) (solid)
 
-    Methods
-    -------
-    get_bounds
-    point_inside
-    distance
     """
-    number_of_bounds = 1 # number of edges
-
     def __init__(self, center, radius, label = 0, isfluid = False):
         self.log = setLogger(__name__)
+        self.number_of_bounds = 1 # number of edges
         self.center = np.asarray(center)
         if radius>=0:
             self.radius = radius

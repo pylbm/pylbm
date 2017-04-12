@@ -138,57 +138,6 @@ class Scheme(object):
       :py:class:`heun<pyLBM.generator.heun>`,
       ...)
 
-    Methods
-    -------
-
-    create_moments_matrix :
-      Create the moments matrices
-    create_relaxation_function :
-      Create the relaxation function
-    create_equilibrium_function :
-      Create the equilibrium function
-    create_transport_function :
-      Create the transport function
-    create_f2m_function :
-      Create the function f2m
-    create_m2f_function :
-      Create the function m2f
-
-    generate :
-      Generate the code
-    equilibrium :
-      Compute the equilibrium
-    transport :
-      Transport phase
-    relaxation :
-      Relaxation phase
-    f2m :
-      Compute the moments from the distribution functions
-    m2f :
-      Compute the distribution functions from the moments
-    onetimestep :
-      One time step of the Lattice Boltzmann method
-    set_initialization :
-      set the initialization functions for the conserved moments
-    set_source_terms :
-      set the source terms functions
-    set_boundary_conditions :
-      Apply the boundary conditions
-
-    compute_amplification_matrix_relaxation :
-      compute the amplification matrix of the relaxation
-    compute_amplification_matrix(wave_vector) :
-      compute the amplification matrix of one time step of the scheme
-      for the given wave vector
-    vp_amplification_matrix(wave_vector) :
-      compute the eigenvalues of the amplification matrix
-      for a given wave vector
-    is_L2_stable :
-      test the L2 stability of the scheme
-    is_monotonically_stable :
-      test the monotonical stability of the scheme
-
-
     Examples
     --------
 
@@ -1114,6 +1063,11 @@ class Scheme(object):
             return True
 
     def compute_consistency(self, dicocons):
+        """
+        compute the consistency of the scheme.
+
+        FIX: documentation
+        """
         t0 = mpi.Wtime()
         ns = self.stencil.nstencils # number of stencil
         nv = self.stencil.nv # number of velocities for each stencil
