@@ -79,29 +79,10 @@ class Simulation(object):
       a numpy array that contains the values of the moments in each point
     F : numpy array
       a numpy array that contains the values of the distribution functions in each point
-
-    Methods
-    -------
-
-    initialization :
-      initialize all the arrays
-    transport :
-      compute the transport phase (modifies the array _F)
-    relaxation :
-      compute the relaxation phase (modifies the array _m)
-    equilibrium :
-      compute the equilibrium
-    f2m :
-      compute the moments _m from the distribution _F
-    m2f :
-      compute the distribution _F from the moments _m
-    boundary_condition :
-      compute the boundary conditions (modifies the array _F)
-    one_time_step :
-      compute a complet time step combining
-      boundary_condition, transport, f2m, relaxation, m2f
-    time_info :
-      print informations about time
+    m_halo : numpy array
+      a numpy array that contains the values of the moments in each point
+    F_halo : numpy array
+      a numpy array that contains the values of the distribution functions in each point
 
     Examples
     --------
@@ -266,6 +247,9 @@ class Simulation(object):
 
     @utils.itemproperty
     def m_halo(self, i):
+        """
+        get the moment i on the whole domain with halo points.
+        """
         if self._update_m:
             self._update_m = False
             self.f2m()
@@ -278,6 +262,9 @@ class Simulation(object):
 
     @utils.itemproperty
     def m(self, i):
+        """
+        get the moment i in the interior domain.
+        """
         if self._update_m:
             self._update_m = False
             self.f2m()
@@ -291,6 +278,9 @@ class Simulation(object):
 
     @utils.itemproperty
     def F_halo(self, i):
+        """
+        get the distribution function i on the whole domain with halo points.
+        """
         return self._F[i]
 
     @F_halo.setter
@@ -300,6 +290,9 @@ class Simulation(object):
 
     @utils.itemproperty
     def F(self, i):
+        """
+        get the distribution function i in the interior domain.
+        """
         return self._F._in(i)
         #return self._F_in[i]
 

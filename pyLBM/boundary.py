@@ -146,11 +146,6 @@ class Boundary_method(object):
     value_bc : dictionnary
        the prescribed values on the border
 
-    Methods
-    -------
-    prepare_rhs :
-        compute the distribution function at the equilibrium with the value on the border
-
     """
     def __init__(self, istore, ilabel, distance, stencil, value_bc, nspace, backend):
         self.log = setLogger(__name__)
@@ -170,12 +165,26 @@ class Boundary_method(object):
         self.function = None
 
     def fix_iload(self):
+        """
+        Transpose iload and istore. 
+
+        Must be fix in a future version.
+        """
         # Fixme : store in a good way and in the right type istore and iload 
         for i in range(len(self.iload)):
             self.iload[i] = np.ascontiguousarray(self.iload[i].T, dtype=np.int32)
         self.istore = np.ascontiguousarray(self.istore.T, dtype=np.int32)
 
     def prepare_rhs(self, simulation):
+        """
+        Compute the distribution function at the equilibrium with the value on the border.
+
+        Parameters
+        ----------
+        simulation : simulation class
+
+        """
+
         nv = simulation._m.nv
         sorder = simulation._m.sorder
         nspace = [1]*(len(sorder)-1)
@@ -222,7 +231,7 @@ class Boundary_method(object):
                     f.array_cpu[...] = f.array.get()
                 self.feq[:, indices[0]] = f.swaparray.reshape((nv, indices[0].size))
 
-    def get_istore_iload_symb(self, dim):
+    def _get_istore_iload_symb(self, dim):
         ncond = symbols('ncond', integer=True)
 
         istore = symbols('istore', integer=True)
@@ -234,18 +243,27 @@ class Boundary_method(object):
             iload.append(IndexedBase(iloads, [ncond, dim+1]))
         return istore, iload, ncond
 
-    def get_rhs_dist_symb(self, ncond):
+    def _get_rhs_dist_symb(self, ncond):
         rhs = IndexedBase('rhs', [ncond])
         dist = IndexedBase('dist', [ncond])
         return rhs, dist
 
     def update(self, ff):
+        """
+        Update distribution functions with this boundary condition.
+
+        Parameters
+        ----------
+
+        ff 
+            The distribution functions
+        """
         from .symbolic import call_genfunction
 
-        args = self.get_args(ff)
+        args = self._get_args(ff)
         call_genfunction(self.function, args)
 
-    def get_args(self, ff):
+    def _get_args(self, ff):
         dim = len(ff.nspace)
         nx = ff.nspace[0]
         if dim > 1:
@@ -266,6 +284,9 @@ class Boundary_method(object):
         return locals()
         
     def move2gpu(self):
+        """
+        Move arrays needed to compute the boundary on the GPU memory.
+        """
         if self.backend.upper() == "LOOPY":
             import pyopencl as cl
             import pyopencl.array
@@ -287,18 +308,11 @@ class bounce_back(Boundary_method):
 
     .. plot:: codes/bounce_back.py
 
-    Methods
-    -------
-    set_rhs :
-        compute and set the additional terms to fix the boundary values
-    set_iload :
-        compute the indices that are needed (symmertic velocities and space indices)
-    update :
-        update the values of the distribution fonctions ouside the domain
-        according to the bounce back condition
-
     """
     def set_iload(self):
+        """
+        Compute the indices that are needed (symmertic velocities and space indices).
+        """        
         k = self.istore[0]
         ksym = self.stencil.get_symmetric()[k][np.newaxis, :]
         v = self.stencil.get_all_velocities()
@@ -306,19 +320,30 @@ class bounce_back(Boundary_method):
         self.iload.append(np.concatenate([ksym, indices]))
 
     def set_rhs(self):
+        """
+        Compute and set the additional terms to fix the boundary values.
+        """
         k = self.istore[0]
         ksym = self.stencil.get_symmetric()[k]
         self.rhs[:] = self.feq[k, np.arange(k.size)] - self.feq[ksym, np.arange(k.size)]
 
     def generate(self, sorder):
+        """
+        Generate the numerical code.
+
+        Parameters
+        ----------
+        sorder : list of int
+            the order of nv, nx, ny and nz
+        """
         from .generator import make_routine, autowrap, For, If, IndexedIntBase
         from .symbolic import nx, ny, nz, nv, indexed, space_loop, ix
 
         ns = int(self.stencil.nv_ptr[-1])
         dim = self.stencil.dim
 
-        istore, iload, ncond = self.get_istore_iload_symb(dim)
-        rhs, dist = self.get_rhs_dist_symb(ncond)
+        istore, iload, ncond = self._get_istore_iload_symb(dim)
+        rhs, dist = self._get_rhs_dist_symb(ncond)
 
         ix = Idx(ix, (0, ncond))
         fstore = indexed('f', [ns, nx, ny, nz], index=[istore[ix, k] for k in range(dim+1)], permutation=sorder)
@@ -337,22 +362,15 @@ class Bouzidi_bounce_back(Boundary_method):
 
     .. plot:: codes/Bouzidi.py
 
-    Methods
-    -------
-    set_rhs :
-        compute and set the additional terms to fix the boundary values
-    set_iload :
-        compute the indices that are needed (symmertic velocities and space indices)
-    update :
-        update the values of the distribution fonctions ouside the domain
-        according to the Bouzidi bounce back condition
-
     """
     def __init__(self, istore, ilabel, distance, stencil, value_bc, nspace, backend):
         super(Bouzidi_bounce_back, self).__init__(istore, ilabel, distance, stencil, value_bc, nspace, backend)
         self.s = np.empty(self.istore.shape[1])
 
     def set_iload(self):
+        """
+        Compute the indices that are needed (symmertic velocities and space indices).
+        """        
         k = self.istore[0]
         ksym = self.stencil.get_symmetric()[k]
         v = self.stencil.get_all_velocities()
@@ -378,19 +396,30 @@ class Bouzidi_bounce_back(Boundary_method):
         self.iload.append(iload2)
 
     def set_rhs(self):
+        """
+        Compute and set the additional terms to fix the boundary values.
+        """
         k = self.istore[0]
         ksym = self.stencil.get_symmetric()[k]
         self.rhs[:] = self.feq[k, np.arange(k.size)] - self.feq[ksym, np.arange(k.size)]
 
     def generate(self, sorder):
+        """
+        Generate the numerical code.
+
+        Parameters
+        ----------
+        sorder : list of int
+            the order of nv, nx, ny and nz
+        """
         from .generator import make_routine, autowrap, For, If, IndexedIntBase
         from .symbolic import nx, ny, nz, nv, indexed, space_loop, ix
 
         ns = int(self.stencil.nv_ptr[-1])
         dim = self.stencil.dim
 
-        istore, iload, ncond = self.get_istore_iload_symb(dim)
-        rhs, dist = self.get_rhs_dist_symb(ncond)
+        istore, iload, ncond = self._get_istore_iload_symb(dim)
+        rhs, dist = self._get_rhs_dist_symb(ncond)
 
         ix = Idx(ix, (0, ncond))
         fstore = indexed('f', [ns, nx, ny, nz], index=[istore[ix, k] for k in range(dim+1)], permutation=sorder)
@@ -410,31 +439,32 @@ class anti_bounce_back(bounce_back):
 
     .. plot:: codes/anti_bounce_back.py
 
-    Methods
-    -------
-    set_rhs :
-        compute and set the additional terms to fix the boundary values
-    set_iload :
-        compute the indices that are needed (symmertic velocities and space indices)
-    update :
-        update the values of the distribution fonctions ouside the domain
-        according to the anti bounce back condition
-
     """
     def set_rhs(self):
+        """
+        Compute and set the additional terms to fix the boundary values.
+        """
         k = self.istore[0]
         ksym = self.stencil.get_symmetric()[k]
         self.rhs[:] = self.feq[k, np.arange(k.size)] + self.feq[ksym, np.arange(k.size)]
 
     def generate(self, sorder):
+        """
+        Generate the numerical code.
+
+        Parameters
+        ----------
+        sorder : list of int
+            the order of nv, nx, ny and nz
+        """
         from .generator import make_routine, autowrap, For, If, IndexedIntBase
         from .symbolic import nx, ny, nz, nv, indexed, space_loop, ix
 
         ns = int(self.stencil.nv_ptr[-1])
         dim = self.stencil.dim
 
-        istore, iload, ncond = self.get_istore_iload_symb(dim)
-        rhs, dist = self.get_rhs_dist_symb(ncond)
+        istore, iload, ncond = self._get_istore_iload_symb(dim)
+        rhs, dist = self._get_rhs_dist_symb(ncond)
 
         ix = Idx(ix, (0, ncond))
         fstore = indexed('f', [ns, nx, ny, nz], index=[istore[ix, k] for k in range(dim+1)], permutation=sorder)
@@ -453,31 +483,32 @@ class Bouzidi_anti_bounce_back(Bouzidi_bounce_back):
 
     .. plot:: codes/Bouzidi.py
 
-    Methods
-    -------
-    set_rhs :
-        compute and set the additional terms to fix the boundary values
-    set_iload :
-        compute the indices that are needed (symmertic velocities and space indices)
-    update :
-        update the values of the distribution fonctions ouside the domain
-        according to the Bouzidi anti bounce back condition
-
     """
     def set_rhs(self):
+        """
+        Compute and set the additional terms to fix the boundary values.
+        """
         k = self.istore[0]
         ksym = self.stencil.get_symmetric()[k]
         self.rhs[:] = self.feq[k, np.arange(k.size)] + self.feq[ksym, np.arange(k.size)]
 
     def generate(self, sorder):
+        """
+        Generate the numerical code.
+
+        Parameters
+        ----------
+        sorder : list of int
+            the order of nv, nx, ny and nz
+        """        
         from .generator import make_routine, autowrap, For, If, IndexedIntBase
         from .symbolic import nx, ny, nz, nv, indexed, space_loop, ix
 
         ns = int(self.stencil.nv_ptr[-1])
         dim = self.stencil.dim
 
-        istore, iload, ncond = self.get_istore_iload_symb(dim)
-        rhs, dist = self.get_rhs_dist_symb(ncond)
+        istore, iload, ncond = self._get_istore_iload_symb(dim)
+        rhs, dist = self._get_rhs_dist_symb(ncond)
 
         ix = Idx(ix, (0, ncond))
         fstore = indexed('f', [ns, nx, ny, nz], index=[istore[ix, k] for k in range(dim+1)], permutation=sorder)
@@ -492,37 +523,41 @@ class Neumann(Boundary_method):
     """
     Boundary condition of type Neumann
 
-    Methods
-    -------
-    set_rhs :
-        compute and set the additional terms to fix the boundary values
-    set_iload :
-        compute the indices that are needed (symmertic velocities and space indices)
-    update :
-        update the values of the distribution fonctions ouside the domain
-        according to the Neumann condition
-
     """
     def __init__(self, istore, ilabel, distance, stencil, value_bc, nspace, backend):
         super(Neumann, self).__init__(istore, ilabel, distance, stencil, value_bc, nspace, backend)
 
     def set_rhs(self):
+        """
+        Compute and set the additional terms to fix the boundary values.
+        """
         pass
 
     def set_iload(self):
+        """
+        Compute the indices that are needed (symmertic velocities and space indices).
+        """        
         k = self.istore[0]
         v = self.stencil.get_all_velocities()
         indices = self.istore[1:] + v[k].T
         self.iload.append(np.concatenate([k[np.newaxis, :], indices]))
 
     def generate(self, sorder):
+        """
+        Generate the numerical code.
+
+        Parameters
+        ----------
+        sorder : list of int
+            the order of nv, nx, ny and nz
+        """        
         from .generator import make_routine, autowrap, For, If, IndexedIntBase
         from .symbolic import nx, ny, nz, nv, indexed, space_loop, ix
 
         ns = int(self.stencil.nv_ptr[-1])
         dim = self.stencil.dim
 
-        istore, iload, ncond = self.get_istore_iload_symb(dim)
+        istore, iload, ncond = self._get_istore_iload_symb(dim)
 
         ix = Idx(ix, (0, ncond))
         fstore = indexed('f', [ns, nx, ny, nz], index=[istore[ix, k] for k in range(dim+1)], permutation=sorder)
@@ -536,18 +571,11 @@ class Neumann_x(Neumann):
     """
     Boundary condition of type Neumann along the x direction
 
-    Methods
-    -------
-    set_rhs :
-        compute and set the additional terms to fix the boundary values
-    set_iload :
-        compute the indices that are needed (symmertic velocities and space indices)
-    update :
-        update the values of the distribution fonctions ouside the domain
-        according to the Neumann condition along the x direction
-
     """
     def set_iload(self):
+        """
+        Compute the indices that are needed (symmertic velocities and space indices).
+        """        
         k = self.istore[0]
         v = self.stencil.get_all_velocities()
         indices = self.istore[1:].copy()
@@ -558,18 +586,11 @@ class Neumann_y(Neumann):
     """
     Boundary condition of type Neumann along the y direction
 
-    Methods
-    -------
-    set_rhs :
-        compute and set the additional terms to fix the boundary values
-    set_iload :
-        compute the indices that are needed (symmertic velocities and space indices)
-    update :
-        update the values of the distribution fonctions ouside the domain
-        according to the Neumann condition along the y direction
-
     """
     def set_iload(self):
+        """
+        Compute the indices that are needed (symmertic velocities and space indices).
+        """
         k = self.istore[0]
         v = self.stencil.get_all_velocities()
         indices = self.istore[1:].copy()
@@ -580,18 +601,11 @@ class Neumann_z(Neumann):
     """
     Boundary condition of type Neumann along the z direction
 
-    Methods
-    -------
-    set_rhs :
-        compute and set the additional terms to fix the boundary values
-    set_iload :
-        compute the indices that are needed (symmertic velocities and space indices)
-    update :
-        update the values of the distribution fonctions ouside the domain
-        according to the Neumann condition along the z direction
-
     """
     def set_iload(self):
+        """
+        Compute the indices that are needed (symmertic velocities and space indices).
+        """        
         k = self.istore[0]
         v = self.stencil.get_all_velocities()
         indices = self.istore[1:].copy()
