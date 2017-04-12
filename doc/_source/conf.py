@@ -28,7 +28,7 @@ import sys, os
 sys.path.insert(0, os.path.abspath('../_sphinxext'))
 
 extensions = ['sphinx.ext.autodoc',
-              #'sphinx.ext.pngmath',
+              #'sphinx.ext.imgmath',
               'sphinx.ext.mathjax',
               'numpydoc',
               'matplotlib.sphinxext.plot_directive',
@@ -43,7 +43,7 @@ extensions = ['sphinx.ext.autodoc',
               #'sphinx.ext.viewcode',
               ]
 nbsphinx_execute = 'auto'              
-mathjax_path="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+#mathjax_path="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 #mathjax_path="/Users/graille/.ipython/nbextensions/mathjax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 #mathjax_path="/home/gouarin/.ipython/nbextensions/mathjax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 #autodoc_member_order = 'bysource'
@@ -322,7 +322,7 @@ texinfo_documents = [
 epub_title = u'pyLBM'
 epub_author = u'Benjamin Graille, Loïc Gouarin'
 epub_publisher = u'Benjamin Graille, Loïc Gouarin'
-epub_copyright = u'2013, Benjamin Graille, Loïc Gouarin'
+epub_copyright = u'2017, Benjamin Graille, Loïc Gouarin'
 
 # The language of the text. It defaults to the language option
 # or en if the language is not set.
@@ -357,6 +357,37 @@ epub_copyright = u'2013, Benjamin Graille, Loïc Gouarin'
 
 # Allow duplicate toc entries.
 #epub_tocdup = True
+
+# -----------------------------------------------------------------------------
+# Plots
+# -----------------------------------------------------------------------------
+numpydoc_use_plots = True
+plot_pre_code = """
+import numpy as np
+np.random.seed(0)
+"""
+plot_include_source = True
+plot_formats = [('png', 100), 'pdf']
+
+import math
+phi = (math.sqrt(5) + 1)/2
+
+plot_rcparams = {
+    'font.size': 8,
+    'axes.titlesize': 8,
+    'axes.labelsize': 8,
+    'xtick.labelsize': 8,
+    'ytick.labelsize': 8,
+    'legend.fontsize': 8,
+    'figure.figsize': (3*phi, 3),
+    'figure.subplot.bottom': 0.2,
+    'figure.subplot.left': 0.2,
+    'figure.subplot.right': 0.9,
+    'figure.subplot.top': 0.85,
+    'figure.subplot.wspace': 0.4,
+    'text.usetex': False,
+}
+
 
 import glob
 autosummary_generate = glob.glob("module/*.rst") + glob.glob("*.rst")

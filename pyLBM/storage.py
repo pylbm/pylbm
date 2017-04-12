@@ -135,10 +135,13 @@ class Array(object):
             set the name and the location of the conserved moments.
             The format is
             
-            - key : the conserved moment (sympy symbol or string)
-            - value : list of 2 integers
-                - first item : the scheme number
-                - second item : the index of the conserved moment in this scheme
+            key : the conserved moment (sympy symbol or string)
+
+            value : list of 2 integers
+            
+                first item : the scheme number
+            
+                second item : the index of the conserved moment in this scheme
 
         nv_ptr : list of int
             store the location of the schemes
