@@ -8,13 +8,15 @@ dependencies:
   - Cython
   - matplotlib
   - future
-  - ipython
+  - jupyter
   - notebook
   - nbconvert
+  - nbformat
   - h5py
   - numpydoc
   - pip
-  - sphinx>1.4.3
+  - sphinx>=1.5.1
   - pip:
      - colorlog
      - hg+https://bitbucket.org/pauloh/pyevtk
+     - git+https://github.com/spatialaudio/nbsphinx

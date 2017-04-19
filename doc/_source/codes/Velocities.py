@@ -25,7 +25,6 @@ def Velocities_1D(n):
     dim = 1
     fig = plt.figure(dim, figsize=(8, 4), facecolor='white')
     fig.clf()
-    plt.hold(True)
     xmin, xmax, ymin, ymax = 1000, -1000, -1, 1
     e = 0.2
     for k in range((2*n+1)**dim):
@@ -49,13 +48,11 @@ def Velocities_1D(n):
     plt.xlim(xmin-2*e, xmax+2*e)
     plt.ylim(ymin-2*e, ymax+2*e)
     plt.draw()
-    plt.hold(False)
 
 def Velocities_2D(n):
     dim = 2
     fig = plt.figure(dim, figsize=(8, 8), facecolor='white')
     fig.clf()
-    plt.hold(True)
     xmin, xmax, ymin, ymax = 1000, -1000, 1000, -1000
     e = .5
     for k in range((2*n+1)**dim):
@@ -87,14 +84,12 @@ def Velocities_2D(n):
     plt.xlim(xmin-2*e, xmax+2*e)
     plt.ylim(ymin-2*e, ymax+2*e)
     plt.draw()
-    plt.hold(False)
 
 def Velocities_3D(n):
     dim = 3
     couleur_tour = "k"
     fig = plt.figure(dim, figsize=(8, 8), facecolor='white')
     fig.clf()
-    plt.hold(True)
     ax = fig.add_subplot(111, projection='3d')
     xmin, xmax, ymin, ymax, zmin, zmax = 1000, -1000, 1000, -1000, 1000, -1000
     e = .5
@@ -156,7 +151,6 @@ def Velocities_3D(n):
     ax.elev = 20
     plt.axis('off')
     plt.draw()
-    plt.hold(False)
 
 def Velocities(dim, n):
     if dim == 1:

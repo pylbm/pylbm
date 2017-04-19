@@ -19,9 +19,12 @@ class Triangle(Element):
     Parameters
     ----------
 
-    point: the coordinates of the first point of the triangle
-    vecta: the coordinates of the first vector
-    vectb: the coordinates of the second vector
+    point : list
+        the coordinates of the first point of the triangle
+    vecta : list
+        the coordinates of the first vector
+    vectb : list
+        the coordinates of the second vector
     label : list of three integers (default [0, 0, 0])
     isfluid : boolean
              - True if the triangle is added
@@ -41,8 +44,6 @@ class Triangle(Element):
     Attributes
     ----------
 
-    number_of_bounds : int
-      3
     point : numpy array
       the coordinates of the first point of the triangle
     vecta : numpy array
@@ -54,18 +55,13 @@ class Triangle(Element):
     isfluid : boolean
       True if the triangle is added
       and False if the triangle is deleted
+    number_of_bounds : int
+        number of edges
 
-    Methods
-    -------
-    get_bounds
-    point_inside
-    distance
     """
-
-    number_of_bounds = 3 # number of edges
-
     def __init__(self, point, vecta, vectb, label = 0, isfluid = False):
         self.log = setLogger(__name__)
+        self.number_of_bounds = 3 # number of edges
         self.point = np.asarray(point)
         self.v0 = np.asarray(vecta)
         self.v1 = np.asarray(vectb)

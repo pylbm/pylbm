@@ -46,19 +46,12 @@ class Circle(Element):
     >>> Circle(center, radius)
         Circle([0 0],1) (solid)
 
-    Methods
-    -------
-    get_bounds
-    point_inside
-    distance
-
     """
-    number_of_bounds = 1 # number of edges
-
     def __init__(self, center, radius, label = 0, isfluid = False):
         self.log = setLogger(__name__)
+        self.number_of_bounds = 1 # number of edges
         self.center = np.asarray(center)
-        if radius>=0:
+        if radius >= 0:
             self.radius = radius
         else:
             self.log.error('The radius of the circle should be positive')

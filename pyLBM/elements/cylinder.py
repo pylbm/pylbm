@@ -208,6 +208,8 @@ class Cylinder_Circle(Cylinder):
     isfluid : boolean
       True if the cylinder is added
       and False if the cylinder is deleted
+    number_of_bounds : int
+        number of edges (3)
 
     Examples
     --------
@@ -220,16 +222,10 @@ class Cylinder_Circle(Cylinder):
     >>> Cylinder_Circle(center, v0, v1, w)
         Cylinder_Circle([0 0 0.5], [1 0 0], [0 1 0], [0 0 1]) (solid)
 
-    Methods
-    -------
-    get_bounds
-    point_inside
-    distance
     """
-    number_of_bounds = 3 # number of edges
-
     def __init__(self, center, v1, v2, w, label = 0, isfluid = False):
         self.log = setLogger(__name__)
+        self.number_of_bounds = 3 # number of edges
         self.center = np.asarray(center)
         self.v1 = np.asarray(v1)
         self.v2 = np.asarray(v2)
@@ -287,6 +283,10 @@ class Cylinder_Ellipse(Cylinder):
     isfluid : boolean
       True if the cylinder is added
       and False if the cylinder is deleted
+    number_of_bounds : int
+        number of edges (3)
+    number_of_bounds : int
+        number of edges (3)
 
     Examples
     --------
@@ -299,16 +299,10 @@ class Cylinder_Ellipse(Cylinder):
     >>> Cylinder_Ellipse(center, v0, v1, w)
         Cylinder_Ellipse([0 0 0.5], [1 0 0], [0 1 0], [0 0 1]) (solid)
 
-    Methods
-    -------
-    get_bounds
-    point_inside
-    distance
     """
-    number_of_bounds = 3 # number of edges
-
     def __init__(self, center, v1, v2, w, label = 0, isfluid = False):
         self.log = setLogger(__name__)
+        self.number_of_bounds = 3 # number of edges
         self.center = np.asarray(center)
         self.v1 = np.asarray(v1)
         self.v2 = np.asarray(v2)
@@ -360,6 +354,8 @@ class Cylinder_Triangle(Cylinder):
     isfluid : boolean
       True if the cylinder is added
       and False if the cylinder is deleted
+    number_of_bounds : int
+        number of edges (3)
 
     Examples
     --------
@@ -372,16 +368,10 @@ class Cylinder_Triangle(Cylinder):
     >>> Cylinder_Triangle(center, v0, v1, w)
         Cylinder_Triangle([0 0 0.5], [1 0 0], [0 1 0], [0 0 1]) (solid)
 
-    Methods
-    -------
-    get_bounds
-    point_inside
-    distance
     """
-    number_of_bounds = 5 # number of edges
-
     def __init__(self, center, v1, v2, w, label = 0, isfluid = False):
         self.log = setLogger(__name__)
+        self.number_of_bounds = 5 # number of edges
         self.center = np.asarray(center)
         self.v1 = np.asarray(v1)
         self.v2 = np.asarray(v2)
@@ -433,6 +423,8 @@ class Parallelepiped(Cylinder):
     isfluid : boolean
       True if the parallelepiped is added
       and False if the parallelepiped is deleted
+    number_of_bounds : int
+        number of edges (6)
 
     Examples
     --------
@@ -444,19 +436,10 @@ class Parallelepiped(Cylinder):
     >>> Parallelepiped(center, v0, v1, v2)
         Parallelepiped([0 0 0], [1 0 0], [0 1 0], [0 0 1]) (solid)
 
-    Methods
-    -------
-    get_bounds :
-      return the bounds of the parallelepiped
-    point_inside :
-      return True or False if the points are in or out the parallelepiped
-    distance :
-      get the distance of a point to the parallelepiped
     """
-    number_of_bounds = 6 # number of edges
-
     def __init__(self, point, v0, v1, v2, label = 0, isfluid = False):
         self.log = setLogger(__name__)
+        self.number_of_bounds = 6 # number of edges
         self.point = np.asarray(point)
         self.v1 = np.asarray(v0)
         self.v2 = np.asarray(v1)
