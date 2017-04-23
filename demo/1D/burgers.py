@@ -44,7 +44,7 @@ def solution(t, x, xmin, xmax, uL, uR): # solution
         xL = xm + t*uL
         xR = xm + t*uR
         u[x < xL] = uL
-        u[x>=xL and x<=xR] = (uL * (xR-x[ind_D]) + uR * (x[ind_D]-xL)) / (xR-xL)
+        u[np.logical_and(x>=xL, x<=xR)] = (uL * (xR-x[np.logical_and(x>=xL, x<=xR)])+ uR * (x[np.logical_and(x>=xL, x<=xR)]-xL)) / (xR-xL)
         u[x > xR] = uR
     return u
 
@@ -70,9 +70,8 @@ def run(dx, Tf, generator="numpy", sorder=None, withPlot=True):
     """
     # parameters
     xmin, xmax = -1., 1.  # bounds of the domain
-    uL =  0.3             # left value
+    uL =  -0.3             # left value
     uR =  0.0             # right value
-    L = 0.2               # length of the middle area
     la = 1.               # scheme velocity (la = dx/dt)
     s = 1.8               # relaxation parameter
 

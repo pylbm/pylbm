@@ -694,7 +694,7 @@ class Scheme(object):
         s.simplify()
 
         u_tild = MatrixSymbol('u_tild', self.dim, 1)
-        
+
         rel_vel = sp.Matrix(self.rel_vel).subs(subs_moments)
         Tu = self.Tu.subs(list(zip(u_tild, rel_vel)))
         Tu.simplify()
@@ -702,7 +702,7 @@ class Scheme(object):
         rel_vel = -sp.Matrix(self.rel_vel).subs(subs_moments)
         Tmu = self.Tu.subs(list(zip(u_tild, rel_vel)))
         Tmu.simplify()
-      
+
         from .generator import make_routine, autowrap, For, If
         from .symbolic import nx, ny, nz, nv, indexed, space_loop
 
@@ -745,7 +745,6 @@ class Scheme(object):
             m = indexed('m', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
             dummy = dummy.subs(list(zip(mv, m)))
             routines += make_routine(('one_time_step', For(iloop, 
-                                                        
                                                             [
                                                                 Eq(m, Mu*f),  # transport + f2m
                                                                 Eq(m, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(m)) + s.multiply_elementwise(dummy)), # relaxation
@@ -755,8 +754,8 @@ class Scheme(object):
                                                         ))
         else:
             nconsm = len(self.consm)
-            routines += make_routine(('one_time_step', For(iloop, 
-                                                        If((Eq(in_or_out, valin), 
+            routines += make_routine(('one_time_step', For(iloop,
+                                                        If((Eq(in_or_out, valin),
                                                             [
                                                                 Eq(mv[:nconsm, 0], sp.Matrix((Mu*f)[:nconsm])),  # transport + f2m
                                                                 Eq(mv[nconsm:, 0], sp.Matrix((Mu*f)[nconsm:])),  # transport + f2m
@@ -766,8 +765,8 @@ class Scheme(object):
                                                             )
                                                         ))), local_vars=[mv], settings={"prefetch":[f[0]]})
             # nconsm = len(self.consm)
-            # routines += make_routine(('one_time_step', For(iloop, 
-            #                                             If((Eq(in_or_out, valin), 
+            # routines += make_routine(('one_time_step', For(iloop,
+            #                                             If((Eq(in_or_out, valin),
             #                                                 [
             #                                                     Eq(mv[:nconsm, 0], sp.Matrix((M*f)[:nconsm])),  # transport + f2m
             #                                                     Eq(mv[nconsm:, 0], sp.Matrix((M*f)[nconsm:])),  # transport + f2m
@@ -838,7 +837,7 @@ class Scheme(object):
     def source_term(self, m, tn=0., dt=0., x=0., y=0., z=0.):
         """ The integration of the source term on the moments m """
         mod = self.generator.get_module()
-        mod.source_term(m.array, tn, dt, x, y, z)        
+        mod.source_term(m.array, tn, dt, x, y, z)
 
     def onetimestep(self, mm, ff, ff_new, in_or_out, valin, tn=0., dt=0., x=0., y=0., z=0.):
         """ Compute one time step of the Lattice Boltzmann method """
