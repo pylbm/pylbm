@@ -269,7 +269,9 @@ class Scheme(object):
                 meq_tmp.simplify()
                 eq.append([e for e in meq_tmp])
         self.EQ = sp.Matrix([e for sublist in eq for e in sublist])
-        print(self.EQ, self.M, self.M.inv())
+        self.log.info("Equilibrium:\n" + sp.pretty(self.EQ))
+        self.log.info("Matrix M to transform the distribution into the moments\n" + sp.pretty(self.M))
+        self.log.info("Matrix M^(-1) to transform the moments into the distribution\n" + sp.pretty(self.invM))
         # put conserved moments at the beginning of P, EQ and s
         self.consm = self._get_conserved_moments(scheme)
 
@@ -284,11 +286,8 @@ class Scheme(object):
             self.invM.col_swap(p[0], p[1])
             self.Tu.row_swap(p[0], p[1])
             self.Tu.col_swap(p[0], p[1])
-            #Tmu.row_swap(p[0], p[1])
-            #Tmu.col_swap(p[0], p[1])
-
-        index = len(self.consm)
-        self.Tu[:index, :index] = sp.Matrix.eye(index)
+            self.Tmu.row_swap(p[0], p[1])
+            self.Tmu.col_swap(p[0], p[1])
 
         for ic, c in enumerate(self.consm.keys()):
             self.consm[c] = ic
@@ -322,6 +321,8 @@ class Scheme(object):
 
         self.bc_compute = True
 
+        self._check_inverse_of_Tu()
+
         # stability
         dicostab = dico.get('stability', None)
         if dicostab is not None:
@@ -347,10 +348,10 @@ class Scheme(object):
                 else:
                     print("The scheme is not stable for the norm L2")
 
+        # consistency
         dicocons = dico.get('consistency', None)
         if dicocons is not None:
             self.compute_consistency(dicocons)
-
 
     def _check_entry_size(self, schemes, key):
         for i, s in enumerate(schemes):
@@ -452,7 +453,7 @@ class Scheme(object):
                         self.invM[index] = invM[k][i, j]
 
                         if self.rel_vel is not None:
-                            self.Tu[index] = Tu[k][i, j]
+                            self.Tu[index] = Tu[k][i, j].expand()
                             #self.Tmu[index] = Tmu[k][i, j]
         except TypeError:
             self.log.error("Unable to convert to float the expression {0} or {1}.\nCheck the 'parameters' entry.".format(self.M[k][i, j], self.invM[k][i, j]))
@@ -461,6 +462,43 @@ class Scheme(object):
         self.Tu.simplify()
         self.M.simplify()
         self.invM.simplify()
+
+        # compute the inverse of self.Tu by formula T(u)T(-u)=Id
+        self.Tmu = sp.eye(gshape[0])
+        for k in range(gshape[0]):
+            for l in range(gshape[0]):
+                self.Tmu[k,l] = self.Tu[k,l].subs(list(zip(u_tild, -u_tild))).simplify()
+
+    def _check_inverse_of_Tu(self):
+        # verification
+        u_tild = MatrixSymbol('u_tild', self.dim, 1)
+        ux, uy, uz = sp.symbols('ux, uy, uz', real=True)
+        L = list(zip(u_tild, [ux, uy, uz][:self.dim]))
+        Tu = self.Tu.subs(L)
+        Tu.simplify()
+        Tmu = self.Tmu.subs(L)
+        Tmu.simplify()
+        gshape = self.stencil.nv_ptr[-1]
+        dummy = Tu*Tmu - sp.Identity(gshape)
+        test = True
+        for k in range(gshape):
+            for l in range(gshape):
+                if not dummy[k, l].equals(0):
+                    test = False
+        if not test:
+            self.log.warning("The property on the translation matrix is not verified\n T(u) * T(-u) is not identity !!!")
+
+    def _check_inverse_of_Mu(self, Mu, invMu):
+        # verification
+        gshape = self.stencil.nv_ptr[-1]
+        dummy = Mu*invMu - sp.Identity(gshape)
+        test = True
+        for k in range(gshape):
+            for l in range(gshape):
+                if not dummy[k, l].equals(0):
+                    test = False
+        if not test:
+            self.log.warning("Problem M(u) * invM(u) is not identity !!!")
 
     def _get_conserved_moments(self, scheme):
         """
@@ -552,7 +590,6 @@ class Scheme(object):
             l_cons[n].sort()
             l_noncons[n].sort()
         return l_cons, l_noncons
-
 
     def set_initialization(self, scheme):
         """
@@ -686,66 +723,66 @@ class Scheme(object):
 
         subs_param = list(zip(pk, pv))
         subs_moments = list(zip(self.consm.keys(), [mv[int(i),0] for i in self.consm.values()]))
-        #M = self.M.subs(subs)
-        #invM = self.M.inv().subs(subs)
+
         eq = self.EQ.subs(subs_moments)
         s = self.s.subs(subs_moments + subs_param)
         eq.simplify()
         s.simplify()
 
-        u_tild = MatrixSymbol('u_tild', self.dim, 1)
-        
-        rel_vel = sp.Matrix(self.rel_vel).subs(subs_moments)
-        Tu = self.Tu.subs(list(zip(u_tild, rel_vel)))
-        Tu.simplify()
+        u_tild = MatrixSymbol('u_tild', self.dim, 1) # the relative velocity
+        ux, uy, uz = sp.symbols('ux, uy, uz', real=True)
+        list_rel_vel = [ux, uy, uz][:self.dim]
+        L = list(zip(u_tild, list_rel_vel))
 
-        rel_vel = -sp.Matrix(self.rel_vel).subs(subs_moments)
-        Tmu = self.Tu.subs(list(zip(u_tild, rel_vel)))
-        Tmu.simplify()
-      
+        Mu = self.Tu.subs(L).expand() * self.M.expand()
+        invMu = self.invM.expand() * self.Tmu.subs(L).expand()
+        Mu.simplify()
+        Mu = Mu.subs(subs_param)
+        M = self.M.subs(subs_param).expand()
+        invMu.simplify()
+        invMu = invMu.subs(subs_param)
+        invM = self.invM.subs(subs_param).expand()
+        self._check_inverse_of_Mu(Mu, invMu)
+
         from .generator import make_routine, autowrap, For, If
         from .symbolic import nx, ny, nz, nv, indexed, space_loop
 
-        iloop = space_loop([(0, nx), (0, ny), (0, nz)], permutation=sorder)
+        iloop = space_loop([(0, nx), (0, ny), (0, nz)], permutation=sorder) # loop over all spatial points
         m = indexed('m', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
         f = indexed('f', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
 
-        Mu = Tu.subs(list(zip(mv, m))).expand()*self.M.expand()
-        invMu = self.M.inv().expand()*Tmu.subs(list(zip(mv, m))).expand()
-        Mu.simplify()
-        Mu = Mu.subs(subs_param)
-        invMu.simplify()
-        invMu = invMu.subs(subs_param)
-
-        #import ipdb; ipdb.set_trace()
-
+        # begin the code with an empty list
         routines = []
-        routines += make_routine(('f2m', For(iloop, Eq(m, Mu*f))), settings={"prefetch":[f[0]]})
-        routines += make_routine(('m2f', For(iloop, Eq(f, invMu*m))), settings={"prefetch":[m[0]]})
 
-        dummy = Tu.subs(list(zip(mv, m))).expand()*eq.subs(list(zip(mv, m))).expand()
-        dummy = dummy.subs(subs_param)
+        # WARNING: (relative velocties)
+        # the moments in the functions f2m, m2f, and equilibrium
+        # are the real moments even if the scheme uses a relative velocity
+
+        # add the function f2m as m = M f
+        routines += make_routine(('f2m', For(iloop, Eq(m, M*f))), settings={"prefetch":[f[0]]})
+        # add the function m2f as f = M^(-1) m
+        routines += make_routine(('m2f', For(iloop, Eq(f, invM*m))), settings={"prefetch":[m[0]]})
+        # add the function equilibrium
+        dummy = eq.subs(list(zip(mv, m)) + subs_param).expand()
         dummy.simplify()
         routines += make_routine(('equilibrium', For(iloop, Eq(m, dummy))))
 
-        # fix: set loop with vmax
-        iloop = space_loop([(1, nx-1), (1, ny-1), (1, nz-1)], permutation=sorder)
+        # fix: set loop with vmax -> DONE ?
+        vmax = [0]*3
+        vmax[:self.dim] = self.stencil.vmax
+        iloop = space_loop([(vmax[0], nx-vmax[0]),
+                            (vmax[1], ny-vmax[1]),
+                            (vmax[2], nz-vmax[2])], permutation=sorder)
         f = indexed('f', [ns, nx, ny, nz], index=[nv] + iloop, list_ind=self.stencil.get_all_velocities(), permutation=sorder)
         f_new = indexed('f_new', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
         in_or_out = indexed('in_or_out', [ns, nx, ny, nz], permutation=sorder, remove_ind=[0])
 
-        Mu = Mu.subs(list(zip(m, mv)))
-        invMu = invMu.subs(list(zip(m, mv)))
-        dummy = dummy.subs(list(zip(m, mv)))
-        # invMu = invM*Tmu
-        # Mu.simplify()
-        # invMu.simplify()
-
         if backend.upper() == "NUMPY":
+            ################## FIX
+            self.log.error("NUMPY generator not allowed in this version with relative velocities")
             m = indexed('m', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
             dummy = dummy.subs(list(zip(mv, m)))
-            routines += make_routine(('one_time_step', For(iloop, 
-                                                        
+            routines += make_routine(('one_time_step', For(iloop,
                                                             [
                                                                 Eq(m, Mu*f),  # transport + f2m
                                                                 Eq(m, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(m)) + s.multiply_elementwise(dummy)), # relaxation
@@ -754,29 +791,26 @@ class Scheme(object):
                                                             )
                                                         ))
         else:
+            # build the equations defining the relative velocities
+            rel_vel = sp.Matrix(self.rel_vel).subs(subs_moments)
             nconsm = len(self.consm)
-            routines += make_routine(('one_time_step', For(iloop, 
-                                                        If((Eq(in_or_out, valin), 
-                                                            [
-                                                                Eq(mv[:nconsm, 0], sp.Matrix((Mu*f)[:nconsm])),  # transport + f2m
-                                                                Eq(mv[nconsm:, 0], sp.Matrix((Mu*f)[nconsm:])),  # transport + f2m
-                                                                Eq(mv, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(mv)) + s.multiply_elementwise(dummy)), # relaxation
-                                                                Eq(f_new, invMu*mv), # m2f + update f_new
-                                                            ]
-                                                            )
-                                                        ))), local_vars=[mv], settings={"prefetch":[f[0]]})
-            # nconsm = len(self.consm)
-            # routines += make_routine(('one_time_step', For(iloop, 
-            #                                             If((Eq(in_or_out, valin), 
-            #                                                 [
-            #                                                     Eq(mv[:nconsm, 0], sp.Matrix((M*f)[:nconsm])),  # transport + f2m
-            #                                                     Eq(mv[nconsm:, 0], sp.Matrix((M*f)[nconsm:])),  # transport + f2m
-            #                                                     Eq(mv, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(mv)) + s.multiply_elementwise(eq)), # relaxation
-            #                                                     Eq(f_new, invM*mv), # m2f + update f_new
-            #                                                 ]
-            #                                                 )
-            #                                             ))), local_vars=[mv], settings={"prefetch":[f[0]]})
-
+            brv = [Eq(mv[:nconsm, 0], sp.Matrix((M*f)[:nconsm]))]
+            for i in range(self.dim):
+                brv.append(Eq(list_rel_vel[i], rel_vel[i].expand()))
+            # build the equilibrium
+            dummy = self.Tu.subs(L)*eq.subs(subs_param).expand()
+            dummy.simplify()
+            routines += make_routine(('one_time_step',
+                                      For(iloop,
+                                          If( (Eq(in_or_out, valin), [
+                                              *brv, # build relative velocity
+                                              Eq(mv[nconsm:,0], sp.Matrix((Mu*f)[nconsm:])), # relative non conserved moments
+                                              Eq(mv, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(mv)) + s.multiply_elementwise(dummy)), # relaxation
+                                              Eq(mv[:nconsm, 0], sp.Matrix((Mu*f)[:nconsm])), #relative conserved moments
+                                              Eq(f_new, invMu*mv), # m2f + update f_new
+                                              ]) )
+                                          )
+                                      ), local_vars = [mv, *list_rel_vel], settings={"prefetch":[f[0]]})
         self.mod = autowrap(routines, backend=backend)
 
     def m2f(self, mm, ff):
@@ -838,7 +872,7 @@ class Scheme(object):
     def source_term(self, m, tn=0., dt=0., x=0., y=0., z=0.):
         """ The integration of the source term on the moments m """
         mod = self.generator.get_module()
-        mod.source_term(m.array, tn, dt, x, y, z)        
+        mod.source_term(m.array, tn, dt, x, y, z)
 
     def onetimestep(self, mm, ff, ff_new, in_or_out, valin, tn=0., dt=0., x=0., y=0., z=0.):
         """ Compute one time step of the Lattice Boltzmann method """

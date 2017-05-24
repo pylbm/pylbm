@@ -89,4 +89,3 @@ def call_genfunction(function, args):
         func_args = getargspec(function).args
         d = {k:args[k] for k in func_args}
     function(**d)
-    
