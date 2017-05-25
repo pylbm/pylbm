@@ -442,7 +442,7 @@ class Stencil(list):
         used to obtain the list of the velocities involved in a stencil.
         For instance, the list for the kth stencil is
             v[nv_ptr[k]:nv_ptr[k+1]]
-    unvtot : int 
+    unvtot : int
         the number of unique velocities involved in the stencils.
 
     Notes
