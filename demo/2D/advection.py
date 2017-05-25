@@ -60,12 +60,12 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     dico = {
         'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':-1},
         'space_step':dx,
-        'scheme_velocity':la,
+        'scheme_velocity':LA,
         'schemes':[
             {
                 'velocities':list(range(1,5)),
                 'conserved_moments':u,
-                'polynomials':[1, LA*X, LA*Y, X**2-Y**2],
+                'polynomials':[1, X, Y, X**2-Y**2],
                 'relaxation_parameters':s,
                 'equilibrium':[u, cx*u, cy*u, 0],
                 'init':{u:(u0,(xmin, xmax, ymin, ymax))},
@@ -73,6 +73,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         ],
         'generator': generator,
         'parameters':{LA:la},
+        'relative_velocity': [cx, cy],
         }
 
     sol = pyLBM.Simulation(dico, sorder=sorder)
