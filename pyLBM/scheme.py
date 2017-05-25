@@ -810,7 +810,7 @@ class Scheme(object):
                                               Eq(f_new, invMu*mv), # m2f + update f_new
                                               ]) )
                                           )
-                                      ), local_vars = [mv, *list_rel_vel], settings={"prefetch":[f[0]]})
+                                      ), local_vars = [mv] + list_rel_vel, settings={"prefetch":[f[0]]})
         self.mod = autowrap(routines, backend=backend)
 
     def m2f(self, mm, ff):
