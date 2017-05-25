@@ -452,7 +452,7 @@ class Scheme(object):
                         self.invM[index] = invM[k][i, j]
 
                         if self.rel_vel is not None:
-                            self.Tu[index] = Tu[k][i, j]
+                            self.Tu[index] = Tu[k][i, j].expand()
                             #self.Tmu[index] = Tmu[k][i, j]
         except TypeError:
             self.log.error("Unable to convert to float the expression {0} or {1}.\nCheck the 'parameters' entry.".format(self.M[k][i, j], self.invM[k][i, j]))
@@ -461,6 +461,12 @@ class Scheme(object):
         self.Tu.simplify()
         self.M.simplify()
         self.invM.simplify()
+
+        # for i in range(9):
+        #     for j in range(9):
+        #         print("({0:1d},{1:1d}): {2}".format(i,j,self.Tu[i,j]))
+        # sp.pprint(self.Tu)
+        # sys.exit()
 
     def _get_conserved_moments(self, scheme):
         """
@@ -698,6 +704,11 @@ class Scheme(object):
         rel_vel = sp.Matrix(self.rel_vel).subs(subs_moments)
         Tu = self.Tu.subs(list(zip(u_tild, rel_vel)))
         Tu.simplify()
+        # for i in range(9):
+        #     for j in range(9):
+        #         print("({0:1d},{1:1d}): {2}".format(i,j,Tu[i,j]))
+        sp.pprint(Tu)
+        sys.exit()
 
         rel_vel = -sp.Matrix(self.rel_vel).subs(subs_moments)
         Tmu = self.Tu.subs(list(zip(u_tild, rel_vel)))
@@ -716,6 +727,8 @@ class Scheme(object):
         Mu = Mu.subs(subs_param)
         invMu.simplify()
         invMu = invMu.subs(subs_param)
+        # Mu.simplify()
+        # invMu = Mu.inv().simplify()
 
         #import ipdb; ipdb.set_trace()
 
@@ -734,9 +747,6 @@ class Scheme(object):
         f_new = indexed('f_new', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
         in_or_out = indexed('in_or_out', [ns, nx, ny, nz], permutation=sorder, remove_ind=[0])
 
-        Mu = Mu.subs(list(zip(m, mv)))
-        invMu = invMu.subs(list(zip(m, mv)))
-        dummy = dummy.subs(list(zip(m, mv)))
         # invMu = invM*Tmu
         # Mu.simplify()
         # invMu.simplify()
@@ -744,8 +754,7 @@ class Scheme(object):
         if backend.upper() == "NUMPY":
             m = indexed('m', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
             dummy = dummy.subs(list(zip(mv, m)))
-            routines += make_routine(('one_time_step', For(iloop, 
-                                                        
+            routines += make_routine(('one_time_step', For(iloop,
                                                             [
                                                                 Eq(m, Mu*f),  # transport + f2m
                                                                 Eq(m, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(m)) + s.multiply_elementwise(dummy)), # relaxation
@@ -754,6 +763,9 @@ class Scheme(object):
                                                             )
                                                         ))
         else:
+            Mu = Mu.subs(list(zip(m, mv)))
+            invMu = invMu.subs(list(zip(m, mv)))
+            dummy = dummy.subs(list(zip(m, mv)))
             nconsm = len(self.consm)
             routines += make_routine(('one_time_step', For(iloop, 
                                                         If((Eq(in_or_out, valin), 
@@ -761,10 +773,11 @@ class Scheme(object):
                                                                 Eq(mv[:nconsm, 0], sp.Matrix((Mu*f)[:nconsm])),  # transport + f2m
                                                                 Eq(mv[nconsm:, 0], sp.Matrix((Mu*f)[nconsm:])),  # transport + f2m
                                                                 Eq(mv, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(mv)) + s.multiply_elementwise(dummy)), # relaxation
+                                                                Eq(mv[1:3,0], 0*mv[1:3,0]),
                                                                 Eq(f_new, invMu*mv), # m2f + update f_new
                                                             ]
                                                             )
-                                                        ))), local_vars=[mv], settings={"prefetch":[f[0]]})
+                                                        ))), local_vars=[mv, utilde], settings={"prefetch":[f[0]]})
             # nconsm = len(self.consm)
             # routines += make_routine(('one_time_step', For(iloop, 
             #                                             If((Eq(in_or_out, valin), 
