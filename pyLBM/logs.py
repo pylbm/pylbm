@@ -13,6 +13,9 @@ from .options import options
 loggers = {}
 
 def setLogger(name):
+    """
+    usage: python *.py --log=INFO
+    """
     global loggers
 
     numeric_level = getattr(logging, options().loglevel.upper(), None)
@@ -27,9 +30,9 @@ def setLogger(name):
         datefmt=None,
         reset=True,
         log_colors={
-                'DEBUG':    'cyan',
-                'INFO':     'green',
-                'WARNING':  'yellow',
+                'DEBUG':    'green',
+                'INFO':     'cyan',
+                'WARNING':  'blue',
                 'ERROR':    'red',
                 'CRITICAL': 'red,bg_white',
         },
