@@ -45,7 +45,7 @@ class Routine(object):
             OutputArguments or InOutArguments (e.g., pass-by-reference in C
             code).
 
-        instructions : list 
+        instructions : list
             Instructions of the routine.
 
         local_vars : list of Symbols
@@ -138,7 +138,7 @@ def get_dims_and_symbol(expr):
         dims = tuple([ (S.Zero, dim - 1) for dim in symbol.shape if dim != 1])
     else:
         raise CodeGenError("Only Indexed, Symbol, or MatrixSymbol "
-                            "can define output arguments.")    
+                            "can define output arguments.")
     return dims, symbol
 
 def extract(expressions, symbols):
@@ -166,7 +166,7 @@ def extract(expressions, symbols):
                 args, vals = extract(e, symbols)
                 output_args += args
         else:
-            raise TypeError("The expression must be a For or an equality (Eq).")         
+            raise TypeError("The expression must be a For or an equality (Eq).")
     return output_args, instructions
 
 
@@ -205,7 +205,7 @@ class LBMCodeGen(CodeGen):
             score_table[i] = 0
 
         def rate_index_position(p):
-            return p*5    
+            return p*5
 
         arrays = expressions.atoms(Indexed)
         for arr in arrays:
@@ -214,7 +214,7 @@ class LBMCodeGen(CodeGen):
                     score_table[ind] += rate_index_position(p)
                 except KeyError:
                     pass
-        
+
         idx_order = sorted(idx_vars, key=lambda x: score_table[x])
 
         # local variables
@@ -361,7 +361,7 @@ class CythonCodeGen(LBMCodeGen):
                       "from libc.math cimport *\n",
                      ]
         return code_lines + ["\n\n"]
-        
+
     def _preprocessor_statements(self, prefix):
         # code_lines = ["#!python\n",
         #               "#cython: boundscheck=False\n",
@@ -379,7 +379,7 @@ class CythonCodeGen(LBMCodeGen):
         code_list = []
         export = True
         # export = self.settings.pop('export', True)
-        if export:            
+        if export:
             code_list.append("def ")
         else:
             code_list.append("cdef void ")
@@ -420,8 +420,11 @@ class CythonCodeGen(LBMCodeGen):
     def _declare_globals(self, routine):
         args = []
         for g in routine.local_vars:
-            shape = [d for d in g.shape if d!=1]
-            args.append("cdef double %s[%s]\n"%(self._get_symbol(g), ','.join("%s"%s for s in shape)))
+            if isinstance(g, Symbol):
+                args.append("cdef double %s\n"%(self._get_symbol(g)))
+            else:
+                shape = [d for d in g.shape if d!=1]
+                args.append("cdef double %s[%s]\n"%(self._get_symbol(g), ','.join("%s"%s for s in shape)))
         return ["".join(args)]
 
     def _declare_locals(self, routine):
@@ -537,7 +540,7 @@ class LoopyCodeGen(LBMCodeGen):
                       "import numpy as np\n"
                      ]
         return code_lines + ["\n\n"]
-                
+
     def _get_routine_opening(self, routine):
         """Returns the opening statements of the routine."""
         code_list = []
@@ -548,7 +551,7 @@ class LoopyCodeGen(LBMCodeGen):
             if isinstance(i, Idx):
                 name.append("%s_"%i.label)
                 bounds.append("0<={ilabel}_<{upper}".format(ilabel=i.label, upper=i.upper-i.lower))
-        
+
         if len(name) > 0:
             code_list.append('"{[%s]:%s}",'%(",".join(name), " and ".join(bounds)))
         code_list.append('"""  # noqa (silences flake8 line length warning)\n')
@@ -589,7 +592,7 @@ class LoopyCodeGen(LBMCodeGen):
         for i, arg in enumerate(routine.local_vars):
             dims = [d for d in arg.shape if d!=1]
             args.append('lp.TemporaryVariable("{name}", dtype=float, shape="{shape}")'.format(name=self._get_symbol(arg), shape=','.join("%s"%s for s in dims)))
-            
+
         code_list.append('[')
         args = ",\n".join(args)
         code_list.append(args)
@@ -634,7 +637,7 @@ class LoopyCodeGen(LBMCodeGen):
 # one_time_step = lp.split_iname(one_time_step, "ii", 16, outer_tag="g.1", inner_tag="l.1")
 # one_time_step = lp.split_iname(one_time_step, "jj", 16, outer_tag="g.0", inner_tag="l.0")
 # one_time_step = lp.expand_subst(one_time_step)
-# one_time_step = lp.add_prefetch(one_time_step, "f", "ii_inner,jj_inner", fetch_bounding_box=True)        
+# one_time_step = lp.add_prefetch(one_time_step, "f", "ii_inner,jj_inner", fetch_bounding_box=True)
         code_list = [ "\n".join(code_list) ]
         return code_list
 
@@ -653,7 +656,7 @@ class LoopyCodeGen(LBMCodeGen):
     dump_fns = [dump_py]
 
 def get_code_generator(language, project):
-    CodeGenClass = {"NUMPY" : NumpyCodeGen, 
+    CodeGenClass = {"NUMPY" : NumpyCodeGen,
                     "CYTHON": CythonCodeGen,
                     "LOOPY": LoopyCodeGen}.get(language.upper())
     if CodeGenClass is None:
@@ -680,7 +683,7 @@ def codegen(name_expr, language, prefix=None, project="project",
                                          global_vars, settings))
 
     # Write the code.
-    return code_gen.write(routines, prefix, to_files, header, empty)    
+    return code_gen.write(routines, prefix, to_files, header, empty)
 
 def make_routine(name_expr, argument_sequence=None, local_vars=None, settings={}):
     if isinstance(name_expr[0], string_types):
@@ -688,8 +691,8 @@ def make_routine(name_expr, argument_sequence=None, local_vars=None, settings={}
         name_expr = [name_expr]
 
     routines = []
-    for name, expr in name_expr:     
+    for name, expr in name_expr:
         routines.append(LBMCodeGen().routine(name, expr, argument_sequence,
                                              local_vars, settings))
-    
+
     return routines

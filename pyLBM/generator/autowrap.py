@@ -109,8 +109,8 @@ import {module_name}
         print(open(self.filename + '.pyx').read())
 
         command = [sys.executable, 'build.py']
-        
-        return command    
+
+        return command
 
     def _prepare_files(self, routines):
         pass
@@ -118,7 +118,7 @@ import {module_name}
 class PythonCodeWrapper(CodeWrapper):
     @property
     def command(self):
-        return []    
+        return []
 
     def _prepare_files(self, routines):
         pass
@@ -127,7 +127,7 @@ class PythonCodeWrapper(CodeWrapper):
         print(open(self.filename + '.py').read())
 
 def get_code_wrapper(backend):
-    CodeWrapClass = {"NUMPY" : PythonCodeWrapper, 
+    CodeWrapClass = {"NUMPY" : PythonCodeWrapper,
                      "CYTHON": CythonCodeWrapper,
                      "LOOPY": PythonCodeWrapper}.get(backend.upper())
     if CodeWrapClass is None:
