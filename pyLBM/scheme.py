@@ -798,7 +798,7 @@ class Scheme(object):
             for i in range(self.dim):
                 brv.append(Eq(list_rel_vel[i], rel_vel[i].expand()))
             # build the equilibrium
-            dummy = self.Tu.subs(L)*eq.subs(subs_param).expand()
+            dummy = self.Tu.subs(L + subs_param)*eq.subs(subs_param).expand()
             dummy.simplify()
             routines += make_routine(('one_time_step',
                                       For(iloop,
