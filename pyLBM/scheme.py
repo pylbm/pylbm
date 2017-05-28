@@ -10,6 +10,7 @@ import sys
 import types
 from six import string_types
 from six.moves import range
+import time
 
 import numpy as np
 import sympy as sp
@@ -56,6 +57,16 @@ proto_cons = {
     'order': (int,),
     'linearization':(type(None), is_dico_sp_sporfloat),
 }
+
+def alltogether(M):
+    for i in range(M.shape[0]):
+       for j in range(M.shape[1]):
+            M[i, j] = M[i, j].together().factor()
+
+def allfactor(M):
+    for i in range(M.shape[0]):
+       for j in range(M.shape[1]):
+            M[i, j] = M[i, j].factor()
 
 def param_to_tuple(param):
     if param is not None:
@@ -250,7 +261,11 @@ class Scheme(object):
         self.invM = None
         self.Tu = None
 
+        t1 = time.time()
         self.create_moments_matrices()
+        t2 = time.time()
+        print('create moments matrices', t2-t1)
+
 
         # self.EQ = sp.Matrix([e for s in scheme for e in s['equilibrium']])
         self.s = sp.Matrix([r for s in scheme for r in s['relaxation_parameters']])
@@ -275,6 +290,7 @@ class Scheme(object):
         # put conserved moments at the beginning of P, EQ and s
         self.consm = self._get_conserved_moments(scheme)
 
+        t1 = time.time()
         permutations = []
         for ic, c in enumerate(self.consm.values()):
             permutations.append([ic, c])
@@ -289,10 +305,16 @@ class Scheme(object):
             self.Tmu.row_swap(p[0], p[1])
             self.Tmu.col_swap(p[0], p[1])
 
+        t2 = time.time()
+        print('swap', t2-t1)
+
         for ic, c in enumerate(self.consm.keys()):
             self.consm[c] = ic
 
+        t1 = time.time()
         self.init = self.set_initialization(scheme)
+        t2 = time.time()
+        print('initialization', t2-t1)
 
         self.source_terms = self.set_source_terms(scheme)
         if self.source_terms is not None:
@@ -321,7 +343,10 @@ class Scheme(object):
 
         self.bc_compute = True
 
-        self._check_inverse_of_Tu()
+        t1 = time.time()
+        #self._check_inverse(self.Tu, self.Tmu, 'Tu')
+        t2 = time.time()
+        print('check inverse Tu', t2-t1)
 
         # stability
         dicostab = dico.get('stability', None)
@@ -406,14 +431,17 @@ class Scheme(object):
         #Mmu = []
         #Tmu = []
 
-        u_tild = MatrixSymbol('u_tild', self.dim, 1)
-
+        #u_tild = MatrixSymbol('u_tild', self.dim, 1)
+        ux, uy, uz = sp.symbols('ux, uy, uz', real=True)
+        u_tild = sp.Matrix([ux, uy, uz])
+        
         if self.la_symb is not None:
             LA = self.la_symb
         else:
             LA = self.la
 
         for iv, v in enumerate(self.stencil.v):
+            print(type(v[0].v[0]), v[0])
             p = self.P[self.stencil.nv_ptr[iv] : self.stencil.nv_ptr[iv+1]]
             compt+=1
             lv = len(v)
@@ -422,11 +450,12 @@ class Scheme(object):
             #Mmu.append(sp.zeros(lv, lv))
             for i in range(lv):
                 for j in range(lv):
-                    sublist = [(str(self.varX[d]), v[j].v[d]*LA) for d in range(self.dim)]
+                    sublist = [(str(self.varX[d]), sp.Integer(v[j].v[d])*LA) for d in range(self.dim)]
                     M[-1][i, j] = p[i].subs(sublist)
 
                     if self.rel_vel is not None:
-                        sublist = [(str(self.varX[d]), v[j].v[d]*LA - u_tild[d, 0]) for d in range(self.dim)]
+                        #sublist = [(str(self.varX[d]), v[j].v[d]*LA - u_tild[d, 0]) for d in range(self.dim)]
+                        sublist = [(str(self.varX[d]), v[j].v[d]*LA - u_tild[d]) for d in range(self.dim)]
                         Mu[-1][i, j] = p[i].subs(sublist)
                         #sublist = [(str(self.varX[d]), v[j].v[d] - self.rel_vel[d]) for d in range(self.dim)]
                         #Mu[-1][i, j] = p[i].subs(sublist)
@@ -442,7 +471,8 @@ class Scheme(object):
         #self.Tmu = sp.eye(gshape[0])
         self.M = sp.zeros(*gshape)
         self.invM = sp.zeros(*gshape)
-
+        
+        t1 = time.time()
         try:
             for k in range(self.nscheme):
                 nvk = self.stencil.nv[k]
@@ -453,21 +483,26 @@ class Scheme(object):
                         self.invM[index] = invM[k][i, j]
 
                         if self.rel_vel is not None:
-                            self.Tu[index] = Tu[k][i, j].expand()
+                            self.Tu[index] = Tu[k][i, j]#.expand()
                             #self.Tmu[index] = Tmu[k][i, j]
         except TypeError:
             self.log.error("Unable to convert to float the expression {0} or {1}.\nCheck the 'parameters' entry.".format(self.M[k][i, j], self.invM[k][i, j]))
             sys.exit()
-
-        self.Tu.simplify()
-        self.M.simplify()
-        self.invM.simplify()
-
+        
+        t2 = time.time()
+        print("build", t2-t1)
+        t1 = time.time()
+        alltogether(self.Tu)
+        alltogether(self.M)
+        alltogether(self.invM)
+        t2 = time.time()
+        print("simplify Tu, M and invM", t2-t1)
+        #sp.pprint(self.M)
         # compute the inverse of self.Tu by formula T(u)T(-u)=Id
         self.Tmu = sp.eye(gshape[0])
         for k in range(gshape[0]):
             for l in range(gshape[0]):
-                self.Tmu[k,l] = self.Tu[k,l].subs(list(zip(u_tild, -u_tild))).simplify()
+                self.Tmu[k,l] = self.Tu[k,l].subs(list(zip(u_tild, -u_tild)))#.simplify()
 
     def _check_inverse_of_Tu(self):
         # verification
@@ -475,9 +510,11 @@ class Scheme(object):
         ux, uy, uz = sp.symbols('ux, uy, uz', real=True)
         L = list(zip(u_tild, [ux, uy, uz][:self.dim]))
         Tu = self.Tu.subs(L)
-        Tu.simplify()
+        alltogether(Tu)
+        #Tu.simplify()
         Tmu = self.Tmu.subs(L)
-        Tmu.simplify()
+        alltogether(Tmu)
+        #Tmu.simplify()
         gshape = self.stencil.nv_ptr[-1]
         dummy = Tu*Tmu - sp.Identity(gshape)
         test = True
@@ -488,17 +525,14 @@ class Scheme(object):
         if not test:
             self.log.warning("The property on the translation matrix is not verified\n T(u) * T(-u) is not identity !!!")
 
-    def _check_inverse_of_Mu(self, Mu, invMu):
+    def _check_inverse(self, M, invM, matrix_name):
         # verification
         gshape = self.stencil.nv_ptr[-1]
-        dummy = Mu*invMu - sp.Identity(gshape)
-        test = True
-        for k in range(gshape):
-            for l in range(gshape):
-                if not dummy[k, l].equals(0):
-                    test = False
+        dummy = M*invM
+        alltogether(dummy)
+        test = dummy == sp.eye(gshape)
         if not test:
-            self.log.warning("Problem M(u) * invM(u) is not identity !!!")
+            self.log.warning("Problem {name} * inv{name} is not identity !!!".format(name=matrix_name))
 
     def _get_conserved_moments(self, scheme):
         """
@@ -726,23 +760,56 @@ class Scheme(object):
 
         eq = self.EQ.subs(subs_moments)
         s = self.s.subs(subs_moments + subs_param)
-        eq.simplify()
-        s.simplify()
+        alltogether(eq)
+        alltogether(s)
+        #eq.simplify()
+        #s.simplify()
 
         u_tild = MatrixSymbol('u_tild', self.dim, 1) # the relative velocity
         ux, uy, uz = sp.symbols('ux, uy, uz', real=True)
         list_rel_vel = [ux, uy, uz][:self.dim]
         L = list(zip(u_tild, list_rel_vel))
 
-        Mu = self.Tu.subs(L).expand() * self.M.expand()
-        invMu = self.invM.expand() * self.Tmu.subs(L).expand()
-        Mu.simplify()
+        t1 = time.time()
+        #Mu = self.Tu.subs(L).expand() * self.M.expand()
+        Mu = self.Tu.subs(L) * self.M
+        t2 = time.time()
+        print('Mu', t2-t1)
+
+        t1 = time.time()
+        #invMu = self.invM.expand() * self.Tmu.subs(L).expand()
+        invMu = self.invM * self.Tmu.subs(L)
+        t2 = time.time()
+        print('invMu', t2-t1)
+
+        t1 = time.time()
         Mu = Mu.subs(subs_param)
-        M = self.M.subs(subs_param).expand()
-        invMu.simplify()
+        alltogether(Mu)
+        #Mu.expand().simplify()
+        t2 = time.time()
+        print('Simplify Mu', t2-t1)
+
+        t1 = time.time()
+        # M = self.M.subs(subs_param).expand()
+        # invMu.simplify()
+        # invMu = invMu.subs(subs_param)
+        # invM = self.invM.subs(subs_param).expand()
+        M = self.M.subs(subs_param)
         invMu = invMu.subs(subs_param)
-        invM = self.invM.subs(subs_param).expand()
-        self._check_inverse_of_Mu(Mu, invMu)
+        invM = self.invM.subs(subs_param)
+        alltogether(M)
+        alltogether(invM)
+        alltogether(invMu)
+        # M.expand().simplify()
+        # invM.expand().simplify()
+        # invMu.expand().simplify()
+        t2 = time.time()
+        print('invM and invMu stuff', t2-t1)
+
+        t1 = time.time()
+        #self._check_inverse(Mu, invMu, 'Mu')
+        t2 = time.time()
+        print('check inverse Mu', t2-t1)
 
         from .generator import make_routine, autowrap, For, If
         from .symbolic import nx, ny, nz, nv, indexed, space_loop
@@ -764,7 +831,8 @@ class Scheme(object):
         routines += make_routine(('m2f', For(iloop, Eq(f, invM*m))), settings={"prefetch":[m[0]]})
         # add the function equilibrium
         dummy = eq.subs(list(zip(mv, m)) + subs_param).expand()
-        dummy.simplify()
+        alltogether(dummy)
+        #dummy.simplify()
         routines += make_routine(('equilibrium', For(iloop, Eq(m, dummy))))
 
         # fix: set loop with vmax -> DONE ?
@@ -786,7 +854,7 @@ class Scheme(object):
                                                             [
                                                                 Eq(m, Mu*f),  # transport + f2m
                                                                 Eq(m, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(m)) + s.multiply_elementwise(dummy)), # relaxation
-                                                                Eq(f_new, invMu*m), # m2f + update f
+                                                                Eq(f_new, (invMu*m).simplify()), # m2f + update f
                                                             ]
                                                             )
                                                         ))
@@ -798,8 +866,13 @@ class Scheme(object):
             for i in range(self.dim):
                 brv.append(Eq(list_rel_vel[i], rel_vel[i].expand()))
             # build the equilibrium
+            t1 = time.time()
             dummy = self.Tu.subs(L + subs_param)*eq.subs(subs_param).expand()
-            dummy.simplify()
+            alltogether(dummy)
+            #dummy.simplify()
+            t2 = time.time()
+            print('build equilibrium', t2-t1)
+
             routines += make_routine(('one_time_step',
                                       For(iloop,
                                           If( (Eq(in_or_out, valin),
