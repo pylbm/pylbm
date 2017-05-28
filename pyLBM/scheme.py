@@ -428,10 +428,7 @@ class Scheme(object):
         invM = []
         Mu = []
         Tu = []
-        #Mmu = []
-        #Tmu = []
 
-        #u_tild = MatrixSymbol('u_tild', self.dim, 1)
         ux, uy, uz = sp.symbols('ux, uy, uz', real=True)
         u_tild = sp.Matrix([ux, uy, uz])
         
@@ -447,32 +444,23 @@ class Scheme(object):
             lv = len(v)
             M.append(sp.zeros(lv, lv))
             Mu.append(sp.zeros(lv, lv))
-            #Mmu.append(sp.zeros(lv, lv))
             for i in range(lv):
                 for j in range(lv):
                     sublist = [(str(self.varX[d]), sp.Integer(v[j].v[d])*LA) for d in range(self.dim)]
                     M[-1][i, j] = p[i].subs(sublist)
 
                     if self.rel_vel is not None:
-                        #sublist = [(str(self.varX[d]), v[j].v[d]*LA - u_tild[d, 0]) for d in range(self.dim)]
                         sublist = [(str(self.varX[d]), v[j].v[d]*LA - u_tild[d]) for d in range(self.dim)]
                         Mu[-1][i, j] = p[i].subs(sublist)
-                        #sublist = [(str(self.varX[d]), v[j].v[d] - self.rel_vel[d]) for d in range(self.dim)]
-                        #Mu[-1][i, j] = p[i].subs(sublist)
-                        #sublist = [(str(self.varX[d]), v[j].v[d] + self.rel_vel[d]) for d in range(self.dim)]
-                        #Mmu[-1][i, j] = p[i].subs(sublist)
 
             invM.append(M[-1].inv())
             Tu.append(Mu[-1]*invM[-1])
-            #Tmu.append(Mmu[-1]*invM)
 
         gshape = (self.stencil.nv_ptr[-1], self.stencil.nv_ptr[-1])
         self.Tu = sp.eye(gshape[0])
-        #self.Tmu = sp.eye(gshape[0])
         self.M = sp.zeros(*gshape)
         self.invM = sp.zeros(*gshape)
         
-        t1 = time.time()
         try:
             for k in range(self.nscheme):
                 nvk = self.stencil.nv[k]
@@ -483,26 +471,19 @@ class Scheme(object):
                         self.invM[index] = invM[k][i, j]
 
                         if self.rel_vel is not None:
-                            self.Tu[index] = Tu[k][i, j]#.expand()
-                            #self.Tmu[index] = Tmu[k][i, j]
+                            self.Tu[index] = Tu[k][i, j]
         except TypeError:
             self.log.error("Unable to convert to float the expression {0} or {1}.\nCheck the 'parameters' entry.".format(self.M[k][i, j], self.invM[k][i, j]))
             sys.exit()
         
-        t2 = time.time()
-        print("build", t2-t1)
-        t1 = time.time()
         alltogether(self.Tu)
         alltogether(self.M)
         alltogether(self.invM)
-        t2 = time.time()
-        print("simplify Tu, M and invM", t2-t1)
-        #sp.pprint(self.M)
         # compute the inverse of self.Tu by formula T(u)T(-u)=Id
         self.Tmu = sp.eye(gshape[0])
         for k in range(gshape[0]):
             for l in range(gshape[0]):
-                self.Tmu[k,l] = self.Tu[k,l].subs(list(zip(u_tild, -u_tild)))#.simplify()
+                self.Tmu[k,l] = self.Tu[k,l].subs(list(zip(u_tild, -u_tild)))
 
     def _check_inverse_of_Tu(self):
         # verification
@@ -762,54 +743,27 @@ class Scheme(object):
         s = self.s.subs(subs_moments + subs_param)
         alltogether(eq)
         alltogether(s)
-        #eq.simplify()
-        #s.simplify()
 
         u_tild = MatrixSymbol('u_tild', self.dim, 1) # the relative velocity
         ux, uy, uz = sp.symbols('ux, uy, uz', real=True)
         list_rel_vel = [ux, uy, uz][:self.dim]
         L = list(zip(u_tild, list_rel_vel))
 
-        t1 = time.time()
-        #Mu = self.Tu.subs(L).expand() * self.M.expand()
         Mu = self.Tu.subs(L) * self.M
-        t2 = time.time()
-        print('Mu', t2-t1)
-
-        t1 = time.time()
-        #invMu = self.invM.expand() * self.Tmu.subs(L).expand()
         invMu = self.invM * self.Tmu.subs(L)
-        t2 = time.time()
-        print('invMu', t2-t1)
 
-        t1 = time.time()
         Mu = Mu.subs(subs_param)
         alltogether(Mu)
-        #Mu.expand().simplify()
-        t2 = time.time()
-        print('Simplify Mu', t2-t1)
 
-        t1 = time.time()
-        # M = self.M.subs(subs_param).expand()
-        # invMu.simplify()
-        # invMu = invMu.subs(subs_param)
-        # invM = self.invM.subs(subs_param).expand()
         M = self.M.subs(subs_param)
         invMu = invMu.subs(subs_param)
         invM = self.invM.subs(subs_param)
         alltogether(M)
         alltogether(invM)
         alltogether(invMu)
-        # M.expand().simplify()
-        # invM.expand().simplify()
-        # invMu.expand().simplify()
-        t2 = time.time()
-        print('invM and invMu stuff', t2-t1)
 
-        t1 = time.time()
+        # fix execution time
         #self._check_inverse(Mu, invMu, 'Mu')
-        t2 = time.time()
-        print('check inverse Mu', t2-t1)
 
         from .generator import make_routine, autowrap, For, If
         from .symbolic import nx, ny, nz, nv, indexed, space_loop
@@ -832,7 +786,6 @@ class Scheme(object):
         # add the function equilibrium
         dummy = eq.subs(list(zip(mv, m)) + subs_param).expand()
         alltogether(dummy)
-        #dummy.simplify()
         routines += make_routine(('equilibrium', For(iloop, Eq(m, dummy))))
 
         # fix: set loop with vmax -> DONE ?
@@ -866,12 +819,8 @@ class Scheme(object):
             for i in range(self.dim):
                 brv.append(Eq(list_rel_vel[i], rel_vel[i].expand()))
             # build the equilibrium
-            t1 = time.time()
             dummy = self.Tu.subs(L + subs_param)*eq.subs(subs_param).expand()
             alltogether(dummy)
-            #dummy.simplify()
-            t2 = time.time()
-            print('build equilibrium', t2-t1)
 
             routines += make_routine(('one_time_step',
                                       For(iloop,
