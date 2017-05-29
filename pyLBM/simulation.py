@@ -157,7 +157,7 @@ class Simulation(object):
             if scheme is not None:
                 self.scheme = scheme
             else:
-                self.scheme = Scheme(dico, check_inverse)
+                self.scheme = Scheme(dico, check_inverse=check_inverse)
         except KeyError:
             self.log.error('Error in the creation of the scheme: wrong dictionnary')
             sys.exit()
