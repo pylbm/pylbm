@@ -64,7 +64,7 @@ proto_cons = {
 def alltogether(M):
     for i in range(M.shape[0]):
        for j in range(M.shape[1]):
-            M[i, j] = M[i, j].together().factor()
+            M[i, j] = M[i, j].expand().together().factor()
 
 def allfactor(M):
     for i in range(M.shape[0]):
@@ -763,7 +763,7 @@ class Scheme(object):
         # add the function m2f as f = M^(-1) m
         generator.add_routine(('m2f', For(iloop, Eq(f, invM*m))), settings={"prefetch":[m[0]]})
         # add the function equilibrium
-        dummy = eq.subs(list(zip(mv, m)) + subs_param).expand()
+        dummy = eq.subs(list(zip(mv, m)) + subs_param)
         alltogether(dummy)
         generator.add_routine(('equilibrium', For(iloop, Eq(m, dummy))))
 
@@ -800,10 +800,12 @@ class Scheme(object):
                 for i in range(self.dim):
                     brv.append(Eq(list_rel_vel[i], rel_vel[i]))
                 # build the equilibrium
-                dummy = self.Tu.subs(subs_param)*eq.subs(subs_param)
+                #dummy = self.Tu.subs(subs_param)*eq.subs(subs_param)
+                dummy = self.Tu*eq
+                dummy = dummy.subs(subs_param)
+                alltogether(dummy)
             else:
                 dummy = eq.subs(subs_param)
-            alltogether(dummy)
 
             generator.add_routine(('one_time_step',
                                       For(iloop,
