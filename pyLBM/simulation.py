@@ -208,9 +208,6 @@ class Simulation(object):
             self._Fold = Array(nv, nspace, vmax, sorder, self.mpi_topo, gpu_support=self.gpu_support)
             self._Fold.set_conserved_moments(self.scheme.consm, self.domain.stencil.nv_ptr)
 
-        #self._m_in = Array_in(self._m)
-        #self._F_in = Array_in(self._F)
-
         self.scheme.generate(self.generator, sorder, self.domain.valin)
 
         self.log.info('Build boundary conditions')
@@ -227,7 +224,8 @@ class Simulation(object):
             method.set_iload()
             method.generate(sorder)
 
-        generator.compile(backend=self.generator)
+        generator.compile(backend=self.generator, verbose=True)
+
         self.log.info('Initialization')
         self.initialization(dico)
         for method in self.bc.methods:
