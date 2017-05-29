@@ -590,8 +590,11 @@ class LoopyCodeGen(LBMCodeGen):
                 else:
                     args.append('lp.ValueArg("{name}", dtype={dtype})'.format(name=name, dtype=arg.get_datatype('PYTHON')))
         for i, arg in enumerate(routine.local_vars):
-            dims = [d for d in arg.shape if d!=1]
-            args.append('lp.TemporaryVariable("{name}", dtype=float, shape="{shape}")'.format(name=self._get_symbol(arg), shape=','.join("%s"%s for s in dims)))
+            if isinstance(arg, Symbol):
+                args.append('lp.TemporaryVariable("{name}", dtype=float)'.format(name=self._get_symbol(arg)))    
+            else:
+                dims = [d for d in arg.shape if d!=1]
+                args.append('lp.TemporaryVariable("{name}", dtype=float, shape="{shape}")'.format(name=self._get_symbol(arg), shape=','.join("%s"%s for s in dims)))
 
         code_list.append('[')
         args = ",\n".join(args)
@@ -600,7 +603,6 @@ class LoopyCodeGen(LBMCodeGen):
 
         # add type
         dim = len(routine.idx_vars)
-        print(dim, routine.idx_vars)
         if dim == 1:
             block_size = [256]
         if dim == 2:

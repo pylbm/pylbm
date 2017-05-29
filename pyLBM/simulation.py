@@ -29,6 +29,7 @@ from .boundary import Boundary
 from . import utils
 from .validate_dictionary import *
 from .context import set_queue
+from .generator import generator
 
 from .logs import setLogger
 from .storage import Array, Array_in, AOS, SOA
@@ -207,9 +208,6 @@ class Simulation(object):
             self._Fold = Array(nv, nspace, vmax, sorder, self.mpi_topo, gpu_support=self.gpu_support)
             self._Fold.set_conserved_moments(self.scheme.consm, self.domain.stencil.nv_ptr)
 
-        #self._m_in = Array_in(self._m)
-        #self._F_in = Array_in(self._F)
-
         self.scheme.generate(self.generator, sorder, self.domain.valin)
 
         self.log.info('Build boundary conditions')
@@ -223,15 +221,18 @@ class Simulation(object):
 
         self.bc = Boundary(self.domain, dico)
         for method in self.bc.methods:
-            method.prepare_rhs(self)
-            method.set_rhs()
             method.set_iload()
-            method.fix_iload()
-            method.move2gpu()
             method.generate(sorder)
+
+        generator.compile(backend=self.generator, verbose=True)
 
         self.log.info('Initialization')
         self.initialization(dico)
+        for method in self.bc.methods:
+            method.prepare_rhs(self)
+            method.set_rhs()
+            method.fix_iload()
+            method.move2gpu()
 
         #computational time measurement
         self.cpu_time = {

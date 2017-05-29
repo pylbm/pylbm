@@ -10,6 +10,7 @@ import sys
 import types
 from six import string_types
 from six.moves import range
+import time
 
 import numpy as np
 import sympy as sp
@@ -20,6 +21,7 @@ from textwrap import dedent
 
 from .stencil import Stencil
 from .validate_dictionary import *
+from .generator import generator
 
 from .logs import setLogger
 import mpi4py.MPI as mpi
@@ -56,6 +58,16 @@ proto_cons = {
     'order': (int,),
     'linearization':(type(None), is_dico_sp_sporfloat),
 }
+
+def alltogether(M):
+    for i in range(M.shape[0]):
+       for j in range(M.shape[1]):
+            M[i, j] = M[i, j].together().factor()
+
+def allfactor(M):
+    for i in range(M.shape[0]):
+       for j in range(M.shape[1]):
+            M[i, j] = M[i, j].factor()
 
 def param_to_tuple(param):
     if param is not None:
@@ -318,10 +330,9 @@ class Scheme(object):
         ssss += "with the pattern " + self.pattern.__str__() + "\n"
         self.log.info(ssss)
 
-
         self.bc_compute = True
 
-        self._check_inverse_of_Tu()
+        #self._check_inverse(self.Tu, self.Tmu, 'Tu')
 
         # stability
         dicostab = dico.get('stability', None)
@@ -403,11 +414,10 @@ class Scheme(object):
         invM = []
         Mu = []
         Tu = []
-        #Mmu = []
-        #Tmu = []
 
-        u_tild = MatrixSymbol('u_tild', self.dim, 1)
-
+        ux, uy, uz = sp.symbols('ux, uy, uz', real=True)
+        u_tild = sp.Matrix([ux, uy, uz])
+        
         if self.la_symb is not None:
             LA = self.la_symb
         else:
@@ -419,30 +429,23 @@ class Scheme(object):
             lv = len(v)
             M.append(sp.zeros(lv, lv))
             Mu.append(sp.zeros(lv, lv))
-            #Mmu.append(sp.zeros(lv, lv))
             for i in range(lv):
                 for j in range(lv):
-                    sublist = [(str(self.varX[d]), v[j].v[d]*LA) for d in range(self.dim)]
+                    sublist = [(str(self.varX[d]), sp.Integer(v[j].v[d])*LA) for d in range(self.dim)]
                     M[-1][i, j] = p[i].subs(sublist)
 
-                    if self.rel_vel is not None:
-                        sublist = [(str(self.varX[d]), v[j].v[d]*LA - u_tild[d, 0]) for d in range(self.dim)]
+                    if self.rel_vel != [0]*self.dim:
+                        sublist = [(str(self.varX[d]), v[j].v[d]*LA - u_tild[d]) for d in range(self.dim)]
                         Mu[-1][i, j] = p[i].subs(sublist)
-                        #sublist = [(str(self.varX[d]), v[j].v[d] - self.rel_vel[d]) for d in range(self.dim)]
-                        #Mu[-1][i, j] = p[i].subs(sublist)
-                        #sublist = [(str(self.varX[d]), v[j].v[d] + self.rel_vel[d]) for d in range(self.dim)]
-                        #Mmu[-1][i, j] = p[i].subs(sublist)
 
             invM.append(M[-1].inv())
             Tu.append(Mu[-1]*invM[-1])
-            #Tmu.append(Mmu[-1]*invM)
 
         gshape = (self.stencil.nv_ptr[-1], self.stencil.nv_ptr[-1])
         self.Tu = sp.eye(gshape[0])
-        #self.Tmu = sp.eye(gshape[0])
         self.M = sp.zeros(*gshape)
         self.invM = sp.zeros(*gshape)
-
+        
         try:
             for k in range(self.nscheme):
                 nvk = self.stencil.nv[k]
@@ -452,22 +455,20 @@ class Scheme(object):
                         self.M[index] = M[k][i, j]
                         self.invM[index] = invM[k][i, j]
 
-                        if self.rel_vel is not None:
-                            self.Tu[index] = Tu[k][i, j].expand()
-                            #self.Tmu[index] = Tmu[k][i, j]
+                        if self.rel_vel != [0]*self.dim:
+                            self.Tu[index] = Tu[k][i, j]
         except TypeError:
             self.log.error("Unable to convert to float the expression {0} or {1}.\nCheck the 'parameters' entry.".format(self.M[k][i, j], self.invM[k][i, j]))
             sys.exit()
-
-        self.Tu.simplify()
-        self.M.simplify()
-        self.invM.simplify()
-
+        
+        alltogether(self.Tu)
+        alltogether(self.M)
+        alltogether(self.invM)
         # compute the inverse of self.Tu by formula T(u)T(-u)=Id
         self.Tmu = sp.eye(gshape[0])
         for k in range(gshape[0]):
             for l in range(gshape[0]):
-                self.Tmu[k,l] = self.Tu[k,l].subs(list(zip(u_tild, -u_tild))).simplify()
+                self.Tmu[k,l] = self.Tu[k,l].subs(list(zip(u_tild, -u_tild)))
 
     def _check_inverse_of_Tu(self):
         # verification
@@ -475,9 +476,11 @@ class Scheme(object):
         ux, uy, uz = sp.symbols('ux, uy, uz', real=True)
         L = list(zip(u_tild, [ux, uy, uz][:self.dim]))
         Tu = self.Tu.subs(L)
-        Tu.simplify()
+        alltogether(Tu)
+        #Tu.simplify()
         Tmu = self.Tmu.subs(L)
-        Tmu.simplify()
+        alltogether(Tmu)
+        #Tmu.simplify()
         gshape = self.stencil.nv_ptr[-1]
         dummy = Tu*Tmu - sp.Identity(gshape)
         test = True
@@ -488,17 +491,14 @@ class Scheme(object):
         if not test:
             self.log.warning("The property on the translation matrix is not verified\n T(u) * T(-u) is not identity !!!")
 
-    def _check_inverse_of_Mu(self, Mu, invMu):
+    def _check_inverse(self, M, invM, matrix_name):
         # verification
         gshape = self.stencil.nv_ptr[-1]
-        dummy = Mu*invMu - sp.Identity(gshape)
-        test = True
-        for k in range(gshape):
-            for l in range(gshape):
-                if not dummy[k, l].equals(0):
-                    test = False
+        dummy = M*invM
+        alltogether(dummy)
+        test = dummy == sp.eye(gshape)
         if not test:
-            self.log.warning("Problem M(u) * invM(u) is not identity !!!")
+            self.log.warning("Problem {name} * inv{name} is not identity !!!".format(name=matrix_name))
 
     def _get_conserved_moments(self, scheme):
         """
@@ -726,46 +726,54 @@ class Scheme(object):
 
         eq = self.EQ.subs(subs_moments)
         s = self.s.subs(subs_moments + subs_param)
-        eq.simplify()
-        s.simplify()
+        alltogether(eq)
+        alltogether(s)
 
-        u_tild = MatrixSymbol('u_tild', self.dim, 1) # the relative velocity
-        ux, uy, uz = sp.symbols('ux, uy, uz', real=True)
-        list_rel_vel = [ux, uy, uz][:self.dim]
-        L = list(zip(u_tild, list_rel_vel))
+        if self.rel_vel != [0]*self.dim:
+            u_tild = MatrixSymbol('u_tild', self.dim, 1) # the relative velocity
+            ux, uy, uz = sp.symbols('ux, uy, uz', real=True)
+            list_rel_vel = [ux, uy, uz][:self.dim]
+            L = list(zip(u_tild, list_rel_vel))
 
-        Mu = self.Tu.subs(L).expand() * self.M.expand()
-        invMu = self.invM.expand() * self.Tmu.subs(L).expand()
-        Mu.simplify()
+            Mu = self.Tu.subs(L) * self.M
+            invMu = self.invM * self.Tmu.subs(L)
+        else:
+            Mu = self.M
+            invMu = self.invM
+            list_rel_vel = []
+        
+        M = self.M.subs(subs_param)
+        invM = self.invM.subs(subs_param)
         Mu = Mu.subs(subs_param)
-        M = self.M.subs(subs_param).expand()
-        invMu.simplify()
         invMu = invMu.subs(subs_param)
-        invM = self.invM.subs(subs_param).expand()
-        self._check_inverse_of_Mu(Mu, invMu)
 
-        from .generator import make_routine, autowrap, For, If
+        alltogether(M)
+        alltogether(invM)
+        alltogether(Mu)
+        alltogether(invMu)
+
+        # fix execution time
+        #self._check_inverse(Mu, invMu, 'Mu')
+
+        from .generator import For, If
         from .symbolic import nx, ny, nz, nv, indexed, space_loop
 
         iloop = space_loop([(0, nx), (0, ny), (0, nz)], permutation=sorder) # loop over all spatial points
         m = indexed('m', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
         f = indexed('f', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
 
-        # begin the code with an empty list
-        routines = []
-
         # WARNING: (relative velocties)
         # the moments in the functions f2m, m2f, and equilibrium
         # are the real moments even if the scheme uses a relative velocity
 
         # add the function f2m as m = M f
-        routines += make_routine(('f2m', For(iloop, Eq(m, M*f))), settings={"prefetch":[f[0]]})
+        generator.add_routine(('f2m', For(iloop, Eq(m, M*f))), settings={"prefetch":[f[0]]})
         # add the function m2f as f = M^(-1) m
-        routines += make_routine(('m2f', For(iloop, Eq(f, invM*m))), settings={"prefetch":[m[0]]})
+        generator.add_routine(('m2f', For(iloop, Eq(f, invM*m))), settings={"prefetch":[m[0]]})
         # add the function equilibrium
         dummy = eq.subs(list(zip(mv, m)) + subs_param).expand()
-        dummy.simplify()
-        routines += make_routine(('equilibrium', For(iloop, Eq(m, dummy))))
+        alltogether(dummy)
+        generator.add_routine(('equilibrium', For(iloop, Eq(m, dummy))))
 
         # fix: set loop with vmax -> DONE ?
         vmax = [0]*3
@@ -782,25 +790,30 @@ class Scheme(object):
             self.log.error("NUMPY generator not allowed in this version with relative velocities")
             m = indexed('m', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
             dummy = dummy.subs(list(zip(mv, m)))
-            routines += make_routine(('one_time_step', For(iloop,
+            generator.add_routine(('one_time_step', For(iloop, 
                                                             [
                                                                 Eq(m, Mu*f),  # transport + f2m
                                                                 Eq(m, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(m)) + s.multiply_elementwise(dummy)), # relaxation
-                                                                Eq(f_new, invMu*m), # m2f + update f
+                                                                Eq(f_new, (invMu*m).simplify()), # m2f + update f
                                                             ]
                                                             )
                                                         ))
+            
         else:
             # build the equations defining the relative velocities
-            rel_vel = sp.Matrix(self.rel_vel).subs(subs_moments)
             nconsm = len(self.consm)
             brv = [Eq(mv[:nconsm, 0], sp.Matrix((M*f)[:nconsm]))]
-            for i in range(self.dim):
-                brv.append(Eq(list_rel_vel[i], rel_vel[i].expand()))
-            # build the equilibrium
-            dummy = self.Tu.subs(L + subs_param)*eq.subs(subs_param).expand()
-            dummy.simplify()
-            routines += make_routine(('one_time_step',
+            if self.rel_vel != [0]*self.dim:
+                rel_vel = sp.Matrix(self.rel_vel).subs(subs_moments)
+                for i in range(self.dim):
+                    brv.append(Eq(list_rel_vel[i], rel_vel[i]))
+                # build the equilibrium
+                dummy = self.Tu.subs(L + subs_param)*eq.subs(subs_param)
+            else:
+                dummy = eq.subs(subs_param)
+            alltogether(dummy)
+
+            generator.add_routine(('one_time_step',
                                       For(iloop,
                                           If( (Eq(in_or_out, valin),
                                               brv + # build relative velocity
@@ -811,7 +824,6 @@ class Scheme(object):
                                               ]) )
                                           )
                                       ), local_vars = [mv] + list_rel_vel, settings={"prefetch":[f[0]]})
-        self.mod = autowrap(routines, backend=backend)
 
     def m2f(self, mm, ff):
         """ Compute the distribution functions f from the moments m """
@@ -827,7 +839,7 @@ class Scheme(object):
         f = ff.array
 
         args = locals()
-        call_genfunction(self.mod.m2f, args)
+        call_genfunction(generator.module.m2f, args)
 
     def f2m(self, ff, mm):
         """ Compute the moments m from the distribution functions f """
@@ -843,7 +855,7 @@ class Scheme(object):
         f = ff.array
 
         args = locals()
-        call_genfunction(self.mod.f2m, args)
+        call_genfunction(generator.module.f2m, args)
 
     def transport(self, f):
         """ The transport phase on the distribution functions f """
@@ -862,8 +874,8 @@ class Scheme(object):
         m = mm.array
 
         args = locals()
-        call_genfunction(self.mod.equilibrium, args)
-
+        call_genfunction(generator.module.equilibrium, args)
+        
     def relaxation(self, m):
         """ The relaxation phase on the moments m """
         mod = self.generator.get_module()
@@ -889,7 +901,7 @@ class Scheme(object):
         f_new = ff_new.array
 
         args = locals()
-        call_genfunction(self.mod.one_time_step, args)
+        call_genfunction(generator.module.one_time_step, args)
 
     def set_boundary_conditions(self, f, m, bc, interface):
         """

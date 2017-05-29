@@ -32,7 +32,7 @@ class CodeWrapper(object):
         self.generator = generator
         self.filepath = filepath
         self.flags = flags
-        self.quiet = not verbose
+        self.verbose = verbose
 
     def _generate_code(self, routines):
         self.generator.write(
@@ -74,7 +74,7 @@ class CodeWrapper(object):
             raise CodeWrapError(
                 "Error while executing command: %s. Command output is:\n%s" % (
                     " ".join(command), e.output.decode()))
-        if not self.quiet:
+        if self.verbose:
             print(retoutput)
 
 
@@ -106,7 +106,8 @@ import {module_name}
         bld.write(code)
         bld.close()
 
-        print(open(self.filename + '.pyx').read())
+        if self.verbose:
+            print(open(self.filename + '.pyx').read())
 
         command = [sys.executable, 'build.py']
 
@@ -124,7 +125,8 @@ class PythonCodeWrapper(CodeWrapper):
         pass
 
     def _process_files(self, routines):
-        print(open(self.filename + '.py').read())
+        if self.verbose:
+            print(open(self.filename + '.py').read())
 
 def get_code_wrapper(backend):
     CodeWrapClass = {"NUMPY" : PythonCodeWrapper,
