@@ -12,7 +12,7 @@ class Generator(object):
         self.routines[name_expr[0]] = make_routine(name_expr, argument_sequence, local_vars, settings)[0]
 
     def compile(self, backend="cython", verbose=False):
-        self.module = autowrap(self.routines.values(), backend, verbose)
+        self.module = autowrap(self.routines.values(), backend, verbose=verbose)
 
 generator = Generator()
 
