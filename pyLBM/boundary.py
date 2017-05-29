@@ -15,6 +15,7 @@ from sympy import *
 from .logs import setLogger
 from .storage import Array
 from .validate_dictionary import *
+from .generator import generator
 
 proto_bc = {
     'method':(is_dico_bcmethod, ),
@@ -161,8 +162,6 @@ class Boundary_method(object):
             self.value_bc[k] = value_bc[k]
         self.nspace = nspace
         self.backend = backend
-
-        self.function = None
 
     def fix_iload(self):
         """
@@ -349,9 +348,11 @@ class bounce_back(Boundary_method):
         fstore = indexed('f', [ns, nx, ny, nz], index=[istore[ix, k] for k in range(dim+1)], permutation=sorder)
         fload = indexed('f', [ns, nx, ny, nz], index=[iload[0][ix, k] for k in range(dim+1)], permutation=sorder)
 
-        routine = make_routine(('bounce_back', For(ix, Eq(fstore, fload + rhs[ix]))))
-        mod = autowrap(routine, backend=self.backend)
-        self.function = mod.bounce_back
+        generator.add_routine(('bounce_back', For(ix, Eq(fstore, fload + rhs[ix]))))
+
+    @property
+    def function(self):
+        return generator.module.bounce_back
 
 class Bouzidi_bounce_back(Boundary_method):
     """
@@ -426,9 +427,11 @@ class Bouzidi_bounce_back(Boundary_method):
         fload0 = indexed('f', [ns, nx, ny, nz], index=[iload[0][ix, k] for k in range(dim+1)], permutation=sorder)
         fload1 = indexed('f', [ns, nx, ny, nz], index=[iload[1][ix, k] for k in range(dim+1)], permutation=sorder)
 
-        routine = make_routine(('Bouzidi_bounce_back', For(ix, Eq(fstore, dist[ix]*fload0 + (1-dist[ix])*fload1 + rhs[ix]))))
-        mod = autowrap(routine, backend=self.backend)
-        self.function = mod.Bouzidi_bounce_back
+        generator.add_routine(('Bouzidi_bounce_back', For(ix, Eq(fstore, dist[ix]*fload0 + (1-dist[ix])*fload1 + rhs[ix]))))
+
+    @property
+    def function(self):
+        return generator.module.Bouzidi_bounce_back
 
 class anti_bounce_back(bounce_back):
     """
@@ -470,9 +473,11 @@ class anti_bounce_back(bounce_back):
         fstore = indexed('f', [ns, nx, ny, nz], index=[istore[ix, k] for k in range(dim+1)], permutation=sorder)
         fload = indexed('f', [ns, nx, ny, nz], index=[iload[0][ix, k] for k in range(dim+1)], permutation=sorder)
 
-        routine = make_routine(('anti_bounce_back', For(ix, Eq(fstore, -fload + rhs[ix]))))
-        mod = autowrap(routine, backend=self.backend)
-        self.function = mod.anti_bounce_back
+        generator.add_routine(('anti_bounce_back', For(ix, Eq(fstore, -fload + rhs[ix]))))
+
+    @property
+    def function(self):
+        return generator.module.anti_bounce_back
 
 class Bouzidi_anti_bounce_back(Bouzidi_bounce_back):
     """
@@ -515,9 +520,11 @@ class Bouzidi_anti_bounce_back(Bouzidi_bounce_back):
         fload0 = indexed('f', [ns, nx, ny, nz], index=[iload[0][ix, k] for k in range(dim+1)], permutation=sorder)
         fload1 = indexed('f', [ns, nx, ny, nz], index=[iload[1][ix, k] for k in range(dim+1)], permutation=sorder)
 
-        routine = make_routine(('Bouzidi_anti_bounce_back', For(ix, Eq(fstore, -dist[ix]*fload0 + (-1+dist[ix])*fload1 + rhs[ix]))))
-        mod = autowrap(routine, backend=self.backend)
-        self.function = mod.Bouzidi_anti_bounce_back
+        generator.add_routine(('Bouzidi_anti_bounce_back', For(ix, Eq(fstore, -dist[ix]*fload0 + (-1+dist[ix])*fload1 + rhs[ix]))))
+
+    @property
+    def function(self):
+        return generator.module.Bouzidi_anti_bounce_back
 
 class Neumann(Boundary_method):
     """
@@ -563,9 +570,11 @@ class Neumann(Boundary_method):
         fstore = indexed('f', [ns, nx, ny, nz], index=[istore[ix, k] for k in range(dim+1)], permutation=sorder)
         fload = indexed('f', [ns, nx, ny, nz], index=[iload[0][ix, k] for k in range(dim+1)], permutation=sorder)
 
-        routine = make_routine(('neumann', For(ix, Eq(fstore, fload))))
-        mod = autowrap(routine, backend=self.backend)
-        self.function = mod.neumann
+        generator.add_routine(('neumann', For(ix, Eq(fstore, fload))))
+
+    @property
+    def function(self):
+        return generator.module.neumann
 
 class Neumann_x(Neumann):
     """
