@@ -126,7 +126,7 @@ class Simulation(object):
     are just call of the methods of the class
     :py:class:`Scheme<pyLBM.scheme.Scheme>`.
     """
-    def __init__(self, dico, domain=None, scheme=None, sorder=None, dtype='float64'):
+    def __init__(self, dico, domain=None, scheme=None, sorder=None, dtype='float64', check_inverse=False):
         self.log = setLogger(__name__)
         self.type = dtype
         self.order = 'C'
@@ -157,7 +157,7 @@ class Simulation(object):
             if scheme is not None:
                 self.scheme = scheme
             else:
-                self.scheme = Scheme(dico)
+                self.scheme = Scheme(dico, check_inverse)
         except KeyError:
             self.log.error('Error in the creation of the scheme: wrong dictionnary')
             sys.exit()

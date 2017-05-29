@@ -26,6 +26,8 @@ from .generator import generator
 from .logs import setLogger
 import mpi4py.MPI as mpi
 
+rel_ux, rel_uy, rel_uz = sp.symbols('rel_ux, rel_uy, rel_uz', real=True)
+
 proto_sch = {
     'velocities': (is_list_int,),
     'conserved_moments': (sp.Symbol, is_list_symb) + string_types,
@@ -156,8 +158,9 @@ class Scheme(object):
     see demo/examples/scheme/
 
     """
-    def __init__(self, dico, stencil=None):
+    def __init__(self, dico, stencil=None, check_inverse=False):
         self.log = setLogger(__name__)
+        self.check_inverse = check_inverse
         # symbolic parameters
         self.param = dico.get('parameters', None)
         pk, pv = param_to_tuple(self.param)
@@ -332,7 +335,8 @@ class Scheme(object):
 
         self.bc_compute = True
 
-        #self._check_inverse(self.Tu, self.Tmu, 'Tu')
+        if self.check_inverse:
+            self._check_inverse_of_Tu()
 
         # stability
         dicostab = dico.get('stability', None)
@@ -415,8 +419,7 @@ class Scheme(object):
         Mu = []
         Tu = []
 
-        ux, uy, uz = sp.symbols('ux, uy, uz', real=True)
-        u_tild = sp.Matrix([ux, uy, uz])
+        u_tild = sp.Matrix([rel_ux, rel_uy, rel_uz])
         
         if self.la_symb is not None:
             LA = self.la_symb
@@ -465,29 +468,18 @@ class Scheme(object):
         alltogether(self.M)
         alltogether(self.invM)
         # compute the inverse of self.Tu by formula T(u)T(-u)=Id
-        self.Tmu = sp.eye(gshape[0])
-        for k in range(gshape[0]):
-            for l in range(gshape[0]):
-                self.Tmu[k,l] = self.Tu[k,l].subs(list(zip(u_tild, -u_tild)))
+        #self.Tmu = sp.eye(gshape[0])
+        self.Tmu = self.Tu.subs(list(zip(u_tild, -u_tild)))
+        # for k in range(gshape[0]):
+        #     for l in range(gshape[0]):
+        #         self.Tmu[k,l] = self.Tu[k,l].subs(list(zip(u_tild, -u_tild)))
 
     def _check_inverse_of_Tu(self):
         # verification
-        u_tild = MatrixSymbol('u_tild', self.dim, 1)
-        ux, uy, uz = sp.symbols('ux, uy, uz', real=True)
-        L = list(zip(u_tild, [ux, uy, uz][:self.dim]))
-        Tu = self.Tu.subs(L)
-        alltogether(Tu)
-        #Tu.simplify()
-        Tmu = self.Tmu.subs(L)
-        alltogether(Tmu)
-        #Tmu.simplify()
+        res = self.Tu*self.Tmu
+        alltogether(res)
         gshape = self.stencil.nv_ptr[-1]
-        dummy = Tu*Tmu - sp.Identity(gshape)
-        test = True
-        for k in range(gshape):
-            for l in range(gshape):
-                if not dummy[k, l].equals(0):
-                    test = False
+        test = res == sp.eye(gshape)
         if not test:
             self.log.warning("The property on the translation matrix is not verified\n T(u) * T(-u) is not identity !!!")
 
@@ -496,6 +488,7 @@ class Scheme(object):
         gshape = self.stencil.nv_ptr[-1]
         dummy = M*invM
         alltogether(dummy)
+        print(dummy)
         test = dummy == sp.eye(gshape)
         if not test:
             self.log.warning("Problem {name} * inv{name} is not identity !!!".format(name=matrix_name))
@@ -730,18 +723,20 @@ class Scheme(object):
         alltogether(s)
 
         if self.rel_vel != [0]*self.dim:
-            u_tild = MatrixSymbol('u_tild', self.dim, 1) # the relative velocity
-            ux, uy, uz = sp.symbols('ux, uy, uz', real=True)
-            list_rel_vel = [ux, uy, uz][:self.dim]
-            L = list(zip(u_tild, list_rel_vel))
+            list_rel_vel = [rel_ux, rel_uy, rel_uz][:self.dim]
 
-            Mu = self.Tu.subs(L) * self.M
-            invMu = self.invM * self.Tmu.subs(L)
+            Mu = self.Tu * self.M
+            invMu = self.invM * self.Tmu
         else:
             Mu = self.M
             invMu = self.invM
             list_rel_vel = []
         
+        # fix execution time
+        if self.check_inverse:
+            self._check_inverse(self.M, self.invM, 'M')
+            self._check_inverse(Mu, invMu, 'Mu')
+
         M = self.M.subs(subs_param)
         invM = self.invM.subs(subs_param)
         Mu = Mu.subs(subs_param)
@@ -751,9 +746,6 @@ class Scheme(object):
         alltogether(invM)
         alltogether(Mu)
         alltogether(invMu)
-
-        # fix execution time
-        #self._check_inverse(Mu, invMu, 'Mu')
 
         from .generator import For, If
         from .symbolic import nx, ny, nz, nv, indexed, space_loop
@@ -808,7 +800,7 @@ class Scheme(object):
                 for i in range(self.dim):
                     brv.append(Eq(list_rel_vel[i], rel_vel[i]))
                 # build the equilibrium
-                dummy = self.Tu.subs(L + subs_param)*eq.subs(subs_param)
+                dummy = self.Tu.subs(subs_param)*eq.subs(subs_param)
             else:
                 dummy = eq.subs(subs_param)
             alltogether(dummy)
