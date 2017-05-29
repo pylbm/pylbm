@@ -221,9 +221,9 @@ class CythonCodePrinter(CodePrinter):
         elif expr.exp == 0.5:
             return 'sqrt(%s)' % self._print(expr.base)
         elif expr.exp > 0 and expr.exp.is_integer:
-            line = self._print(expr.base)
+            line = "%s"%(self.parenthesize(expr.base, PREC))
             for i in range(1, expr.exp):
-                line += '*' + self._print(expr.base)
+                line += '*' + "%s"%(self.parenthesize(expr.base, PREC))
             return '(%s)' % line
         else:
             return 'pow(%s, %s)' % (self._print(expr.base),
