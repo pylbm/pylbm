@@ -262,11 +262,7 @@ class Scheme(object):
         self.invM = None
         self.Tu = None
 
-        t1 = time.time()
         self.create_moments_matrices()
-        t2 = time.time()
-        print('create moments matrices', t2-t1)
-
 
         # self.EQ = sp.Matrix([e for s in scheme for e in s['equilibrium']])
         self.s = sp.Matrix([r for s in scheme for r in s['relaxation_parameters']])
@@ -291,7 +287,6 @@ class Scheme(object):
         # put conserved moments at the beginning of P, EQ and s
         self.consm = self._get_conserved_moments(scheme)
 
-        t1 = time.time()
         permutations = []
         for ic, c in enumerate(self.consm.values()):
             permutations.append([ic, c])
@@ -306,16 +301,10 @@ class Scheme(object):
             self.Tmu.row_swap(p[0], p[1])
             self.Tmu.col_swap(p[0], p[1])
 
-        t2 = time.time()
-        print('swap', t2-t1)
-
         for ic, c in enumerate(self.consm.keys()):
             self.consm[c] = ic
 
-        t1 = time.time()
         self.init = self.set_initialization(scheme)
-        t2 = time.time()
-        print('initialization', t2-t1)
 
         self.source_terms = self.set_source_terms(scheme)
         if self.source_terms is not None:
@@ -343,10 +332,7 @@ class Scheme(object):
 
         self.bc_compute = True
 
-        t1 = time.time()
         #self._check_inverse(self.Tu, self.Tmu, 'Tu')
-        t2 = time.time()
-        print('check inverse Tu', t2-t1)
 
         # stability
         dicostab = dico.get('stability', None)
@@ -438,7 +424,6 @@ class Scheme(object):
             LA = self.la
 
         for iv, v in enumerate(self.stencil.v):
-            print(type(v[0].v[0]), v[0])
             p = self.P[self.stencil.nv_ptr[iv] : self.stencil.nv_ptr[iv+1]]
             compt+=1
             lv = len(v)
@@ -449,7 +434,7 @@ class Scheme(object):
                     sublist = [(str(self.varX[d]), sp.Integer(v[j].v[d])*LA) for d in range(self.dim)]
                     M[-1][i, j] = p[i].subs(sublist)
 
-                    if self.rel_vel is not None:
+                    if self.rel_vel != [0]*self.dim:
                         sublist = [(str(self.varX[d]), v[j].v[d]*LA - u_tild[d]) for d in range(self.dim)]
                         Mu[-1][i, j] = p[i].subs(sublist)
 
@@ -470,7 +455,7 @@ class Scheme(object):
                         self.M[index] = M[k][i, j]
                         self.invM[index] = invM[k][i, j]
 
-                        if self.rel_vel is not None:
+                        if self.rel_vel != [0]*self.dim:
                             self.Tu[index] = Tu[k][i, j]
         except TypeError:
             self.log.error("Unable to convert to float the expression {0} or {1}.\nCheck the 'parameters' entry.".format(self.M[k][i, j], self.invM[k][i, j]))
@@ -744,22 +729,27 @@ class Scheme(object):
         alltogether(eq)
         alltogether(s)
 
-        u_tild = MatrixSymbol('u_tild', self.dim, 1) # the relative velocity
-        ux, uy, uz = sp.symbols('ux, uy, uz', real=True)
-        list_rel_vel = [ux, uy, uz][:self.dim]
-        L = list(zip(u_tild, list_rel_vel))
+        if self.rel_vel != [0]*self.dim:
+            u_tild = MatrixSymbol('u_tild', self.dim, 1) # the relative velocity
+            ux, uy, uz = sp.symbols('ux, uy, uz', real=True)
+            list_rel_vel = [ux, uy, uz][:self.dim]
+            L = list(zip(u_tild, list_rel_vel))
 
-        Mu = self.Tu.subs(L) * self.M
-        invMu = self.invM * self.Tmu.subs(L)
-
-        Mu = Mu.subs(subs_param)
-        alltogether(Mu)
-
+            Mu = self.Tu.subs(L) * self.M
+            invMu = self.invM * self.Tmu.subs(L)
+        else:
+            Mu = self.M
+            invMu = self.invM
+            list_rel_vel = []
+        
         M = self.M.subs(subs_param)
-        invMu = invMu.subs(subs_param)
         invM = self.invM.subs(subs_param)
+        Mu = Mu.subs(subs_param)
+        invMu = invMu.subs(subs_param)
+
         alltogether(M)
         alltogether(invM)
+        alltogether(Mu)
         alltogether(invMu)
 
         # fix execution time
@@ -771,9 +761,6 @@ class Scheme(object):
         iloop = space_loop([(0, nx), (0, ny), (0, nz)], permutation=sorder) # loop over all spatial points
         m = indexed('m', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
         f = indexed('f', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
-
-        # begin the code with an empty list
-        routines = []
 
         # WARNING: (relative velocties)
         # the moments in the functions f2m, m2f, and equilibrium
@@ -814,13 +801,16 @@ class Scheme(object):
             
         else:
             # build the equations defining the relative velocities
-            rel_vel = sp.Matrix(self.rel_vel).subs(subs_moments)
             nconsm = len(self.consm)
             brv = [Eq(mv[:nconsm, 0], sp.Matrix((M*f)[:nconsm]))]
-            for i in range(self.dim):
-                brv.append(Eq(list_rel_vel[i], rel_vel[i].expand()))
-            # build the equilibrium
-            dummy = self.Tu.subs(L + subs_param)*eq.subs(subs_param).expand()
+            if self.rel_vel != [0]*self.dim:
+                rel_vel = sp.Matrix(self.rel_vel).subs(subs_moments)
+                for i in range(self.dim):
+                    brv.append(Eq(list_rel_vel[i], rel_vel[i]))
+                # build the equilibrium
+                dummy = self.Tu.subs(L + subs_param)*eq.subs(subs_param)
+            else:
+                dummy = eq.subs(subs_param)
             alltogether(dummy)
 
             generator.add_routine(('one_time_step',
