@@ -779,14 +779,14 @@ class Scheme(object):
 
         if backend.upper() == "NUMPY":
             ################## FIX
-            self.log.error("NUMPY generator not allowed in this version with relative velocities")
+            #self.log.error("NUMPY generator not allowed in this version with relative velocities")
             m = indexed('m', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
-            dummy = dummy.subs(list(zip(mv, m)))
+            dummy = eq.subs(list(zip(mv, m)) + subs_param).expand()
             generator.add_routine(('one_time_step', For(iloop, 
                                                             [
                                                                 Eq(m, Mu*f),  # transport + f2m
                                                                 Eq(m, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(m)) + s.multiply_elementwise(dummy)), # relaxation
-                                                                Eq(f_new, (invMu*m).simplify()), # m2f + update f
+                                                                Eq(f_new, invMu*m), # m2f + update f
                                                             ]
                                                             )
                                                         ))
