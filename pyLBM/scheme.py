@@ -261,6 +261,8 @@ class Scheme(object):
         self._check_entry_size(scheme, 'relaxation_parameters')
 
         self.P = sp.Matrix([p for s in scheme for p in s['polynomials']])
+        self._source_terms = [s.get('source_terms', None) for s in scheme]
+        print(self._source_terms)
         self.M = None
         self.invM = None
         self.Tu = None
@@ -309,28 +311,29 @@ class Scheme(object):
 
         self.init = self.set_initialization(scheme)
 
-        self.source_terms = self.set_source_terms(scheme)
-        if self.source_terms is not None:
-            self._source_terms = [create_matrix(s) for s in self.source_terms]
-            for cm, icm in self.consm.items():
-                for i, eq in enumerate(self._source_terms):
-                    for j, e in enumerate(eq):
-                        if e is not None:
-                            self._source_terms[i][j] = e.subs(cm, m[icm])
-            self.ode_solver = dico.get('ode_solver', basic)()
-        else:
-            self._source_terms = None
-            self.ode_solver = None
+        #self._source_terms = dico.get('source_terms', None)
+        # if self.source_terms is not None:
+
+        #     self._source_terms = [create_matrix(s) for s in self.source_terms]
+        #     for cm, icm in self.consm.items():
+        #         for i, eq in enumerate(self._source_terms):
+        #             for j, e in enumerate(eq):
+        #                 if e is not None:
+        #                     self._source_terms[i][j] = e.subs(cm, m[icm])
+        #     self.ode_solver = dico.get('ode_solver', basic)()
+        # else:
+        #     self._source_terms = None
+        #     self.ode_solver = None
 
         # generate the code
-        if self._source_terms is None:
-            dummypattern = ['transport', 'relaxation']
-        else:
-            dummypattern = ['transport', ('source_term', 0.5), 'relaxation', ('source_term', 0.5)]
-        self.pattern = dico.get('split_pattern', dummypattern)
+        # if self._source_terms is None:
+        #     dummypattern = ['transport', 'relaxation']
+        # else:
+        #     dummypattern = ['transport', ('source_term', 0.5), 'relaxation', ('source_term', 0.5)]
+        # self.pattern = dico.get('split_pattern', dummypattern)
         self.generator = dico.get('generator', "CYTHON").upper()
         ssss = "Generator used for the scheme functions:\n{0}\n".format(self.generator)
-        ssss += "with the pattern " + self.pattern.__str__() + "\n"
+        #ssss += "with the pattern " + self.pattern.__str__() + "\n"
         self.log.info(ssss)
 
         self.bc_compute = True
@@ -696,20 +699,20 @@ class Scheme(object):
         """
         pk, pv = param_to_tuple(self.param)
 
-        if self._source_terms is not None:
-            ST = copy.deepcopy(self._source_terms)
-            for i, sti in enumerate(ST):
-                for j, stij in enumerate(sti):
-                    if stij is not None:
-                        ST[i][j] = stij.subs(list(zip(pk, pv)))
-            dicoST = {'ST':ST,
-                      'vart':self.vart,
-                      'varx':self.varX[0],
-                      'vary':self.varX[1],
-                      'varz':self.varX[2],
-                      'ode_solver':self.ode_solver}
-        else:
-            dicoST = None
+        # if self._source_terms is not None:
+        #     ST = copy.deepcopy(self._source_terms)
+        #     for i, sti in enumerate(ST):
+        #         for j, stij in enumerate(sti):
+        #             if stij is not None:
+        #                 ST[i][j] = stij.subs(list(zip(pk, pv)))
+        #     dicoST = {'ST':ST,
+        #               'vart':self.vart,
+        #               'varx':self.varX[0],
+        #               'vary':self.varX[1],
+        #               'varz':self.varX[2],
+        #               'ode_solver':self.ode_solver}
+        # else:
+        #     dicoST = None
 
         ns = int(self.stencil.nv_ptr[-1])
         mv = sp.MatrixSymbol('m', ns, 1)
@@ -721,6 +724,17 @@ class Scheme(object):
         s = self.s.subs(subs_moments + subs_param)
         alltogether(eq)
         alltogether(s)
+
+        # create source terms equations using Euler explicit scheme
+        source_eq = [m for m in mv]
+        dt = symbols('dt')
+        for source in self._source_terms:
+            if source:
+                for k, v in source.items():
+                    lhs = k.subs(subs_moments)
+                    rhs = lhs + .5*dt*v.subs(subs_moments)
+                    source_eq[lhs.i] = rhs
+        source_eq = sp.Matrix(source_eq)
 
         if self.rel_vel != [0]*self.dim:
             list_rel_vel = [rel_ux, rel_uy, rel_uz][:self.dim]
@@ -782,10 +796,13 @@ class Scheme(object):
             #self.log.error("NUMPY generator not allowed in this version with relative velocities")
             m = indexed('m', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
             dummy = eq.subs(list(zip(mv, m)) + subs_param).expand()
+            source_eq = source_eq.subs(list(zip(mv, m)) + subs_param).expand()
             generator.add_routine(('one_time_step', For(iloop, 
                                                             [
                                                                 Eq(m, Mu*f),  # transport + f2m
+                                                                Eq(m, source_eq), # source terms
                                                                 Eq(m, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(m)) + s.multiply_elementwise(dummy)), # relaxation
+                                                                Eq(m, source_eq), # source terms
                                                                 Eq(f_new, invMu*m), # m2f + update f
                                                             ]
                                                             )
@@ -812,8 +829,10 @@ class Scheme(object):
                                           If( (Eq(in_or_out, valin),
                                               brv + # build relative velocity
                                               [Eq(mv[nconsm:,0], sp.Matrix((Mu*f)[nconsm:])), # relative non conserved moments
+                                              Eq(mv, source_eq), # source terms
                                               Eq(mv, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(mv)) + s.multiply_elementwise(dummy)), # relaxation
                                               Eq(mv[:nconsm, 0], sp.Matrix((Mu*f)[:nconsm])), #relative conserved moments
+                                              Eq(mv, source_eq),  # source terms
                                               Eq(f_new, invMu*mv), # m2f + update f_new
                                               ]) )
                                           )
