@@ -262,7 +262,7 @@ class Scheme(object):
 
         self.P = sp.Matrix([p for s in scheme for p in s['polynomials']])
         self._source_terms = [s.get('source_terms', None) for s in scheme]
-        print(self._source_terms)
+
         self.M = None
         self.invM = None
         self.Tu = None

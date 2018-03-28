@@ -46,6 +46,7 @@ proto_simu = {
     'relative_velocity': (type(None), is_list_sp_or_nb,),
     'boundary_conditions':(type(None), is_dico_bc),
     'generator':(type(None), is_generator),
+    'show_code':(type(None), bool),
     'ode_solver':(type(None), is_ode_solver),
     'split_pattern': (type(None), is_list_string_or_tuple),
     'stability':(type(None), is_dico_stab),
@@ -182,6 +183,7 @@ class Simulation(object):
         vmax = self.domain.stencil.vmax
 
         self.generator = dico.get('generator', "CYTHON").upper()
+        self.show_code = dico.get('show_code', False)
         set_queue(self.generator)
         self.gpu_support = True if self.generator=="LOOPY" else False
 
@@ -224,7 +226,7 @@ class Simulation(object):
             method.set_iload()
             method.generate(sorder)
 
-        generator.compile(backend=self.generator, verbose=True)
+        generator.compile(backend=self.generator, verbose=self.show_code)
 
         self.log.info('Initialization')
         self.initialization(dico)
