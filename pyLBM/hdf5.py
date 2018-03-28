@@ -74,7 +74,7 @@ class H5File(object):
             #print(self.region)
             for i in range(self.dim):
                 dset = self.h5file.create_dataset("x_{}".format(i), [self.global_size[i]], dtype=np.double)
-                dset[:] = coords[i].flatten()
+                dset[:] = np.concatenate(coords[i])
 
     def _get_slice(self, rank):
         """
@@ -131,7 +131,7 @@ class H5File(object):
 
         comm = self.mpi_topo.cartcomm
         if comm.Get_rank() == 0:
-            dset = self.h5file.create_dataset(name, self.global_size[::-1] + [self.dim], dtype=np.double)
+            dset = self.h5file.create_dataset(name, self.global_size[::-1] + [3], dtype=np.double)
             for i, d in enumerate(data):
                 self._set_dset(dset, comm, d, i, with_index=True)
             self.vectors[name] = self.h5filename + ":/" + name
