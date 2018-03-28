@@ -15,17 +15,14 @@ mass, qx, qy, qz = sp.symbols('mass, qx, qy, qz')
 def bc_up(f, m, x, y, z):
     m[qx] = .01
 
-def save(x, y, z, m, im):
-    init_pvd = False
-    if im == 1:
-        init_pvd = True
-
-    vtk = pyLBM.VTKFile('karman', './data', im, init_pvd=init_pvd)
-    vtk.set_grid(x, y, z)
-    vtk.add_scalar('mass', m[mass])
-    qx_n, qy_n, qz_n = m[qx], m[qy], m[qz]
-    vtk.add_vector('velocity', [qx_n, qy_n, qz_n])
-    vtk.save()
+def save(sol, im):
+    x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
+    h5 = pyLBM.H5File(sol.mpi_topo, 'karman', './karman', im)
+    h5.set_grid(x, y, z)
+    h5.add_scalar('mass', sol.m[mass])
+    qx_n, qy_n, qz_n = sol.m[qx], sol.m[qy], sol.m[qz]
+    h5.add_vector('velocity', [qx_n, qy_n, qz_n])
+    h5.save()
 
 def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     """
@@ -115,8 +112,6 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
 
     sol = pyLBM.Simulation(dico, sorder=sorder)
 
-    x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
-
     im = 0
     compt = 0
     while sol.t < Tf:
@@ -126,7 +121,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
             if mpi.COMM_WORLD.Get_rank() == 0:
                 sol.time_info()
             im += 1
-            save(x, y, z, sol.m, im)
+            save(sol, im)
             compt = 0
 
     return sol

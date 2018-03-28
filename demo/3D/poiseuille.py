@@ -42,17 +42,15 @@ X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 p, ux, uy, uz = sp.symbols('p,ux,uy,uz')
 
 
-def plot(x, y, z, m, num):
-    init_pvd = False
-    if num == 1:
-        init_pvd = True
+def save(sol, num):
+    x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
 
-    vtk = pyLBM.VTKFile('poiseuille', './data', num, init_pvd=init_pvd)
-    vtk.set_grid(x, y, z)
-    vtk.add_scalar('pressure', m[p])
-    qx_n, qy_n, qz_n = m[ux], m[uy], m[uz]
-    vtk.add_vector('velocity', [qx_n, qy_n, qz_n])
-    vtk.save()
+    h5 = pyLBM.H5File(sol.mpi_topo, 'poiseuille', './poiseuille', num)
+    h5.set_grid(x, y, z)
+    h5.add_scalar('pressure', sol.m[p])
+    qx_n, qy_n, qz_n = sol.m[ux], sol.m[uy], sol.m[uz]
+    h5.add_vector('velocity', [qx_n, qy_n, qz_n])
+    h5.save()
 
 def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     """
@@ -166,22 +164,13 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
 
     sol = pyLBM.Simulation(dico, sorder=sorder)
 
-    x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
-
-    import mpi4py.MPI as mpi
     im = 0
     while sol.t < Tf:
         nrep = 100
-        t1 = mpi.Wtime()
         for i in range(nrep):
                  sol.one_time_step()
-        t2 = mpi.Wtime()
-        print(sol._F.size*100/1e6/(t2-t1))
-
-        if withPlot:
-            im += 1
-            plot(x, y, z, sol.m, im)
-
+        im += 1
+        save(sol, im)
     return sol
 
 if __name__ == '__main__':
