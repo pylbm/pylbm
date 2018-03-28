@@ -105,7 +105,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
                 'init': {rho: 1., qx: (qx0, (U, k)), qy: (qy0, (U, delta))},
             },
         ],
-        'relative_velocity': [qx/rho, qy/rho],
+        #'relative_velocity': [qx/rho, qy/rho],
         'generator': generator,
     }
 

@@ -65,7 +65,6 @@ def run(dx, Tf, generator="numpy", sorder=None, withPlot=True):
         },
         ],
         'generator': generator,
-        'split_pattern': ['transport', 'relaxation'],
         'parameters': {LA: la},
     }
 

@@ -21,15 +21,12 @@ import pyLBM
 
 u, X, Y, Z, LA = sp.symbols('u, X, Y, Z, LA')
 
-def save(x, y, z, m, im):
-    init_pvd = False
-    if im == 1:
-        init_pvd = True
-
-    vtk = pyLBM.VTKFile('advection', './data', im, init_pvd=init_pvd)
-    vtk.set_grid(x, y, z)
-    vtk.add_scalar('u', m[u])
-    vtk.save()
+def save(sol, im):
+    x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
+    h5 = pyLBM.H5File(sol.mpi_topo, 'advection', './advection', im)
+    h5.set_grid(x, y, z)
+    h5.add_scalar('u', sol.m[u])
+    h5.save()
 
 def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     """
@@ -82,15 +79,13 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
 
     sol = pyLBM.Simulation(d, sorder=sorder)
 
-    x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
-
     im = 0
     while sol.t < Tf:
         sol.one_time_step()
 
         if withPlot:
             im += 1
-            save(x, y, z, sol.m, im)
+            save(sol, im)
 
     return sol
 
