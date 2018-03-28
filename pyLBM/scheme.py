@@ -797,17 +797,29 @@ class Scheme(object):
             m = indexed('m', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
             dummy = eq.subs(list(zip(mv, m)) + subs_param).expand()
             source_eq = source_eq.subs(list(zip(mv, m)) + subs_param).expand()
-            generator.add_routine(('one_time_step', For(iloop, 
+            # FIX: have a unique version for source terms. The issue here is that sympy
+            #      return True for Eq(m, source_eq) if there are no source terms which is not
+            #      a valid expression for codegen (could be fix if we can use Assignment instead of Eq)
+            if Eq(m, source_eq) == True:
+                generator.add_routine(('one_time_step', For(iloop, 
                                                             [
                                                                 Eq(m, Mu*f),  # transport + f2m
-                                                                Eq(m, source_eq), # source terms
                                                                 Eq(m, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(m)) + s.multiply_elementwise(dummy)), # relaxation
-                                                                Eq(m, source_eq), # source terms
                                                                 Eq(f_new, invMu*m), # m2f + update f
                                                             ]
                                                             )
                                                         ))
-            
+            else:
+                generator.add_routine(('one_time_step', For(iloop, 
+                                                            [
+                                                                Eq(m, Mu*f),  # transport + f2m
+                                                                Eq(m, sp.Matrix(source_eq)), # source terms
+                                                                Eq(m, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(m)) + s.multiply_elementwise(dummy)), # relaxation
+                                                                Eq(m, sp.Matrix(source_eq)), # source terms
+                                                                Eq(f_new, invMu*m), # m2f + update f
+                                                            ]
+                                                            )
+                                                        ))
         else:
             # build the equations defining the relative velocities
             nconsm = len(self.consm)
@@ -824,19 +836,35 @@ class Scheme(object):
             else:
                 dummy = eq.subs(subs_param)
 
+            source_eq = source_eq.subs(subs_param).expand()
+
             generator.add_routine(('one_time_step',
                                       For(iloop,
                                           If( (Eq(in_or_out, valin),
                                               brv + # build relative velocity
-                                              [Eq(mv[nconsm:,0], sp.Matrix((Mu*f)[nconsm:])), # relative non conserved moments
+                                              [Eq(mv, sp.Matrix(Mu*f)), # relative non conserved moments
                                               Eq(mv, source_eq), # source terms
                                               Eq(mv, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(mv)) + s.multiply_elementwise(dummy)), # relaxation
-                                              Eq(mv[:nconsm, 0], sp.Matrix((Mu*f)[:nconsm])), #relative conserved moments
                                               Eq(mv, source_eq),  # source terms
                                               Eq(f_new, invMu*mv), # m2f + update f_new
                                               ]) )
                                           )
                                       ), local_vars = [mv] + list_rel_vel, settings={"prefetch":[f[0]]})
+
+            ## FIX: relative velocity
+            # generator.add_routine(('one_time_step',
+            #                           For(iloop,
+            #                               If( (Eq(in_or_out, valin),
+            #                                   brv + # build relative velocity
+            #                                   [Eq(mv[nconsm:,0], sp.Matrix((Mu*f)[nconsm:])), # relative non conserved moments
+            #                                   Eq(mv, source_eq), # source terms
+            #                                   Eq(mv, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(mv)) + s.multiply_elementwise(dummy)), # relaxation
+            #                                   Eq(mv[:nconsm, 0], sp.Matrix((Mu*f)[:nconsm])), #relative conserved moments
+            #                                   Eq(mv, source_eq),  # source terms
+            #                                   Eq(f_new, invMu*mv), # m2f + update f_new
+            #                                   ]) )
+            #                               )
+            #                           ), local_vars = [mv] + list_rel_vel, settings={"prefetch":[f[0]]})
 
     def m2f(self, mm, ff):
         """ Compute the distribution functions f from the moments m """

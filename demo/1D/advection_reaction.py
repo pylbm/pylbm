@@ -15,7 +15,7 @@ from scipy import stats
 import sympy as sp
 import pyLBM
 
-t, XX, LA, u = sp.symbols('t, x, LA, u')
+t, X, LA, u = sp.symbols('t, X, LA, u')
 C, MU = sp.symbols('C, MU')
 
 
@@ -29,10 +29,7 @@ def solution(t, x, xmin, xmax, c, mu):
     ui = u0(x - c*t, xmin, xmax)
     return (dt+2*ui-(1-2*ui)*dt)/(2-2*(1-2*ui)*dt)
 
-def run(dt, Tf,
-    generator = pyLBM.generator.NumpyGenerator,
-    ode_solver = pyLBM.generator.basic,
-    sorder=None, withPlot=True):
+def run(dt, Tf, generator = 'numpy', sorder=None, withPlot=True):
     """
     Parameters
     ----------
@@ -68,7 +65,7 @@ def run(dt, Tf,
         {
             'velocities':[1,2],
             'conserved_moments':u,
-            'polynomials':[1,LA*XX],
+            'polynomials':[1,LA*X],
             'relaxation_parameters':[0., s],
             'equilibrium':[u, C*u],
             'source_terms':{u:MU*u*(1-u)},
@@ -76,15 +73,12 @@ def run(dt, Tf,
         },
         ],
         'generator': generator,
-        'ode_solver': ode_solver,
-        'split_pattern': [('source_term', 0.5), 'transport', 'relaxation', ('source_term', 0.5)],
-        'parameters': {LA: la, C: c, MU: mu, 'time': t, 'space_x': XX},
+        'parameters': {LA: la, C: c, MU: mu},
     }
 
     # simulation
     sol = pyLBM.Simulation(dico, sorder=sorder) # build the simulation
 
-    print(sol.scheme.generator.code)
 
     if withPlot:
         # create the viewer to plot the solution
@@ -117,4 +111,4 @@ def run(dt, Tf,
 
 if __name__ == '__main__':
     Tf = 2.
-    run(1./128, 1., generator = pyLBM.generator.CythonGenerator)
+    run(1./128, 1.)

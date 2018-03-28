@@ -128,4 +128,4 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
 if __name__ == '__main__':
     dx = 1./128
     Tf = 20
-    run(dx, Tf, generator="loopy")
+    run(dx, Tf, generator="cython")

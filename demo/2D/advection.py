@@ -73,7 +73,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         ],
         'generator': generator,
         'parameters':{LA:la},
-        'relative_velocity': [cx, cy],
+        #'relative_velocity': [cx, cy],
         }
 
     sol = pyLBM.Simulation(dico, sorder=sorder)
