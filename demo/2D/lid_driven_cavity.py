@@ -87,12 +87,13 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
                 'init': {rho: 1., qx: 0., qy: 0.},
             },
         ],
-        'relative_velocity': [qx/rho, qy/rho],
+        #'relative_velocity': [qx/rho, qy/rho],
         'boundary_conditions':{
             0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}},
             1:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}, 'value':(bc_up, (driven_velocity,))}
         },
         'generator': generator,
+        'show_code': True,
     }
 
     sol = pyLBM.Simulation(lid_cavity, sorder=sorder)
