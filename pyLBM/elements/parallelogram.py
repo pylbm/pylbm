@@ -153,12 +153,12 @@ class Parallelogram(Element):
             s += '(solid)'
         return s
 
-    def _visualize(self, viewer, color, viewlabel):
+    def _visualize(self, viewer, color, viewlabel, alpha=1.):
         A = [self.point[k] for k in range(2)]
         B = [A[k] + self.v0[k] for k in range(2)]
         C = [B[k] + self.v1[k] for k in range(2)]
         D = [A[k] + self.v1[k] for k in range(2)]
-        viewer.polygon([A,B,C,D], color)
+        viewer.polygon([A,B,C,D], color, alpha=alpha)
         if viewlabel:
             viewer.text(str(self.label[0]), [0.5*(A[0]+B[0]), 0.5*(A[1]+B[1])])
             viewer.text(str(self.label[1]), [0.5*(A[0]+D[0]), 0.5*(A[1]+D[1])])

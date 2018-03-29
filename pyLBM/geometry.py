@@ -151,7 +151,7 @@ class Geometry(object):
         """
         self.list_elem.append(elem)
 
-    def visualize(self, viewer_app=viewer.matplotlibViewer, viewlabel=False, fluid_color='blue'):
+    def visualize(self, viewer_app=viewer.matplotlibViewer, viewlabel=False, fluid_color='blue', viewgrid=False, alpha = 1.):
         """
         plot a view of the geometry
 
@@ -189,7 +189,7 @@ class Geometry(object):
             ax.polygon(np.array([[xmin, ymin],
                           [xmin, ymax],
                           [xmax, ymax],
-                          [xmax, ymin]]), fluid_color)
+                          [xmax, ymin]]), fluid_color, alpha=alpha)
             if viewlabel:
                 # label 0 for left
                 ax.text(str(self.box_label[0]), [xmin, 0.5*(ymin+ymax)])
@@ -202,12 +202,15 @@ class Geometry(object):
             for elem in self.list_elem:
                 if elem.isfluid:
                     color = fluid_color
+                    a = alpha
                 else:
                     color = 'white'
-                elem._visualize(ax, color, viewlabel)
+                    a = 1
+                elem._visualize(ax, color, viewlabel, alpha=a)
             xpercent = 0.05*(xmax-xmin)
             ypercent = 0.05*(ymax-ymin)
-            ax.axis(xmin-xpercent, xmax+xpercent, ymin-ypercent, ymax+ypercent)
+            ax.axis(xmin-xpercent, xmax+xpercent, ymin-ypercent, ymax+ypercent, aspect='equal')
+            ax.grid(viewgrid)
         elif self.dim == 3:
             couleurs = [(1./k, 0., 1.-1./k) for k in range(1,11)]
             Pmin = [(float)(self.bounds[k][0]) for k in range(3)]
