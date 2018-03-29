@@ -737,7 +737,7 @@ class Stencil(list):
 
 
         if unique_velocities:
-            view = viewer_mod.Fig()
+            view = viewer_mod.Fig(figsize = (5, 5))
             ax = view[0]
             #ax.title = "unique_velocities"
 
@@ -761,10 +761,27 @@ class Stencil(list):
             ymin, ymax = np.min(vy) - 1, np.max(vy) + 1
             zmin, zmax = np.min(vz) - 1, np.max(vz) + 1
             ax.title = "Stencil of the unique velocities"
-            if self.dim < 3:
-                ax.axis(xmin, xmax, ymin, ymax, zmin, zmax)
-            else:
+            if self.dim == 1:
                 ax.axis(xmin, xmax, ymin, ymax)
+                ax.xaxis(np.arange(xmin, xmax+1))
+                ax.yaxis_set_visible(False)
+            if self.dim == 2:
+                ax.axis(xmin, xmax, ymin, ymax, aspect='equal')
+                ax.xaxis(np.arange(xmin, xmax+1))
+                ax.yaxis(np.arange(ymin, ymax+1))
+            if self.dim == 3:
+                ax.axis(xmin, xmax, ymin, ymax, zmin, zmax, self.dim, aspect='equal')
+                ax.xaxis(np.arange(xmin, xmax+1))
+                ax.yaxis(np.arange(ymin, ymax+1))
+                ax.zaxis(np.arange(zmin, zmax+1))
+            # if self.dim == 3:
+            #     ax.axis(xmin, xmax, ymin, ymax, zmin, zmax)
+            # else:
+            #     ax.axis(xmin, xmax, ymin, ymax)
+            #     ax.xaxis(np.arange(xmin, xmax+1))
+            #     ax.yaxis_set_visible(False)
+            ax.grid(visible=True, which='major', alpha=0.5)
+
         else:
             if k is None:
                 lv = list(range(self.nstencils))
@@ -773,11 +790,11 @@ class Stencil(list):
             else:
                 lv = k
 
-            view = viewer_mod.Fig(len(lv), 1, dim = self.dim)
+            view = viewer_mod.Fig(len(lv), 1, dim = self.dim, figsize = (5, 5*len(lv)))
+            view.fix_space(wspace=0.25, hspace=0.25)
 
             for ii, i in enumerate(lv):
                 ax = view[ii]
-                #ax.title = "stencil %d"%i
 
                 vx = self.vx[i]
                 vy = vz = 0
@@ -791,16 +808,32 @@ class Stencil(list):
                 pos[:, 1] = vy
                 pos[:, 2] = vz
 
-                ax.text(list(map(str, self.num[i])), pos[:,:max(2,self.dim)])
-
                 xmin, xmax = np.min(vx) - 1, np.max(vx) + 1
                 ymin, ymax = np.min(vy) - 1, np.max(vy) + 1
                 zmin, zmax = np.min(vz) - 1, np.max(vz) + 1
                 ax.title = "Stencil {0:d}".format(ii)
-                if self.dim == 3:
-                    ax.axis(xmin, xmax, ymin, ymax, zmin, zmax, self.dim)
-                else:
+                if self.dim == 1:
                     ax.axis(xmin, xmax, ymin, ymax)
+                    ax.xaxis(np.arange(xmin, xmax+1))
+                    ax.yaxis_set_visible(False)
+                    ax.plot([xmin, xmax], [0, 0], color = 'orange', alpha = 0.25)
+                if self.dim == 2:
+                    ax.axis(xmin, xmax, ymin, ymax, aspect='equal')
+                    ax.xaxis(np.arange(xmin, xmax+1))
+                    ax.yaxis(np.arange(ymin, ymax+1))
+                    ax.plot([xmin, xmax], [0, 0], color = 'orange', alpha = 0.25)
+                    ax.plot([0, 0], [ymin, ymax], color = 'orange', alpha = 0.25)
+                if self.dim == 3:
+                    ax.axis(xmin, xmax, ymin, ymax, zmin, zmax, self.dim, aspect='equal')
+                    ax.xaxis(np.arange(xmin, xmax+1))
+                    ax.yaxis(np.arange(ymin, ymax+1))
+                    ax.zaxis(np.arange(zmin, zmax+1))
+                    ax.plot([xmin, xmax], [0, 0], [0, 0], color = 'orange', alpha = 0.25)
+                    ax.plot([0, 0], [ymin, ymax], [0, 0], color = 'orange', alpha = 0.25)
+                    ax.plot([0, 0], [0, 0], [zmin, zmax], color = 'orange', alpha = 0.25)
+
+                ax.text(list(map(str, self.num[i])), pos[:,:max(2,self.dim)], fontsize = 12, color = 'navy', fontweight='bold')
+                ax.grid(visible=True, which='major', alpha=0.25)
 
         view.show()
 

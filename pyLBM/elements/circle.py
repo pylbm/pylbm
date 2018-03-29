@@ -115,7 +115,7 @@ class Circle(Element):
         array of distances
 
         """
-        x, y = grid        
+        x, y = grid
         v1 = self.radius*np.array([1,0])
         v2 = self.radius*np.array([0,1])
         return distance_ellipse(x, y, v, self.center, v1, v2, dmax, self.label)
@@ -128,8 +128,8 @@ class Circle(Element):
             s += '(solid)'
         return s
 
-    def _visualize(self, viewer, color, viewlabel=False, scale=np.ones(2)):
-        viewer.ellipse(self.center*scale, tuple(self.radius*scale), color)
+    def _visualize(self, viewer, color, viewlabel=False, scale=np.ones(2), alpha=1.):
+        viewer.ellipse(self.center*scale, tuple(self.radius*scale), color, alpha=alpha)
         if viewlabel:
             theta = self.center[0] + 2*self.center[1]+10*self.radius
             x, y = self.center[0] + self.radius*np.cos(theta), self.center[1] + self.radius*np.sin(theta)

@@ -252,21 +252,21 @@ class Domain(object):
     def x_halo(self):
         """
         x component of the coordinates of the whole domain (halo points included).
-        """        
+        """
         return self.coords_halo[0]
 
     @property
     def y_halo(self):
         """
         y component of the coordinates of the whole domain (halo points included).
-        """        
+        """
         return self.coords_halo[1]
 
     @property
     def z_halo(self):
         """
         z component of the coordinates of the whole domain (halo points included).
-        """        
+        """
         return self.coords_halo[2]
 
     def __str__(self):
@@ -336,7 +336,7 @@ class Domain(object):
 
     def get_bounds_halo(self):
         """
-        Return the coordinates of the bottom right and upper left corner of the 
+        Return the coordinates of the bottom right and upper left corner of the
         whole domain with halo points.
         """
         bottom_right = np.asarray([self.coords_halo[k][0] for k in range(self.dim)])
@@ -345,7 +345,7 @@ class Domain(object):
 
     def get_bounds(self):
         """
-        Return the coordinates of the bottom right and upper left corner of the 
+        Return the coordinates of the bottom right and upper left corner of the
         interior domain.
         """
         bottom_right = np.asarray([self.coords[k][0] for k in range(self.dim)])
@@ -531,30 +531,37 @@ class Domain(object):
         if self.dim == 1:
             x = self.coords_halo[0]
             y = np.zeros(x.shape)
-            vkmax = self.stencil.vmax[0]
-            for k in range(self.stencil.unvtot):
-                vk = self.stencil.unique_velocities[k].vx
-                color = (1.-(vkmax+vk)*0.5/vkmax, 0., (vkmax+vk)*0.5/vkmax)
-                indbord = np.where(self.distance[k,:]<=1)[0]
-                if indbord.size != 0:
-                    xx = x[indbord]
-                    yy = y[indbord]
-                    dist = self.distance[k, indbord]
-                    dx = self.dx
-                    l = np.empty((2*indbord.size, 2))
-                    l[::2, :] = np.asarray([xx, yy]).T
-                    l[1::2, :] = np.asarray([xx + dx*dist*vk, yy]).T
-                    view.segments(l, color=color)
+            if view_seg or view_bound:
+                vxkmax = self.stencil.vmax[0]
+                for k in range(self.stencil.unvtot):
+                    vxk = self.stencil.unique_velocities[k].vx
+                    color = (1.-(vxkmax+vxk)*0.5/vxkmax, 0., (vxkmax+vxk)*0.5/vxkmax)
+                    indbord = np.where(self.distance[k,:]<=1)[0]
+                    if indbord.size != 0:
+                        xx = x[indbord]
+                        yy = y[indbord]
+                        dist = self.distance[k, indbord]
+                        dx = self.dx
+                        if view_seg:
+                            l = np.empty((2*xx.size, 2))
+                            l[::2, :] = np.asarray([xx, yy]).T
+                            l[1::2, :] = np.asarray([xx + dx*dist*vxk, yy]).T
+                            view.segments(l, alpha=0.75, width=2, color=color)
+                        if view_bound:
+                            l = np.asarray([xx + dx*dist*vxk, yy]).T
+                            view.markers(l, 200*self.dx, symbol='d', color=color)
             indin = np.where(self.in_or_out==self.valin)
-            view.markers(np.asarray([x[indin],y[indin]]).T, 200*self.dx, symbol='*')
+            view.markers(np.asarray([x[indin],y[indin]]).T, 200*self.dx, symbol='o', alpha=0.5, color='navy')
             indout = np.where(self.in_or_out==self.valout)
-            view.markers(np.asarray([x[indout],y[indout]]).T, 200*self.dx, symbol='s')
+            view.markers(np.asarray([x[indout],y[indout]]).T, 200*self.dx, symbol='s', color='orange')
 
             xmin, xmax = self.geom.bounds[0][:]
             L = xmax-xmin
             h = L/20
             l = L/50
             view.axis(xmin - L/2, xmax + L/2, -10*h, 10*h)
+            view.grid(visible=True)
+            view.yaxis_set_visible(False)
 
         elif self.dim == 2:
 
