@@ -157,11 +157,11 @@ class Ellipsoid(Element):
             s += '(solid)'
         return s
 
-    def _visualize(self, viewer, color, viewlabel=False, scale=np.ones(3)):
+    def _visualize(self, viewer, color, viewlabel=False, scale=np.ones(3), alpha=1.):
         v1 = scale*self.v1
         v2 = scale*self.v2
         v3 = scale*self.v3
-        viewer.ellipse_3D(self.center*scale, v1, v2, v3 , color)
+        viewer.ellipse_3D(self.center*scale, v1, v2, v3 , color, alpha=alpha)
         if viewlabel:
             x, y, z = self.center[0], self.center[1], self.center[2]
             viewer.text(str(self.label[0]), [x, y, z])

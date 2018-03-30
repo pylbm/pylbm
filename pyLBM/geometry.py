@@ -151,7 +151,13 @@ class Geometry(object):
         """
         self.list_elem.append(elem)
 
-    def visualize(self, viewer_app=viewer.matplotlibViewer, viewlabel=False, fluid_color='blue', viewgrid=False, alpha = 1.):
+    def visualize(self,
+                  viewer_app=viewer.matplotlibViewer,
+                  figsize = (6,4),
+                  viewlabel=False,
+                  fluid_color='navy',
+                  viewgrid=False,
+                  alpha = 1.):
         """
         plot a view of the geometry
 
@@ -163,7 +169,7 @@ class Geometry(object):
         fluid_color : color for the fluid part (default blue)
 
         """
-        view = viewer_app.Fig(dim = self.dim)
+        view = viewer_app.Fig(dim = self.dim, figsize = figsize)
         ax = view[0]
 
         if self.dim == 1:
@@ -183,6 +189,8 @@ class Geometry(object):
                 # label 1 for right
                 ax.text(str(self.box_label[1]), [xmax-l, -2*h])
             ax.axis(xmin - L/2, xmax + L/2, -10*h, 10*h)
+            ax.yaxis_set_visible(False)
+            ax.xaxis_set_visible(viewgrid)
         elif self.dim == 2:
             xmin, xmax = self.bounds[0][:]
             ymin, ymax = self.bounds[1][:]
@@ -212,7 +220,7 @@ class Geometry(object):
             ax.axis(xmin-xpercent, xmax+xpercent, ymin-ypercent, ymax+ypercent, aspect='equal')
             ax.grid(viewgrid)
         elif self.dim == 3:
-            couleurs = [(1./k, 0., 1.-1./k) for k in range(1,11)]
+            couleurs = [(.5+.5/k, .5/k, 1.-1./k) for k in range(1,11)]
             Pmin = [(float)(self.bounds[k][0]) for k in range(3)]
             Pmax = [(float)(self.bounds[k][1]) for k in range(3)]
             xmin, xm, xmax = Pmin[0], .5*(Pmin[0]+Pmax[0]), Pmax[0]
@@ -226,21 +234,23 @@ class Geometry(object):
                     ZS = x0 + np.zeros(XS.shape)
                     C = [XS, YS, ZS]
                     ax.surface(C[(2-k)%3], C[(3-k)%3], C[(1-k)%3],
-                         color=couleurs[self.box_label[ct_lab]%10])
+                         color=couleurs[self.box_label[ct_lab]%10], alpha=min(alpha,0.5))
                     if viewlabel:
                         x = .25*np.sum(C[(2-k)%3])
                         y = .25*np.sum(C[(3-k)%3])
                         z = .25*np.sum(C[(1-k)%3])
                         ax.text(str(self.box_label[ct_lab]), [x, y, z], fontsize=18)
-                        ct_lab += 1
-            ax.axis(xmin,xmax,ymin,ymax,zmin,zmax)
+                    ct_lab += 1
+            ax.axis(xmin,xmax,ymin,ymax,zmin,zmax, aspect='equal')
             ax.set_label("X", "Y", "Z")
             for elem in self.list_elem:
                 if elem.isfluid:
                     coul = fluid_color
+                    a = alpha
                 else:
                     coul = [couleurs[elem.label[k]] for k in range(elem.number_of_bounds)]
-                elem._visualize(ax, coul, viewlabel)
+                    a = 1
+                elem._visualize(ax, coul, viewlabel, alpha=a)
         else:
             self.log.error('Error in geometry.visualize(): the dimension {0} is not allowed'.format(self.dim))
 
