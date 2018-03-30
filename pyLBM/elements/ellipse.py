@@ -139,7 +139,7 @@ class Ellipse(Element):
             s += '(solid)'
         return s
 
-    def _visualize(self, viewer, color, viewlabel=False, scale=np.ones(2)):
+    def _visualize(self, viewer, color, viewlabel=False, scale=np.ones(2), alpha=1.):
         nv1 = np.linalg.norm(self.v1)
         nv2 = np.linalg.norm(self.v2)
         if nv1 > nv2:
@@ -153,7 +153,7 @@ class Ellipse(Element):
         else:
             theta = np.arctan(v[1]/v[0])
 
-        viewer.ellipse(self.center*scale, (r1*scale[0], r2*scale[1]), color, angle = theta)
+        viewer.ellipse(self.center*scale, (r1*scale[0], r2*scale[1]), color, angle = theta, alpha=alpha)
         if viewlabel:
             x, y = self.center[0] + r1*np.cos(theta), self.center[1] + r1*np.sin(theta)
             viewer.text(str(self.label[0]), [x*scale[0], y*scale[1]])
