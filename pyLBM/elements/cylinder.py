@@ -148,7 +148,7 @@ class Cylinder(Element):
     def __str__(self):
         pass
 
-    def _visualize(self, viewer, color, viewlabel=False, scale=np.ones(3)):
+    def _visualize(self, viewer, color, viewlabel=False, scale=np.ones(3), alpha=1.):
         if isinstance(color, int):
             color = [color]*self.number_of_bounds
         lx_b, ly_b = self.base._visualize()
@@ -161,7 +161,7 @@ class Cylinder(Element):
             X = c[0] + self.A[0,0]*X_cyl + self.A[0,1]*Y_cyl + self.A[0,2]*Z_cyl
             Y = c[1] + self.A[1,0]*X_cyl + self.A[1,1]*Y_cyl + self.A[1,2]*Z_cyl
             Z = c[2] + self.A[2,0]*X_cyl + self.A[2,1]*Y_cyl + self.A[2,2]*Z_cyl
-            viewer.surface(X, Y, Z, color[k])
+            viewer.surface(X, Y, Z, color[k], alpha=alpha)
         vv = np.sin(np.linspace(0, np.pi, 10))
         Xbase = np.outer(lx_b[-2], vv)
         Ybase = np.outer(ly_b[-2], vv)
@@ -169,11 +169,11 @@ class Cylinder(Element):
         X = c[0] + self.A[0,0]*Xbase + self.A[0,1]*Ybase + self.A[0,2]*Zbase
         Y = c[1] + self.A[1,0]*Xbase + self.A[1,1]*Ybase + self.A[1,2]*Zbase
         Z = c[2] + self.A[2,0]*Xbase + self.A[2,1]*Ybase + self.A[2,2]*Zbase
-        viewer.surface(X, Y, Z, color=color[-2])
+        viewer.surface(X, Y, Z, color=color[-2], alpha=alpha)
         X = c[0] + self.A[0,0]*Xbase + self.A[0,1]*Ybase - self.A[0,2]*Zbase
         Y = c[1] + self.A[1,0]*Xbase + self.A[1,1]*Ybase - self.A[1,2]*Zbase
         Z = c[2] + self.A[2,0]*Xbase + self.A[2,1]*Ybase - self.A[2,2]*Zbase
-        viewer.surface(X, Y, Z, color=color[-2])
+        viewer.surface(X, Y, Z, color=color[-2], alpha=alpha)
 
 
 class Cylinder_Circle(Cylinder):

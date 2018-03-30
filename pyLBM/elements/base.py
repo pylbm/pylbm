@@ -45,7 +45,7 @@ class Element(object):
     def __repr__(self):
         return self.__str__()
 
-    def _visualize(self, viewer, color, viewlabel=False, scale=np.ones(2)):
+    def _visualize(self, viewer, color, viewlabel=False, scale=np.ones(2), alpha=1.):
         pass
 
     def test_label(self):
