@@ -115,6 +115,8 @@ class PlotWidget(object):
             self.ax.set_xlim3d(xmin, xmax)
             self.ax.set_ylim3d(ymin, ymax)
             self.ax.set_zlim3d(zmin, zmax)
+            if aspect is not None:
+                self.ax.set_aspect(aspect)
 
     def xaxis_set_visible(self, visible):
         self.ax.get_xaxis().set_visible(visible)
@@ -152,13 +154,13 @@ class PlotWidget(object):
     def polygon(self, pos, color, alpha=1.):
         return self.ax.add_patch(Polygon(pos, closed=True, fill=True, color=color, alpha=alpha))
 
-    def surface(self, X, Y, Z, color):
+    def surface(self, X, Y, Z, color, alpha=0.5):
         return self.ax.plot_surface(X, Y, Z,
             rstride=1, cstride=1, color=color,
-            shade=False, alpha=0.5,
+            shade=False, alpha=alpha,
             antialiased=False, linewidth=.5)
 
-    def ellipse_3D(self, pos, a, b, c, color):
+    def ellipse_3D(self, pos, a, b, c, color, alpha=1.):
         u = np.linspace(0, 2.*np.pi, 100)
         v = np.linspace(0, np.pi, 100)
         CS = np.outer(np.cos(u), np.sin(v))
@@ -167,7 +169,7 @@ class PlotWidget(object):
         x = pos[0] + a[0]*CS + b[0]*SS + c[0]*C
         y = pos[1] + a[1]*CS + b[1]*SS + c[1]*C
         z = pos[2] + a[2]*CS + b[2]*SS + c[2]*C
-        return self.ax.plot_surface(x, y, z, rstride=4, cstride=4, color=color[0])
+        return self.ax.plot_surface(x, y, z, rstride=4, cstride=4, color=color[0], alpha=alpha)
 
     def markers(self, pos, size, color='k', symbol='o', alpha=1.):
         if pos.shape[1] == 2:
