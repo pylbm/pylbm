@@ -271,6 +271,7 @@ class Scheme(object):
 
         # self.EQ = sp.Matrix([e for s in scheme for e in s['equilibrium']])
         self.s = sp.Matrix([r for s in scheme for r in s['relaxation_parameters']])
+        self.s_non_swap = self.s.copy()
 
         eq = []
         for i, s in enumerate(scheme):
@@ -286,6 +287,7 @@ class Scheme(object):
                 meq_tmp.simplify()
                 eq.append([e for e in meq_tmp])
         self.EQ = sp.Matrix([e for sublist in eq for e in sublist])
+        self.EQ_non_swap = self.EQ.copy()
         self.log.info("Equilibrium:\n" + sp.pretty(self.EQ))
         self.log.info("Matrix M to transform the distribution into the moments\n" + sp.pretty(self.M))
         self.log.info("Matrix M^(-1) to transform the moments into the distribution\n" + sp.pretty(self.invM))
@@ -389,21 +391,37 @@ class Scheme(object):
             s += "    Stencil.nv[{0:d}]=".format(k) + str(self.stencil.nv[k]) + "\n"
         s += "\t velocities value:\n"
         for k in range(self.nscheme):
-            s+="    v[{0:d}]=".format(k)
+            s+="    v[{0:d}] = ".format(k)
             for v in self.stencil.v[k]:
                 s += v.__str__() + ', '
             s += '\n'
         s += "\t polynomials:\n"
+        kl = 0
         for k in range(self.nscheme):
-            s += "    P[{0:d}]=".format(k) + self.P[k].__str__() + "\n"
+            s += "    P[{0:d}] = ".format(k)
+            for l in range(self.stencil.nv[k]):
+                s += self.P[kl].__str__() + ", "
+                kl += 1
+            s += "\n"
         s += "\t equilibria:\n"
+        kl = 0
         for k in range(self.nscheme):
-            s += "    EQ[{0:d}]=".format(k) + self.EQ[k].__str__() + "\n"
+            s += "    EQ[{0:d}] = ".format(k)
+            for l in range(self.stencil.nv[k]):
+                s += self.EQ_non_swap[kl].__str__() + ", "
+                kl += 1
+            s += "\n"
         s += "\t relaxation parameters:\n"
+        kl = 0
         for k in range(self.nscheme):
-            s += "    s[{0:d}]=".format(k) + self.s[k].__str__() + "\n"
+            s += "    s[{0:d}] = ".format(k)
+            for l in range(self.stencil.nv[k]):
+                s += self.s_non_swap[kl].__str__() + ", "
+                kl += 1
+            s += "\n"
         s += "\t moments matrices\n"
-        s += "M = " + self.M.__str__() + "\n"
+        s += "M      = " + self.M.__str__() + "\n"
+        s += "M^(-1) = " + self.invM.__str__() + "\n"
         return s
 
     def create_moments_matrices(self):
@@ -423,7 +441,7 @@ class Scheme(object):
         Tu = []
 
         u_tild = sp.Matrix([rel_ux, rel_uy, rel_uz])
-        
+
         if self.la_symb is not None:
             LA = self.la_symb
         else:
@@ -451,7 +469,7 @@ class Scheme(object):
         self.Tu = sp.eye(gshape[0])
         self.M = sp.zeros(*gshape)
         self.invM = sp.zeros(*gshape)
-        
+
         try:
             for k in range(self.nscheme):
                 nvk = self.stencil.nv[k]
@@ -466,7 +484,7 @@ class Scheme(object):
         except TypeError:
             self.log.error("Unable to convert to float the expression {0} or {1}.\nCheck the 'parameters' entry.".format(self.M[k][i, j], self.invM[k][i, j]))
             sys.exit()
-        
+
         alltogether(self.Tu)
         alltogether(self.M)
         alltogether(self.invM)
@@ -745,7 +763,7 @@ class Scheme(object):
             Mu = self.M
             invMu = self.invM
             list_rel_vel = []
-        
+
         # fix execution time
         if self.check_inverse:
             self._check_inverse(self.M, self.invM, 'M')
@@ -801,7 +819,7 @@ class Scheme(object):
             #      return True for Eq(m, source_eq) if there are no source terms which is not
             #      a valid expression for codegen (could be fix if we can use Assignment instead of Eq)
             if Eq(m, source_eq) == True:
-                generator.add_routine(('one_time_step', For(iloop, 
+                generator.add_routine(('one_time_step', For(iloop,
                                                             [
                                                                 Eq(m, Mu*f),  # transport + f2m
                                                                 Eq(m, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(m)) + s.multiply_elementwise(dummy)), # relaxation
@@ -810,7 +828,7 @@ class Scheme(object):
                                                             )
                                                         ))
             else:
-                generator.add_routine(('one_time_step', For(iloop, 
+                generator.add_routine(('one_time_step', For(iloop,
                                                             [
                                                                 Eq(m, Mu*f),  # transport + f2m
                                                                 Eq(m, sp.Matrix(source_eq)), # source terms
@@ -916,7 +934,7 @@ class Scheme(object):
 
         args = locals()
         call_genfunction(generator.module.equilibrium, args)
-        
+
     def relaxation(self, m):
         """ The relaxation phase on the moments m """
         mod = self.generator.get_module()
@@ -925,7 +943,7 @@ class Scheme(object):
     def source_term(self, m, tn=0., dt=0., x=0., y=0., z=0.):
         """ The integration of the source term on the moments m """
         mod = self.generator.get_module()
-        mod.source_term(m.array, tn, dt, x, y, z)        
+        mod.source_term(m.array, tn, dt, x, y, z)
 
     def onetimestep(self, mm, ff, ff_new, in_or_out, valin, tn=0., dt=0., x=0., y=0., z=0.):
         """ Compute one time step of the Lattice Boltzmann method """
