@@ -520,7 +520,7 @@ class Bouzidi_anti_bounce_back(Bouzidi_bounce_back):
         fload0 = indexed('f', [ns, nx, ny, nz], index=[iload[0][ix, k] for k in range(dim+1)], permutation=sorder)
         fload1 = indexed('f', [ns, nx, ny, nz], index=[iload[1][ix, k] for k in range(dim+1)], permutation=sorder)
 
-        generator.add_routine(('Bouzidi_anti_bounce_back', For(ix, Eq(fstore, -dist[ix]*fload0 + (-1+dist[ix])*fload1 + rhs[ix]))))
+        generator.add_routine(('Bouzidi_anti_bounce_back', For(ix, Eq(fstore, -dist[ix]*fload0 + (1-dist[ix])*fload1 + rhs[ix]))))
 
     @property
     def function(self):
