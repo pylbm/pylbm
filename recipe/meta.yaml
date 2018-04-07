@@ -25,6 +25,7 @@ requirements:
     - h5py
     - colorlog
     - mpi4py
+    - future
 
 test:
   imports:
