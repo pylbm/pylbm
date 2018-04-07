@@ -59,11 +59,15 @@ install:
     # Configure the VM.
     - cmd: conda.exe install -n root --quiet --yes conda-forge-build-setup
     - cmd: run_conda_forge_build_setup
+    # Microsoft MPI
+    - "powershell conf\\ci\\appveyor\\install-msmpi.ps1"
+    - "SetEnvMPI.cmd"
 
-# Skip .NET project specific build phase.
+    # Skip .NET project specific build phase.
 build: off
 
 test_script:
+    - "set MPI=msmpi"
     - conda.exe build recipe --quiet
     - conda.exe install -n root --yes --use-local pylbm
     # Run the tests outside the source tree.
