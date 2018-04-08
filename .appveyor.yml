@@ -79,7 +79,7 @@ on_success:
     #- cmd: SET PATH=%CONDA_INSTALL_LOCN%;%CONDA_INSTALL_LOCN%\Scripts;%PATH%
     # Write the output file location to a file...cannot simply use conda build --output
     # because astropy_helpers prints out a message when it is freezing the version number during setup.
-    - python -c "from conda_build.api import get_output_file_path; p=get_output_file_path('recipes'); f=open('to_upload.txt', 'w');f.write(p)"
+    - python -c "from conda_build.api import get_output_file_path; p=get_output_file_path('recipe'); f=open('to_upload.txt', 'w');f.write(p)"
     # ...so that we can set a variable to the name of that output file.
     - set /P BUILT_PACKAGE=<to_upload.txt
     - echo %BUILT_PACKAGE%
