@@ -1,0 +1,47 @@
+{% set data = load_setup_py_data() %}
+
+package:
+  name: pylbm
+  version: {{ data.get('version') }}
+
+source:
+  path: ../
+
+build:
+  number: 0
+  script: python setup.py install --single-version-externally-managed --record=record.txt
+
+requirements:
+  build:
+    - python
+    - setuptools
+  run:
+    - python
+    - numpy
+    - matplotlib
+    - six
+    - sympy
+    - cython
+    - h5py
+    - colorlog
+    - mpi4py
+    - future
+
+test:
+  imports:
+    - pyLBM
+
+about:
+  home: https://github.com/pylbm/pylbm
+  license: BSD
+  license_family: BSD
+  license_file: ''
+  summary: 'package for numerical simulations using Lattice Boltzmann solvers'
+  description: 'package for numerical simulations using Lattice Boltzmann solvers'
+  doc_url: 'http://pylbm.readthedocs.io/en/develop/'
+  dev_url: ''
+
+extra:
+  recipe-maintainers: 
+    - gouarin
+    - bgraille
