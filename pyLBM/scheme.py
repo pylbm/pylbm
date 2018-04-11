@@ -283,7 +283,9 @@ class Scheme(object):
             if meq:
                 eq.append(meq)
             if feq:
-                meq_tmp = self.M*feq[0](self.stencil.get_all_velocities(), *feq[1])
+                sli = slice(self.stencil.nv_ptr[i],self.stencil.nv_ptr[i+1])
+                print(self.M[sli, sli], feq[0](self.stencil.get_all_velocities(i), *feq[1]))
+                meq_tmp = self.M[sli, sli]*feq[0](self.stencil.get_all_velocities(i), *feq[1])
                 meq_tmp.simplify()
                 eq.append([e for e in meq_tmp])
         self.EQ = sp.Matrix([e for sublist in eq for e in sublist])
@@ -535,6 +537,7 @@ class Scheme(object):
 
         for i in range(len(self.stencil.nv_ptr)-1):
             leq = self.EQ[self.stencil.nv_ptr[i]:self.stencil.nv_ptr[i+1]]
+            print(leq)
             cm_ieq = consm_tmp[i]
             if cm_ieq is not None:
                 if isinstance(cm_ieq, sp.Symbol):
