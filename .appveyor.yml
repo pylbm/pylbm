@@ -84,6 +84,4 @@ on_success:
     - set /P BUILT_PACKAGE=<to_upload.txt
     - echo %BUILT_PACKAGE%
     # If this build is because of a tag make the conda package and upload it.
-    #- cmd: if "%APPVEYOR_REPO_TAG%"=="true" anaconda -t %BINSTAR_TOKEN% upload -u astropy %BUILT_PACKAGE%    
-    - cmd: anaconda -t %BINSTAR_TOKEN% upload -u pylbm --force %BUILT_PACKAGE%
-    #- cmd: upload_or_check_non_existence .\recipe pylbm --channel=main
+    - cmd:  if "%APPVEYOR_REPO_TAG%"=="true" anaconda -t %BINSTAR_TOKEN% upload -u pylbm --force %BUILT_PACKAGE%

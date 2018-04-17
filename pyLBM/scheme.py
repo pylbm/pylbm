@@ -283,7 +283,8 @@ class Scheme(object):
             if meq:
                 eq.append(meq)
             if feq:
-                meq_tmp = self.M*feq[0](self.stencil.get_all_velocities(), *feq[1])
+                sli = slice(self.stencil.nv_ptr[i],self.stencil.nv_ptr[i+1])
+                meq_tmp = self.M[sli, sli]*feq[0](self.stencil.get_all_velocities(i), *feq[1])
                 meq_tmp.simplify()
                 eq.append([e for e in meq_tmp])
         self.EQ = sp.Matrix([e for sublist in eq for e in sublist])
@@ -509,7 +510,6 @@ class Scheme(object):
         gshape = self.stencil.nv_ptr[-1]
         dummy = M*invM
         alltogether(dummy)
-        print(dummy)
         test = dummy == sp.eye(gshape)
         if not test:
             self.log.warning("Problem {name} * inv{name} is not identity !!!".format(name=matrix_name))
