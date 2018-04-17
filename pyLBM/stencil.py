@@ -639,18 +639,24 @@ class Stencil(list):
         vectorize = np.vectorize(lambda obj: obj.num)
         return vectorize(self.v[k])
 
-    def get_all_velocities(self):
+    def get_all_velocities(self, ischeme=None):
         """
         get all the velocities for all the stencils in one array
         """
-        size = self.nv_ptr[-1]
-        allv = np.empty((size, self.dim), dtype='int')
-        for iv, v in enumerate(self):
-            vx = self.vx[iv]
-            vy = self.vy[iv]
-            vz = self.vz[iv]
-            allv[self.nv_ptr[iv]:self.nv_ptr[iv+1], :] = np.asarray([vx, vy, vz][:self.dim]).T
-        return allv
+        if ischeme is None:
+            size = self.nv_ptr[-1]
+            allv = np.empty((size, self.dim), dtype='int')
+            for iv, v in enumerate(self):
+                vx = self.vx[iv]
+                vy = self.vy[iv]
+                vz = self.vz[iv]
+                allv[self.nv_ptr[iv]:self.nv_ptr[iv+1], :] = np.asarray([vx, vy, vz][:self.dim]).T
+            return allv
+        else:
+            vx = self.vx[ischeme]
+            vy = self.vy[ischeme]
+            vz = self.vz[ischeme]
+            return np.asarray([vx, vy, vz][:self.dim]).T
 
     def get_symmetric(self, axis=None):
         """
