@@ -92,7 +92,6 @@ class H5File(object):
 
     def _set_dset(self, dset, comm,  data, index=0, with_index=False):
         ind, buffer_size = self._get_slice(0)
-        # print(0, ind, buffer_size, data.T.shape)
         ind = tuple(ind)
         if with_index:
             ind = ind + (index,)
@@ -146,7 +145,7 @@ class H5File(object):
             self.xdmf_file = open(self.path + '/' + self.filename + '.xdmf', "w")
             self.xdmf_file.write("""<?xml version="1.0" ?>
 <!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>
-<Xdmf xmlns:xi="http://www.w3.org/2003/XInclude" Version="2.2">
+<Xdmf>
  <Domain>           
             """)
             if self.dim == 2:
@@ -172,7 +171,7 @@ class H5File(object):
 
             for k, v in self.scalars.items():
                 self.xdmf_file.write("""
-                <Attribute Name="{0}" AttributeType="Scalar">
+                <Attribute Name="{0}" AttributeType="Scalar" Center="Node">
                 <DataItem Format="HDF" Dimensions="{1}">
                 {2} 
                 </DataItem>
@@ -181,7 +180,7 @@ class H5File(object):
 
             for k, v in self.vectors.items():
                 self.xdmf_file.write("""
-                <Attribute Name="{0}" AttributeType="Vector">
+                <Attribute Name="{0}" AttributeType="Vector" Center="Node">
                 <DataItem Format="HDF" Dimensions="{1} {2}">
                 {3} 
                 </DataItem>
@@ -189,3 +188,4 @@ class H5File(object):
                 """.format(k, ' '.join(map(str, self.global_size[::-1])), self.dim, v))
 
             self.xdmf_file.write("</Grid>\n</Domain>\n</Xdmf>\n")
+            self.xdmf_file.close()
