@@ -9,10 +9,10 @@ from __future__ import division
 """
 Example of a 2D geometry: the backward facing step
 """
-import pyLBM
+import pylbm
 dgeom = {
     'box':{'x': [0, 3], 'y': [0, 1], 'label':[0, 1, 2, 3]},
-    'elements':[pyLBM.Parallelogram((0.,0.), (.5,0.), (0., .5), label = [4,5,6,7])],
+    'elements':[pylbm.Parallelogram((0.,0.), (.5,0.), (0., .5), label = [4,5,6,7])],
 }
-geom = pyLBM.Geometry(dgeom)
+geom = pylbm.Geometry(dgeom)
 geom.visualize(viewlabel=True)

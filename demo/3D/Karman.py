@@ -3,7 +3,7 @@ from __future__ import division
 """
 test: True
 """
-import pyLBM
+import pylbm
 from six.moves import range
 import sympy as sp
 import math
@@ -17,7 +17,7 @@ def bc_up(f, m, x, y, z):
 
 def save(sol, im):
     x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
-    h5 = pyLBM.H5File(sol.mpi_topo, 'karman', './karman', im)
+    h5 = pylbm.H5File(sol.mpi_topo, 'karman', './karman', im)
     h5.set_grid(x, y, z)
     h5.add_scalar('mass', sol.m[mass])
     qx_n, qy_n, qz_n = sol.m[qx], sol.m[qy], sol.m[qz]
@@ -35,7 +35,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -60,7 +60,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
 
     dico = {
         'box':{'x':[0., 2.], 'y':[0., 1.], 'z':[0., 1.], 'label':[1, 2, -1, -1, -1, -1]},
-        'elements':[pyLBM.Sphere((.3,.5,.5), 0.125, 0)],
+        'elements':[pylbm.Sphere((.3,.5,.5), 0.125, 0)],
         'space_step':dx,
         'scheme_velocity':la,
         'schemes':[{
@@ -102,15 +102,15 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
             },
         }],
         'boundary_conditions':{
-            0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}},
-            1:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}, 'value':bc_up},
-            2:{'method':{0: pyLBM.bc.Neumann_x}},
+            0:{'method':{0: pylbm.bc.Bouzidi_bounce_back}},
+            1:{'method':{0: pylbm.bc.Bouzidi_bounce_back}, 'value':bc_up},
+            2:{'method':{0: pylbm.bc.Neumann_x}},
         },
         'parameters': {LA: la},
         'generator': generator,
     }
 
-    sol = pyLBM.Simulation(dico, sorder=sorder)
+    sol = pylbm.Simulation(dico, sorder=sorder)
 
     im = 0
     compt = 0

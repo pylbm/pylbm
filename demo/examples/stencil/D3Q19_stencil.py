@@ -10,11 +10,11 @@ from __future__ import division
 Example of a 19 velocities scheme in 3D
 """
 from six.moves import range
-import pyLBM
+import pylbm
 dsten = {
     'dim':3,
     'schemes':[{'velocities':list(range(19))},],
 }
-s = pyLBM.Stencil(dsten)
+s = pylbm.Stencil(dsten)
 print(s)
-s.visualize(pyLBM.viewer.matplotlibViewer)
+s.visualize(pylbm.viewer.matplotlibViewer)

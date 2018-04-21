@@ -1,12 +1,12 @@
 The Scheme
 ##############################
 
-With pyLBM, elementary schemes can be gathered and coupled through the
+With pylbm, elementary schemes can be gathered and coupled through the
 equilibrium in order to simplify the implementation of the vectorial schemes.
 Of course, the user can implement a single elementary scheme and then recover the
 classical framework of the d'Humières schemes.
 
-For pyLBM, the :py:class:`scheme<pyLBM.scheme.Scheme>` is performed
+For pylbm, the :py:class:`scheme<pylbm.scheme.Scheme>` is performed
 through a dictionary. The generalized d'Humières framework for vectorial schemes
 is used [dH92]_, [G14]_. In the first section, we describe how build an elementary scheme. Then
 the vectorial schemes are introduced as coupled elementary schemes.
@@ -41,7 +41,7 @@ to the time :math:`t+dt` consists in the succession of these two phases.
   toward an equilibrium value denoted
   :math:`{\boldsymbol f}^{\textrm{eq}}`.
 
-  pyLBM uses the framework of d'Humières: the linear operator of the collision
+  pylbm uses the framework of d'Humières: the linear operator of the collision
   is diagonal in a special basis called moments denoted by
   :math:`{\boldsymbol m} = (m_0,\ldots,m_{q-1})`.
   The change-of-basis matrix :math:`M` is such that
@@ -90,8 +90,8 @@ to the time :math:`t+dt` consists in the succession of these two phases.
 Notations
 ==============================
 
-The :py:class:`scheme<pyLBM.scheme.Scheme>` is defined and build
-through a dictionary in pyLBM. Let us first list the several key words
+The :py:class:`scheme<pylbm.scheme.Scheme>` is defined and build
+through a dictionary in pylbm. Let us first list the several key words
 of this dictionary:
 
 - ``dim``: the spatial dimension. This argument is optional if the geometry is
@@ -99,7 +99,7 @@ of this dictionary:
 - ``scheme_velocity``: the velocity of the scheme denoted by :math:`\lambda` in the
   previous section and defined as the spatial step over the time step
   (:math:`\lambda=dx/dt`) ;
-- ``schemes``: the list of the schemes. In pyLBM, several coupled schemes can be used,
+- ``schemes``: the list of the schemes. In pylbm, several coupled schemes can be used,
   the coupling being done through the equilibrium values of the moments.
   Some examples with only one scheme and with more than one schemes are given in the next sections.
   Each element of the list should be a dictionay with the following key words:
@@ -411,7 +411,7 @@ by the relations
 The vectorial schemes
 ******************************
 
-With pyLBM, vectorial schemes can be built easily by using a list of elementary schemes.
+With pylbm, vectorial schemes can be built easily by using a list of elementary schemes.
 Each elementary scheme is given by a dictionary as in the previous section.
 The conserved moments of all the elementary schemes can be used in the equilibrium values of the non conserved moments,
 in order to couple the schemes. For more details on the vectorial schemes,

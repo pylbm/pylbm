@@ -16,7 +16,7 @@ from __future__ import division
 """
 import sympy as sp
 import numpy as np
-import pyLBM
+import pylbm
 
 h, q, X, LA, g = sp.symbols('h, q, X, LA, g')
 
@@ -39,7 +39,7 @@ def run(dx, Tf, generator="numpy", sorder=None, withPlot=True):
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -79,17 +79,17 @@ def run(dx, Tf, generator="numpy", sorder=None, withPlot=True):
             },
         ],
         'boundary_conditions':{
-            0:{'method':{0: pyLBM.bc.Neumann, 1: pyLBM.bc.Neumann}},
+            0:{'method':{0: pylbm.bc.Neumann, 1: pylbm.bc.Neumann}},
         },
         'generator': generator,
         'parameters':{LA:la, g:1.},
     }
 
-    sol = pyLBM.Simulation(dico, sorder=sorder)
+    sol = pylbm.Simulation(dico, sorder=sorder)
 
     if withPlot:
         # create the viewer to plot the solution
-        viewer = pyLBM.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlibViewer
         fig = viewer.Fig(2, 1)
         ax1 = fig[0]
         ax1.axis(xmin, xmax, .9*ymina, 1.1*ymaxa)

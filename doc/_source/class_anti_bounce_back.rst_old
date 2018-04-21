@@ -13,13 +13,13 @@ conditions are equivalent (but in that case, anti_bounce_back is probably more e
 the class anti_bounce_back
 --------------------------
 
-.. autoclass:: pyLBM.boundary.anti_bounce_back
+.. autoclass:: pylbm.boundary.anti_bounce_back
    :members:
    :no-undoc-members:
 
 the class Bouzidi_anti_bounce_back
 ----------------------------------
 
-.. autoclass:: pyLBM.boundary.Bouzidi_anti_bounce_back
+.. autoclass:: pylbm.boundary.Bouzidi_anti_bounce_back
    :members:
    :no-undoc-members:

@@ -24,7 +24,7 @@ initial conditions
 import numpy as np
 import sympy as sp
 
-import pyLBM
+import pylbm
 
 hdf5_save = False
 
@@ -60,7 +60,7 @@ def update(iframe):
     ax.title = 'solution at t = {0:f}'.format(sol.t)
 
 def save(mpi_topo, x, y, m, num):
-    h5 = pyLBM.H5File(mpi_topo, filename, path, num)
+    h5 = pylbm.H5File(mpi_topo, filename, path, num)
     h5.set_grid(x, y)
     h5.add_scalar('rho', m[rho])
     h5.add_scalar('E', m[E])
@@ -170,7 +170,7 @@ if __name__ == "__main__":
         'generator': 'cython',
     }
 
-    sol = pyLBM.Simulation(dico)
+    sol = pylbm.Simulation(dico)
 
 
     if hdf5_save:
@@ -186,7 +186,7 @@ if __name__ == "__main__":
             save(sol.mpi_topo, x, y, sol.m, im)
     else:
         # init viewer
-        viewer = pyLBM.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlibViewer
         fig = viewer.Fig()
         ax = fig[0]
         N, M = sol.m[rho].shape

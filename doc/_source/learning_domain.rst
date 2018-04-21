@@ -1,16 +1,16 @@
 The Domain of the simulation
 ##############################
 
-With pyLBM, the numerical simulations can be performed in a domain
+With pylbm, the numerical simulations can be performed in a domain
 with a complex geometry.
 The creation of the geometry from a dictionary is explained `here <learning_geometry.html>`_.
 All the informations needed to build the domain are defined through a dictionary
-and put in a object of the class :py:class:`Domain <pyLBM.domain.Domain>`.
+and put in a object of the class :py:class:`Domain <pylbm.domain.Domain>`.
 
 The domain is built from three types of informations:
 
-* a geometry (class :py:class:`Geometry <pyLBM.geometry.Geometry>`),
-* a stencil (class :py:class:`Stencil <pyLBM.stencil.Stencil>`),
+* a geometry (class :py:class:`Geometry <pylbm.geometry.Geometry>`),
+* a stencil (class :py:class:`Stencil <pylbm.stencil.Stencil>`),
 * a space step (a float for the grid step of the simulation).
 
 The domain is a uniform cartesian discretization of the geometry with a grid step
@@ -46,7 +46,7 @@ the domain.
 The space step :math:`dx` is taken to :math:`0.1` to allow the visualization.
 The result is then visualized with the distance of the boundary points
 by using the method
-:py:meth:`visualize<pyLBM.domain.Domain.visualize>`.
+:py:meth:`visualize<pylbm.domain.Domain.visualize>`.
 
 :download:`script<codes/domain_D1Q5_segment.py>`
 
@@ -66,7 +66,7 @@ the domain.
 The space step :math:`dx` is taken to :math:`0.1` to allow the visualization.
 The result is then visualized with the distance of the boundary points
 by using the method
-:py:meth:`visualize<pyLBM.domain.Domain.visualize>`.
+:py:meth:`visualize<pylbm.domain.Domain.visualize>`.
 
 
 Examples in 2D
@@ -99,7 +99,7 @@ The stencil is composed by the nine velocities
 One phantom cell is then added all around the square.
 The space step :math:`dx` is taken to :math:`0.1` to allow the visualization.
 The result is then visualized by using the method
-:py:meth:`visualize <pyLBM.domain.Domain.visualize>`.
+:py:meth:`visualize <pylbm.domain.Domain.visualize>`.
 This method can be used without parameter: the domain is visualize in white
 for the fluid part (where the computation is done) and in black for the solid part
 (the phantom cells or the obstacles).
@@ -116,7 +116,7 @@ A square with a hole with a :math:`D_2Q_{13}`
 The unit square :math:`[0,1]^2` can be holed with a circle.
 In this example,
 a solid disc lies in the fluid domain defined by
-a :py:class:`circle <pyLBM.elements.Circle>`
+a :py:class:`circle <pylbm.elements.Circle>`
 with a center of (0.5, 0.5) and a radius of 0.125
 
 .. literalinclude:: codes/domain_D2Q13_square_hole.py
@@ -156,7 +156,7 @@ The cube :math:`[0,1]^3` with a :math:`D_3Q_{19}`
 The cube :math:`[0,1]^3` is created by the dictionary with the key ``box``
 and the first 19th  velocities.
 The result is then visualized by using the method
-:py:meth:`visualize <pyLBM.domain.Domain.visualize>`.
+:py:meth:`visualize <pylbm.domain.Domain.visualize>`.
 
 The cube with a hole with a :math:`D_3Q_{19}`
 =================================================

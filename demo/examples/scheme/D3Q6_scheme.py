@@ -11,7 +11,7 @@ Example of a 6 velocities scheme for the advection equation in 3D
 """
 from six.moves import range
 import sympy as sp
-import pyLBM
+import pylbm
 u, X, Y, Z = sp.symbols('u,X,Y,Z')
 cx, cy, cz = .1, .0, .0
 d = {
@@ -27,6 +27,6 @@ d = {
         },
     ],
 }
-s = pyLBM.Scheme(d)
+s = pylbm.Scheme(d)
 print(s)
 print(s.generator.code)

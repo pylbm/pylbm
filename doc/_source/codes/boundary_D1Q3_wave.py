@@ -10,7 +10,7 @@ Example of a D1Q3 for the wave equation
 """
 import numpy as np
 import sympy as sp
-import pyLBM
+import pylbm
 u, v, X, c, LA = sp.symbols('u, v, X, c, LA')
 
 def init_u(x):
@@ -35,16 +35,16 @@ d = {
         },
     ],
     'boundary_conditions':{
-        0:{'method': {0: pyLBM.bc.bounce_back}, 'value': None},
+        0:{'method': {0: pylbm.bc.bounce_back}, 'value': None},
     },
 }
-#s = pyLBM.Scheme(d)
+#s = pylbm.Scheme(d)
 
 """
 import matplotlib.pyplot as plt
-sol = pyLBM.Simulation(d)
+sol = pylbm.Simulation(d)
 
-viewer = pyLBM.viewer.matplotlibViewer
+viewer = pylbm.viewer.matplotlibViewer
 fig = viewer.Fig()
 ax = fig[0]
 xmin, xmax, ymin, ymax = 0., 3., -2.2, 2.2

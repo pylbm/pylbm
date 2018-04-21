@@ -12,7 +12,7 @@ conditions are equivalent (but in that case, bounce_back is probably more effici
 the class bounce_back
 -------------------------
 
-.. autoclass:: pyLBM.boundary.bounce_back
+.. autoclass:: pylbm.boundary.bounce_back
    :members:
    :no-undoc-members:
 
@@ -20,6 +20,6 @@ the class bounce_back
 the class Bouzidi_bounce_back
 -----------------------------
 
-.. autoclass:: pyLBM.boundary.Bouzidi_bounce_back
+.. autoclass:: pylbm.boundary.Bouzidi_bounce_back
    :members:
    :no-undoc-members:

@@ -1,6 +1,6 @@
 
 from six.moves import range
-from pyLBM.stencil import Velocity
+from pylbm.stencil import Velocity
 import nose.tools as tools
 import random
 
