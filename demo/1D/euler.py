@@ -28,7 +28,7 @@ from __future__ import division
 
 import sympy as sp
 import numpy as np
-import pyLBM
+import pylbm
 
 rho, q, E, X, LA = sp.symbols('rho, q, E, X, LA')
 
@@ -51,7 +51,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -104,9 +104,9 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         'boundary_conditions':{
             0:{
                 'method':{
-                    0: pyLBM.bc.Neumann,
-                    1: pyLBM.bc.Neumann,
-                    2: pyLBM.bc.Neumann
+                    0: pylbm.bc.Neumann,
+                    1: pylbm.bc.Neumann,
+                    2: pylbm.bc.Neumann
                 },
             },
         },
@@ -114,7 +114,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         'generator': generator,
     }
 
-    sol = pyLBM.Simulation(dico, sorder=sorder)
+    sol = pylbm.Simulation(dico, sorder=sorder)
 
     while (sol.t<Tf):
         sol.one_time_step()
@@ -128,7 +128,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         p = (gamma-1.)*(E_n - .5*rho_n*u**2)
         e = E_n/rho_n - .5*u**2
 
-        viewer= pyLBM.viewer.matplotlibViewer
+        viewer= pylbm.viewer.matplotlibViewer
         fig = viewer.Fig(2, 3)
 
         fig[0,0].plot(x, rho_n)

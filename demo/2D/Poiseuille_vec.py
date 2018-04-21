@@ -32,7 +32,7 @@ from __future__ import division
 from six.moves import range
 import numpy as np
 import sympy as sp
-import pyLBM
+import pylbm
 
 X, Y, LA = sp.symbols('X, Y, LA')
 p, ux, uy = sp.symbols('p, ux, uy')
@@ -55,7 +55,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -111,20 +111,20 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         ],
         'parameters': {LA: la},
         'boundary_conditions':{
-            0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back,
-                         1: pyLBM.bc.Bouzidi_anti_bounce_back,
-                         2: pyLBM.bc.Bouzidi_anti_bounce_back
+            0:{'method':{0: pylbm.bc.Bouzidi_bounce_back,
+                         1: pylbm.bc.Bouzidi_anti_bounce_back,
+                         2: pylbm.bc.Bouzidi_anti_bounce_back
                          },
             },
-            1:{'method':{0: pyLBM.bc.Bouzidi_anti_bounce_back,
-                         1: pyLBM.bc.Neumann_x,
-                         2: pyLBM.bc.Neumann_x
+            1:{'method':{0: pylbm.bc.Bouzidi_anti_bounce_back,
+                         1: pylbm.bc.Neumann_x,
+                         2: pylbm.bc.Neumann_x
                          },
                 'value':(bc_out, (width, grad_pressure, cte))
             },
-            2:{'method':{0: pyLBM.bc.Bouzidi_anti_bounce_back,
-                         1: pyLBM.bc.Bouzidi_anti_bounce_back,
-                         2: pyLBM.bc.Bouzidi_anti_bounce_back
+            2:{'method':{0: pylbm.bc.Bouzidi_anti_bounce_back,
+                         1: pylbm.bc.Bouzidi_anti_bounce_back,
+                         2: pylbm.bc.Bouzidi_anti_bounce_back
                          },
                 'value':(bc_in, (width, height, max_velocity, grad_pressure, cte)),
             },
@@ -132,7 +132,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         'generator': generator,
     }
 
-    sol = pyLBM.Simulation(dico, sorder=sorder)
+    sol = pylbm.Simulation(dico, sorder=sorder)
 
     while sol.t<Tf:
         sol.one_time_step()
@@ -152,7 +152,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         print("Norm of the error on qy:  {0:10.3e}".format(Err_uy))
 
         # init viewer
-        viewer = pyLBM.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlibViewer
         fig = viewer.Fig()
         ax = fig[0]
 

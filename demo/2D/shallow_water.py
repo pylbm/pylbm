@@ -8,7 +8,7 @@ from six.moves import range
 import numpy as np
 import sympy as sp
 
-import pyLBM
+import pylbm
 
 import pylab as plt
 import matplotlib.cm as cm
@@ -37,7 +37,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -101,10 +101,10 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         'generator': generator,
         }
 
-    sol = pyLBM.Simulation(dico, sorder=sorder)
+    sol = pylbm.Simulation(dico, sorder=sorder)
 
     if withPlot:
-        viewer = pyLBM.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlibViewer
         fig = viewer.Fig()
         ax = fig[0]
 

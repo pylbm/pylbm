@@ -10,7 +10,7 @@ from __future__ import division
 Example of a vectorial two velocities scheme for the wave equation in 1D
 """
 import sympy as sp
-import pyLBM
+import pylbm
 u, v, X = sp.symbols('u, v, X')
 LA, c, sigma = sp.symbols('LA, c, sigma')
 
@@ -39,4 +39,4 @@ d = {
         'numeric':True,
     }
 }
-s = pyLBM.Scheme(d)
+s = pylbm.Scheme(d)

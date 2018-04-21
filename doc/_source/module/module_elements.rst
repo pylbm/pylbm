@@ -1,7 +1,7 @@
 The module elements
 ===================
 
-.. currentmodule:: pyLBM.elements
+.. currentmodule:: pylbm.elements
 
 .. versionadded:: 0.2
   the geometrical elements are yet implemented in 3D.

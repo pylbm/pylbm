@@ -12,7 +12,7 @@ Stability of the D1Q2
 import numpy as np
 import pylab as plt
 import sympy as sp
-import pyLBM
+import pylbm
 
 u, X = sp.symbols('u,X')
 
@@ -34,7 +34,7 @@ def scheme_constructor(ux, s):
             'test_L2_stability':False,
         },
     }
-    return pyLBM.Scheme(dico)
+    return pylbm.Scheme(dico)
 
 def vp_plot(ux):
     Nk = 100

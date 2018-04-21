@@ -26,7 +26,7 @@ MINOR = "3"
 PATCH = "0"
 VERSION = "{0}.{1}.{2}".format(MAJOR, MINOR, PATCH)
 
-def write_version_py(filename='pyLBM/version.py'):
+def write_version_py(filename='pylbm/version.py'):
     a = open(filename, 'w')
     try:
         a.write("version = '{}'".format(VERSION))
@@ -38,18 +38,18 @@ README = open("README.rst").readlines()
 write_version_py()
 
 setup(
-    name           = "pyLBM",
+    name           = "pylbm",
     version        = VERSION,
     description    = README[0],
     long_description = "".join(README[1:]),
     author         = "Benjamin Graille, Loic Gouarin",
     author_email   = "benjamin.graille@math.u-psud.fr, loic.gouarin@math.u-psud.fr",
-    url            = "http://www.math.u-psud.fr/pyLBM",
+    url            = "http://www.math.u-psud.fr/pylbm",
     license        = "BSD",
     keywords       = "Lattice Boltzmann Methods",
     classifiers    = CLASSIFIERS,
     packages       = find_packages(exclude=['demo', 'doc', 'tests*']),
-    #package_data   = {'pyLBM': ['../tests/data/domain/*']},
+    #package_data   = {'pylbm': ['../tests/data/domain/*']},
     include_package_data=True,
     install_requires=[
                       'numpy>=1.9.2',

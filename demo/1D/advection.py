@@ -14,7 +14,7 @@ from __future__ import division
 """
 import numpy as np
 import sympy as sp
-import pyLBM
+import pylbm
 
 X, LA, u = sp.symbols('X, LA, u')
 
@@ -34,7 +34,7 @@ def run(dx, Tf, generator="numpy", sorder=None, withPlot=True):
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     store: list
         storage order
@@ -69,11 +69,11 @@ def run(dx, Tf, generator="numpy", sorder=None, withPlot=True):
     }
 
     # simulation
-    sol = pyLBM.Simulation(dico, sorder=sorder) # build the simulation
+    sol = pylbm.Simulation(dico, sorder=sorder) # build the simulation
 
     if withPlot:
         # create the viewer to plot the solution
-        viewer = pyLBM.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlibViewer
         fig = viewer.Fig()
         ax = fig[0]
         ymin, ymax = -.2, 1.2

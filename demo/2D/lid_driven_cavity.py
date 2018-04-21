@@ -7,7 +7,7 @@ from six.moves import range
 import numpy as np
 import sympy as sp
 import mpi4py.MPI as mpi
-import pyLBM
+import pylbm
 
 X, Y, LA = sp.symbols('X, Y, LA')
 rho, qx, qy = sp.symbols('rho, qx, qy')
@@ -34,7 +34,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -89,18 +89,18 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         ],
         #'relative_velocity': [qx/rho, qy/rho],
         'boundary_conditions':{
-            0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}},
-            1:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}, 'value':(bc_up, (driven_velocity,))}
+            0:{'method':{0: pylbm.bc.Bouzidi_bounce_back}},
+            1:{'method':{0: pylbm.bc.Bouzidi_bounce_back}, 'value':(bc_up, (driven_velocity,))}
         },
         'generator': generator,
         'show_code': True,
     }
 
-    sol = pyLBM.Simulation(lid_cavity, sorder=sorder)
+    sol = pylbm.Simulation(lid_cavity, sorder=sorder)
 
     if withPlot:
         # init viewer
-        viewer = pyLBM.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlibViewer
         fig = viewer.Fig()
         ax = fig[0]
         image = ax.image(vorticity, (sol,), cmap='jet', clim=[0, .1])

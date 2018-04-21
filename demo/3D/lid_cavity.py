@@ -4,7 +4,7 @@ from __future__ import division
 test: True
 """
 from six.moves import range
-import pyLBM
+import pylbm
 import sympy as sp
 import math
 
@@ -18,7 +18,7 @@ def bc_up(f, m, x, y, z):
 def save(sol, im):
     x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
 
-    h5 = pyLBM.H5File(sol.mpi_topo, 'lid_cavity', './lid_cavity', im)
+    h5 = pylbm.H5File(sol.mpi_topo, 'lid_cavity', './lid_cavity', im)
     h5.set_grid(x, y, z)
     h5.add_scalar('mass', sol.m[mass])
     qx_n, qy_n, qz_n = sol.m[qx], sol.m[qy], sol.m[qz]
@@ -36,7 +36,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -102,14 +102,14 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
             },
         }],
         'boundary_conditions':{
-            0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}},
-            1:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}, 'value':bc_up},
+            0:{'method':{0: pylbm.bc.Bouzidi_bounce_back}},
+            1:{'method':{0: pylbm.bc.Bouzidi_bounce_back}, 'value':bc_up},
         },
         'parameters': {LA: la},
         'generator': generator,
     }
 
-    sol = pyLBM.Simulation(dico, sorder=sorder)
+    sol = pylbm.Simulation(dico, sorder=sorder)
 
     im = 0
     compt = 0

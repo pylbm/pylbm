@@ -9,7 +9,7 @@ from __future__ import print_function
 Example of a D2Q4 for advection
 """
 import sympy as sp
-import pyLBM
+import pylbm
 u, X, Y = sp.symbols('u, X, Y')
 
 d = {
@@ -24,5 +24,5 @@ d = {
     },
   ],
 }
-s = pyLBM.Scheme(d)
+s = pylbm.Scheme(d)
 print(s)

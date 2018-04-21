@@ -1,7 +1,7 @@
 the module stencil
 ======================
 
-.. currentmodule:: pyLBM.stencil
+.. currentmodule:: pylbm.stencil
 
 .. index::
    single: Stencil

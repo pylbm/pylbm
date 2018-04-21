@@ -7,7 +7,7 @@ from six.moves import range
 import numpy as np
 import sympy as sp
 import mpi4py.MPI as mpi
-import pyLBM
+import pylbm
 
 X, Y = sp.symbols('X, Y')
 rho, qx, qy, T, LA = sp.symbols('rho, qx, qy, T, LA', real=True)
@@ -51,9 +51,9 @@ def bc_down(f, m, x, y):
 
 def save(x, y, m, num):
     if num > 0:
-        vtk = pyLBM.VTKFile(filename, path, num)
+        vtk = pylbm.VTKFile(filename, path, num)
     else:
-        vtk = pyLBM.VTKFile(filename, path, num, init_pvd = True)
+        vtk = pylbm.VTKFile(filename, path, num, init_pvd = True)
     vtk.set_grid(x, y)
     vtk.add_scalar('T', m[T])
     vtk.save()
@@ -85,7 +85,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -125,17 +125,17 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
             },
         ],
         'boundary_conditions':{
-            0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back, 1: pyLBM.bc.Bouzidi_anti_bounce_back}, 'value':bc_down},
-            1:{'method':{0: pyLBM.bc.Bouzidi_bounce_back, 1: pyLBM.bc.Bouzidi_anti_bounce_back}, 'value':bc_up},
+            0:{'method':{0: pylbm.bc.Bouzidi_bounce_back, 1: pylbm.bc.Bouzidi_anti_bounce_back}, 'value':bc_down},
+            1:{'method':{0: pylbm.bc.Bouzidi_bounce_back, 1: pylbm.bc.Bouzidi_anti_bounce_back}, 'value':bc_up},
         },
         'generator': "cython",
     }
 
-    sol = pyLBM.Simulation(dico)
+    sol = pylbm.Simulation(dico)
 
     x, y = sol.domain.x, sol.domain.y
 
-    viewer = pyLBM.viewer.matplotlibViewer
+    viewer = pylbm.viewer.matplotlibViewer
     fig = viewer.Fig()
     ax = fig[0]
     image = ax.image(sol.m[T].T, cmap='cubehelix', clim=[Tu, Td+.25])

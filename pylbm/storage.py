@@ -11,7 +11,7 @@ from .generator import generator
 class Array(object):
     """
     This class defines the storage of the moments and
-    distribution functions in pyLBM.
+    distribution functions in pylbm.
 
     It sets the storage in memory and how to access.
 

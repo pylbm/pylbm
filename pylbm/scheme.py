@@ -91,9 +91,9 @@ class Scheme(object):
         (la = dx / dt)
       - schemes : a list of dictionaries, one for each scheme
       - generator : a generator for the code, optional
-        (see :py:class:`Generator <pyLBM.generator.base.Generator>`)
+        (see :py:class:`Generator <pylbm.generator.base.Generator>`)
       - ode_solver : a method to integrate the source terms, optional
-        (see :py:class:`ode_solver <pyLBM.generator.ode_schemes.ode_solver>`)
+        (see :py:class:`ode_solver <pylbm.generator.ode_schemes.ode_solver>`)
       - test_stability : boolean (optional)
 
     Notes
@@ -124,7 +124,7 @@ class Scheme(object):
       scheme velocity, ratio dx/dt
     nscheme : int
       number of elementary schemes
-    stencil : object of class :py:class:`Stencil <pyLBM.stencil.Stencil>`
+    stencil : object of class :py:class:`Stencil <pylbm.stencil.Stencil>`
       a stencil of velocities
     P : list of sympy matrix
       list of polynomials that define the moments
@@ -141,15 +141,15 @@ class Scheme(object):
       the symbolic inverse matrix
     invMnum : numpy array
       the numeric inverse matrix (F = invMnum m)
-    generator : :py:class:`Generator <pyLBM.generator.base.Generator>`
+    generator : :py:class:`Generator <pylbm.generator.base.Generator>`
       the used generator (
-      :py:class:`NumpyGenerator<pyLBM.generator.NumpyGenerator>`,
-      :py:class:`CythonGenerator<pyLBM.generator.CythonGenerator>`,
+      :py:class:`NumpyGenerator<pylbm.generator.NumpyGenerator>`,
+      :py:class:`CythonGenerator<pylbm.generator.CythonGenerator>`,
       ...)
-    ode_solver : :py:class:`ode_solver <pyLBM.generator.ode_schemes.ode_solver>`,
+    ode_solver : :py:class:`ode_solver <pylbm.generator.ode_schemes.ode_solver>`,
       the used ODE solver (
-      :py:class:`explicit_euler<pyLBM.generator.explicit_euler>`,
-      :py:class:`heun<pyLBM.generator.heun>`,
+      :py:class:`explicit_euler<pylbm.generator.explicit_euler>`,
+      :py:class:`heun<pylbm.generator.heun>`,
       ...)
 
     Examples
@@ -973,7 +973,7 @@ class Scheme(object):
           the array of the distribution functions
         m : numpy array
           the array of the moments
-        bc : :py:class:`pyLBM.boundary.Boundary`
+        bc : :py:class:`pylbm.boundary.Boundary`
           the class that contains all the informations needed
           for the boundary conditions
 
