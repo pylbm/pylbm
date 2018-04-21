@@ -1,7 +1,7 @@
 the module domain
 ======================
 
-.. currentmodule:: pyLBM.domain
+.. currentmodule:: pylbm.domain
 
 .. autosummary::
    :toctree: generated/

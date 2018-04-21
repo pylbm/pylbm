@@ -7,7 +7,7 @@ import matplotlib.cm as cm
 from matplotlib.patches import FancyArrowPatch
 from mpl_toolkits.mplot3d import Axes3D, proj3d
 
-import pyLBM
+import pylbm
 import numpy as np
 
 class Arrow3D(FancyArrowPatch):
@@ -28,7 +28,7 @@ def Velocities_1D(n):
     xmin, xmax, ymin, ymax = 1000, -1000, -1, 1
     e = 0.2
     for k in range((2*n+1)**dim):
-        v = pyLBM.stencil.Velocity(dim = dim, num = k)
+        v = pylbm.stencil.Velocity(dim = dim, num = k)
         x = v.vx
         xmin = min(xmin, x)
         xmax = max(xmax, x)
@@ -56,7 +56,7 @@ def Velocities_2D(n):
     xmin, xmax, ymin, ymax = 1000, -1000, 1000, -1000
     e = .5
     for k in range((2*n+1)**dim):
-        v = pyLBM.stencil.Velocity(dim = dim, num = k)
+        v = pylbm.stencil.Velocity(dim = dim, num = k)
         x = v.vx
         y = v.vy
         xmin = min(xmin, x)
@@ -94,7 +94,7 @@ def Velocities_3D(n):
     xmin, xmax, ymin, ymax, zmin, zmax = 1000, -1000, 1000, -1000, 1000, -1000
     e = .5
     for k in range((2*n+1)**dim):
-        v = pyLBM.stencil.Velocity(dim = dim, num = k)
+        v = pylbm.stencil.Velocity(dim = dim, num = k)
         x = v.vx
         y = v.vy
         z = v.vz

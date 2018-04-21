@@ -10,7 +10,7 @@ from __future__ import division
 Example of a 4 velocities scheme for the advection equation in 2D
 """
 import sympy as sp
-import pyLBM
+import pylbm
 u, X, Y = sp.symbols('u,X,Y')
 cx, cy = .1, .0
 d = {
@@ -26,6 +26,6 @@ d = {
         },
     ],
 }
-s = pyLBM.Scheme(d)
+s = pylbm.Scheme(d)
 print(s)
 print(s.generator.code)

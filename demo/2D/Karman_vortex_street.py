@@ -7,7 +7,7 @@ from six.moves import range
 import numpy as np
 import sympy as sp
 
-import pyLBM
+import pylbm
 
 X, Y, LA = sp.symbols('X, Y, LA')
 rho, qx, qy = sp.symbols('rho, qx, qy')
@@ -35,7 +35,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -64,7 +64,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
 
     dico = {
         'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[0, 1, 0, 0]},
-        'elements':[pyLBM.Circle([.3, 0.5*(ymin+ymax)+2*dx], radius, label=2)],
+        'elements':[pylbm.Circle([.3, 0.5*(ymin+ymax)+2*dx], radius, label=2)],
         'space_step':dx,
         'scheme_velocity':la,
         'schemes':[
@@ -97,21 +97,21 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         ],
         'parameters':{'LA':la},
         'boundary_conditions':{
-            0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}, 'value':(bc_rect, (rhoo, uo))},
-            1:{'method':{0: pyLBM.bc.Neumann_x}},
-            2:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}},
+            0:{'method':{0: pylbm.bc.Bouzidi_bounce_back}, 'value':(bc_rect, (rhoo, uo))},
+            1:{'method':{0: pylbm.bc.Neumann_x}},
+            2:{'method':{0: pylbm.bc.Bouzidi_bounce_back}},
         },
         'generator': generator,
     }
 
-    sol = pyLBM.Simulation(dico, sorder=sorder)
+    sol = pylbm.Simulation(dico, sorder=sorder)
 
     if withPlot:
         Re = rhoo*uo*2*radius/mu
         print("Reynolds number {0:10.3e}".format(Re))
 
         # init viewer
-        viewer = pyLBM.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlibViewer
         fig = viewer.Fig()
 
         ax = fig[0]

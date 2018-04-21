@@ -10,7 +10,7 @@ Example of a D3Q6 for advection
 """
 from six.moves import range
 import sympy as sp
-import pyLBM
+import pylbm
 u, X, Y, Z = sp.symbols('u, X, Y, Z')
 
 cx, cy, cz = .1, -.1, .2
@@ -25,5 +25,5 @@ d = {
         'relaxation_parameters': [0., 1.5, 1.5, 1.5, 1.5, 1.5],
     },],
 }
-s = pyLBM.Scheme(d)
+s = pylbm.Scheme(d)
 print(s)

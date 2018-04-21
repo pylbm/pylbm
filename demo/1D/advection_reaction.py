@@ -13,7 +13,7 @@ from six.moves import range
 import numpy as np
 from scipy import stats
 import sympy as sp
-import pyLBM
+import pylbm
 
 t, X, LA, u = sp.symbols('t, X, LA, u')
 C, MU = sp.symbols('C, MU')
@@ -40,7 +40,7 @@ def run(dt, Tf, generator = 'numpy', sorder=None, withPlot=True):
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     store: list
         storage order
@@ -77,12 +77,12 @@ def run(dt, Tf, generator = 'numpy', sorder=None, withPlot=True):
     }
 
     # simulation
-    sol = pyLBM.Simulation(dico, sorder=sorder) # build the simulation
+    sol = pylbm.Simulation(dico, sorder=sorder) # build the simulation
 
 
     if withPlot:
         # create the viewer to plot the solution
-        viewer = pyLBM.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlibViewer
         fig = viewer.Fig()
         ax = fig[0]
         ymin, ymax = -.2, 1.2

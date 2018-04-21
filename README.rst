@@ -1,4 +1,4 @@
-pyLBM
+pylbm
 =====
 
 |build status| |Doc badge| |Gitter Badge|
@@ -11,20 +11,20 @@ pyLBM
 .. |Doc badge| image:: https://readthedocs.org/projects/pylbm/badge/?version=develop
    :target: http://pylbm.readthedocs.io/en/develop/
    
-pyLBM is an all-in-one package for numerical simulations using Lattice Boltzmann solvers.
+pylbm is an all-in-one package for numerical simulations using Lattice Boltzmann solvers.
 
 This package gives all the tools to describe your lattice Boltzmann scheme in 1D, 2D and 3D problems.
 
 We choose the D'Humières formalism to describe the problem. You can have complex geometry with a set of simple shape like circle, sphere, ...
 
-pyLBM performs the numerical scheme using Cython, Pythran or Numba from the scheme and the domain given by the user. pyLBM has MPI support with mpi4py.
+pylbm performs the numerical scheme using Cython, Pythran or Numba from the scheme and the domain given by the user. pylbm has MPI support with mpi4py.
 
 Installation
 ============
 
 You can install the last version on Pypi
 
-  pip install pyLBM
+  pip install pylbm
 
 You can also clone the project
 
@@ -39,11 +39,11 @@ and then use the command
 Getting started
 ================
 
-To understand how to use pyLBM, you have a lot of Python notebooks on our website
+To understand how to use pylbm, you have a lot of Python notebooks on our website
 
-`<http://www.math.u-psud.fr/pyLBM/tutorial.html>`_
+`<http://www.math.u-psud.fr/pylbm/tutorial.html>`_
 
 For more information, take a look at the documentation
 
-`<http://www.math.u-psud.fr/pyLBM>`_
+`<http://www.math.u-psud.fr/pylbm>`_
 

@@ -8,11 +8,11 @@
 Example of a segment in 1D with a D1Q5
 """
 from six.moves import range
-import pyLBM
+import pylbm
 dico = {
     'box':{'x': [0, 1], 'label':0},
     'space_step':0.1,
     'schemes':[{'velocities':list(range(5))}],
 }
-dom = pyLBM.Domain(dico)
+dom = pylbm.Domain(dico)
 dom.visualize()

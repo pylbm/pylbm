@@ -59,10 +59,10 @@ class Domain(object):
 
         - box : a dictionary that defines the computational box
         - elements : the list of the elements
-          (available elements are given in the module :py:mod:`elements <pyLBM.elements>`)
+          (available elements are given in the module :py:mod:`elements <pylbm.elements>`)
         - space_step : the spatial step
         - schemes : a list of dictionaries,
-          each of them defining a elementary :py:class:`Scheme <pyLBM.scheme.Scheme>`
+          each of them defining a elementary :py:class:`Scheme <pylbm.scheme.Scheme>`
 
     Notes
     -----
@@ -76,7 +76,7 @@ class Domain(object):
       (length twice the number of dimensions)
       used to label each edge (optional)
 
-    See :py:class:`Geometry <pyLBM.geometry.Geometry>` for more details.
+    See :py:class:`Geometry <pylbm.geometry.Geometry>` for more details.
 
     If the geometry and/or the stencil were previously generated,
     it can be used directly as following
@@ -84,9 +84,9 @@ class Domain(object):
     >>> Domain(dico, geometry = geom, stencil = sten)
 
     where geom is an object of the class
-    :py:class:`Geometry <pyLBM.geometry.Geometry>`
+    :py:class:`Geometry <pylbm.geometry.Geometry>`
     and sten an object of the class
-    :py:class:`Stencil <pyLBM.stencil.Stencil>`
+    :py:class:`Stencil <pylbm.stencil.Stencil>`
     In that case, dico does not need to contain the informations for generate
     the geometry and/or the stencil
 
@@ -130,7 +130,7 @@ class Domain(object):
       type of data (example: 'float64')
     stencil :
       the stencil of the velocities (object of the class
-      :py:class:`Stencil <pyLBM.stencil.Stencil>`)
+      :py:class:`Stencil <pylbm.stencil.Stencil>`)
     global_size : list of int
       number of points in each direction
     extent : list of int

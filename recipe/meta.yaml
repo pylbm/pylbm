@@ -29,7 +29,7 @@ requirements:
 
 test:
   imports:
-    - pyLBM
+    - pylbm
 
 about:
   home: https://github.com/pylbm/pylbm

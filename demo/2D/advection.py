@@ -17,7 +17,7 @@ import numpy as np
 import sympy as sp
 from six.moves import range
 
-import pyLBM
+import pylbm
 
 u, X, Y, LA = sp.symbols('u, X, Y, LA')
 
@@ -38,7 +38,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -76,11 +76,11 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         #'relative_velocity': [cx, cy],
         }
 
-    sol = pyLBM.Simulation(dico, sorder=sorder)
+    sol = pylbm.Simulation(dico, sorder=sorder)
 
     if withPlot:
         # create the viewer to plot the solution
-        viewer = pyLBM.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlibViewer
         fig = viewer.Fig()
         ax = fig[0]
         im = ax.image(sol.m[u].transpose())

@@ -5,7 +5,7 @@ import numpy as np
 import sympy as sp
 import matplotlib.pyplot as plt
 
-import pyLBM
+import pylbm
 
 X, Y, LA = sp.symbols('X, Y, LA')
 rho, qx, qy = sp.symbols('rho, qx, qy')
@@ -71,16 +71,16 @@ def test_transport():
                               },
                     },
                     ],
-        #'generator': pyLBM.generator.CythonGenerator,
+        #'generator': pylbm.generator.CythonGenerator,
         'boundary_conditions':{
-            0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}},
-            1:{'method':{0: pyLBM.bc.Bouzidi_anti_bounce_back}},
+            0:{'method':{0: pylbm.bc.Bouzidi_bounce_back}},
+            1:{'method':{0: pylbm.bc.Bouzidi_anti_bounce_back}},
         },
         'parameters':{'LA':1.},
         }
 
 
-    sol = pyLBM.Simulation(dico)
+    sol = pylbm.Simulation(dico)
 
     while (sol.t<Tf-0.5*sol.dt):
         #sol.m2f()
@@ -144,9 +144,9 @@ def test_transport():
 #                  }
 #             }
 #
-#     geom = pyLBMGeom.Geometry(dico)
-#     dom = pyLBMDom.Domain(geom,dico)
-#     sol = pyLBMSimu.Simulation(dico, geom)
+#     geom = pylbmGeom.Geometry(dico)
+#     dom = pylbmDom.Domain(geom,dico)
+#     sol = pylbmSimu.Simulation(dico, geom)
 #     print sol.Scheme.Code_Relaxation
 #     q2 = qxi**2+qyi**2
 #     valeq = [rhoi, qxi, qyi, -2*rhoi+3*q2, rhoi+1.5*q2, qxi, qyi, qxi**2-qyi**2, qxi*qyi]

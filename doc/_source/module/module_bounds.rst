@@ -1,7 +1,7 @@
 the module bounds
 ===================
 
-.. currentmodule:: pyLBM.boundary
+.. currentmodule:: pylbm.boundary
 
 The module bounds contains the classes needed to treat
 the boundary conditions with the LBM formalism

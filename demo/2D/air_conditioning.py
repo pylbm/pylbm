@@ -2,7 +2,7 @@ import numpy as np
 import sympy as sp
 import mpi4py.MPI as mpi
 
-import pyLBM
+import pylbm
 
 X, Y, LA = sp.symbols('X, Y, LA')
 rho, qx, qy, T = sp.symbols('rho, qx, qy, T')
@@ -22,7 +22,7 @@ def bc_in(f, m, x, y):
     m[T] = T0 + (Tin - T0)*(ymax-y)*(y-.8)*100
 
 def save(mpi_topo, x, y, m, num):
-    h5 = pyLBM.H5File(mpi_topo, filename, path, num)
+    h5 = pylbm.H5File(mpi_topo, filename, path, num)
     h5.set_grid(x, y)
     h5.add_vector('velocity', [sol.m[qx], sol.m[qy]])
     h5.add_scalar('Vx', sol.m[qx])
@@ -65,8 +65,8 @@ sT = [0., skappa, skappa, se, snu]
 dico = {
     'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[1, 2, 0, 0]},
     'elements':[
-        pyLBM.Parallelogram([xmin, ymin], [ .1, 0], [0, .8], label=0),
-        pyLBM.Parallelogram([xmax, ymin], [-.1, 0], [0, .8], label=0),
+        pylbm.Parallelogram([xmin, ymin], [ .1, 0], [0, .8], label=0),
+        pylbm.Parallelogram([xmax, ymin], [-.1, 0], [0, .8], label=0),
     ],
     'space_step':dx,
     'scheme_velocity':la,
@@ -103,17 +103,17 @@ dico = {
         },
     ],
     'boundary_conditions':{
-        0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back, 1: pyLBM.bc.Bouzidi_anti_bounce_back}, 'value':bc},
-        1:{'method':{0: pyLBM.bc.Bouzidi_bounce_back, 1: pyLBM.bc.Bouzidi_anti_bounce_back}, 'value':bc_in},
-        2:{'method':{0: pyLBM.bc.Neumann_y, 1: pyLBM.bc.Neumann_y}, 'value':None},
+        0:{'method':{0: pylbm.bc.Bouzidi_bounce_back, 1: pylbm.bc.Bouzidi_anti_bounce_back}, 'value':bc},
+        1:{'method':{0: pylbm.bc.Bouzidi_bounce_back, 1: pylbm.bc.Bouzidi_anti_bounce_back}, 'value':bc_in},
+        2:{'method':{0: pylbm.bc.Neumann_y, 1: pylbm.bc.Neumann_y}, 'value':None},
     },
     'generator': "cython",
 }
 
-sol = pyLBM.Simulation(dico)
+sol = pylbm.Simulation(dico)
 
 # create the viewer to plot the solution
-viewer = pyLBM.viewer.matplotlibViewer
+viewer = pylbm.viewer.matplotlibViewer
 fig = viewer.Fig()
 ax = fig[0]
 im = ax.image(sol.m[T].transpose(), cmap='jet', clim=[Tin, T0])

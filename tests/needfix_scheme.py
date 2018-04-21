@@ -3,7 +3,7 @@ from nose import tools
 import importlib
 import sys
 import os
-import pyLBM
+import pylbm
 
 path = os.path.dirname(__file__) + '/data/scheme'
 sys.path.insert(0, path)
@@ -42,7 +42,7 @@ def test_scheme():
                     yield construct_scheme, module, dico
 
 def construct_scheme(module, dico):
-    s = pyLBM.Scheme(dico)
+    s = pylbm.Scheme(dico)
     for m1, m2 in zip(s.M, module.M):
         tools.ok_(np.all(m1==m2))
     tools.eq_(s._EQ, module.EQ_result)

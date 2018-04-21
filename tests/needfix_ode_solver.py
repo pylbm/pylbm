@@ -6,7 +6,7 @@ from scipy import stats
 import sympy as sp
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-import pyLBM
+import pylbm
 
 u, X = sp.symbols('u, x')
 
@@ -15,11 +15,11 @@ def solution(t, alpha):
 
 def verification(dt, alpha, f, ode_solver):
     c = 0.5*alpha*dt
-    if ode_solver == pyLBM.generator.basic or ode_solver == pyLBM.generator.explicit_euler:
+    if ode_solver == pylbm.generator.basic or ode_solver == pylbm.generator.explicit_euler:
         coeff = 1-c
-    elif ode_solver == pyLBM.generator.heun or ode_solver == pyLBM.generator.middle_point:
+    elif ode_solver == pylbm.generator.heun or ode_solver == pylbm.generator.middle_point:
         coeff = 1-c+c**2/2
-    elif ode_solver == pyLBM.generator.RK4:
+    elif ode_solver == pylbm.generator.RK4:
         coeff = 1-c+c**2/2-c**3/6+c**4/24
     else:
         print("Cannot test the ode scheme ", ode_solver.__name__)
@@ -27,8 +27,8 @@ def verification(dt, alpha, f, ode_solver):
     assert(np.allclose(f, coeff**np.arange(0, 2*f.size, 2)))
 
 def run(dt, alpha,
-    generator = pyLBM.generator.CythonGenerator,
-    ode_solver = pyLBM.generator.basic):
+    generator = pylbm.generator.CythonGenerator,
+    ode_solver = pylbm.generator.basic):
     # parameters
     Tf = 1
     la = 1.
@@ -55,7 +55,7 @@ def run(dt, alpha,
         ],
     }
 
-    sol = pyLBM.Simulation(dico)
+    sol = pylbm.Simulation(dico)
     #print(sol.scheme.generator.code)
     fnum = np.empty((Nt,))
     tnum = np.empty((Nt,))
@@ -70,11 +70,11 @@ def run(dt, alpha,
 
 if __name__ == "__main__":
     alpha = 0.875
-    ODES = [pyLBM.generator.basic,
-        pyLBM.generator.explicit_euler,
-        pyLBM.generator.heun,
-        pyLBM.generator.middle_point,
-        pyLBM.generator.RK4
+    ODES = [pylbm.generator.basic,
+        pylbm.generator.explicit_euler,
+        pylbm.generator.heun,
+        pylbm.generator.middle_point,
+        pylbm.generator.RK4
     ]
     print(" "*28 + " Numpy      Cython")
     for odes in ODES:
@@ -85,9 +85,9 @@ if __name__ == "__main__":
             dt = 2**(-k)
             DT.append(0.5*dt)
             ERnp.append(run(dt, alpha,
-                generator = pyLBM.generator.NumpyGenerator,
+                generator = pylbm.generator.NumpyGenerator,
                 ode_solver = odes))
             ERcy.append(run(dt, alpha,
-                generator = pyLBM.generator.CythonGenerator,
+                generator = pylbm.generator.CythonGenerator,
                 ode_solver = odes))
         print("Slope for {0:14s}: {1:10.3e} {2:10.3e}".format(odes.__name__, stats.linregress(np.log2(DT), np.log2(ERnp))[0],  stats.linregress(np.log2(DT), np.log2(ERcy))[0]))

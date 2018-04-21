@@ -622,7 +622,7 @@ class Neumann_z(Neumann):
         self.iload.append(np.concatenate([k[np.newaxis, :], indices]))
 
 if __name__ == "__main__":
-    #from pyLBM.elements import *
+    #from pylbm.elements import *
     #import geometry, domain
     import numpy as np
 

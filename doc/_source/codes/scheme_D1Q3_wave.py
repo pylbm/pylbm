@@ -9,7 +9,7 @@ from __future__ import print_function
 Example of a D1Q3 for the wave equation
 """
 import sympy as sp
-import pyLBM
+import pylbm
 u, v, X = sp.symbols('u, v, X')
 
 c = 0.5
@@ -25,5 +25,5 @@ d = {
     },
   ],
 }
-s = pyLBM.Scheme(d)
+s = pylbm.Scheme(d)
 print(s)
