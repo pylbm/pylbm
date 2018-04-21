@@ -1,7 +1,7 @@
 the module geometry
 ======================
 
-.. currentmodule:: pyLBM.geometry
+.. currentmodule:: pylbm.geometry
 
 .. autosummary::
    :toctree: generated/

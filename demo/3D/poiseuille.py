@@ -36,7 +36,7 @@ from six.moves import range
 import numpy as np
 import sympy as sp
 
-import pyLBM
+import pylbm
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 p, ux, uy, uz = sp.symbols('p,ux,uy,uz')
@@ -45,7 +45,7 @@ p, ux, uy, uz = sp.symbols('p,ux,uy,uz')
 def save(sol, num):
     x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
 
-    h5 = pyLBM.H5File(sol.mpi_topo, 'poiseuille', './poiseuille', num)
+    h5 = pylbm.H5File(sol.mpi_topo, 'poiseuille', './poiseuille', num)
     h5.set_grid(x, y, z)
     h5.add_scalar('pressure', sol.m[p])
     qx_n, qy_n, qz_n = sol.m[ux], sol.m[uy], sol.m[uz]
@@ -63,7 +63,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -137,23 +137,23 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
             },
         ],
         'boundary_conditions':{
-            0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back,
-                         1: pyLBM.bc.Bouzidi_anti_bounce_back,
-                         2: pyLBM.bc.Bouzidi_anti_bounce_back,
-                         3: pyLBM.bc.Bouzidi_anti_bounce_back,
+            0:{'method':{0: pylbm.bc.Bouzidi_bounce_back,
+                         1: pylbm.bc.Bouzidi_anti_bounce_back,
+                         2: pylbm.bc.Bouzidi_anti_bounce_back,
+                         3: pylbm.bc.Bouzidi_anti_bounce_back,
                          },
             },
-            1:{'method':{0: pyLBM.bc.Bouzidi_anti_bounce_back,
-                         1: pyLBM.bc.Neumann_x,
-                         2: pyLBM.bc.Neumann_x,
-                         3: pyLBM.bc.Neumann_x,
+            1:{'method':{0: pylbm.bc.Bouzidi_anti_bounce_back,
+                         1: pylbm.bc.Neumann_x,
+                         2: pylbm.bc.Neumann_x,
+                         3: pylbm.bc.Neumann_x,
                          },
                 'value':bc_out,
             },
-            2:{'method':{0: pyLBM.bc.Bouzidi_anti_bounce_back,
-                         1: pyLBM.bc.Bouzidi_anti_bounce_back,
-                         2: pyLBM.bc.Bouzidi_anti_bounce_back,
-                         3: pyLBM.bc.Bouzidi_anti_bounce_back,
+            2:{'method':{0: pylbm.bc.Bouzidi_anti_bounce_back,
+                         1: pylbm.bc.Bouzidi_anti_bounce_back,
+                         2: pylbm.bc.Bouzidi_anti_bounce_back,
+                         3: pylbm.bc.Bouzidi_anti_bounce_back,
                          },
                 'value':bc_in,
             },
@@ -162,7 +162,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         'generator': generator,
     }
 
-    sol = pyLBM.Simulation(dico, sorder=sorder)
+    sol = pylbm.Simulation(dico, sorder=sorder)
 
     im = 0
     while sol.t < Tf:

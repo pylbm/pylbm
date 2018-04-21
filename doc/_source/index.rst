@@ -1,24 +1,24 @@
-.. pyLBM documentation master file, created by
+.. pylbm documentation master file, created by
    sphinx-quickstart on Wed Dec 11 10:32:28 2013.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
 
-pyLBM is an all-in-one package for numerical simulations using
+pylbm is an all-in-one package for numerical simulations using
 Lattice Boltzmann solvers.
 
-pyLBM is licensed under the BSD license,
+pylbm is licensed under the BSD license,
 enabling reuse with few restrictions.
 
 Getting started
 ---------------------------
 
-pyLBM can be a simple way to make numerical simulations
+pylbm can be a simple way to make numerical simulations
 by using the Lattice Boltzmann method.
 
-To install pyLBM, you have several ways. You can install the last version on Pypi ::
+To install pylbm, you have several ways. You can install the last version on Pypi ::
 
-    pip install pyLBM
+    pip install pylbm
 
 You can also clone the project ::
 
@@ -36,7 +36,7 @@ or ::
 
 Once the package is installed
 you just have to understand how build a dictionary that will be
-understood by pyLBM to perform the simulation.
+understood by pylbm to perform the simulation.
 The dictionary should contain all the needed informations as
 
 - the geometry (see :doc:`here<learning_geometry>` for documentation)
@@ -45,7 +45,7 @@ The dictionary should contain all the needed informations as
 - another informations like the space step, the scheme velocity, the generator
   of the functions...
 
-To understand how to use pyLBM, you have a lot of Python notebooks
+To understand how to use pylbm, you have a lot of Python notebooks
 in the `tutorial <tutorial.html>`_.
 
 Documentation for users
@@ -65,7 +65,7 @@ Documentation for users
 Documentation of the code
 ---------------------------
 
-.. currentmodule:: pyLBM
+.. currentmodule:: pylbm
 
 The most important classes 
 

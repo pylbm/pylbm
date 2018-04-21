@@ -2,7 +2,7 @@ from __future__ import print_function
 from six.moves import range
 import numpy as np
 import copy
-import pyLBM
+import pylbm
 
 class test_domain1D(object):
     dom1d = {'box':{'x': [0, 1], 'label': 0},
@@ -15,7 +15,7 @@ class test_domain1D(object):
     def test_simple_domain_with_labels(self):
         dom1d = copy.deepcopy(self.dom1d)
         dom1d['box'] = {'x': [0, 1], 'label': [0, 1]}
-        dom = pyLBM.Domain(dom1d)
+        dom = pylbm.Domain(dom1d)
 
         assert(dom.shape_halo == [6])
         assert(dom.shape_in == [4])
@@ -24,12 +24,12 @@ class test_domain1D(object):
         assert(np.all(dom.x_halo == np.linspace(-.125, 1.125, 6)))
 
     def test_with_given_geometry_and_stencil(self):
-        geom = pyLBM.Geometry({'box': {'x': [0, 1]}})
-        sten = pyLBM.Stencil({'dim': 1, 'schemes': [{'velocities':list(range(3))}]})
-        dom = pyLBM.Domain(geometry = geom, stencil=sten, space_step=.25)
+        geom = pylbm.Geometry({'box': {'x': [0, 1]}})
+        sten = pylbm.Stencil({'dim': 1, 'schemes': [{'velocities':list(range(3))}]})
+        dom = pylbm.Domain(geometry = geom, stencil=sten, space_step=.25)
 
     def test_domain_with_one_scheme(self):
-        dom = pyLBM.Domain(self.dom1d)
+        dom = pylbm.Domain(self.dom1d)
 
         desired_in_or_out = self.valin*np.ones(6)
         desired_in_or_out[[0, -1]] = self.valout
@@ -48,7 +48,7 @@ class test_domain1D(object):
         dom1d = copy.deepcopy(self.dom1d)
         dom1d['schemes'].append({'velocities':list(range(5))})
 
-        dom = pyLBM.Domain(dom1d)
+        dom = pylbm.Domain(dom1d)
 
         desired_in_or_out = self.valin*np.ones(8)
         desired_in_or_out[[0, 1, -2, -1]] = self.valout
@@ -72,7 +72,7 @@ class test_domain1D(object):
         dom1d['box'] = {'x': [0, 1], 'label': [lleft, lright]}
         dom1d['schemes'].append({'velocities':list(range(5))})
 
-        dom = pyLBM.Domain(dom1d)
+        dom = pylbm.Domain(dom1d)
 
         desired_in_or_out = self.valin*np.ones(8)
         desired_in_or_out[[0, 1, -2, -1]] = self.valout

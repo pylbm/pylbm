@@ -10,7 +10,7 @@ from __future__ import division
 Example of a two velocities scheme for the advection equation in 1D
 """
 import sympy as sp
-import pyLBM
+import pylbm
 u, X = sp.symbols('u,X')
 LA, c, sigma = sp.symbols('LA, c, sigma')
 
@@ -29,4 +29,4 @@ d = {
     'parameters':{LA:1., c:.1, sigma:1./1.9-.5},
     'consistency':{'order':3}
 }
-s = pyLBM.Scheme(d)
+s = pylbm.Scheme(d)

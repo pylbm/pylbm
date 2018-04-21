@@ -9,10 +9,10 @@ from __future__ import division
 """
 Example of a 2D geometry: the square [0,1]x[0,1] with a circular hole
 """
-import pyLBM
+import pylbm
 dgeom = {
     'box':{'x': [0, 1], 'y': [0, 1], 'label':0},
-    'elements':[pyLBM.Circle((0.5,0.5), 0.125, label = 1)],
+    'elements':[pylbm.Circle((0.5,0.5), 0.125, label = 1)],
 }
-geom = pyLBM.Geometry(dgeom)
+geom = pylbm.Geometry(dgeom)
 geom.visualize(viewlabel=True)

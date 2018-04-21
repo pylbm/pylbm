@@ -17,13 +17,13 @@ from __future__ import division
 from six.moves import range
 import numpy as np
 import sympy as sp
-import pyLBM
+import pylbm
 
 u, X, Y, Z, LA = sp.symbols('u, X, Y, Z, LA')
 
 def save(sol, im):
     x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
-    h5 = pyLBM.H5File(sol.mpi_topo, 'advection', './advection', im)
+    h5 = pylbm.H5File(sol.mpi_topo, 'advection', './advection', im)
     h5.set_grid(x, y, z)
     h5.add_scalar('u', sol.m[u])
     h5.save()
@@ -39,7 +39,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -77,7 +77,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         'generator': generator,
     }
 
-    sol = pyLBM.Simulation(d, sorder=sorder)
+    sol = pylbm.Simulation(d, sorder=sorder)
 
     im = 0
     while sol.t < Tf:

@@ -10,7 +10,7 @@ from six import string_types
 import types
 import sympy as sp
 import numpy as np
-import pyLBM
+import pylbm
 
 
 class PrintInColor(object):
@@ -105,7 +105,7 @@ def is_dico_int_func(d, ntab=0):
     return is_dico_generic(d, int, types.FunctionType, ntab=ntab)
 
 def is_dico_box(d, ntab=0):
-    return test_dico_prototype(d, pyLBM.geometry.proto_box, ntab=ntab)
+    return test_dico_prototype(d, pylbm.geometry.proto_box, ntab=ntab)
 
 def is_dico_bc(d, ntab=0):
     test = isinstance(d, dict)
@@ -120,7 +120,7 @@ def is_dico_bc(d, ntab=0):
                 debut_l = debut(True) + space(ntab)
                 ligne_l = PrintInColor.correct(label) + ": "
                 if isinstance(dico_bc_label, dict):
-                    test_lk, ligne_lk = test_dico_prototype(dico_bc_label, pyLBM.boundary.proto_bc, ntab=ntab+1)
+                    test_lk, ligne_lk = test_dico_prototype(dico_bc_label, pylbm.boundary.proto_bc, ntab=ntab+1)
                     if not test_lk:
                         debut_l = debut(False) + space(ntab)
                     ligne_l += ligne_lk
@@ -139,10 +139,10 @@ def is_dico_sources(d, ntab=0):
     return is_dico_generic(d, (sp.Symbol, string_types), (tuple, int, float, sp.Expr, string_types), ntab=ntab)
 
 def is_dico_stab(d, ntab=0):
-    return test_dico_prototype(d, pyLBM.scheme.proto_stab, ntab=ntab)
+    return test_dico_prototype(d, pylbm.scheme.proto_stab, ntab=ntab)
 
 def is_dico_cons(d, ntab=0):
-    return test_dico_prototype(d, pyLBM.scheme.proto_cons, ntab=ntab)
+    return test_dico_prototype(d, pylbm.scheme.proto_cons, ntab=ntab)
 
 def is_dico_bcmethod(d, ntab=0):
     test = isinstance(d, dict)
@@ -158,7 +158,7 @@ def is_dico_bcmethod(d, ntab=0):
                 debut_l = debut(True) + space(ntab)
                 ligne_l = PrintInColor.correct(label) + ": "
                 try:
-                    if issubclass(value, pyLBM.boundary.Boundary_method):
+                    if issubclass(value, pylbm.boundary.Boundary_method):
                         test_l = True
                         ligne_l = PrintInColor.correct(value)
                     else:
@@ -178,7 +178,7 @@ def is_list_sch(l, ntab=0):
         compt = 0
         for sch in l:
             if isinstance(sch, dict):
-                test_l, ligne_l = test_dico_prototype(sch, pyLBM.scheme.proto_sch, ntab=ntab+1)
+                test_l, ligne_l = test_dico_prototype(sch, pylbm.scheme.proto_sch, ntab=ntab+1)
             else:
                 test_l = False
                 ligne_l = PrintInColor.error(sch)
@@ -195,7 +195,7 @@ def is_list_sch_dom(l, ntab=0):
         compt = 0
         for sch in l:
             if isinstance(sch, dict):
-                test_l, ligne_l = test_dico_prototype(sch, pyLBM.scheme.proto_sch_dom, ntab=ntab+1)
+                test_l, ligne_l = test_dico_prototype(sch, pylbm.scheme.proto_sch_dom, ntab=ntab+1)
             else:
                 test_l = False
                 ligne_l = PrintInColor.error(sch)
@@ -229,13 +229,13 @@ def is_generator(d, ntab=None):
 
 def is_ode_solver(d, ntab=None):
     try:
-        test = issubclass(d, pyLBM.generator.ode_schemes.ode_solver)
+        test = issubclass(d, pylbm.generator.ode_schemes.ode_solver)
     except:
         test = False
     return test, PrintInColor.unknown(d, test)
 
 def is_list_elem(l, ntab=None):
-    return is_list_generic(l, pyLBM.elements.base.Element)
+    return is_list_generic(l, pylbm.elements.base.Element)
 
 def is_list_sp(l, ntab=None):
     return is_list_generic(l, (sp.Expr, string_types))
@@ -421,7 +421,7 @@ if __name__ == "__main__":
         'box':{'x':(0., 1.), 'y':[0,1], 'label':[0, 'out', 0, 0]},
         'dim':1,
         'space_step':1.,
-        'generator':pyLBM.generator.CythonGenerator,
+        'generator':pylbm.generator.CythonGenerator,
         'scheme_velocity':1.,
         'schemes':[{
             'velocities':list(range(1,5)),
@@ -438,10 +438,10 @@ if __name__ == "__main__":
             'test_L2_stability':False,
         },
         'boundary_conditions':{
-            0:{'method':{0:pyLBM.bc.anti_bounce_back}, 'value':fin},
-            'in':{'method':{0:pyLBM.bc.neumann}, 'value':None},
+            0:{'method':{0:pylbm.bc.anti_bounce_back}, 'value':fin},
+            'in':{'method':{0:pylbm.bc.neumann}, 'value':None},
         },
     }
 
-    test, aff = validate(dico, pyLBM.simulation.proto_simu)
+    test, aff = validate(dico, pylbm.simulation.proto_simu)
     print(aff)

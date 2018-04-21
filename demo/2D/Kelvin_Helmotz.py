@@ -7,7 +7,7 @@ from six.moves import range
 import numpy as np
 import sympy as sp
 import mpi4py.MPI as mpi
-import pyLBM
+import pylbm
 
 X, Y = sp.symbols('X, Y')
 rho, qx, qy, LA = sp.symbols('rho, qx, qy, LA', real=True)
@@ -48,7 +48,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -110,7 +110,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     }
 
 
-    sol = pyLBM.Simulation(kelvin_helmoltz, sorder=sorder)
+    sol = pylbm.Simulation(kelvin_helmoltz, sorder=sorder)
 
     # f = feq(sp.Matrix([qx/rho, qy/rho]))
     # out = sol.scheme.M*f
@@ -120,7 +120,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     # print(out)
     if withPlot:
         # init viewer
-        viewer = pyLBM.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlibViewer
         fig = viewer.Fig()
         ax = fig[0]
         image = ax.image(vorticity, (sol,), cmap='jet')#, clim=[-60, 50])

@@ -20,7 +20,7 @@ from six.moves import range
 import numpy as np
 import sympy as sp
 
-import pyLBM
+import pylbm
 
 X, LA, u = sp.symbols('X, LA, u')
 
@@ -59,7 +59,7 @@ def run(dx, Tf, generator="numpy", sorder=None, withPlot=True):
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -92,7 +92,7 @@ def run(dx, Tf, generator="numpy", sorder=None, withPlot=True):
             },
         ],
         'boundary_conditions':{
-            0:{'method':{0: pyLBM.bc.Neumann}},
+            0:{'method':{0: pylbm.bc.Neumann}},
         },
         'generator': generator,
         'parameters': {LA: la},
@@ -113,20 +113,20 @@ def run(dx, Tf, generator="numpy", sorder=None, withPlot=True):
             },
         ],
         'boundary_conditions':{
-            0:{'method':{0: pyLBM.bc.Neumann}},
+            0:{'method':{0: pylbm.bc.Neumann}},
         },
         'generator': generator,
         'parameters': {LA: la},
     }
     # simulation
-    sol = pyLBM.Simulation(dico1, sorder=sorder) # build the simulation with D1Q2
+    sol = pylbm.Simulation(dico1, sorder=sorder) # build the simulation with D1Q2
     title = 'D1Q2'
-    # sol = pyLBM.Simulation(dico2, sorder=sorder) # build the simulation with D1Q3
+    # sol = pylbm.Simulation(dico2, sorder=sorder) # build the simulation with D1Q3
     # title = 'D1Q3'
 
     if withPlot:
         # create the viewer to plot the solution
-        viewer = pyLBM.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlibViewer
         fig = viewer.Fig()
         ax = fig[0]
         ymin, ymax = min([uL,uR])-.1*abs(uL-uR), max([uL,uR])+.1*abs(uL-uR)

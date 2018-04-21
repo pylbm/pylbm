@@ -7,7 +7,7 @@
 """
 Example of a 1D geometry: the segment [0,1]
 """
-import pyLBM
+import pylbm
 d = {'box':{'x': [0, 1], 'label': [0, 1]}}
-g = pyLBM.Geometry(d)
+g = pylbm.Geometry(d)
 g.visualize(viewlabel = True)

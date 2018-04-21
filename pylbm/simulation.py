@@ -62,8 +62,8 @@ class Simulation(object):
     ----------
 
     dico : dictionary
-    domain : object of class :py:class:`Domain<pyLBM.domain.Domain>`, optional
-    scheme : object of class :py:class:`Scheme<pyLBM.scheme.Scheme>`, optional
+    domain : object of class :py:class:`Domain<pylbm.domain.Domain>`, optional
+    scheme : object of class :py:class:`Scheme<pylbm.scheme.Scheme>`, optional
     type :   optional argument (default value is 'float64')
 
     Attributes
@@ -73,9 +73,9 @@ class Simulation(object):
       spatial dimension
     type : float64
       the type of the values
-    domain : :py:class:`Domain<pyLBM.domain.Domain>`
+    domain : :py:class:`Domain<pylbm.domain.Domain>`
       the domain given in argument
-    scheme : :py:class:`Scheme<pyLBM.scheme.Scheme>`
+    scheme : :py:class:`Scheme<pylbm.scheme.Scheme>`
       the scheme given in argument
     m : numpy array
       a numpy array that contains the values of the moments in each point
@@ -116,16 +116,16 @@ class Simulation(object):
     -----
 
     The methods
-    :py:meth:`transport<pyLBM.simulation.Simulation.transport>`,
-    :py:meth:`relaxation<pyLBM.simulation.Simulation.relaxation>`,
-    :py:meth:`equilibrium<pyLBM.simulation.Simulation.equilibrium>`,
-    :py:meth:`f2m<pyLBM.simulation.Simulation.f2m>`,
-    :py:meth:`m2f<pyLBM.simulation.Simulation.m2f>`,
-    :py:meth:`boundary_condition<pyLBM.simulation.Simulation.boundary_condition>`,
+    :py:meth:`transport<pylbm.simulation.Simulation.transport>`,
+    :py:meth:`relaxation<pylbm.simulation.Simulation.relaxation>`,
+    :py:meth:`equilibrium<pylbm.simulation.Simulation.equilibrium>`,
+    :py:meth:`f2m<pylbm.simulation.Simulation.f2m>`,
+    :py:meth:`m2f<pylbm.simulation.Simulation.m2f>`,
+    :py:meth:`boundary_condition<pylbm.simulation.Simulation.boundary_condition>`,
     and
-    :py:meth:`one_time_step<pyLBM.simulation.Simulation.one_time_step>`
+    :py:meth:`one_time_step<pylbm.simulation.Simulation.one_time_step>`
     are just call of the methods of the class
-    :py:class:`Scheme<pyLBM.scheme.Scheme>`.
+    :py:class:`Scheme<pylbm.scheme.Scheme>`.
     """
     def __init__(self, dico, domain=None, scheme=None, sorder=None, dtype='float64', check_inverse=False):
         self.log = setLogger(__name__)
