@@ -1,22 +1,5 @@
-name: pylbm
+name: pylbm_docs
+channels:
+ - conda-forge  
 dependencies:
-  - python=2.7
-  - mercurial
-  - numpy>1.9.*
-  - mpi4py
-  - sympy
-  - Cython
-  - matplotlib
-  - future
-  - jupyter
-  - notebook
-  - nbconvert
-  - nbformat
-  - h5py
-  - numpydoc
-  - pip
-  - sphinx>=1.5.1
-  - pip:
-     - colorlog
-     - hg+https://bitbucket.org/pauloh/pyevtk
-     - git+https://github.com/spatialaudio/nbsphinx
+  - nbsphinx
