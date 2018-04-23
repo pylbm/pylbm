@@ -13,7 +13,6 @@ from .scheme import Scheme
 from .elements import *
 from .geometry import Geometry
 from . import viewer
-#from .vtk import VTKFile
 from .hdf5 import H5File
 
 from .version import version as __version__

@@ -128,22 +128,21 @@ def update(iframe):
     im.set_data(sol.m[T].transpose())
     ax.title = 'temperature at t = {0:f}'.format(sol.t)
 
-fig.animate(update, interval=1)
-fig.show()
+#fig.animate(update, interval=1)
+#fig.show()
 
-# filename = 'Air_Conditioning'
-# path = './data_2'
-# x, y = sol.domain.x, sol.domain.y
-
-# im = 0
-# save(sol.mpi_topo, x, y, sol.m, im)
-# compt = 0
-# while sol.t<Tf:
-#     compt += 1
-#     sol.one_time_step()
-#         compt = 0
-#     if compt == 64:
-#         im += 1
-#         if mpi.COMM_WORLD.Get_rank() == 0:
-#             print("t = {0}".format(sol.t))
-#         save(sol.mpi_topo, x, y, sol.m, im)
+filename = 'Air_Conditioning'
+path = './Air_Conditioning'
+x, y = sol.domain.x, sol.domain.y
+im = 0
+save(sol.mpi_topo, x, y, sol.m, im)
+compt = 0
+while sol.t<Tf:
+    compt += 1
+    sol.one_time_step()
+    if compt == 64:
+        compt = 0
+        im += 1
+        if mpi.COMM_WORLD.Get_rank() == 0:
+            print("t = {0}".format(sol.t))
+        save(sol.mpi_topo, x, y, sol.m, im)

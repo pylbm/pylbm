@@ -49,14 +49,12 @@ def bc_down(f, m, x, y):
     m[qy] = 0.
     m[T] = Td# + (Td-Tu) * 5 * (0.1*np.random.random_sample((x.shape[0],1))-0.05)
 
-def save(x, y, m, num):
-    if num > 0:
-        vtk = pylbm.VTKFile(filename, path, num)
-    else:
-        vtk = pylbm.VTKFile(filename, path, num, init_pvd = True)
-    vtk.set_grid(x, y)
-    vtk.add_scalar('T', m[T])
-    vtk.save()
+def save(sol, im):
+    x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
+    h5 = pylbm.H5File(sol.mpi_topo, 'rayleigh_benard', './rayleigh_benard', im)
+    h5.set_grid(x, y)
+    h5.add_scalar('T', sol.m[T])
+    h5.save()
 
 def feq_NS(v, u):
     c0 = 1#LA
@@ -139,7 +137,6 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     fig = viewer.Fig()
     ax = fig[0]
     image = ax.image(sol.m[T].T, cmap='cubehelix', clim=[Tu, Td+.25])
-    print(sol.m[T])
 
     def update(iframe):
         nrep = 1    
