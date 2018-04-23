@@ -49,7 +49,6 @@ setup(
     keywords       = "Lattice Boltzmann Methods",
     classifiers    = CLASSIFIERS,
     packages       = find_packages(exclude=['demo', 'doc', 'tests*']),
-    #package_data   = {'pylbm': ['../tests/data/domain/*']},
     include_package_data=True,
     install_requires=[
                       'numpy>=1.9.2',
@@ -59,12 +58,8 @@ setup(
                       'mpi4py>=1.3.1',
                       'matplotlib>=1.4.0',
                       'future',
-                      'pyevtk>=1.0.0',
                       'h5py'
                       ],
-    dependency_links=[
-        "hg+https://bitbucket.org/pauloh/pyevtk"
-    ],
     extras_require={'pythran': ["pythran>=0.7.1"],
                     'numba': ["numba>=0.19.1"]
                     },

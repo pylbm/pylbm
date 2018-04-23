@@ -26,7 +26,7 @@ import sympy as sp
 
 import pylbm
 
-hdf5_save = False
+hdf5_save = True
 
 GA, X, Y, LA = sp.symbols('GA, X, Y, LA')
 rho, qx, qy, E, Bx, By = sp.symbols('rho, qx, qy, E, Bx, By')
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     # parameters
     xmin, xmax, ymin, ymax = 0., 2*np.pi, 0., 2*np.pi
     if hdf5_save:
-        dx = np.pi / 128
+        dx = np.pi / 256
         s0, s1, s2, s3 = [1.9]*4
     else:
         dx = np.pi / 64
@@ -179,8 +179,8 @@ if __name__ == "__main__":
         im = 0
         x, y = sol.domain.x, sol.domain.y
         save(sol.mpi_topo, x, y, sol.m, im)
-        while sol.t<3.:
-            for k in range(16):
+        while sol.t < 100.:
+            for k in range(256):
                 sol.one_time_step()
             im += 1
             save(sol.mpi_topo, x, y, sol.m, im)
