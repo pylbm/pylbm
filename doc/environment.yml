@@ -2,4 +2,5 @@ name: pylbm_docs
 channels:
  - conda-forge  
 dependencies:
+  - mpi4py
   - nbsphinx
