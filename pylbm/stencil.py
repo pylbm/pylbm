@@ -726,7 +726,7 @@ class Stencil(list):
         Parameters
         ----------
 
-        viewer : package used to plot the figure (could be matplotlib, vtk, ...)
+        viewer : package used to plot the figure (could be matplotlib, ...)
             see viewer for more information
         k : list of stencil index to plot
             if None plot all stencils
@@ -854,8 +854,7 @@ if __name__ == '__main__':
 
     s = Stencil(d)
 
-    #v = viewer.MatplotlibViewer()
-    v = viewer.VtkViewer()
+    v = viewer.MatplotlibViewer()
 
     print s.vx[0]
     print s.vy[0]
@@ -876,7 +875,6 @@ if __name__ == '__main__':
     s = Stencil(d)
 
     #v = viewer.MatplotlibViewer()
-    #v = viewer.VtkViewer()
 
     #for i in xrange(5):
     #    print s.get_index(1, i)

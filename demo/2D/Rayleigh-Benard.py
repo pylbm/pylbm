@@ -32,13 +32,12 @@ def printProgress (iteration, total, prefix = '', suffix = '', decimals = 1, bar
         sys.stdout.write('\n')
         sys.stdout.flush()
 
-VTK_save = False
+HDF_save = False
 
 X, Y, LA = sp.symbols('X, Y, LA')
 rho, qx, qy, T = sp.symbols('rho, qx, qy, T')
 
 def init_T(x, y):
-    #return Td + (Tu-Td)/(ymax-ymin)*(y-ymin)
     return Td + (Tu-Td)/(ymax-ymin)*(y-ymin) + (Td-Tu) * (0.1*np.random.random_sample((x.shape[0],y.shape[1]))-0.05)
 
 def bc_up(f, m, x, y):
@@ -50,16 +49,14 @@ def bc_down(f, m, x, y):
     np.random.seed(1)
     m[qx] = 0.
     m[qy] = 0.
-    m[T] = Td# + (Td-Tu) * 5 * (0.1*np.random.random_sample((x.shape[0],1))-0.05)
+    m[T] = Td
 
-def save(x, y, m, num):
-    if num > 0:
-        vtk = pylbm.VTKFile(filename, path, num)
-    else:
-        vtk = pylbm.VTKFile(filename, path, num, init_pvd = True)
-    vtk.set_grid(x, y)
-    vtk.add_scalar('T', m[T])
-    vtk.save()
+def save(sol, im):
+    x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
+    h5 = pylbm.H5File(sol.mpi_topo, 'rayleigh_benard', './rayleigh_benard', im)
+    h5.set_grid(x, y)
+    h5.add_scalar('T', sol.m[T])
+    h5.save()
 
 # parameters
 Tu = -0.5
@@ -142,15 +139,14 @@ if VTK_save:
     im = 0
     l = Tf / sol.dt / 32
     printProgress(im, l, prefix = 'Progress:', suffix = 'Complete', barLength = 50)
-    filename = 'Rayleigh_Benard'
-    path = './data_' + filename
-    save(x, y, sol.m, im)
+
+    save(sol, im)
     while sol.t<Tf:
         for k in range(32):
             sol.one_time_step()
         im += 1
         printProgress(im, l, prefix = 'Progress:', suffix = 'Complete', barLength = 50)
-        save(x, y, sol.m, im)
+        save(sol, im)
 else:
     viewer = pylbm.viewer.matplotlibViewer
     fig = viewer.Fig()
