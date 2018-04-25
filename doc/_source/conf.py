@@ -112,17 +112,8 @@ pygments_style = 'sphinx'
 # HTML output
 # -----------------------------------------------------------------------------
 
-#html_theme = 'scipy'
-html_theme = 'scikit-image'
+html_theme = 'pylbm'
 html_theme_path = ['../_theme']
-
-# html_theme_options = {
-#     "edit_link": True,
-#     "sidebar": "right",
-#     "scipy_org_logo": True,
-#     "rootlinks": [("http://math.u-psud.fr/~pylbm", "pylbm"),
-#                   ("http://math.u-psud.fr/~pylbm/doc", "Docs")],
-# }
 
 html_title = "%s v%s Manual" % (project, version)
 html_static_path = ['../_static']

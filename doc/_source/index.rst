@@ -16,7 +16,11 @@ Getting started
 pylbm can be a simple way to make numerical simulations
 by using the Lattice Boltzmann method.
 
-To install pylbm, you have several ways. You can install the last version on Pypi ::
+To install pylbm, you have several ways. You can install it using conda ::
+
+    conda install pylbm -c pylbm -c conda-forge
+
+or using the last version on Pypi ::
 
     pip install pylbm
 
@@ -24,14 +28,12 @@ You can also clone the project ::
 
     git clone https://github.com/pylbm/pylbm
 
-and then use the commands ::
+and then use the command ::
 
-    pip install -r requirements.txt
     python setup.py install
 
-or ::
+or if you don't have root privileges ::
 
-    pip install -r requirements.txt
     python setup.py install --user
 
 Once the package is installed
