@@ -22,27 +22,39 @@ pylbm performs the numerical scheme using Cython, Pythran or Numba from the sche
 Installation
 ============
 
-You can install pylbm using
+You can install pylbm in several ways
 
-- conda
+With conda
+----------
 
-  conda install pylbm -c pylbm -c conda-forge
+.. code::
+
+   conda install pylbm -c pylbm -c conda-forge
   
-- pypi
+With Pypi
+---------
 
-  pip install pylbm
+.. code::
+
+   pip install pylbm
 
 or
   
-  pip install pylbm --user
+.. code::
+
+   pip install pylbm --user
 
 You can also clone the project
 
-  git clone https://github.com/pylbm/pylbm
+.. code::
+
+   git clone https://github.com/pylbm/pylbm
 
 and then use the command
 
-  python setup.py install
+.. code::
+
+   python setup.py install
 
 For more information, take a look at the documentation
 
