@@ -44,6 +44,9 @@ or
 
    pip install pylbm --user
 
+From source
+-----------
+
 You can also clone the project
 
 .. code::
