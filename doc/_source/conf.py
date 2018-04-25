@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.abspath('../_sphinxext'))
 extensions = ['sphinx.ext.autodoc',
               #'sphinx.ext.imgmath',
               'sphinx.ext.mathjax',
-              'numpydoc',
+              'sphinx.ext.napoleon',
               'matplotlib.sphinxext.plot_directive',
               'lbm_ext',
               'nbsphinx',
