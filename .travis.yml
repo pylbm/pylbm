@@ -3,9 +3,6 @@ env:
     - PYVER="2.7"
     - PYVER="3.5"
     - PYVER="3.6"
-  global:
-    secure: BJfN9nTM+5UU1PcMtOjPLPcFuULE5RtdwreqakKYcvEXV9hSLoSAfvep40/iPuXkocRg6lFBovNsBm24pdArwn48gaj5qQ9EwCo0T047KiIneEJC5MghH+ur/teklo3BjJiYfA6eI1zJxJ5yES1cjpnI/++6m1HFuSBG0xSTV/5GOQFW9NnYnmJuFjNXddJ4GusNeL18MDpAoBzDkQHqyS696S6Se0RBfOXRFF8x0dOFg9RGsIVYHVA7y2JXwhReTgCJmsJmByfLkRcPHyGBRK+gx0WoJNna+8+N5fiaNF3FPMyb+ActqTTAh4kOymBkA9Fxyym+yjU4qDBvXEdTZsaXqB2weICAKFQ+z6mgElH4oujHCBlruFFCNwc7A8XN8KqftQRpPgCc8UNUJvFkL3DQJs6FISM/BXBRy9JlgSsL37Rco2uVO/5a3A8lgaT/RzaGsICh/NbU3BGRZVrB+YBD8AxC3Lp4uR/z2GfDyYgFYGp0z2PA7ZwTSzULpxQHXiHhJcaq+rmBsocT3JEUZkuINlwRoTeHhJkTlcjcUMFJN2Vo1p83R4ZhFwPZyOvys0nojwuvgsEzwp5Rn4Euv+MP6qLrQ60HVX13uwMfJzz1dem34CtdzugV8iwWFAWDaGCYIX+sxBch8ClEDzy4XxdPW3P66ucs2Bk6iuT7hkw=
-    secure: Q4GWpIzqa8sXYkBK7QsReQnXzrFxc8U1/i8AMsRKQWoemtYe5hIFQNDU+g3cx9cQpdvkD1CroFpG1cMaiDlVflQ4MzUs181VYSSAK184abO8ay6T0p6FLWL6QgpwIn92sa9G+vh+SDvG7ePWhjGomMdnGEXXTDXXwC87wqiQCm331JrhwuQQIJRWFlKGdrGoEjMzxJfCVs80PnKjsUvk+ggo+ijRYZZDIAqG/QXT1Qe2wR8IO/LCeDqJaZLkOIXTvHz6+0VXVV8V/YJqbnEyeixo3rJL0aapMefS7K5DXcV0YNFnOsz+1k0I1yoaFdb7oi/jLwzfJMlRCtQLf70ZCwZjzypQ0u4y3uqXCr6WxJEuwjulcf1CrHoPaFnfSj2j3loAvXB84rbK0gLAqrbYulWGFtkPwJGc2FMoWjNMVbGAybE3ZwQoxK1J5RQS1l39VAhPWQ4lSmZEKmvd87gP9FCR+N7vLO5xmecnw6sU2Mb6+TgVtdIvPJSsLjBNrPMmP0IZvgXX4TPRK01wZciwR5BGHTsIbYjzCedEsdDXZN2Odr6ENB9jT0iw6zV59DKwZevnK/xEn0CwgVXkHOEJOXs2i6x+fmC1HFtRZsCqs3guZtVnr8kEVTnPPOGJp7TR9h2VQSM6y5hNEzKb+SMXrCEEYfYYIkknUlKAzH5kuDc=
 
 sudo: false
 
@@ -33,41 +30,11 @@ before_install:
   # Useful for debugging any issues with conda
   - conda info -a
 
-  - |
-    if [[ $TRAVIS_TAG ]]; then
-      conda install anaconda-client conda-build;
-    fi
-
 install:
-  - conda create --yes -n pyenv python=$PYVER nose numpy mpi4py
-  - source activate pyenv
+  - conda create --yes -n pylbm_env python=$PYVER nose numpy mpi4py h5py
+  - source activate pylbm_env
   - python --version
-  - pip --version
-  - pip install -r requirements.txt
-  - pip install .
+  - python setup.py install
   - which nosetests
-  - |
-    if [[ $TRAVIS_TAG ]]; then
-      python setup.py sdist;
-      conda build -q --python ${PYVER} recipes &&
-      conda install --use-local ${PROJECT_NAME} &&
-      conda uninstall ${PROJECT_NAME};
-    fi
 
 script: nosetests
-
-deploy:
-  - provider: pypi
-    skip_cleanup: true
-    user: pylbm
-    password: "${PYPI_PASSWD}"
-    on:
-      repo: "${GITHUB_REPO_NAME}"
-      tags: true
-      condition: "$PYVER == 3.6 && $TRAVIS_OS_NAME == linux"
-  - provider: script
-    skip_cleanup: true
-    script: anaconda -t $BINSTAR_TOKEN upload --force ${HOME}/miniconda/conda-bld/*/${PROJECT_NAME}-*.tar.bz2
-    on:
-      repo: "${GITHUB_REPO_NAME}"
-      tags: true
