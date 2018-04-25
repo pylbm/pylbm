@@ -22,9 +22,19 @@ pylbm performs the numerical scheme using Cython, Pythran or Numba from the sche
 Installation
 ============
 
-You can install the last version on Pypi
+You can install pylbm using
+
+- conda
+
+  conda install pylbm -c pylbm -c conda-forge
+  
+- pypi
 
   pip install pylbm
+
+or
+  
+  pip install pylbm --user
 
 You can also clone the project
 
@@ -32,18 +42,9 @@ You can also clone the project
 
 and then use the command
 
-  pip install -r requirements.txt
-  
   python setup.py install
-
-Getting started
-================
-
-To understand how to use pylbm, you have a lot of Python notebooks on our website
-
-`<http://www.math.u-psud.fr/pylbm/tutorial.html>`_
 
 For more information, take a look at the documentation
 
-`<http://www.math.u-psud.fr/pylbm>`_
+`<http://pylbm.readthedocs.io>`_
 
