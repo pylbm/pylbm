@@ -63,6 +63,7 @@ class H5File(object):
             self.region.append(comm.gather(coords[i].size, root=0))
             self.global_size.append(np.sum(np.asarray(self.region[i])))
             coords[i] = np.asarray(comm.gather(coords[i], root=0))
+            comm.Free()
 
         if mpi.COMM_WORLD.Get_rank() == 0:
             for i in range(len(self.region)):
