@@ -1,10 +1,12 @@
 pylbm
 =====
 
-|Travis| |Appveyor| |Doc badge| |Gitter Badge|
+|Binder| |Travis| |Appveyor| |Doc badge| |Gitter Badge|
 
 [![Appveyor](https://ci.appveyor.com/api/projects/status/quf1hllkedr0rxbk?svg=true)](https://ci.appveyor.com/project/QuantStack/xtensor)
 
+.. |Binder| image:: https://mybinder.org/badge.svg 
+   :target: https://mybinder.org/v2/gh/pylbm/pylbm/develop
 .. |Travis| image:: https://travis-ci.org/pylbm/pylbm.svg?branch=develop
    :target: https://travis-ci.org/pylbm/pylbm
 .. |Appveyor| image:: https://ci.appveyor.com/api/projects/status/lm3gufe7njj29s0t/branch/develop?svg=true
