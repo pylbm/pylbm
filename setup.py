@@ -60,7 +60,4 @@ setup(
                       'future',
                       'h5py'
                       ],
-    extras_require={'pythran': ["pythran>=0.7.1"],
-                    'numba': ["numba>=0.19.1"]
-                    },
 )
