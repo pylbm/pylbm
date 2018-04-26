@@ -1,0 +1,6 @@
+channels:
+  - pylbm
+  - conda-forge
+  - defaults
+dependencies:
+  - pylbm
