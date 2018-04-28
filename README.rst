@@ -3,8 +3,6 @@ pylbm
 
 |Binder| |Travis| |Appveyor| |Doc badge| |Gitter Badge|
 
-[![Appveyor](https://ci.appveyor.com/api/projects/status/quf1hllkedr0rxbk?svg=true)](https://ci.appveyor.com/project/QuantStack/xtensor)
-
 .. |Binder| image:: https://mybinder.org/badge.svg 
    :target: https://mybinder.org/v2/gh/pylbm/pylbm/develop
 .. |Travis| image:: https://travis-ci.org/pylbm/pylbm.svg?branch=develop
@@ -23,7 +21,7 @@ This package gives all the tools to describe your lattice Boltzmann scheme in 1D
 
 We choose the D'Humières formalism to describe the problem. You can have complex geometry with a set of simple shape like circle, sphere, ...
 
-pylbm performs the numerical scheme using Cython, Pythran or Numba from the scheme and the domain given by the user. pylbm has MPI support with mpi4py.
+pylbm performs the numerical scheme using Cython, NumPy or Loo.py from the scheme and the domain given by the user. Pythran and Numba wiil be available soon. pylbm has MPI support with mpi4py.
 
 Installation
 ============
