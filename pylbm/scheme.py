@@ -856,18 +856,30 @@ class Scheme(object):
 
             source_eq = source_eq.subs(subs_param).expand()
 
-            generator.add_routine(('one_time_step',
-                                      For(iloop,
-                                          If( (Eq(in_or_out, valin),
-                                              brv + # build relative velocity
-                                              [Eq(mv, sp.Matrix(Mu*f)), # relative non conserved moments
-                                              Eq(mv, source_eq), # source terms
-                                              Eq(mv, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(mv)) + s.multiply_elementwise(dummy)), # relaxation
-                                              Eq(mv, source_eq),  # source terms
-                                              Eq(f_new, invMu*mv), # m2f + update f_new
-                                              ]) )
-                                          )
-                                      ), local_vars = [mv] + list_rel_vel, settings={"prefetch":[f[0]]})
+            if all([s is None for s in self._source_terms]):
+                generator.add_routine(('one_time_step',
+                                        For(iloop,
+                                            If( (Eq(in_or_out, valin),
+                                                brv + # build relative velocity
+                                                [Eq(mv, sp.Matrix(Mu*f)), # relative non conserved moments
+                                                Eq(mv, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(mv)) + s.multiply_elementwise(dummy)), # relaxation
+                                                Eq(f_new, invMu*mv), # m2f + update f_new
+                                                ]) )
+                                            )
+                                        ), local_vars = [mv] + list_rel_vel, settings={"prefetch":[f[0]]})
+            else:
+                generator.add_routine(('one_time_step',
+                                        For(iloop,
+                                            If( (Eq(in_or_out, valin),
+                                                brv + # build relative velocity
+                                                [Eq(mv, sp.Matrix(Mu*f)), # relative non conserved moments
+                                                Eq(mv, source_eq), # source terms
+                                                Eq(mv, (sp.ones(*s.shape) - s).multiply_elementwise(sp.Matrix(mv)) + s.multiply_elementwise(dummy)), # relaxation
+                                                Eq(mv, source_eq),  # source terms
+                                                Eq(f_new, invMu*mv), # m2f + update f_new
+                                                ]) )
+                                            )
+                                        ), local_vars = [mv] + list_rel_vel, settings={"prefetch":[f[0]]})
 
             ## FIX: relative velocity
             # generator.add_routine(('one_time_step',
