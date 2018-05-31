@@ -44,7 +44,7 @@ setup(
     long_description = "".join(README[1:]),
     author         = "Benjamin Graille, Loic Gouarin",
     author_email   = "benjamin.graille@math.u-psud.fr, loic.gouarin@math.u-psud.fr",
-    url            = "http://www.math.u-psud.fr/pylbm",
+    url            = "https://github.com/pylbm/pylbm",
     license        = "BSD",
     keywords       = "Lattice Boltzmann Methods",
     classifiers    = CLASSIFIERS,
@@ -52,7 +52,7 @@ setup(
     include_package_data=True,
     install_requires=[
                       'numpy>=1.9.2',
-                      'sympy>=0.7.6',
+                      'sympy>=1.1.1',
                       'colorlog>=2.4.0',
                       'Cython>=0.21.1',
                       'mpi4py>=1.3.1',
