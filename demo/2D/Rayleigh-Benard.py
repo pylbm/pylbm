@@ -66,7 +66,7 @@ Ra = 2000
 Pr = 0.71
 Ma = 0.01
 alpha = .005
-if VTK_save:
+if HDF_save:
     dx = 1./256 # spatial step
 else:
     dx = 1./128
@@ -134,7 +134,7 @@ sol = pylbm.Simulation(dico)
 
 x, y = sol.domain.x, sol.domain.y
 
-if VTK_save:
+if HDF_save:
     Tf = 500.
     im = 0
     l = Tf / sol.dt / 32
