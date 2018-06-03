@@ -856,7 +856,7 @@ class Scheme(object):
 
             source_eq = source_eq.subs(subs_param).expand()
 
-            if all([s is None for s in self._source_terms]):
+            if all([src_t is None for src_t in self._source_terms]):
                 generator.add_routine(('one_time_step',
                                         For(iloop,
                                             If( (Eq(in_or_out, valin),
