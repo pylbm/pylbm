@@ -23,7 +23,7 @@ CLASSIFIERS = [
 
 MAJOR = "0"
 MINOR = "3"
-PATCH = "1"
+PATCH = "2"
 VERSION = "{0}.{1}.{2}".format(MAJOR, MINOR, PATCH)
 
 def write_version_py(filename='pylbm/version.py'):
