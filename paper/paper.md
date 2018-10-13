@@ -2,10 +2,10 @@
 title: '`pylbm`: A flexible Python package for lattice Boltzmann method'
 tags:
   - Python
-  - lattice Boltzmann
-  - fl
-  - galactic dynamics
-  - milky way
+  - lattice Boltzmann Method
+  - Computational Fluid Dynamics
+  - High Performance Computing
+  - Code Generator
 authors:
   - name: Loïc Gouarin
     orcid: 0000-0003-4761-9989
