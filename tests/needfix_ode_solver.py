@@ -1,5 +1,5 @@
-from __future__ import print_function
-from __future__ import division
+
+
 from six.moves import range
 import numpy as np
 from scipy import stats

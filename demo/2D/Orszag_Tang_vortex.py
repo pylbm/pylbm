@@ -1,4 +1,4 @@
-from __future__ import print_function, division
+, division
 from six.moves import range
 """
 D2Q4 solver for the MHD system (in 2D)
@@ -186,7 +186,7 @@ if __name__ == "__main__":
             save(sol.mpi_topo, x, y, sol.m, im)
     else:
         # init viewer
-        viewer = pylbm.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig()
         ax = fig[0]
         N, M = sol.m[rho].shape

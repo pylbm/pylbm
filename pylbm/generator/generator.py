@@ -1,3 +1,6 @@
+# FIXME: make pylint happy !
+#pylint: disable=all
+
 import collections
 from .codegen import make_routine
 from .autowrap import autowrap

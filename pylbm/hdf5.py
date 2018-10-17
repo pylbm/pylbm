@@ -1,12 +1,25 @@
+# Authors:
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
+#     Benjamin Graille <benjamin.graille@math.u-psud.fr>
+#
+# License: BSD 3 clause
+
+"""
+HDF5 module
+"""
+import os
+import logging
 from six.moves import range
 import numpy as np
 import h5py
 import mpi4py.MPI as mpi
-import os
 
-from .logs import setLogger
+log = logging.getLogger(__name__) #pylint: disable=invalid-name
 
-class H5File(object):
+class H5File:
+    """
+    class to manage hfd5 and xdmf file.
+    """
     def __init__(self, mpi_topo, filename, path='', timestep=0, init_xdmf=False):
         self.timestep = timestep
         prefix = '_{}'.format(timestep)
@@ -14,12 +27,20 @@ class H5File(object):
         self.filename = filename + prefix
         self.h5filename = filename + prefix + '.h5'
 
-        if mpi.COMM_WORLD.Get_rank()==0:
+        self.origin = None
+        self.dx = None
+        self.dim = None
+        self.n = None
+        self.region = None
+        self.global_size = None
+        self.xdmf_file = None
+
+        if mpi.COMM_WORLD.Get_rank() == 0:
             if not os.path.exists(path):
                 os.mkdir(path)
 
             self.h5file = h5py.File(path + '/' + self.h5filename, "w")
-            
+
         # All the processes wait for the creation of the output directory
         mpi.COMM_WORLD.Barrier()
 
@@ -29,11 +50,27 @@ class H5File(object):
         self._init_grid = True
         self._init_xdmf = init_xdmf
 
-        self.log = setLogger(__name__)
-
     def set_grid(self, x, y=None, z=None):
+        """
+        create the hdf5 coordinate.
+
+        Parameters
+        ----------
+
+        x : ndarray
+            x-coordinate
+
+        y : ndarray
+            y-coordinate
+            default is None
+
+        z : ndarray
+            z-coordinate
+            default is None
+
+        """
         if not self._init_grid:
-            self.log.warning("h5 grid redefined.")
+            log.warning("h5 grid redefined.")
 
         self.origin = [x[0]]
         self.dx = [x[1] - x[0]]
@@ -52,8 +89,8 @@ class H5File(object):
         self.region = []
         self.global_size = []
 
-        # get the region own by each processes 
-        # the global size 
+        # get the region own by each processes
+        # the global size
         # and the global coords
         for i in range(self.dim):
             sub = [False]*self.dim
@@ -69,7 +106,7 @@ class H5File(object):
             for i in range(len(self.region)):
                 self.region[i].insert(0, 0)
                 for j in range(1, len(self.region[i])):
-                    self.region[i][j] += self.region[i][j-1] 
+                    self.region[i][j] += self.region[i][j-1]
             #self.region = np.asarray(self.region, dtype=np.int)
             #self.region = np.concatenate((np.zeros((self.dim, 1), dtype=np.int), np.cumsum(self.region, axis=1)), axis=1)
             #print(self.region)
@@ -79,7 +116,7 @@ class H5File(object):
 
     def _get_slice(self, rank):
         """
-        get the part own by the processor rank and 
+        get the part own by the processor rank and
         the size of the data in each direction
         """
         ind = []
@@ -91,7 +128,29 @@ class H5File(object):
             buffer_size.append(self.region[i][mpi_coords[i]+1] - self.region[i][mpi_coords[i]])
         return ind[::-1], buffer_size[::-1]
 
-    def _set_dset(self, dset, comm,  data, index=0, with_index=False):
+    def _set_dset(self, dset, comm, data, index=0, with_index=False):
+        """
+        Merge data from multiple sub domains into a dataset.
+
+        Parameters
+        ----------
+
+        dset : dataset
+            hdf5 dataset where to store the data
+
+        comm : comm
+            mpi communicator
+
+        data : array
+            data on the sub-domain
+
+        index : int
+            use to store an index of a vector
+
+        with_index : bool
+            if we store a vector component
+
+        """
         ind, buffer_size = self._get_slice(0)
         ind = tuple(ind)
         if with_index:
@@ -106,10 +165,25 @@ class H5File(object):
                 ind = ind + (index,)
             rcv_buffer = np.empty(buffer_size)
             comm.Recv([rcv_buffer, mpi.DOUBLE], source=i, tag=index)
-            #print(rcv_buffer, rcv_buffer.shape)
             dset[ind] = rcv_buffer
-        
+
     def add_scalar(self, name, f, *fargs):
+        """
+        store a scalar field.
+
+        Parameters
+        ----------
+
+        name: string
+            the name of the dataset entry
+
+        f : array or function
+            data to store
+
+        fargs: tuple
+            arguments of f if f is a function
+
+        """
         if isinstance(f, np.ndarray):
             data = f
         else:
@@ -124,22 +198,41 @@ class H5File(object):
             comm.Send([np.ascontiguousarray(data.T, dtype=np.double), mpi.DOUBLE], dest=0, tag=0)
 
     def add_vector(self, name, f, *fargs):
+        """
+        store a vector field.
+
+        Parameters
+        ----------
+
+        name: string
+            the name of the dataset entry
+
+        f : array or function
+            data to store
+
+        fargs: tuple
+            arguments of f if f is a function
+
+        """
         if isinstance(f, list):
-            data = f
+            datas = f
         else:
-            data = f(*fargs)
+            datas = f(*fargs)
 
         comm = self.mpi_topo.cartcomm
         if comm.Get_rank() == 0:
             dset = self.h5file.create_dataset(name, self.global_size[::-1] + [self.dim], dtype=np.double)
-            for i, d in enumerate(data):
-                self._set_dset(dset, comm, d, i, with_index=True)
+            for i, data in enumerate(datas):
+                self._set_dset(dset, comm, data, i, with_index=True)
             self.vectors[name] = self.h5filename + ":/" + name
         else:
-            for i, d in enumerate(data):
-                comm.Send([np.ascontiguousarray(d.T), mpi.DOUBLE], dest=0, tag=i)
+            for i, data in enumerate(datas):
+                comm.Send([np.ascontiguousarray(data.T), mpi.DOUBLE], dest=0, tag=i)
 
     def save(self):
+        """
+        save the hdf5 and the xdmf files.
+        """
         comm = self.mpi_topo.cartcomm
         if comm.Get_rank() == 0:
             self.h5file.close()

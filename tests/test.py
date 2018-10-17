@@ -1,4 +1,4 @@
-from __future__ import division
+
 from six.moves import range
 import sys
 import cmath
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     sol2 = pylbm.Simulation(dicoQ2)
     sol3 = pylbm.Simulation(dicoQ3)
 
-    viewer = pylbm.viewer.matplotlibViewer
+    viewer = pylbm.viewer.matplotlib_viewer
     fig = viewer.Fig()
     ax = fig[0]
     ymin, ymax = -.2, 1.2

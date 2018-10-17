@@ -1,14 +1,22 @@
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
 
+"""
+Ellipsoid element
+"""
+
+#pylint: disable=invalid-name
+
+import logging
 import numpy as np
 
 from .base import Element
-from ..logs import setLogger
-from .utils import *
+from .utils import distance_ellipsoid
+
+log = logging.getLogger(__name__) #pylint: disable=invalid-name
 
 class Ellipsoid(Element):
     """
@@ -16,34 +24,37 @@ class Ellipsoid(Element):
 
     Parameters
     ----------
-    center : a list that contains the three coordinates of the center
-    v1 : a vector
-    v2 : a vector
-    v3 : a vector (v1, v2, and v3 have to be orthogonal)
-    label : list of one integer (default [0])
+    center : list
+        the three coordinates of the center
+    v1 : list
+        a vector
+    v2 : list
+        a vector
+    v3 : list
+        a vector (v1, v2, and v3 have to be orthogonal)
+    label : list
+        one integer (default [0])
     isfluid : boolean
-             - True if the ellipsoid is added
-             - False if the ellipsoid is deleted
+        - True if the ellipsoid is added
+        - False if the ellipsoid is deleted
 
     Attributes
     ----------
     number_of_bounds : int
-      1
-    center : numpy array
-      the coordinates of the center of the sphere
-    v1 : numpy array
-      the coordinates of the first vector
-    v2 : numpy array
-      the coordinates of the second vector
-    v3 : numpy array
-      the coordinates of the third vector
-    label : list of integers
-      the list of the label of the edge
+        1
+    center : ndarray
+        the coordinates of the center of the sphere
+    v1 : ndarray
+        the coordinates of the first vector
+    v2 : ndarray
+        the coordinates of the second vector
+    v3 : ndarray
+        the coordinates of the third vector
+    label : list
+        the list of the label of the edge
     isfluid : boolean
-      True if the ellipsoid is added
-      and False if the ellipsoid is deleted
-    number_of_bounds : int
-        number of edges (1)
+        True if the ellipsoid is added
+        and False if the ellipsoid is deleted
 
     Examples
     --------
@@ -56,26 +67,20 @@ class Ellipsoid(Element):
         Ellipsoid([0 0 0], [3 0 0], [0 2 0], [0 0 1]) (solid)
 
     """
-    def __init__(self, center, v1, v2, v3, label = 0, isfluid = False):
-        self.log = setLogger(__name__)
+    def __init__(self, center, v1, v2, v3, label=0, isfluid=False):
         self.number_of_bounds = 1 # number of edges
         self.center = np.asarray(center)
         p12 = abs(v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2])
         p23 = abs(v2[0]*v3[0] + v2[1]*v3[1] + v2[2]*v3[2])
         p31 = abs(v3[0]*v1[0] + v3[1]*v1[1] + v3[2]*v1[2])
-        if  max(p12, p23, p31)> 1.e-14:
-            self.log.error('The vectors of the ellipsoid are not orthogonal')
+        if  max(p12, p23, p31) > 1.e-14:
+            log.error('The vectors of the ellipsoid are not orthogonal')
         else:
             self.v1 = np.asarray(v1)
             self.v2 = np.asarray(v2)
             self.v3 = np.asarray(v3)
-        self.isfluid = isfluid
-        if isinstance(label, int):
-            self.label = [label]*self.number_of_bounds
-        else:
-            self.label = label
-        self.test_label()
-        self.log.info(self.__str__())
+        super(Ellipsoid, self).__init__(label, isfluid)
+        log.info(self.__str__())
 
     def get_bounds(self):
         """
@@ -86,6 +91,7 @@ class Ellipsoid(Element):
                 np.linalg.norm(self.v3))
         return self.center - r, self.center + r
 
+    #pylint: disable=too-many-locals
     def point_inside(self, grid):
         """
         return a boolean array which defines
@@ -99,14 +105,15 @@ class Ellipsoid(Element):
         Parameters
         ----------
 
-        x : x coordinates of the points
-        y : y coordinates of the points
-        z : z coordinates of the points
+        grid : ndarray
+            coordinates of the points
 
         Returns
         -------
 
-        Array of boolean (True inside the ellipsoid, False otherwise)
+        ndarray
+            Array of boolean (True inside the ellipsoid, False otherwise)
+
         """
         x, y, z = grid
 
@@ -136,15 +143,19 @@ class Ellipsoid(Element):
         Parameters
         ----------
 
-        x : x coordinates of the points
-        y : y coordinates of the points
-        z : z coordinates of the points
-        v : direction of interest
+        grid : ndarray
+            coordinates of the points
+        v : ndarray
+            direction of interest
+        dmax : float
+            distance max
 
         Returns
         -------
 
-        array of distances
+        ndarray
+            array of distances
+
         """
         x, y, z = grid
         return distance_ellipsoid(x, y, z, v, self.center, self.v1, self.v2, self.v3, dmax, self.label)
@@ -157,11 +168,11 @@ class Ellipsoid(Element):
             s += '(solid)'
         return s
 
-    def _visualize(self, viewer, color, viewlabel=False, scale=np.ones(3), alpha=1.):
+    def visualize(self, viewer, color, viewlabel=False, scale=np.ones(3), alpha=1.):
         v1 = scale*self.v1
         v2 = scale*self.v2
         v3 = scale*self.v3
-        viewer.ellipse_3D(self.center*scale, v1, v2, v3 , color, alpha=alpha)
+        viewer.ellipse_3d(self.center*scale, v1, v2, v3, color, alpha=alpha)
         if viewlabel:
             x, y, z = self.center[0], self.center[1], self.center[2]
             viewer.text(str(self.label[0]), [x, y, z])

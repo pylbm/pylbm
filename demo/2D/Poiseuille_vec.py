@@ -1,5 +1,5 @@
-from __future__ import print_function
-from __future__ import division
+
+
 """
  Solver D2Q(4,4,4) for a Poiseuille flow
 
@@ -111,20 +111,20 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         ],
         'parameters': {LA: la},
         'boundary_conditions':{
-            0:{'method':{0: pylbm.bc.Bouzidi_bounce_back,
-                         1: pylbm.bc.Bouzidi_anti_bounce_back,
-                         2: pylbm.bc.Bouzidi_anti_bounce_back
+            0:{'method':{0: pylbm.bc.BouzidiBounceBack,
+                         1: pylbm.bc.BouzidiAntiBounceBack,
+                         2: pylbm.bc.BouzidiAntiBounceBack
                          },
             },
-            1:{'method':{0: pylbm.bc.Bouzidi_anti_bounce_back,
-                         1: pylbm.bc.Neumann_x,
-                         2: pylbm.bc.Neumann_x
+            1:{'method':{0: pylbm.bc.BouzidiAntiBounceBack,
+                         1: pylbm.bc.NeumannX,
+                         2: pylbm.bc.NeumannX
                          },
                 'value':(bc_out, (width, grad_pressure, cte))
             },
-            2:{'method':{0: pylbm.bc.Bouzidi_anti_bounce_back,
-                         1: pylbm.bc.Bouzidi_anti_bounce_back,
-                         2: pylbm.bc.Bouzidi_anti_bounce_back
+            2:{'method':{0: pylbm.bc.BouzidiAntiBounceBack,
+                         1: pylbm.bc.BouzidiAntiBounceBack,
+                         2: pylbm.bc.BouzidiAntiBounceBack
                          },
                 'value':(bc_in, (width, height, max_velocity, grad_pressure, cte)),
             },
@@ -152,7 +152,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         print("Norm of the error on qy:  {0:10.3e}".format(Err_uy))
 
         # init viewer
-        viewer = pylbm.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig()
         ax = fig[0]
 

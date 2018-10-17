@@ -1,8 +1,8 @@
 env:
   matrix:
-    - PYVER="2.7"
     - PYVER="3.5"
     - PYVER="3.6"
+    - PYVER="3.7"
 
 sudo: false
 
@@ -31,10 +31,12 @@ before_install:
   - conda info -a
 
 install:
-  - conda create --yes -n pylbm_env python=$PYVER nose numpy mpi4py h5py
+  - conda create -n pylbm_env python=$PYVER
   - source activate pylbm_env
+  - conda install --file requirements-dev.txt -c conda-forge
   - python --version
   - python setup.py install
-  - which nosetests
 
-script: nosetests
+script:
+  - pytest --pylint --pylint-rcfile=.pyrcfile --pylint-error-types=EF pylbm
+  - cd tests; pytest --cov=pylbm

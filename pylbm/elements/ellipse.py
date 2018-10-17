@@ -1,15 +1,21 @@
-from __future__ import division
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
 
+"""
+Ellipse element
+"""
+#pylint: disable=invalid-name
+
+import logging
 import numpy as np
 
 from .base import Element
-from ..logs import setLogger
-from .utils import *
+from .utils import distance_ellipse
+
+log = logging.getLogger(__name__) #pylint: disable=invalid-name
 
 class Ellipse(Element):
     """
@@ -17,31 +23,33 @@ class Ellipse(Element):
 
     Parameters
     ----------
-    center : a list that contains the two coordinates of the center
-    v1 : a vector
-    v2 : a second vector (v1 and v2 have to be othogonal)
-    label : list of one integer (default [0])
+    center : list
+        the two coordinates of the center
+    v1 : list
+        a vector
+    v2 : list
+        a second vector (v1 and v2 have to be othogonal)
+    label : list
+        one integer (default [0])
     isfluid : boolean
-             - True if the ellipse is added
-             - False if the ellipse is deleted
+        - True if the ellipse is added
+        - False if the ellipse is deleted
 
     Attributes
     ----------
     number_of_bounds : int
-      1
-    center : numpy array
-      the coordinates of the center of the ellipse
-    v1 : numpy array
-      the coordinates of the first vector
-    v2 : numpy array
-      the coordinates of the second vector
-    label : list of integers
-      the list of the label of the edge
+        1
+    center : ndarray
+        the coordinates of the center of the ellipse
+    v1 : ndarray
+        the coordinates of the first vector
+    v2 : ndarray
+        the coordinates of the second vector
+    label : list
+        the list of the label of the edge
     isfluid : boolean
-      True if the ellipse is added
-      and False if the ellipse is deleted
-    number_of_bounds : int
-        number of edges (1)
+        True if the ellipse is added
+        and False if the ellipse is deleted
 
     Examples
     --------
@@ -55,22 +63,16 @@ class Ellipse(Element):
         Ellipse([0 0], [2 0], [0 1]) (solid)
 
     """
-    def __init__(self, center, v1, v2, label = 0, isfluid = False):
-        self.log = setLogger(__name__)
+    def __init__(self, center, v1, v2, label=0, isfluid=False):
         self.number_of_bounds = 1 # number of edges
         self.center = np.asarray(center)
         if abs(v1[0]*v2[0] + v1[1]*v2[1]) > 1.e-14:
-            self.log.error('The vectors of the ellipse are not orthogonal')
+            log.error('The vectors of the ellipse are not orthogonal')
         else:
             self.v1 = np.asarray(v1)
             self.v2 = np.asarray(v2)
-        self.isfluid = isfluid
-        if isinstance(label, int):
-            self.label = [label]*self.number_of_bounds
-        else:
-            self.label = label
-        self.test_label()
-        self.log.info(self.__str__())
+        super(Ellipse, self).__init__(label, isfluid)
+        log.info(self.__str__())
 
     def get_bounds(self):
         """
@@ -92,13 +94,15 @@ class Ellipse(Element):
         Parameters
         ----------
 
-        x : x coordinates of the points
-        y : y coordinates of the points
+        grid : ndarray
+            coordinates of the points
 
         Returns
         -------
 
-        Array of boolean (True inside the ellipse, False otherwise)
+        ndarray
+            Array of boolean (True inside the ellipse, False otherwise)
+
         """
         x, y = grid
 
@@ -118,14 +122,18 @@ class Ellipse(Element):
         Parameters
         ----------
 
-        x : x coordinates of the points
-        y : y coordinates of the points
-        v : direction of interest
+        grid : ndarray
+            coordinates of the points
+        v : ndarray
+            direction of interest
+        dmax : float
+            distance max
 
         Returns
         -------
 
-        array of distances
+        ndarray
+            array of distances
 
         """
         x, y = grid
@@ -139,7 +147,7 @@ class Ellipse(Element):
             s += '(solid)'
         return s
 
-    def _visualize(self, viewer, color, viewlabel=False, scale=np.ones(2), alpha=1.):
+    def visualize(self, viewer, color, viewlabel=False, scale=np.ones(2), alpha=1.):
         nv1 = np.linalg.norm(self.v1)
         nv2 = np.linalg.norm(self.v2)
         if nv1 > nv2:
@@ -153,7 +161,7 @@ class Ellipse(Element):
         else:
             theta = np.arctan(v[1]/v[0])
 
-        viewer.ellipse(self.center*scale, (r1*scale[0], r2*scale[1]), color, angle = theta, alpha=alpha)
+        viewer.ellipse(self.center*scale, (r1*scale[0], r2*scale[1]), color, angle=theta, alpha=alpha)
         if viewlabel:
             x, y = self.center[0] + r1*np.cos(theta), self.center[1] + r1*np.sin(theta)
             viewer.text(str(self.label[0]), [x*scale[0], y*scale[1]])

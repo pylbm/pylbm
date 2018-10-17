@@ -1,5 +1,5 @@
-from __future__ import print_function
-from __future__ import division
+
+
 """
 test: True
 """
@@ -120,7 +120,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     # print(out)
     if withPlot:
         # init viewer
-        viewer = pylbm.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig()
         ax = fig[0]
         image = ax.image(vorticity, (sol,), cmap='jet')#, clim=[-60, 50])

@@ -1,5 +1,5 @@
-from __future__ import print_function
-from __future__ import division
+
+
 """
  Solver D3Q6^4 for a Poiseuille flow
 
@@ -137,23 +137,23 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
             },
         ],
         'boundary_conditions':{
-            0:{'method':{0: pylbm.bc.Bouzidi_bounce_back,
-                         1: pylbm.bc.Bouzidi_anti_bounce_back,
-                         2: pylbm.bc.Bouzidi_anti_bounce_back,
-                         3: pylbm.bc.Bouzidi_anti_bounce_back,
+            0:{'method':{0: pylbm.bc.BouzidiBounceBack,
+                         1: pylbm.bc.BouzidiAntiBounceBack,
+                         2: pylbm.bc.BouzidiAntiBounceBack,
+                         3: pylbm.bc.BouzidiAntiBounceBack,
                          },
             },
-            1:{'method':{0: pylbm.bc.Bouzidi_anti_bounce_back,
-                         1: pylbm.bc.Neumann_x,
-                         2: pylbm.bc.Neumann_x,
-                         3: pylbm.bc.Neumann_x,
+            1:{'method':{0: pylbm.bc.BouzidiAntiBounceBack,
+                         1: pylbm.bc.NeumannX,
+                         2: pylbm.bc.NeumannX,
+                         3: pylbm.bc.NeumannX,
                          },
                 'value':bc_out,
             },
-            2:{'method':{0: pylbm.bc.Bouzidi_anti_bounce_back,
-                         1: pylbm.bc.Bouzidi_anti_bounce_back,
-                         2: pylbm.bc.Bouzidi_anti_bounce_back,
-                         3: pylbm.bc.Bouzidi_anti_bounce_back,
+            2:{'method':{0: pylbm.bc.BouzidiAntiBounceBack,
+                         1: pylbm.bc.BouzidiAntiBounceBack,
+                         2: pylbm.bc.BouzidiAntiBounceBack,
+                         3: pylbm.bc.BouzidiAntiBounceBack,
                          },
                 'value':bc_in,
             },

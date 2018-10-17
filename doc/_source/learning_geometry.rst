@@ -26,9 +26,9 @@ The elementary shapes are
 * a :py:class:`Parallelepiped <pylbm.elements.Parallelepiped>`
 * a Cylinder with a 2D-base
 
-  - :py:class:`Cylinder (Circle) <pylbm.elements.Cylinder_Circle>`
-  - :py:class:`Cylinder (Ellipse) <pylbm.elements.Cylinder_Ellipse>`
-  - :py:class:`Cylinder (Triangle) <pylbm.elements.Cylinder_Triangle>`
+  - :py:class:`Cylinder (Circle) <pylbm.elements.CylinderCircle>`
+  - :py:class:`Cylinder (Ellipse) <pylbm.elements.CylinderEllipse>`
+  - :py:class:`Cylinder (Triangle) <pylbm.elements.CylinderTriangle>`
 
 Several examples of geometries can be found in
 demo/examples/geometry/
