@@ -1,5 +1,5 @@
-from __future__ import print_function
-from __future__ import division
+
+
 from six.moves import range
 import numpy as np
 import sympy as sp
@@ -73,8 +73,8 @@ def test_transport():
                     ],
         #'generator': pylbm.generator.CythonGenerator,
         'boundary_conditions':{
-            0:{'method':{0: pylbm.bc.Bouzidi_bounce_back}},
-            1:{'method':{0: pylbm.bc.Bouzidi_anti_bounce_back}},
+            0:{'method':{0: pylbm.bc.BouzidiBounceBack}},
+            1:{'method':{0: pylbm.bc.BouzidiAntiBounceBack}},
         },
         'parameters':{'LA':1.},
         }

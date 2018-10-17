@@ -1,7 +1,7 @@
-from __future__ import print_function
-from __future__ import division
+
+
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
@@ -17,7 +17,7 @@ v2 = [0,-1.5, 1.5]
 v3 = [1, -1, 0]
 dico = {
     'box':{'x': [-3, 3], 'y': [-3, 3], 'z':[-3, 3], 'label':0},
-    'elements':[pylbm.Cylinder_Ellipse((0.5,0,0), v1, v2, v3, label=[1,2,3])],
+    'elements':[pylbm.CylinderEllipse((0.5,0,0), v1, v2, v3, label=[1,2,3])],
     'space_step':.5,
     'schemes':[{'velocities':list(range(19))}]
 }

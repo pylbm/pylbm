@@ -1,13 +1,21 @@
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
 
+"""
+Circle element
+"""
+#pylint: disable=invalid-name
+
+import logging
 import numpy as np
+
 from .base import Element
-from ..logs import setLogger
-from .utils import *
+from .utils import distance_ellipse
+
+log = logging.getLogger(__name__) #pylint: disable=invalid-name
 
 class Circle(Element):
     """
@@ -15,26 +23,29 @@ class Circle(Element):
 
     Parameters
     ----------
-    center : a list that contains the two coordinates of the center
-    radius : a positive float for the radius
-    label : list of one integer (default [0])
+    center : list
+        the two coordinates of the center
+    radius : float
+        the radius
+    label : list
+        default [0]
     isfluid : boolean
-             - True if the circle is added
-             - False if the circle is deleted
+        - True if the circle is added
+        - False if the circle is deleted
 
     Attributes
     ----------
     number_of_bounds : int
-      1
-    center : numpy array
-      the coordinates of the center of the circle
+        1
+    center : ndarray
+        the coordinates of the center of the circle
     radius : double
-      positive float for the radius of the circle
-    label : list of integers
-      the list of the label of the edge
+        positive float for the radius of the circle
+    label : list
+        the list of the label of the edge
     isfluid : boolean
-      True if the circle is added
-      and False if the circle is deleted
+        True if the circle is added
+        and False if the circle is deleted
 
     Examples
     --------
@@ -47,21 +58,15 @@ class Circle(Element):
         Circle([0 0],1) (solid)
 
     """
-    def __init__(self, center, radius, label = 0, isfluid = False):
-        self.log = setLogger(__name__)
+    def __init__(self, center, radius, label=0, isfluid=False):
         self.number_of_bounds = 1 # number of edges
         self.center = np.asarray(center)
         if radius >= 0:
             self.radius = radius
         else:
-            self.log.error('The radius of the circle should be positive')
-        self.isfluid = isfluid
-        if isinstance(label, int):
-            self.label = [label]*self.number_of_bounds
-        else:
-            self.label = label
-        self.test_label()
-        self.log.info(self.__str__())
+            log.error('The radius of the circle should be positive')
+        super(Circle, self).__init__(label, isfluid)
+        log.info(self.__str__())
 
     def get_bounds(self):
         """
@@ -82,17 +87,19 @@ class Circle(Element):
         Parameters
         ----------
 
-        x : x coordinates of the points
-        y : y coordinates of the points
+        grid : ndarray
+            coordinates of the points
 
         Returns
         -------
 
-        Array of boolean (True inside the circle, False otherwise)
+        ndarray
+            Array of boolean (True inside the circle, False otherwise)
+
         """
         x, y = grid
         v2 = np.asarray([x - self.center[0], y - self.center[1]])
-        return (v2[0]**2 + v2[1]**2)<=self.radius**2
+        return (v2[0]**2 + v2[1]**2) <= self.radius**2
 
     def distance(self, grid, v, dmax=None):
         """
@@ -105,19 +112,23 @@ class Circle(Element):
         Parameters
         ----------
 
-        x : x coordinates of the points
-        y : y coordinates of the points
-        v : direction of interest
+        grid : ndarray
+            coordinates of the points
+        v : ndarray
+            direction of interest
+        dmax : float
+            distance max
 
         Returns
         -------
 
-        array of distances
+        ndarray
+            array of distances
 
         """
         x, y = grid
-        v1 = self.radius*np.array([1,0])
-        v2 = self.radius*np.array([0,1])
+        v1 = self.radius*np.array([1, 0])
+        v2 = self.radius*np.array([0, 1])
         return distance_ellipse(x, y, v, self.center, v1, v2, dmax, self.label)
 
     def __str__(self):
@@ -128,7 +139,7 @@ class Circle(Element):
             s += '(solid)'
         return s
 
-    def _visualize(self, viewer, color, viewlabel=False, scale=np.ones(2), alpha=1.):
+    def visualize(self, viewer, color, viewlabel=False, scale=np.ones(2), alpha=1.):
         viewer.ellipse(self.center*scale, tuple(self.radius*scale), color, alpha=alpha)
         if viewlabel:
             theta = self.center[0] + 2*self.center[1]+10*self.radius

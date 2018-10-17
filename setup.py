@@ -43,7 +43,7 @@ setup(
     description    = README[0],
     long_description = "".join(README[1:]),
     author         = "Benjamin Graille, Loic Gouarin",
-    author_email   = "benjamin.graille@math.u-psud.fr, loic.gouarin@math.u-psud.fr",
+    author_email   = "benjamin.graille@math.u-psud.fr, loic.gouarin@polytechnique.edu",
     url            = "https://github.com/pylbm/pylbm",
     license        = "BSD",
     keywords       = "Lattice Boltzmann Methods",

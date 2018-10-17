@@ -27,7 +27,7 @@ The 3D elements are:
    Sphere
    Ellipsoid
    Parallelepiped
-   Cylinder_Circle
-   Cylinder_Ellipse
-   Cylinder_Triangle
+   CylinderCircle
+   CylinderEllipse
+   CylinderTriangle
   

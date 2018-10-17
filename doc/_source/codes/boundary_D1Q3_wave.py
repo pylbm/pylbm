@@ -1,6 +1,6 @@
-from __future__ import print_function
+
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
@@ -35,7 +35,7 @@ d = {
         },
     ],
     'boundary_conditions':{
-        0:{'method': {0: pylbm.bc.bounce_back}, 'value': None},
+        0:{'method': {0: pylbm.bc.BounceBack}, 'value': None},
     },
 }
 #s = pylbm.Scheme(d)
@@ -44,7 +44,7 @@ d = {
 import matplotlib.pyplot as plt
 sol = pylbm.Simulation(d)
 
-viewer = pylbm.viewer.matplotlibViewer
+viewer = pylbm.viewer.matplotlib_viewer
 fig = viewer.Fig()
 ax = fig[0]
 xmin, xmax, ymin, ymax = 0., 3., -2.2, 2.2

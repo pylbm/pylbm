@@ -1,4 +1,5 @@
-from __future__ import print_function, division
+# FIXME: make pylint happy !
+#pylint: disable=all
 
 import sys
 import os

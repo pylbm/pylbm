@@ -1,17 +1,19 @@
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
 
+"""
+Module which implements a Cartesian MPI topology
+"""
+
 import numpy as np
 import mpi4py.MPI as mpi
-from argparse import ArgumentParser
 
 from .options import options
-from .logs import setLogger
 
-class MPI_topology(object):
+class MpiTopology:
     """
     Interface construction using a MPI topology.
 
@@ -20,6 +22,8 @@ class MPI_topology(object):
 
     dim : int
       number of spatial dimensions (1, 2, or 3)
+    comm : comm
+      the default MPI communicator
     period : list
       boolean list that specifies if a direction is periodic or not.
       Its size is dim.
@@ -29,7 +33,7 @@ class MPI_topology(object):
 
     dim : int
       number of spatial dimensions (1, 2, or 3)
-    comm : MPI communicator
+    comm : comm
       the communicator of the topology
     split : tuple
       number of processes in each direction
@@ -72,24 +76,61 @@ class MPI_topology(object):
 
         self.split = np.asarray(split[:self.dim])
         self.cartcomm = comm.Create_cart(self.split, period)
-        self.region = None
-        self.lx = None
-        self.log = setLogger(__name__)
 
-    def get_lx_(self, n, axes=0):
-        lx = [0]
-        np = self.cartcomm.Get_topo()[0][axes]
-        for i in range(np):
-            lx.append(lx[-1] + n//np + ((n % np) > i))
-        return lx
+    def get_region_indices_(self, n, axis=0):
+        """
+        1D region indices owned by each sub domain.
 
-    def get_lx(self, nx, ny=None, nz=None):
-        lx = [self.get_lx_(nx, 0)]
+        Parameters
+        ----------
+
+        n : int
+            number of total discrete points for a given axis
+        axis : int
+            axis used in the MPI topology
+
+        Returns
+        -------
+
+        list
+            list of regions owned by each processes for a given axis
+
+        """
+        region_indices = [0]
+        nproc = self.cartcomm.Get_topo()[0][axis]
+        for i in range(nproc):
+            region_indices.append(region_indices[-1] + n//nproc + ((n % nproc) > i))
+        return region_indices
+
+    def get_region_indices(self, nx, ny=None, nz=None):
+        """
+        Region indices owned by each sub domain.
+
+        Parameters
+        ----------
+
+        nx : int
+            number of total discrete points in x direction
+        ny : int
+            number of total discrete points in y direction
+            default is None
+        nz : int
+            number of total discrete points in z direction
+            default is None
+
+        Returns
+        -------
+
+        list
+            list of regions owned by each processes
+
+        """
+        region_indices = [self.get_region_indices_(nx, 0)]
         if ny is not None:
-            lx.append(self.get_lx_(ny, 1))
+            region_indices.append(self.get_region_indices_(ny, 1))
         if nz is not None:
-            lx.append (self.get_lx_(nz, 2))
-        return lx
+            region_indices.append(self.get_region_indices_(nz, 2))
+        return region_indices
 
     def get_coords(self):
         """
@@ -100,14 +141,37 @@ class MPI_topology(object):
         return np.asarray(self.cartcomm.Get_coords(rank))
 
     def get_region(self, nx, ny=None, nz=None):
-        lx = self.get_lx(nx, ny, nz)
+        """
+        Region indices owned by the sub domain.
+
+        Parameters
+        ----------
+
+        nx : int
+            number of total discrete points in x direction
+        ny : int
+            number of total discrete points in y direction
+            default is None
+        nz : int
+            number of total discrete points in z direction
+            default is None
+
+        Returns
+        -------
+
+        list
+            region owned by the process
+
+        """
+
+        region_indices = self.get_region_indices(nx, ny, nz)
 
         coords = self.get_coords()
         region = []
         for i in range(coords.size):
-            region.append([lx[i][coords[i]], 
-                           lx[i][coords[i] + 1]
-                         ])
+            region.append([region_indices[i][coords[i]],
+                           region_indices[i][coords[i] + 1]
+                          ])
         return region
 
     def set_options(self):
@@ -128,6 +192,12 @@ def get_directions(dim):
     dim : int
       number of spatial dimensions (1, 2, or 3)
 
+    Returns
+    -------
+
+    ndarray
+        all the possible directions with a stencil of 1
+
     Examples
     --------
 
@@ -147,31 +217,22 @@ def get_directions(dim):
        [ 1,  1]], dtype=int32)
 
     """
-    a = np.array([-1, 0, 1])
+    common_direction = np.array([-1, 0, 1])
 
     if dim == 1:
-        directions = a[:, np.newaxis]
+        directions = common_direction[:, np.newaxis]
     elif dim == 2:
-        a = a[np.newaxis, :]
+        common_direction = common_direction[np.newaxis, :]
 
         directions = np.empty((9, 2), dtype=np.int32)
-        directions[:, 0] = np.repeat(a, 3, axis=1).flatten()
-        directions[:, 1] = np.repeat(a, 3, axis=0).flatten()
+        directions[:, 0] = np.repeat(common_direction, 3, axis=1).flatten()
+        directions[:, 1] = np.repeat(common_direction, 3, axis=0).flatten()
     elif dim == 3:
-        a = a[np.newaxis, :]
+        common_direction = common_direction[np.newaxis, :]
 
         directions = np.empty((27, 3), dtype=np.int32)
-        directions[:, 0] = np.repeat(a, 9, axis=1).flatten()
-        directions[:, 1] = np.repeat(np.repeat(a, 3, axis=0), 3).flatten()
-        directions[:, 2] = np.repeat(a, 9, axis=0).flatten()
+        directions[:, 0] = np.repeat(common_direction, 9, axis=1).flatten()
+        directions[:, 1] = np.repeat(np.repeat(common_direction, 3, axis=0), 3).flatten()
+        directions[:, 2] = np.repeat(common_direction, 9, axis=0).flatten()
 
     return directions
-
-def get_tags(dim):
-    tag = np.arange((3)**dim).reshape((3,)*dim)
-    if dim == 1:
-        return tag, tag[::-1]
-    if dim == 2:
-        return tag, tag[::-1, ::-1]
-    if dim == 3:
-        return tag, tag[::-1, ::-1, ::-1]

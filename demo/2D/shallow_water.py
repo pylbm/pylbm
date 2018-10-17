@@ -1,5 +1,5 @@
-from __future__ import print_function
-from __future__ import division
+
+
 """
 test: True
 """
@@ -104,7 +104,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     sol = pylbm.Simulation(dico, sorder=sorder)
 
     if withPlot:
-        viewer = pylbm.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig()
         ax = fig[0]
 
