@@ -1,12 +1,16 @@
-from __future__ import division
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
 
+"""
+Useful functions to compute the distance
+between a point and an object
+"""
+#pylint: disable=invalid-name
+
 import numpy as np
-from six.moves import range
 
 def intersection_two_lines(p1, v1, p2, v2):
     """
@@ -29,20 +33,22 @@ def distance_lines(x, y, v, p, vt, dmax, label):
     v2 = np.asarray([x, y])
     alpha = 1e16*np.ones((x.size, y.size))
     border = -np.ones((x.size, y.size))
-    for i in range(len(vt)):
-        tmp1, tmp2 = intersection_two_lines(v2, v, p[i], vt[i])
+    for i, vti in enumerate(vt):
+        tmp1, tmp2 = intersection_two_lines(v2, v, p[i], vti)
         if tmp1 is not None:
             if dmax is None:
-                ind = np.logical_and(tmp1>0, np.logical_and(tmp2>=0, tmp2<=1))
+                ind = np.logical_and(tmp1 > 0,
+                                     np.logical_and(tmp2 >= 0, tmp2 <= 1))
             else:
-                ind = np.logical_and(np.logical_and(tmp1>0, tmp1<=dmax),
-                                   np.logical_and(tmp2>=0, tmp2<=1))
-            ind = np.where(np.logical_and(alpha>tmp1, ind))
+                ind = np.logical_and(np.logical_and(tmp1 > 0, tmp1 <= dmax),
+                                     np.logical_and(tmp2 >= 0, tmp2 <= 1))
+            ind = np.where(np.logical_and(alpha > tmp1, ind))
             alpha[ind] = tmp1[ind]
             border[ind] = label[i]
     alpha[alpha == 1e16] = -1.
     return alpha, border
 
+#pylint: disable=too-many-locals
 def distance_ellipse(x, y, v, center, v1, v2, dmax, label):
     """
     return the distance according
@@ -62,29 +68,30 @@ def distance_ellipse(x, y, v, center, v1, v2, dmax, label):
     b = 2*X*v[0]*vy2 + 2*Y*v[1]*vx2 - 2*(X*v[1]+Y*v[0])*vxy
     c = X**2*vy2 + Y**2*vx2 - 2*X*Y*vxy - (v1[0]*v2[1]-v1[1]*v2[0])**2
     delta = b**2 - 4*a*c
-    ind = delta>=0 # wird but it works
+    ind = delta >= 0 # wird but it works
     delta[ind] = np.sqrt(delta[ind])
     d1 = 1e16*np.ones(delta.shape)
     d2 = 1e16*np.ones(delta.shape)
     if a != 0:
-        d1[ind] = (-b[ind]-delta[ind])/(2*a)
-        d2[ind] = (-b[ind]+delta[ind])/(2*a)
-    d1[d1<0] = 1e16
-    d2[d2<0] = 1e16
+        d1[ind] = (-b[ind] - delta[ind])/(2*a)
+        d2[ind] = (-b[ind] + delta[ind])/(2*a)
+    d1[d1 < 0] = 1e16
+    d2[d2 < 0] = 1e16
     d = -np.ones(d1.shape)
     d[ind] = np.minimum(d1[ind], d2[ind])
-    d[d==1e16] = -1
+    d[d == 1e16] = -1
 
     alpha = -np.ones(delta.shape)
     border = -np.ones(delta.shape)
     if dmax is None:
-        ind = d>0
+        ind = d > 0
     else:
-        ind = np.logical_and(d>0, d<=dmax)
+        ind = np.logical_and(d > 0, d <= dmax)
     alpha[ind] = d[ind]
     border[ind] = label[0]
     return alpha, border
 
+#pylint: disable=too-many-locals
 def distance_ellipsoid(x, y, z, v, center, v1, v2, v3, dmax, label):
     """
     return the distance according
@@ -118,24 +125,24 @@ def distance_ellipsoid(x, y, z, v, center, v1, v2, v3, dmax, label):
     c = cxx*X**2 + cyy*Y**2 + czz*Z**2 \
         + cxy*X*Y + cyz*Y*Z + czx*Z*X - d
     delta = b**2 - 4*a*c
-    ind = delta>=0 # wird but ir works
+    ind = delta >= 0 # wird but ir works
     delta[ind] = np.sqrt(delta[ind])
     d1 = 1e16*np.ones(delta.shape)
     d2 = 1e16*np.ones(delta.shape)
-    d1[ind] = (-b[ind]-delta[ind])/(2*a)
-    d2[ind] = (-b[ind]+delta[ind])/(2*a)
-    d1[d1<0] = 1e16
-    d2[d2<0] = 1e16
+    d1[ind] = (-b[ind] - delta[ind])/(2*a)
+    d2[ind] = (-b[ind] + delta[ind])/(2*a)
+    d1[d1 < 0] = 1e16
+    d2[d2 < 0] = 1e16
     d = -np.ones(d1.shape)
     d[ind] = np.minimum(d1[ind], d2[ind])
-    d[d==1e16] = -1
+    d[d == 1e16] = -1
 
     alpha = -np.ones((x.size, y.size, z.size))
     border = -np.ones((x.size, y.size, z.size))
     if dmax is None:
-        ind = d>0
+        ind = d > 0
     else:
-        ind = np.logical_and(d>0, d<=dmax)
+        ind = np.logical_and(d > 0, d <= dmax)
     alpha[ind] = d[ind]
     border[ind] = label[0]
     return alpha, border

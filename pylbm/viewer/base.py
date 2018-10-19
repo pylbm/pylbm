@@ -1,45 +1,57 @@
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
 
-import abc
-from future.utils import with_metaclass
+"""
+Base module that describes what we need to define a new viewer.
+"""
+from abc import ABC, abstractmethod
 
-class Viewer(with_metaclass(abc.ABCMeta, object)):
-    @abc.abstractmethod
+class Viewer(ABC):
+    """
+    Base class which describes the methods needed to
+    define a new viewer
+    """
+    @abstractmethod
     def text(self, t, pos, fontsize, color, **kwargs):
         """
         add text on the figure
         """
-        return
+        pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def line(self, pos, width, color, **kwargs):
         """
         add line on th figure
         """
-        return
+        pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def draw(self):
         """
         show figure
         """
-        return
+        pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def clear(self):
-        return
+        """
+        Clear the figure
+        """
+        pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def axis(self, xmin, xmax, ymin, ymax, zmin, zmax):
-        return
+        """
+        define the axis
+        """
+        pass
 
-    @abc.abstractproperty
+    @abstractmethod
     def is3d(self):
         """
         3d support of the viewer
         """
-        return
+        pass

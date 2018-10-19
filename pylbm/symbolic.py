@@ -1,9 +1,19 @@
-import sympy as sp
-import inspect
-import sys
+# Authors:
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
+#     Benjamin Graille <benjamin.graille@math.u-psud.fr>
+#
+# License: BSD 3 clause
 
-nx, ny, nz, nv = sp.symbols("nx, ny, nz, nv", integer=True)
-ix, iy, iz, iv = sp.symbols("ix, iy, iz, iv", integer=True)
+"""
+Symbolic module
+"""
+
+import sys
+import inspect
+import sympy as sp
+
+nx, ny, nz, nv = sp.symbols("nx, ny, nz, nv", integer=True) #pylint: disable=invalid-name
+ix, iy, iz, iv = sp.symbols("ix, iy, iz, iv", integer=True) #pylint: disable=invalid-name
 
 def set_order(array, sorder, remove_ind=None):
     out = [-1]*len(sorder)
@@ -14,11 +24,11 @@ def set_order(array, sorder, remove_ind=None):
             out.pop(sorder[i])
     return out
 
-def indexed(name, shape, index=[iv, ix, iy, iz], list_ind=None, ranges=None, permutation=None, remove_ind=None):
+def indexed(name, shape, index=(iv, ix, iy, iz), list_ind=None, ranges=None, permutation=None, remove_ind=None):
     if not permutation:
         permutation = range(len(index))
 
-    output =  sp.IndexedBase(name, set_order(shape, permutation, remove_ind))
+    output = sp.IndexedBase(name, set_order(shape, permutation, remove_ind))
 
     if ranges:
         ind = [set_order([k] + index[1:], permutation, remove_ind) for k in ranges]
@@ -26,9 +36,9 @@ def indexed(name, shape, index=[iv, ix, iy, iz], list_ind=None, ranges=None, per
     elif list_ind is not None:
         ind = []
         indices = index[1:]
-        for il, l in enumerate(list_ind):
+        for il, l in enumerate(list_ind): #pylint: disable=invalid-name
             tmp_ind = []
-            for ik, k in enumerate(l):
+            for ik, k in enumerate(l): #pylint: disable=invalid-name
                 tmp_ind.append(indices[ik] - int(k))
             ind.append(set_order([il] + tmp_ind, permutation, remove_ind))
         return sp.Matrix([output[i] for i in ind])
@@ -41,7 +51,7 @@ def space_loop(ranges, permutation=None):
 
     indices = [ix, iy, iz]
     idx = []
-    for ir, r in enumerate(ranges):
+    for ir, r in enumerate(ranges): #pylint: disable=invalid-name
         idx.append(sp.Idx(indices[ir], r))
     return set_order([0] + idx, permutation, remove_ind=[0])
 
@@ -77,15 +87,15 @@ PY3 = sys.version_info >= (3,)
 if PY3:
     from inspect import getfullargspec as getargspec
 else:
-    getargspec = getargspec_permissive
+    getargspec = getargspec_permissive #pylint: disable=invalid-name
 
 def call_genfunction(function, args):
     from .context import queue
     try:
         func_args = function.arg_dict.keys()
-        d = {k:args[k] for k in func_args}
+        d = {k:args[k] for k in func_args} #pylint: disable=invalid-name
         d['queue'] = queue
-    except:
+    except: #pylint: disable=bare-except
         func_args = getargspec(function).args
-        d = {k:args[k] for k in func_args}
+        d = {k:args[k] for k in func_args} #pylint: disable=invalid-name
     function(**d)

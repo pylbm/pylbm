@@ -1,4 +1,5 @@
-from __future__ import print_function, division
+# FIXME: make pylint happy !
+#pylint: disable=all
 from sympy.core import S
 from sympy.core.compatibility import string_types, range
 from sympy.printing.codeprinter import CodePrinter

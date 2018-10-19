@@ -1,5 +1,5 @@
-from __future__ import print_function
-from __future__ import division
+
+
 """
 test: True
 """
@@ -123,8 +123,8 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
             },
         ],
         'boundary_conditions':{
-            0:{'method':{0: pylbm.bc.Bouzidi_bounce_back, 1: pylbm.bc.Bouzidi_anti_bounce_back}, 'value':bc_down},
-            1:{'method':{0: pylbm.bc.Bouzidi_bounce_back, 1: pylbm.bc.Bouzidi_anti_bounce_back}, 'value':bc_up},
+            0:{'method':{0: pylbm.bc.BouzidiBounceBack, 1: pylbm.bc.BouzidiAntiBounceBack}, 'value':bc_down},
+            1:{'method':{0: pylbm.bc.BouzidiBounceBack, 1: pylbm.bc.BouzidiAntiBounceBack}, 'value':bc_up},
         },
         'generator': "cython",
     }
@@ -133,7 +133,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
 
     x, y = sol.domain.x, sol.domain.y
 
-    viewer = pylbm.viewer.matplotlibViewer
+    viewer = pylbm.viewer.matplotlib_viewer
     fig = viewer.Fig()
     ax = fig[0]
     image = ax.image(sol.m[T].T, cmap='cubehelix', clim=[Tu, Td+.25])

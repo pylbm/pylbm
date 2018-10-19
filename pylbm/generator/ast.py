@@ -1,3 +1,6 @@
+# FIXME: make pylint happy !
+#pylint: disable=all
+
 from sympy.core import Symbol, Expr, Tuple
 from sympy.core.sympify import _sympify, sympify
 from sympy.tensor import Idx, IndexedBase, Indexed

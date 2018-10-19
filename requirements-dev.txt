@@ -1,0 +1,14 @@
+numpy
+matplotlib
+six
+sympy >=1.1.1,<1.2
+cython
+h5py
+mpi4py
+future
+colorlog
+pytest
+pylint
+pytest-pylint
+pytest-cov
+codecov

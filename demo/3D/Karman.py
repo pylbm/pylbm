@@ -1,5 +1,5 @@
-from __future__ import print_function
-from __future__ import division
+
+
 """
 test: True
 """
@@ -102,9 +102,9 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
             },
         }],
         'boundary_conditions':{
-            0:{'method':{0: pylbm.bc.Bouzidi_bounce_back}},
-            1:{'method':{0: pylbm.bc.Bouzidi_bounce_back}, 'value':bc_up},
-            2:{'method':{0: pylbm.bc.Neumann_x}},
+            0:{'method':{0: pylbm.bc.BouzidiBounceBack}},
+            1:{'method':{0: pylbm.bc.BouzidiBounceBack}, 'value':bc_up},
+            2:{'method':{0: pylbm.bc.NeumannX}},
         },
         'parameters': {LA: la},
         'generator': generator,

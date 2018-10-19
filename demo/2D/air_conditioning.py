@@ -103,9 +103,9 @@ dico = {
         },
     ],
     'boundary_conditions':{
-        0:{'method':{0: pylbm.bc.Bouzidi_bounce_back, 1: pylbm.bc.Bouzidi_anti_bounce_back}, 'value':bc},
-        1:{'method':{0: pylbm.bc.Bouzidi_bounce_back, 1: pylbm.bc.Bouzidi_anti_bounce_back}, 'value':bc_in},
-        2:{'method':{0: pylbm.bc.Neumann_y, 1: pylbm.bc.Neumann_y}, 'value':None},
+        0:{'method':{0: pylbm.bc.BouzidiBounceBack, 1: pylbm.bc.BouzidiAntiBounceBack}, 'value':bc},
+        1:{'method':{0: pylbm.bc.BouzidiBounceBack, 1: pylbm.bc.BouzidiAntiBounceBack}, 'value':bc_in},
+        2:{'method':{0: pylbm.bc.NeumannY, 1: pylbm.bc.NeumannY}, 'value':None},
     },
     'generator': "cython",
 }
@@ -113,7 +113,7 @@ dico = {
 sol = pylbm.Simulation(dico)
 
 # create the viewer to plot the solution
-viewer = pylbm.viewer.matplotlibViewer
+viewer = pylbm.viewer.matplotlib_viewer
 fig = viewer.Fig()
 ax = fig[0]
 im = ax.image(sol.m[T].transpose(), cmap='jet', clim=[Tin, T0])
