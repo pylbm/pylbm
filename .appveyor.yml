@@ -21,7 +21,7 @@ install:
   - cmd: SET PATH=%CONDA_INSTALL_LOCN%;%CONDA_INSTALL_LOCN%\Scripts;%PATH%
   - cmd: conda create --yes -n pylbm_env python=%CONDA_PY%
   - cmd: activate pylbm_env
-  - cmd: conda install --yes --file requirements-dev.txt -c conda-forge
+  - cmd: pip install -r requirements-dev.txt
   - cmd: python setup.py install
 
 # Skip .NET project specific build phase.
