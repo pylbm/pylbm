@@ -28,5 +28,4 @@ install:
 build: off
 
 test_script:
-  - pytest --pylint --pylint-rcfile=.pyrcfile --pylint-error-types=EF pylbm
-  - cd tests; pytest --cov=pylbm
+  - pytest
