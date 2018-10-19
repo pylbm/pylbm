@@ -1,14 +1,22 @@
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
 
+"""
+Sphere element
+"""
+
+#pylint: disable=invalid-name
+
+import logging
 import numpy as np
 
 from .base import Element
-from ..logs import setLogger
-from .utils import *
+from .utils import distance_ellipsoid
+
+log = logging.getLogger(__name__) #pylint: disable=invalid-name
 
 class Sphere(Element):
     """
@@ -16,28 +24,31 @@ class Sphere(Element):
 
     Parameters
     ----------
-    center : a list that contains the three coordinates of the center
-    radius : a positive float for the radius
-    label : list of one integer (default [0])
+
+    center : list
+        the three coordinates of the center
+    radius : real
+        a positive real number for the radius
+    label : list
+        one integer (default [0])
     isfluid : boolean
-             - True if the sphere is added
-             - False if the sphere is deleted
+        - True if the sphere is added
+        - False if the sphere is deleted
 
     Attributes
     ----------
+
     number_of_bounds : int
-      1
-    center : numpy array
-      the coordinates of the center of the sphere
-    radius : double
-      positive float for the radius of the sphere
-    label : list of integers
-      the list of the label of the edge
+        1
+    center : ndarray
+        the coordinates of the center of the sphere
+    radius : real
+        a positive real number for the radius of the sphere
+    label : list
+        the list of the label of the edge
     isfluid : boolean
-      True if the sphere is added
-      and False if the sphere is deleted
-    number_of_bounds : int
-        number of edges (1)
+        True if the sphere is added
+        and False if the sphere is deleted
 
     Examples
     --------
@@ -50,21 +61,15 @@ class Sphere(Element):
         Sphere([0 0 0],1) (solid)
 
     """
-    def __init__(self, center, radius, label = 0, isfluid = False):
-        self.log = setLogger(__name__)
+    def __init__(self, center, radius, label=0, isfluid=False):
         self.number_of_bounds = 1 # number of edges
         self.center = np.asarray(center)
-        if radius>=0:
+        if radius >= 0:
             self.radius = radius
         else:
-            self.log.error('The radius of the sphere should be positive')
-        self.isfluid = isfluid
-        if isinstance(label, int):
-            self.label = [label]*self.number_of_bounds
-        else:
-            self.label = label
-        self.test_label()
-        self.log.info(self.__str__())
+            log.error('The radius of the sphere should be positive')
+        super(Sphere, self).__init__(label, isfluid)
+        log.info(self.__str__())
 
     def get_bounds(self):
         """
@@ -85,18 +90,19 @@ class Sphere(Element):
         Parameters
         ----------
 
-        x : x coordinates of the points
-        y : y coordinates of the points
-        z : z coordinates of the points
+        grid : ndarray
+            coordinates of the points
 
         Returns
         -------
 
-        Array of boolean (True inside the sphere, False otherwise)
+        ndarray
+            Array of boolean (True inside the sphere, False otherwise)
+
         """
         x, y, z = grid
         v2 = np.asarray([x - self.center[0], y - self.center[1], z - self.center[2]])
-        return (v2[0]**2 + v2[1]**2 + v2[2]**2)<=self.radius**2
+        return (v2[0]**2 + v2[1]**2 + v2[2]**2) <= self.radius**2
 
     def distance(self, grid, v, dmax=None):
         """
@@ -109,20 +115,24 @@ class Sphere(Element):
         Parameters
         ----------
 
-        x : x coordinates of the points
-        y : y coordinates of the points
-        z : z coordinates of the points
-        v : direction of interest
+        grid : ndarray
+            coordinates of the points
+        v : ndarray
+            direction of interest
+        dmax : float
+            distance max
 
         Returns
         -------
 
-        array of distances
+        ndarray
+            array of distances
+
         """
         x, y, z = grid
-        v1 = self.radius*np.array([1,0,0])
-        v2 = self.radius*np.array([0,1,0])
-        v3 = self.radius*np.array([0,0,1])
+        v1 = self.radius*np.array([1, 0, 0])
+        v2 = self.radius*np.array([0, 1, 0])
+        v3 = self.radius*np.array([0, 0, 1])
         return distance_ellipsoid(x, y, z, v, self.center, v1, v2, v3, dmax, self.label)
 
 
@@ -134,11 +144,11 @@ class Sphere(Element):
             s += '(solid)'
         return s
 
-    def _visualize(self, viewer, color, viewlabel=False, scale=np.ones(3), alpha=1.):
-        v1 = self.radius*np.array([1,0,0])*scale
-        v2 = self.radius*np.array([0,1,0])*scale
-        v3 = self.radius*np.array([0,0,1])*scale
-        viewer.ellipse_3D(self.center*scale, v1, v2, v3, color, alpha=alpha)
+    def visualize(self, viewer, color, viewlabel=False, scale=np.ones(3), alpha=1.):
+        v1 = self.radius*np.array([1, 0, 0])*scale
+        v2 = self.radius*np.array([0, 1, 0])*scale
+        v3 = self.radius*np.array([0, 0, 1])*scale
+        viewer.ellipse_3d(self.center*scale, v1, v2, v3, color, alpha=alpha)
         if viewlabel:
             x, y, z = self.center[0], self.center[1], self.center[2]
             viewer.text(str(self.label[0]), [x, y, z])

@@ -1,5 +1,5 @@
-from __future__ import print_function
-from __future__ import division
+
+
 """
 test: True
 """
@@ -86,9 +86,9 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
                     }],
         'parameters':{'LA':la},
         'boundary_conditions':{
-            0:{'method':{0: pylbm.bc.Bouzidi_bounce_back}},
-            1:{'method':{0: pylbm.bc.Neumann_x}},
-            2:{'method':{0: pylbm.bc.Bouzidi_bounce_back},
+            0:{'method':{0: pylbm.bc.BouzidiBounceBack}},
+            1:{'method':{0: pylbm.bc.NeumannX}},
+            2:{'method':{0: pylbm.bc.BouzidiBounceBack},
                'value':(bc_in, (width, height, max_velocity, grad_pressure))}
         },
         'generator': generator,
@@ -98,7 +98,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
 
     if withPlot:
         # init viewer
-        viewer = pylbm.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig()
         ax = fig[0]
 

@@ -1,60 +1,54 @@
-from __future__ import print_function
-from __future__ import division
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
 
+"""
+pylbm simulation
+"""
+
+import sys
+import logging
 from six.moves import range
 from six import string_types
-import sys
-import types
-import cmath
 import numpy as np
 import sympy as sp
-from sympy.matrices import Matrix, zeros
 import mpi4py.MPI as mpi
-
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-import matplotlib.cm as cm
 
 from .domain import Domain
 from .scheme import Scheme
-from .geometry import Geometry
-from .stencil import Stencil
 from .boundary import Boundary
 from . import utils
-from .validate_dictionary import *
+from . import validate_dictionary as valid_dic
 from .context import set_queue
 from .generator import generator
 
-from .logs import setLogger
-from .storage import Array, Array_in, AOS, SOA
+from .storage import Array, AOS, SOA
 
-proto_simu = {
+log = logging.getLogger(__name__) #pylint: disable=invalid-name
+
+proto_simu = { #pylint: disable=invalid-name
     'name':(type(None),) + string_types,
-    'box':(is_dico_box,),
-    'elements':(type(None), is_list_elem),
+    'box':(valid_dic.is_dico_box,),
+    'elements':(type(None), valid_dic.is_list_elem),
     'dim':(type(None), int),
     'space_step':(int, float, sp.Symbol),
     'scheme_velocity':(int, float, sp.Symbol),
-    'parameters':(type(None), is_dico_sp_sporfloat),
-    'schemes':(is_list_sch,),
-    'relative_velocity': (type(None), is_list_sp_or_nb,),
-    'boundary_conditions':(type(None), is_dico_bc),
-    'generator':(type(None), is_generator),
+    'parameters':(type(None), valid_dic.is_dico_sp_sporfloat),
+    'schemes':(valid_dic.is_list_sch,),
+    'relative_velocity': (type(None), valid_dic.is_list_sp_or_nb,),
+    'boundary_conditions':(type(None), valid_dic.is_dico_bc),
+    'generator':(type(None), valid_dic.is_generator),
     'show_code':(type(None), bool),
-    'ode_solver':(type(None), is_ode_solver),
-    'split_pattern': (type(None), is_list_string_or_tuple),
-    'stability':(type(None), is_dico_stab),
-    'consistency':(type(None), is_dico_cons),
+    'ode_solver':(type(None), valid_dic.is_ode_solver),
+    'split_pattern': (type(None), valid_dic.is_list_string_or_tuple),
+    'stability':(type(None), valid_dic.is_dico_stab),
+    'consistency':(type(None), valid_dic.is_dico_cons),
     'inittype':(type(None),) + string_types,
 }
 
-class Simulation(object):
+class Simulation:
     """
     create a class simulation
 
@@ -127,54 +121,52 @@ class Simulation(object):
     are just call of the methods of the class
     :py:class:`Scheme<pylbm.scheme.Scheme>`.
     """
+    #pylint: disable=too-many-branches, too-many-statements, too-many-locals
     def __init__(self, dico, domain=None, scheme=None, sorder=None, dtype='float64', check_inverse=False):
-        self.log = setLogger(__name__)
         self.type = dtype
         self.order = 'C'
         self._update_m = True
 
-        self.log.info('Check the dictionary (by Simulation)')
-        test, aff = validate(dico, proto_simu)
+        log.info('Check the dictionary (by Simulation)')
+        test, aff = valid_dic.validate(dico, proto_simu)
         if test:
-            self.log.info(aff)
+            log.info(aff)
         else:
-            self.log.error(aff)
+            log.error(aff)
             sys.exit()
 
         self.name = dico.get('name', None)
 
-        self.log.info('Build the domain')
+        log.info('Build the domain')
         try:
             if domain is not None:
                 self.domain = domain
             else:
-                self.domain = Domain(dico, verif=False)
+                self.domain = Domain(dico)
         except KeyError:
-            self.log.error('Error in the creation of the domain: wrong dictionnary')
+            log.error('Error in the creation of the domain: wrong dictionnary')
             sys.exit()
 
-        self.log.info('Build the scheme')
+        log.info('Build the scheme')
         try:
             if scheme is not None:
                 self.scheme = scheme
             else:
                 self.scheme = Scheme(dico, check_inverse=check_inverse)
         except KeyError:
-            self.log.error('Error in the creation of the scheme: wrong dictionnary')
+            log.error('Error in the creation of the scheme: wrong dictionnary')
             sys.exit()
 
         self.t = 0.
         self.nt = 0
         self.dt = self.domain.dx/self.scheme.la
-        try:
-            assert self.domain.dim == self.scheme.dim
-        except:
-            self.log.error('Solution: the dimension of the domain and of the scheme are not the same\n')
+        if self.domain.dim != self.scheme.dim:
+            log.error('Solution: the dimension of the domain and of the scheme are not the same\n')
             sys.exit()
 
         self.dim = self.domain.dim
 
-        self.log.info('Build arrays')
+        log.info('Build arrays')
 
         self.mpi_topo = self.domain.mpi_topo
 
@@ -185,7 +177,7 @@ class Simulation(object):
         self.generator = dico.get('generator', "CYTHON").upper()
         self.show_code = dico.get('show_code', False)
         set_queue(self.generator)
-        self.gpu_support = True if self.generator=="LOOPY" else False
+        self.gpu_support = True if self.generator == "LOOPY" else False
 
         if sorder is None:
             if self.generator == "NUMPY":
@@ -201,25 +193,27 @@ class Simulation(object):
             self._m = Array(nv, nspace, vmax, sorder, self.mpi_topo, gpu_support=self.gpu_support)
             self._F = Array(nv, nspace, vmax, sorder, self.mpi_topo, gpu_support=self.gpu_support)
 
-        self._m.set_conserved_moments(self.scheme.consm, self.domain.stencil.nv_ptr)
-        self._F.set_conserved_moments(self.scheme.consm, self.domain.stencil.nv_ptr)
+        self._m.set_conserved_moments(self.scheme.consm)
+        self._F.set_conserved_moments(self.scheme.consm)
 
         if self.generator == "NUMPY":
             self._Fold = self._F
         else:
             self._Fold = Array(nv, nspace, vmax, sorder, self.mpi_topo, gpu_support=self.gpu_support)
-            self._Fold.set_conserved_moments(self.scheme.consm, self.domain.stencil.nv_ptr)
+            self._Fold.set_conserved_moments(self.scheme.consm)
 
         self.scheme.generate(self.generator, sorder, self.domain.valin)
 
-        self.log.info('Build boundary conditions')
+        log.info('Build boundary conditions')
 
         if self.gpu_support:
-            import pyopencl as cl
-            import pyopencl.array
-            from .context import queue
-
-            self.domain.in_or_out = cl.array.to_device(queue, self.domain.in_or_out)  
+            try:
+                import pyopencl as cl
+                import pyopencl.array #pylint: disable=unused-variable
+                from .context import queue
+            except ImportError:
+                raise ImportError("Please install loo.py")
+            self.domain.in_or_out = cl.array.to_device(queue, self.domain.in_or_out)
 
         self.bc = Boundary(self.domain, dico)
         for method in self.bc.methods:
@@ -228,7 +222,7 @@ class Simulation(object):
 
         generator.compile(backend=self.generator, verbose=self.show_code)
 
-        self.log.info('Initialization')
+        log.info('Initialization')
         self.initialization(dico)
         for method in self.bc.methods:
             method.prepare_rhs(self)
@@ -271,13 +265,8 @@ class Simulation(object):
         if self._update_m:
             self._update_m = False
             self.f2m()
-        #return self._m_in[i]
-        return self._m._in(i)
 
-    @m.setter
-    def m(self, i, value):
-        self._update_m = False
-        self._m_in[i] = value
+        return self._m._in(i) #pylint: disable=protected-access
 
     @utils.itemproperty
     def F_halo(self, i):
@@ -296,13 +285,7 @@ class Simulation(object):
         """
         get the distribution function i in the interior domain.
         """
-        return self._F._in(i)
-        #return self._F_in[i]
-
-    @F.setter
-    def F(self, i, value):
-        self._update_m = True
-        self._F_in[i] = value
+        return self._F._in(i) #pylint: disable=protected-access
 
     def __str__(self):
         s = "Simulation informations: "
@@ -313,27 +296,31 @@ class Simulation(object):
         s += self.scheme.__str__()
         return s
 
+    #pylint: disable=too-many-locals
     def time_info(self):
+        """
+        get performance information about the simulation
+        """
         t = self.cpu_time
         # tranform the seconds into days, hours, minutes, seconds
         ttot = int(t['total'])
         tms = int(1000*(t['total'] - ttot))
-        us = 1 # 1 second
-        um = 60*us # 1 minute
-        uh = 60*um # 1 hour
-        ud = 24*uh # 1 day
-        unity = [ud, uh, um, us]
+        second = 1 # 1 second
+        minute = 60*second # 1 minute
+        hour = 60*minute # 1 hour
+        day = 24*hour # 1 day
+        unity = [day, hour, minute, second]
         unity_name = ['d', 'h', 'm', 's']
         tcut = []
-        for u in unity:
-            tcut.append(ttot//u)
-            ttot -= tcut[-1]*u
+        for unit in unity:
+            tcut.append(ttot//unit)
+            ttot -= tcut[-1]*unit
         #computational time measurement
         s = '*'*50
         s += '\n* Time informations' + ' '*30 + '*'
         s += '\n* ' + '-'*46 + ' *'
         s += '\n* MLUPS {0:5.1f}'.format(t['MLUPS']) + ' '*36 + '*'
-        s += '\n* Number of iterations {0:10.3e}'.format(t['number_of_iterations'])
+        s += '\n* Nminuteber of iterations {0:10.3e}'.format(t['number_of_iterations'])
         s += ' '*16 + '*'
         s += '\n* Total time   '
         test_dummy = True
@@ -369,16 +356,13 @@ class Simulation(object):
     def initialization(self, dico):
         """
         initialize all the numy array with the initial conditions
+        set the initial values to the numpy arrays _F and _m
 
         Parameters
         ----------
 
         dico : the dictionary with the `key:value` 'init'
 
-        Returns
-        -------
-
-        set the initial values to the numpy arrays _F and _m
 
         Notes
         -----
@@ -388,6 +372,7 @@ class Simulation(object):
         If the initial values have to be set to _F, use the optional
         `key:value` 'inittype' with the value 'distributions'
         (default value is set to 'moments').
+
         """
         # type of initialization
         # by default, the initialization is on the moments
@@ -402,7 +387,7 @@ class Simulation(object):
         else:
             sss = 'Error in the creation of the scheme: wrong dictionnary\n'
             sss += 'the key `inittype` should be moments or distributions'
-            self.log.error(sss)
+            log.error(sss)
             sys.exit()
 
         for k, v in self.scheme.init.items():
@@ -421,7 +406,7 @@ class Simulation(object):
             self.scheme.f2m(self._F, self._m)
 
         self._Fold.array[:] = self._F.array[:]
-        
+
     def transport(self):
         """
         compute the transport phase on distribution functions
@@ -440,7 +425,7 @@ class Simulation(object):
         self.scheme.relaxation(self._m)
         self.cpu_time['relaxation'] += mpi.Wtime() - t
 
-    def source_term(self, fraction_of_time_step = 1.):
+    def source_term(self, fraction_of_time_step=1.):
         """
         compute the source term phase on moments
         (the array _m is modified)
@@ -515,7 +500,7 @@ class Simulation(object):
         self.boundary_condition()
 
         self.scheme.onetimestep(self._m, self._F, self._Fold, self.domain.in_or_out, self.domain.valin, self.t, self.dt,
-            *self.domain.coords)
+                                *self.domain.coords)
         self._F, self._Fold = self._Fold, self._F
 
         self.t += self.dt

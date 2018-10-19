@@ -1,19 +1,16 @@
-from __future__ import print_function
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
+#pylint: disable=invalid-name, missing-docstring
 
-from six.moves import range
-from six import string_types
 import types
+from six import string_types
 import sympy as sp
-import numpy as np
 import pylbm
 
-
-class PrintInColor(object):
+class PrintInColor:
     RED = '\033[91m'
     GREEN = '\033[92m'
     YELLOW = '\033[93m'
@@ -158,13 +155,13 @@ def is_dico_bcmethod(d, ntab=0):
                 debut_l = debut(True) + space(ntab)
                 ligne_l = PrintInColor.correct(label) + ": "
                 try:
-                    if issubclass(value, pylbm.boundary.Boundary_method):
+                    if issubclass(value, pylbm.boundary.BoundaryMethod):
                         test_l = True
                         ligne_l = PrintInColor.correct(value)
                     else:
                         test_l = False
                         ligne_l = PrintInColor.error(value)
-                except:
+                except: #pylint: disable=bare-except
                     test_l = False
                     ligne_l = PrintInColor.error(value)
             test = test and test_l
@@ -205,47 +202,61 @@ def is_list_sch_dom(l, ntab=0):
             test = test and test_l
     return test, ligne
 
+#pylint: disable=unused-argument
 def is_list_int(l, ntab=None):
     return is_list_generic(l, int)
 
+#pylint: disable=unused-argument
 def is_list_int_or_string(l, ntab=None):
     return is_list_generic(l, (int, string_types))
 
+#pylint: disable=unused-argument
 def is_list_float(l, ntab=None):
     return is_list_generic(l, (int, float))
 
+#pylint: disable=unused-argument
 def is_2_list_int_or_float(l, ntab=None):
     return is_list_generic(l, (int, float), size=2)
 
+#pylint: disable=unused-argument
 def is_list_string_or_tuple(l, ntab=None):
     return is_list_generic(l, (tuple, string_types))
 
+#pylint: disable=unused-argument
 def is_generator(d, ntab=None):
     try:
         test = d.upper() in ["NUMPY", "CYTHON", "LOOPY"]
-    except:
+    except: #pylint: disable=bare-except
         test = False
     return test, PrintInColor.unknown(d, test)
 
+#pylint: disable=unused-argument
 def is_ode_solver(d, ntab=None):
-    try:
-        test = issubclass(d, pylbm.generator.ode_schemes.ode_solver)
-    except:
-        test = False
-    return test, PrintInColor.unknown(d, test)
+    # FIXME: ode_schemes is not in generator anymore.
+    pass
+    # try:
+    #     test = issubclass(d, pylbm.generator.ode_schemes.ode_solver)
+    # except: #pylint: disable=bare-except
+    #     test = False
+    # return test, PrintInColor.unknown(d, test)
 
+#pylint: disable=unused-argument
 def is_list_elem(l, ntab=None):
     return is_list_generic(l, pylbm.elements.base.Element)
 
+#pylint: disable=unused-argument
 def is_list_sp(l, ntab=None):
     return is_list_generic(l, (sp.Expr, string_types))
 
+#pylint: disable=unused-argument
 def is_list_sp_or_nb(l, ntab=None):
     return is_list_generic(l, (int, float, sp.Expr, string_types))
 
+#pylint: disable=unused-argument
 def is_list_symb(l, ntab=None):
     return is_list_generic(l, (sp.Symbol, string_types))
 
+#pylint: disable=too-many-branches
 def test_dico_prototype(dico, proto, ntab=0):
     test_g = True
     aff = ''
@@ -305,6 +316,7 @@ def test_compatibility_dim(dico):
                 test = False
     return test, aff
 
+#pylint: disable=too-many-locals, too-many-nested-blocks
 def test_compatibility_schemes(dico):
     test = True
     aff = ''
@@ -369,22 +381,22 @@ def test_compatibility_bc(dico):
         labels = dbox.get('label', [])
         if isinstance(labels, int):
             labels = [labels,]
-        if len(labels) == 0:
+        if not labels:
             aff += PrintInColor.correct("No label given in the dictionary: default is -1 for periodic.\n")
         else:
-            if any(l!=-1 for l in labels):
+            if any(l != -1 for l in labels):
                 dbc = dico.get('boundary_conditions', None)
                 if dbc is None:
                     aff += PrintInColor.error("No boundary condition given in the dictionary.\n")
                     test = False
                 for l in labels:
-                    test_l = (l==-1) or any(k==l for k in list(dbc.keys()))
+                    test_l = (l == -1) or any(k == l for k in list(dbc.keys()))
                     if not test_l:
                         test = False
                         aff += PrintInColor.error("The label {0} has no corresponding boundary condition.\n".format(l))
     return test, aff
 
-def validate(dico, proto, test_comp = True):
+def validate(dico, proto, test_comp=True):
     aff = "\n" + "*"*75
     aff += "\nTest of the dictionary\n"
     aff += "*"*75
@@ -407,41 +419,3 @@ def validate(dico, proto, test_comp = True):
         aff += '\n'
     aff += "*"*75 + '\n'
     return test, aff
-
-if __name__ == "__main__":
-
-    rho, LA, X, Y = sp.symbols('rho, LA, X, Y')
-    qx, qy = sp.symbols('qx, qy')
-    rhoo, ux, uy = 1., 0.1, 0.2
-
-    def fin(x):
-        return x
-
-    dico = {
-        'box':{'x':(0., 1.), 'y':[0,1], 'label':[0, 'out', 0, 0]},
-        'dim':1,
-        'space_step':1.,
-        'generator':pylbm.generator.CythonGenerator,
-        'scheme_velocity':1.,
-        'schemes':[{
-            'velocities':list(range(1,5)),
-            'conserved_moments':rho,
-            'polynomials':[1, X, Y, X**2-Y**2, 2],
-            'equilibrium':[rho, ux*rho, uy*rho, 0.],
-            'relaxation_parameters':[0., 1., 1.],
-            'init':{rho:1.,},
-        }],
-        'parameters':{LA:1.},
-        'stability':{
-            'linearization':{rho: rhoo,},
-            'test_maximum_principle':False,
-            'test_L2_stability':False,
-        },
-        'boundary_conditions':{
-            0:{'method':{0:pylbm.bc.anti_bounce_back}, 'value':fin},
-            'in':{'method':{0:pylbm.bc.neumann}, 'value':None},
-        },
-    }
-
-    test, aff = validate(dico, pylbm.simulation.proto_simu)
-    print(aff)

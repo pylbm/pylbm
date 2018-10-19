@@ -1,7 +1,7 @@
-from __future__ import print_function
-from __future__ import division
+
+
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
@@ -17,4 +17,4 @@ dsten = {
 }
 s = pylbm.Stencil(dsten)
 print(s)
-s.visualize(pylbm.viewer.matplotlibViewer)
+s.visualize(pylbm.viewer.matplotlib_viewer)

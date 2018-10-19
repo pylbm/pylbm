@@ -1,28 +1,33 @@
-from __future__ import print_function
-from __future__ import division
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
 
+"""
+Module for LBM boundary conditions
+"""
+
+import collections
+import logging
+import types
 import numpy as np
 from six.moves import range
-import types
-import collections
-from sympy import *
+from sympy import symbols, IndexedBase, Idx, Eq
 
-from .logs import setLogger
 from .storage import Array
-from .validate_dictionary import *
+from .validate_dictionary import is_dico_bcmethod
 from .generator import generator
 
-proto_bc = {
+log = logging.getLogger(__name__) #pylint: disable=invalid-name
+
+proto_bc = { #pylint: disable=invalid-name
     'method':(is_dico_bcmethod, ),
     'value':(type(None), types.FunctionType, tuple),
 }
 
-class Boundary_Velocity(object):
+#pylint: disable=too-few-public-methods
+class BoundaryVelocity:
     """
     Indices and distances for the label and the velocity ksym
     """
@@ -45,23 +50,24 @@ class Boundary_Velocity(object):
             self.indices += np.asarray(v.v)[:, np.newaxis]
         self.distance = np.array(domain.distance[(num,) + ind])
 
-class Boundary(object):
+class Boundary:
     """
     Construct the boundary problem by defining the list of indices on the border and the methods used on each label.
 
     Parameters
     ----------
-    domain : Domain class
-
-    dico : a dictionary that describes the boundaries
-        - key is a label
-        - value are again a dictionnary with
-            + "method" key that gives the boundary method class used (Bounce_back, Anti_bounce_back, ...)
-            + "value_bc" key that gives the value on the boundary
+    domain : Domain
+        the simulation domain
+    dico : dictionary
+        describes the boundaries
+            - key is a label
+            - value are again a dictionnary with
+                + "method" key that gives the boundary method class used (Bounce_back, Anti_bounce_back, ...)
+                + "value_bc" key that gives the value on the boundary
 
     Attributes
     ----------
-    bv : dictionnary
+    bv_per_label : dictionnary
         for each label key, a list of spatial indices and distance define for each velocity the points
         on the domain that are on the boundary.
 
@@ -70,32 +76,30 @@ class Boundary(object):
         The list contains Boundary_method instance.
 
     """
+    #pylint: disable=too-many-locals
     def __init__(self, domain, dico):
-        self.log = setLogger(__name__)
         self.domain = domain
 
         # build the list of indices for each unique velocity and for each label
-        self.bv = {}
+        self.bv_per_label = {}
         for label in self.domain.list_of_labels():
             dummy_bv = []
             for k in range(self.domain.stencil.unvtot):
-                dummy_bv.append(Boundary_Velocity(self.domain, label, k))
-            self.bv[label] = dummy_bv
+                dummy_bv.append(BoundaryVelocity(self.domain, label, k))
+            self.bv_per_label[label] = dummy_bv
 
         # build the list of boundary informations for each stencil and each label
-        dico_bound = dico.get('boundary_conditions',{})
+        dico_bound = dico.get('boundary_conditions', {})
         stencil = self.domain.stencil
-
 
         istore = collections.OrderedDict() # important to set the boundary conditions always in the same way !!!
         ilabel = {}
         distance = {}
         value_bc = {}
 
+        #pylint: disable=too-many-nested-blocks
         for label in self.domain.list_of_labels():
-            if label == -1: # periodic conditions
-                pass
-            elif label == -2: # interface conditions
+            if label in [-1, -2]: # periodic or interface conditions
                 pass
             else: # non periodic conditions
                 value_bc[label] = dico_bound[label].get('value', None)
@@ -104,9 +108,9 @@ class Boundary(object):
                 # where the distribution function must be updated on the boundary
                 for k, v in methods.items():
                     for inumk, numk in enumerate(stencil.num[k]):
-                        if self.bv[label][stencil.unum2index[numk]].indices.size != 0:
-                            indices = self.bv[label][stencil.unum2index[numk]].indices
-                            distance_tmp = self.bv[label][stencil.unum2index[numk]].distance
+                        if self.bv_per_label[label][stencil.unum2index[numk]].indices.size != 0:
+                            indices = self.bv_per_label[label][stencil.unum2index[numk]].indices
+                            distance_tmp = self.bv_per_label[label][stencil.unum2index[numk]].distance
                             velocity = (inumk + stencil.nv_ptr[k])*np.ones(indices.shape[1], dtype=np.int32)[np.newaxis, :]
                             ilabel_tmp = label*np.ones(indices.shape[1], dtype=np.int32)
                             istore_tmp = np.concatenate([velocity, indices])
@@ -125,31 +129,35 @@ class Boundary(object):
         for k in list(istore.keys()):
             self.methods.append(k(istore[k], ilabel[k], distance[k], stencil, value_bc, domain.distance.shape, backend))
 
-class Boundary_method(object):
+
+#pylint: disable=protected-access
+class BoundaryMethod:
     """
     Set boundary method.
-    
+
     Parameters
     ----------
-    None
+    FIXME : add parameters documentation
 
     Attributes
     ----------
-    feq : NumPy array
-       the equilibrium values of the distribution function on the border
-    rhs : NumPy array
-       the additional terms to fix the boundary values
-    distance : NumPy array
-       distance to the border (needed for Bouzidi type conditions)
-    istore : NumPy array
-    ilabel : NumPy array
+    feq : ndarray
+        the equilibrium values of the distribution function on the border
+    rhs : ndarray
+        the additional terms to fix the boundary values
+    distance : ndarray
+        distance to the border (needed for Bouzidi type conditions)
+    istore : ndarray
+        indices of points where we store the boundary condition
+    ilabel : ndarray
+        label of the boundary
     iload : list
+        indices of points needed to compute the boundary condition
     value_bc : dictionnary
        the prescribed values on the border
 
     """
     def __init__(self, istore, ilabel, distance, stencil, value_bc, nspace, backend):
-        self.log = setLogger(__name__)
         self.istore = istore
         self.feq = np.zeros((stencil.nv_ptr[-1], istore.shape[1]))
         self.rhs = np.zeros(istore.shape[1])
@@ -165,22 +173,24 @@ class Boundary_method(object):
 
     def fix_iload(self):
         """
-        Transpose iload and istore. 
+        Transpose iload and istore.
 
         Must be fix in a future version.
         """
-        # Fixme : store in a good way and in the right type istore and iload 
+        # Fixme : store in a good way and in the right type istore and iload
         for i in range(len(self.iload)):
             self.iload[i] = np.ascontiguousarray(self.iload[i].T, dtype=np.int32)
         self.istore = np.ascontiguousarray(self.istore.T, dtype=np.int32)
 
+    #pylint: disable=too-many-locals
     def prepare_rhs(self, simulation):
         """
         Compute the distribution function at the equilibrium with the value on the border.
 
         Parameters
         ----------
-        simulation : simulation class
+        simulation : Simulation
+            simulation class
 
         """
 
@@ -204,28 +214,28 @@ class Boundary_method(object):
                     x = simulation.domain.coords_halo[i][self.istore[i + 1, indices]]
                     x += s*v[k, i]*simulation.domain.dx
                     x = x.ravel()
-                    for i in range(1, simulation.domain.dim):
+                    for j in range(1, simulation.domain.dim): #pylint: disable=unused-variable
                         x = x[:, np.newaxis]
                     coords += (x,)
 
-                m = Array(nv, nspace , 0, sorder, gpu_support=gpu_support)
-                m.set_conserved_moments(simulation.scheme.consm, self.stencil.nv_ptr)
+                m = Array(nv, nspace, 0, sorder, gpu_support=gpu_support)
+                m.set_conserved_moments(simulation.scheme.consm)
 
-                f = Array(nv, nspace , 0, sorder, gpu_support=gpu_support)
-                f.set_conserved_moments(simulation.scheme.consm, self.stencil.nv_ptr)
+                f = Array(nv, nspace, 0, sorder, gpu_support=gpu_support)
+                f.set_conserved_moments(simulation.scheme.consm)
 
                 #TODO add error message and more tests
                 if isinstance(value, types.FunctionType):
                     value(f, m, *coords)
                 elif isinstance(value, tuple):
                     if len(value) != 2:
-                        self.log.error("""Function set in boundary must be the function name or a tuple
+                        log.error("""Function set in boundary must be the function name or a tuple
                                        of size 2 with function name and extra args.""")
                     args = coords + value[1]
                     value[0](f, m, *args)
                 simulation.scheme.equilibrium(m)
                 simulation.scheme.m2f(m, f)
-                
+
                 if self.backend.upper() == "LOOPY":
                     f.array_cpu[...] = f.array.get()
                 self.feq[:, indices[0]] = f.swaparray.reshape((nv, indices[0].size))
@@ -242,7 +252,8 @@ class Boundary_method(object):
             iload.append(IndexedBase(iloads, [ncond, dim+1]))
         return istore, iload, ncond
 
-    def _get_rhs_dist_symb(self, ncond):
+    @staticmethod
+    def _get_rhs_dist_symb(ncond):
         rhs = IndexedBase('rhs', [ncond])
         dist = IndexedBase('dist', [ncond])
         return rhs, dist
@@ -254,14 +265,15 @@ class Boundary_method(object):
         Parameters
         ----------
 
-        ff 
+        ff : array
             The distribution functions
         """
         from .symbolic import call_genfunction
 
         args = self._get_args(ff)
-        call_genfunction(self.function, args)
+        call_genfunction(self.function, args) #pylint: disable=no-member
 
+    #pylint: disable=possibly-unused-variable
     def _get_args(self, ff):
         dim = len(ff.nspace)
         nx = ff.nspace[0]
@@ -271,9 +283,9 @@ class Boundary_method(object):
             nz = ff.nspace[2]
 
         f = ff.array
-        
+
         for i in range(len(self.iload)):
-           exec('iload{i} = self.iload[{i}]'.format(i=i))
+            exec('iload{i} = self.iload[{i}]'.format(i=i)) #pylint: disable=exec-used
 
         istore = self.istore
         rhs = self.rhs
@@ -281,24 +293,27 @@ class Boundary_method(object):
             dist = self.s
         ncond = istore.shape[0]
         return locals()
-        
+
     def move2gpu(self):
         """
         Move arrays needed to compute the boundary on the GPU memory.
         """
         if self.backend.upper() == "LOOPY":
-            import pyopencl as cl
-            import pyopencl.array
-            from .context import queue
+            try:
+                import pyopencl as cl
+                import pyopencl.array #pylint: disable=unused-variable
+                from .context import queue
+            except ImportError:
+                raise ImportError("Please install loo.py")
 
             self.rhs = cl.array.to_device(queue, self.rhs)
             if hasattr(self, 's'):
-                self.s = cl.array.to_device(queue, self.s)
+                self.s = cl.array.to_device(queue, self.s) #pylint: disable=attribute-defined-outside-init
             self.istore = cl.array.to_device(queue, self.istore)
             for i in range(len(self.iload)):
                 self.iload[i] = cl.array.to_device(queue, self.iload[i])
 
-class bounce_back(Boundary_method):
+class BounceBack(BoundaryMethod):
     """
     Boundary condition of type bounce-back
 
@@ -311,7 +326,7 @@ class bounce_back(Boundary_method):
     def set_iload(self):
         """
         Compute the indices that are needed (symmertic velocities and space indices).
-        """        
+        """
         k = self.istore[0]
         ksym = self.stencil.get_symmetric()[k][np.newaxis, :]
         v = self.stencil.get_all_velocities()
@@ -326,35 +341,37 @@ class bounce_back(Boundary_method):
         ksym = self.stencil.get_symmetric()[k]
         self.rhs[:] = self.feq[k, np.arange(k.size)] - self.feq[ksym, np.arange(k.size)]
 
+    #pylint: disable=too-many-locals
     def generate(self, sorder):
         """
         Generate the numerical code.
 
         Parameters
         ----------
-        sorder : list of int
+        sorder : list
             the order of nv, nx, ny and nz
         """
-        from .generator import make_routine, autowrap, For, If, IndexedIntBase
-        from .symbolic import nx, ny, nz, nv, indexed, space_loop, ix
+        from .generator import For
+        from .symbolic import nx, ny, nz, indexed, ix
 
         ns = int(self.stencil.nv_ptr[-1])
         dim = self.stencil.dim
 
         istore, iload, ncond = self._get_istore_iload_symb(dim)
-        rhs, dist = self._get_rhs_dist_symb(ncond)
+        rhs, _ = self._get_rhs_dist_symb(ncond)
 
-        ix = Idx(ix, (0, ncond))
-        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[ix, k] for k in range(dim+1)], permutation=sorder)
-        fload = indexed('f', [ns, nx, ny, nz], index=[iload[0][ix, k] for k in range(dim+1)], permutation=sorder)
+        idx = Idx(ix, (0, ncond))
+        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], permutation=sorder)
+        fload = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], permutation=sorder)
 
-        generator.add_routine(('bounce_back', For(ix, Eq(fstore, fload + rhs[ix]))))
+        generator.add_routine(('bounce_back', For(idx, Eq(fstore, fload + rhs[ix]))))
 
     @property
     def function(self):
+        """Return the generated function"""
         return generator.module.bounce_back
 
-class Bouzidi_bounce_back(Boundary_method):
+class BouzidiBounceBack(BoundaryMethod):
     """
     Boundary condition of type Bouzidi bounce-back [BFL01]
 
@@ -365,13 +382,13 @@ class Bouzidi_bounce_back(Boundary_method):
 
     """
     def __init__(self, istore, ilabel, distance, stencil, value_bc, nspace, backend):
-        super(Bouzidi_bounce_back, self).__init__(istore, ilabel, distance, stencil, value_bc, nspace, backend)
+        super(BouzidiBounceBack, self).__init__(istore, ilabel, distance, stencil, value_bc, nspace, backend)
         self.s = np.empty(self.istore.shape[1])
 
     def set_iload(self):
         """
         Compute the indices that are needed (symmertic velocities and space indices).
-        """        
+        """
         k = self.istore[0]
         ksym = self.stencil.get_symmetric()[k]
         v = self.stencil.get_all_velocities()
@@ -404,17 +421,18 @@ class Bouzidi_bounce_back(Boundary_method):
         ksym = self.stencil.get_symmetric()[k]
         self.rhs[:] = self.feq[k, np.arange(k.size)] - self.feq[ksym, np.arange(k.size)]
 
+    #pylint: disable=too-many-locals
     def generate(self, sorder):
         """
         Generate the numerical code.
 
         Parameters
         ----------
-        sorder : list of int
+        sorder : list
             the order of nv, nx, ny and nz
         """
-        from .generator import make_routine, autowrap, For, If, IndexedIntBase
-        from .symbolic import nx, ny, nz, nv, indexed, space_loop, ix
+        from .generator import For
+        from .symbolic import nx, ny, nz, indexed, ix
 
         ns = int(self.stencil.nv_ptr[-1])
         dim = self.stencil.dim
@@ -422,18 +440,19 @@ class Bouzidi_bounce_back(Boundary_method):
         istore, iload, ncond = self._get_istore_iload_symb(dim)
         rhs, dist = self._get_rhs_dist_symb(ncond)
 
-        ix = Idx(ix, (0, ncond))
-        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[ix, k] for k in range(dim+1)], permutation=sorder)
-        fload0 = indexed('f', [ns, nx, ny, nz], index=[iload[0][ix, k] for k in range(dim+1)], permutation=sorder)
-        fload1 = indexed('f', [ns, nx, ny, nz], index=[iload[1][ix, k] for k in range(dim+1)], permutation=sorder)
+        idx = Idx(ix, (0, ncond))
+        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], permutation=sorder)
+        fload0 = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], permutation=sorder)
+        fload1 = indexed('f', [ns, nx, ny, nz], index=[iload[1][idx, k] for k in range(dim+1)], permutation=sorder)
 
-        generator.add_routine(('Bouzidi_bounce_back', For(ix, Eq(fstore, dist[ix]*fload0 + (1-dist[ix])*fload1 + rhs[ix]))))
+        generator.add_routine(('Bouzidi_bounce_back', For(idx, Eq(fstore, dist[idx]*fload0 + (1-dist[idx])*fload1 + rhs[idx]))))
 
     @property
     def function(self):
+        """Return the generated function"""
         return generator.module.Bouzidi_bounce_back
 
-class anti_bounce_back(bounce_back):
+class AntiBounceBack(BounceBack):
     """
     Boundary condition of type anti bounce-back
 
@@ -451,35 +470,36 @@ class anti_bounce_back(bounce_back):
         ksym = self.stencil.get_symmetric()[k]
         self.rhs[:] = self.feq[k, np.arange(k.size)] + self.feq[ksym, np.arange(k.size)]
 
+    #pylint: disable=too-many-locals
     def generate(self, sorder):
         """
         Generate the numerical code.
 
         Parameters
         ----------
-        sorder : list of int
+        sorder : list
             the order of nv, nx, ny and nz
         """
-        from .generator import make_routine, autowrap, For, If, IndexedIntBase
-        from .symbolic import nx, ny, nz, nv, indexed, space_loop, ix
+        from .generator import For
+        from .symbolic import nx, ny, nz, indexed, ix
 
         ns = int(self.stencil.nv_ptr[-1])
         dim = self.stencil.dim
 
         istore, iload, ncond = self._get_istore_iload_symb(dim)
-        rhs, dist = self._get_rhs_dist_symb(ncond)
+        rhs, _ = self._get_rhs_dist_symb(ncond)
 
-        ix = Idx(ix, (0, ncond))
-        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[ix, k] for k in range(dim+1)], permutation=sorder)
-        fload = indexed('f', [ns, nx, ny, nz], index=[iload[0][ix, k] for k in range(dim+1)], permutation=sorder)
+        idx = Idx(ix, (0, ncond))
+        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], permutation=sorder)
+        fload = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], permutation=sorder)
 
-        generator.add_routine(('anti_bounce_back', For(ix, Eq(fstore, -fload + rhs[ix]))))
+        generator.add_routine(('anti_bounce_back', For(idx, Eq(fstore, -fload + rhs[idx]))))
 
     @property
     def function(self):
         return generator.module.anti_bounce_back
 
-class Bouzidi_anti_bounce_back(Bouzidi_bounce_back):
+class BouzidiAntiBounceBack(BouzidiBounceBack):
     """
     Boundary condition of type Bouzidi anti bounce-back
 
@@ -497,17 +517,18 @@ class Bouzidi_anti_bounce_back(Bouzidi_bounce_back):
         ksym = self.stencil.get_symmetric()[k]
         self.rhs[:] = self.feq[k, np.arange(k.size)] + self.feq[ksym, np.arange(k.size)]
 
+    #pylint: disable=too-many-locals
     def generate(self, sorder):
         """
         Generate the numerical code.
 
         Parameters
         ----------
-        sorder : list of int
+        sorder : list
             the order of nv, nx, ny and nz
-        """        
-        from .generator import make_routine, autowrap, For, If, IndexedIntBase
-        from .symbolic import nx, ny, nz, nv, indexed, space_loop, ix
+        """
+        from .generator import For
+        from .symbolic import nx, ny, nz, indexed, ix
 
         ns = int(self.stencil.nv_ptr[-1])
         dim = self.stencil.dim
@@ -515,25 +536,22 @@ class Bouzidi_anti_bounce_back(Bouzidi_bounce_back):
         istore, iload, ncond = self._get_istore_iload_symb(dim)
         rhs, dist = self._get_rhs_dist_symb(ncond)
 
-        ix = Idx(ix, (0, ncond))
-        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[ix, k] for k in range(dim+1)], permutation=sorder)
-        fload0 = indexed('f', [ns, nx, ny, nz], index=[iload[0][ix, k] for k in range(dim+1)], permutation=sorder)
-        fload1 = indexed('f', [ns, nx, ny, nz], index=[iload[1][ix, k] for k in range(dim+1)], permutation=sorder)
+        idx = Idx(ix, (0, ncond))
+        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], permutation=sorder)
+        fload0 = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], permutation=sorder)
+        fload1 = indexed('f', [ns, nx, ny, nz], index=[iload[1][idx, k] for k in range(dim+1)], permutation=sorder)
 
-        generator.add_routine(('Bouzidi_anti_bounce_back', For(ix, Eq(fstore, -dist[ix]*fload0 + (1-dist[ix])*fload1 + rhs[ix]))))
+        generator.add_routine(('Bouzidi_anti_bounce_back', For(idx, Eq(fstore, -dist[idx]*fload0 + (1-dist[idx])*fload1 + rhs[idx]))))
 
     @property
     def function(self):
         return generator.module.Bouzidi_anti_bounce_back
 
-class Neumann(Boundary_method):
+class Neumann(BoundaryMethod):
     """
     Boundary condition of type Neumann
 
     """
-    def __init__(self, istore, ilabel, distance, stencil, value_bc, nspace, backend):
-        super(Neumann, self).__init__(istore, ilabel, distance, stencil, value_bc, nspace, backend)
-
     def set_rhs(self):
         """
         Compute and set the additional terms to fix the boundary values.
@@ -543,40 +561,42 @@ class Neumann(Boundary_method):
     def set_iload(self):
         """
         Compute the indices that are needed (symmertic velocities and space indices).
-        """        
+        """
         k = self.istore[0]
         v = self.stencil.get_all_velocities()
         indices = self.istore[1:] + v[k].T
         self.iload.append(np.concatenate([k[np.newaxis, :], indices]))
 
+    #pylint: disable=too-many-locals
     def generate(self, sorder):
         """
         Generate the numerical code.
 
         Parameters
         ----------
-        sorder : list of int
+        sorder : list
             the order of nv, nx, ny and nz
-        """        
-        from .generator import make_routine, autowrap, For, If, IndexedIntBase
-        from .symbolic import nx, ny, nz, nv, indexed, space_loop, ix
+        """
+        from .generator import For
+        from .symbolic import nx, ny, nz, indexed, ix
 
         ns = int(self.stencil.nv_ptr[-1])
         dim = self.stencil.dim
 
         istore, iload, ncond = self._get_istore_iload_symb(dim)
 
-        ix = Idx(ix, (0, ncond))
-        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[ix, k] for k in range(dim+1)], permutation=sorder)
-        fload = indexed('f', [ns, nx, ny, nz], index=[iload[0][ix, k] for k in range(dim+1)], permutation=sorder)
+        idx = Idx(ix, (0, ncond))
+        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], permutation=sorder)
+        fload = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], permutation=sorder)
 
-        generator.add_routine(('neumann', For(ix, Eq(fstore, fload))))
+        generator.add_routine(('neumann', For(idx, Eq(fstore, fload))))
 
     @property
     def function(self):
+        """Return the generated function"""
         return generator.module.neumann
 
-class Neumann_x(Neumann):
+class NeumannX(Neumann):
     """
     Boundary condition of type Neumann along the x direction
 
@@ -584,14 +604,14 @@ class Neumann_x(Neumann):
     def set_iload(self):
         """
         Compute the indices that are needed (symmertic velocities and space indices).
-        """        
+        """
         k = self.istore[0]
         v = self.stencil.get_all_velocities()
         indices = self.istore[1:].copy()
         indices[0] += v[k].T[0]
         self.iload.append(np.concatenate([k[np.newaxis, :], indices]))
 
-class Neumann_y(Neumann):
+class NeumannY(Neumann):
     """
     Boundary condition of type Neumann along the y direction
 
@@ -606,7 +626,7 @@ class Neumann_y(Neumann):
         indices[1] += v[k].T[1]
         self.iload.append(np.concatenate([k[np.newaxis, :], indices]))
 
-class Neumann_z(Neumann):
+class NeumannZ(Neumann):
     """
     Boundary condition of type Neumann along the z direction
 
@@ -614,53 +634,9 @@ class Neumann_z(Neumann):
     def set_iload(self):
         """
         Compute the indices that are needed (symmertic velocities and space indices).
-        """        
+        """
         k = self.istore[0]
         v = self.stencil.get_all_velocities()
         indices = self.istore[1:].copy()
         indices[1] += v[k].T[2]
         self.iload.append(np.concatenate([k[np.newaxis, :], indices]))
-
-if __name__ == "__main__":
-    #from pylbm.elements import *
-    #import geometry, domain
-    import numpy as np
-
-    # dim = 2
-    # dx = .1
-    # xmin, xmax, ymin, ymax = 0., 1., 0., 1.
-    #
-    # dico_geometry = {'dim':dim,
-    #                  'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[0,0,1,0]},
-    #                  'Elements':[0],
-    #                  0:{'Element':Circle([0.5*(xmin+xmax),0.5*(ymin+ymax)], 0.3),
-    #                     'del':True,
-    #                     'label':2}
-    #                  }
-    #
-    # dico   = {'dim':dim,
-    #           'eometry':dico_geometry,
-    #           'space_step':dx,
-    #           'number_of_schemes':1,
-    #           0:{'velocities':range(9),}
-    #           }
-    #
-    # geom = Geometry.Geometry(dico)
-    # dom = Domain.Domain(geom,dico)
-    # b = Boundary(dom, 2, 0)
-    # print b.indices
-    # print
-    # print b.distance
-
-    istore = np.arange(12).reshape((3, 4))
-    b = Boundary_method(istore)
-
-    def changek(k, stencil):
-        ksym = stencil.get_symmetric()
-        return ksym[k]
-
-    def changei(i):
-        return np.array([[1], [1]])+i
-
-    b.add_iload(changek, changei)
-    print(b.istore, b.iload)

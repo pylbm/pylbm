@@ -1,5 +1,5 @@
-from __future__ import print_function
-from __future__ import division
+
+
 """
  Solver D1Q2Q2 for the p-system on [0, 1]
 
@@ -91,7 +91,7 @@ def run(dx, Tf, generator="numpy", sorder=None, withPlot=True):
 
     if withPlot:
         # create the viewer to plot the solution
-        viewer = pylbm.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig(2, 1)
         ax1 = fig[0]
         ax1.axis(xmin, xmax, .9*ymina, 1.1*ymaxa)

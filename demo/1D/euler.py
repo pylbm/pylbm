@@ -1,5 +1,5 @@
-from __future__ import print_function
-from __future__ import division
+
+
 """
  Solver D1Q2Q2 for the Euler system on [0, 1]
 
@@ -128,7 +128,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         p = (gamma-1.)*(E_n - .5*rho_n*u**2)
         e = E_n/rho_n - .5*u**2
 
-        viewer= pylbm.viewer.matplotlibViewer
+        viewer= pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig(2, 3)
 
         fig[0,0].plot(x, rho_n)

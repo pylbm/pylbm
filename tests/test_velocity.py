@@ -1,12 +1,12 @@
 
 from six.moves import range
 from pylbm.stencil import Velocity
-import nose.tools as tools
+import pytest
 import random
 
-@tools.raises(Exception)
 def test_velocity_argument():
-    Velocity()
+    with pytest.raises(Exception):
+        Velocity()
 
 class test_velocity_1D(object):
     num = [0, 1, 2, 3, 4, 5, 6, 7]
@@ -32,10 +32,10 @@ class test_velocity_1D(object):
         vs = v.get_symmetric(axis=0).get_symmetric(axis=0)
         assert(vs.vx == v.vx and vs.num == v.num)
 
-    @tools.raises(ValueError)
     def test_symmetry3(self):
-        v = Velocity(dim=1, num=random.randint(0,1000))
-        vs = v.get_symmetric(axis=1).get_symmetric(axis=1)
+        with pytest.raises(ValueError):
+            v = Velocity(dim=1, num=random.randint(0,1000))
+            vs = v.get_symmetric(axis=1).get_symmetric(axis=1)
 
 class test_velocity_2D(object):
     num = list(range(9))
@@ -82,10 +82,10 @@ class test_velocity_2D(object):
             vs = v.get_symmetric()
             assert(vs.num == sn)
 
-    @tools.raises(ValueError)
     def test_symmetry5(self):
-        v = Velocity(dim=2, num=0)
-        vs = v.get_symmetric(axis=2).get_symmetric(axis=2)
+        with pytest.raises(ValueError):
+            v = Velocity(dim=2, num=0)
+            vs = v.get_symmetric(axis=2).get_symmetric(axis=2)
 
 class test_velocity_3D(object):
     num = list(range(27))

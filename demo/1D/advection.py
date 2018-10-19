@@ -1,5 +1,5 @@
-from __future__ import print_function
-from __future__ import division
+
+
 """
  Solver D1Q2 for the advection equation on the 1D-torus
 
@@ -73,7 +73,7 @@ def run(dx, Tf, generator="numpy", sorder=None, withPlot=True):
 
     if withPlot:
         # create the viewer to plot the solution
-        viewer = pylbm.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig()
         ax = fig[0]
         ymin, ymax = -.2, 1.2

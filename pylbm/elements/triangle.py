@@ -1,16 +1,23 @@
-from __future__ import division
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
 
+"""
+Triangle element
+"""
+
+#pylint: disable=invalid-name
+
+import logging
 import numpy as np
 from six.moves import range
 
 from .base import Element
-from ..logs import setLogger
-from .utils import *
+from .utils import distance_lines
+
+log = logging.getLogger(__name__) #pylint: disable=invalid-name
 
 class Triangle(Element):
     """
@@ -25,10 +32,11 @@ class Triangle(Element):
         the coordinates of the first vector
     vectb : list
         the coordinates of the second vector
-    label : list of three integers (default [0, 0, 0])
+    label : list
+        three integers (default [0, 0, 0])
     isfluid : boolean
-             - True if the triangle is added
-             - False if the triangle is deleted
+        - True if the triangle is added
+        - False if the triangle is deleted
 
     Examples
     --------
@@ -44,37 +52,28 @@ class Triangle(Element):
     Attributes
     ----------
 
-    point : numpy array
-      the coordinates of the first point of the triangle
-    vecta : numpy array
-      the coordinates of the first vector
-    vectb : numpy array
-      the coordinates of the second vector
-    label : list of integers
-      the list of the label of the edge
+    point : ndarray
+        the coordinates of the first point of the triangle
+    v0 : ndarray
+        the coordinates of the first vector
+    v1 : ndarray
+        the coordinates of the second vector
+    label : list
+        the list of the label of the edge
     isfluid : boolean
-      True if the triangle is added
-      and False if the triangle is deleted
+        True if the triangle is added
+        and False if the triangle is deleted
     number_of_bounds : int
         number of edges
 
     """
-    def __init__(self, point, vecta, vectb, label = 0, isfluid = False):
-        self.log = setLogger(__name__)
+    def __init__(self, point, vecta, vectb, label=0, isfluid=False):
         self.number_of_bounds = 3 # number of edges
         self.point = np.asarray(point)
         self.v0 = np.asarray(vecta)
         self.v1 = np.asarray(vectb)
-        self.isfluid = isfluid
-        if isinstance(label, int):
-            self.label = [label]*self.number_of_bounds
-        else:
-            self.label = label
-        self.test_label()
-        a = self.point
-        b = self.point + self.v0
-        c = self.point + self.v1
-        self.log.info(self.__str__())
+        super(Triangle, self).__init__(label, isfluid)
+        log.info(self.__str__())
 
     def get_bounds(self):
         """
@@ -98,13 +97,14 @@ class Triangle(Element):
         Parameters
         ----------
 
-        x : x coordinates of the points
-        y : y coordinates of the points
+        grid : ndarray
+            coordinates of the points
 
         Returns
         -------
 
-        Array of boolean (True inside the triangle, False otherwise)
+        ndarray
+            Array of boolean (True inside the triangle, False otherwise)
 
         """
         x, y = grid
@@ -113,7 +113,7 @@ class Triangle(Element):
         invdelta = 1./(self.v0[0]*self.v1[1] - self.v0[1]*self.v1[0])
         u = (v2[0]*self.v1[1] - v2[1]*self.v1[0])*invdelta
         v = (v2[1]*self.v0[0] - v2[0]*self.v0[1])*invdelta
-        return np.logical_and(np.logical_and(u>=0, v>=0), u + v<=1)
+        return np.logical_and(np.logical_and(u >= 0, v >= 0), u + v <= 1)
 
     def distance(self, grid, v, dmax=None):
         """
@@ -126,14 +126,18 @@ class Triangle(Element):
         Parameters
         ----------
 
-        x : x coordinates of the points
-        y : y coordinates of the points
-        v : direction of interest
+        grid : ndarray
+            coordinates of the points
+        v : ndarray
+            direction of interest
+        dmax : float
+            distance max
 
         Returns
         -------
 
-        array of distances
+        ndarray
+            array of distances
 
         """
         x, y = grid
@@ -154,11 +158,11 @@ class Triangle(Element):
             s += '(solid)'
         return s
 
-    def _visualize(self, viewer, color, viewlabel, alpha=1.):
+    def visualize(self, viewer, color, viewlabel=False, scale=np.ones(3), alpha=1.):
         A = [self.point[k] for k in range(2)]
         B = [A[k] + self.v0[k] for k in range(2)]
         D = [A[k] + self.v1[k] for k in range(2)]
-        viewer.polygon([A,B,D], color, alpha=alpha)
+        viewer.polygon([A, B, D], color, alpha=alpha)
         if viewlabel:
             viewer.text(str(self.label[0]), [0.5*(A[0]+B[0]), 0.5*(A[1]+B[1])])
             viewer.text(str(self.label[1]), [0.5*(A[0]+D[0]), 0.5*(A[1]+D[1])])
