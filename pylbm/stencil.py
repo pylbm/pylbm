@@ -11,15 +11,21 @@ lattice Boltzmann schemes.
 from math import sqrt
 from textwrap import dedent
 import logging
-from past.builtins import cmp
 from six.moves import range
 import numpy as np
 
 from .utils import itemproperty
 from .geometry import get_box
 from . import viewer
+from .validator import validate
 
 log = logging.getLogger(__name__) #pylint: disable=invalid-name
+
+def cmp(a, b):
+    """
+    cmp function like in python 2.
+    """
+    return (a > b) - (a < b)
 
 def permute_in_place(iterable):
     """
@@ -577,8 +583,10 @@ class Stencil(list):
         1,  2,  2,  1, -1, -2, -2, -1,  0,  3,  0, -3,  3,  3, -3, -3,  1,
         3,  3,  1, -1, -3, -3, -1,  2,  3,  3,  2, -2, -3, -3, -2])
     """
-    def __init__(self, dico):
+    def __init__(self, dico, need_validation=True):
         super(Stencil, self).__init__()
+        if need_validation:
+            validate(dico, __class__.__name__)
         # get the dimension of the stencil (given in the dictionnary or computed
         # through the geometrical box)
         self.dim = self.extract_dim(dico)

@@ -18,7 +18,7 @@ from sympy.parsing.sympy_parser import parse_expr
 from sympy import symbols, Eq
 
 from .stencil import Stencil
-from . import validate_dictionary as valid_dic
+from .validator import validate
 from .generator import generator
 
 #pylint: disable=too-many-lines
@@ -26,39 +26,6 @@ from .generator import generator
 log = logging.getLogger(__name__) #pylint: disable=invalid-name
 
 rel_ux, rel_uy, rel_uz = sp.symbols('rel_ux, rel_uy, rel_uz', real=True) #pylint: disable=invalid-name
-
-proto_sch = { #pylint: disable=invalid-name
-    'velocities': (valid_dic.is_list_int,),
-    'conserved_moments': (sp.Symbol, valid_dic.is_list_symb) + string_types,
-    'polynomials': (valid_dic.is_list_sp_or_nb,),
-    'equilibrium': (type(None), valid_dic.is_list_sp_or_nb,),
-    'feq': (type(None), tuple),
-    'relaxation_parameters': (valid_dic.is_list_sp_or_nb,),
-    'source_terms': (type(None), valid_dic.is_dico_sources),
-    'init':(type(None), valid_dic.is_dico_init),
-}
-
-proto_sch_dom = { #pylint: disable=invalid-name
-    'velocities': (valid_dic.is_list_int,),
-    'conserved_moments': (type(None), sp.Symbol, valid_dic.is_list_symb) + string_types,
-    'polynomials': (type(None), valid_dic.is_list_sp_or_nb,),
-    'equilibrium': (type(None), valid_dic.is_list_sp_or_nb,),
-    'feq': (type(None), tuple),
-    'relaxation_parameters': (type(None), valid_dic.is_list_sp_or_nb,),
-    'source_terms': (type(None), valid_dic.is_dico_sources),
-    'init':(type(None), valid_dic.is_dico_init),
-}
-
-proto_stab = { #pylint: disable=invalid-name
-    'linearization':(type(None), valid_dic.is_dico_sp_float),
-    'test_monotonic_stability':(type(None), bool),
-    'test_L2_stability':(type(None), bool),
-}
-
-proto_cons = { #pylint: disable=invalid-name
-    'order': (int,),
-    'linearization':(type(None), valid_dic.is_dico_sp_sporfloat),
-}
 
 def alltogether(M):
     """
@@ -196,7 +163,9 @@ class Scheme:
     see demo/examples/scheme/
 
     """
-    def __init__(self, dico, stencil=None, check_inverse=False):
+    def __init__(self, dico, stencil=None, check_inverse=False, need_validation=True):
+        if need_validation:
+            validate(dico, __class__.__name__)
         self.check_inverse = check_inverse
         # symbolic parameters
         self.param = dico.get('parameters', None)
@@ -205,7 +174,7 @@ class Scheme:
         if stencil is not None:
             self.stencil = stencil
         else:
-            self.stencil = Stencil(dico)
+            self.stencil = Stencil(dico, need_validation=False)
         self.dim = self.stencil.dim
 
         la = dico.get('scheme_velocity', None)
