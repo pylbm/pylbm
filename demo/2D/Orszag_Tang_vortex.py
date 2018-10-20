@@ -1,4 +1,4 @@
-, division
+
 from six.moves import range
 """
 D2Q4 solver for the MHD system (in 2D)

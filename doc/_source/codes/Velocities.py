@@ -1,4 +1,4 @@
-, division
+
 from six.moves import range
 import matplotlib
 import matplotlib.pyplot as plt
