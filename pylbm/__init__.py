@@ -25,7 +25,7 @@ numeric_level = getattr(logging, options().loglevel, None) #pylint: disable=inva
 
 #pylint: disable=bad-continuation
 formatter = ColoredFormatter( #pylint: disable=invalid-name
-        "%(log_color)s[%d] %(levelname)-8s %(name)s in function %(funcName)s line %(lineno)s\n%(reset)s\t%(message)s".format(mpi.COMM_WORLD.Get_rank()), #pylint: disable=too-many-format-args
+        "%(log_color)s[{}] %(levelname)-8s %(name)s in function %(funcName)s line %(lineno)s\n%(reset)s%(message)s".format(mpi.COMM_WORLD.Get_rank()), #pylint: disable=too-many-format-args
         datefmt=None,
         reset=True,
         log_colors={'DEBUG':    'green',
