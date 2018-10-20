@@ -1,19 +1,9 @@
-from __future__ import print_function, division
+, division
 
 import os
 import sys
 import shutil
 import copy
-
-import IPython.nbformat as nbformat
-from IPython.nbconvert import RSTExporter
-from IPython.utils.process import get_output_error_code
-from IPython.testing.tools import get_ipython_cmd
-
-try:
-    from urllib2 import urlopen
-except ImportError:
-    from urllib.request import urlopen  # Py3k
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 DOC_DIR = os.path.abspath(os.path.join(THIS_DIR, '..'))
@@ -22,7 +12,7 @@ SRC_DIR = os.path.join(DOC_DIR, '_source/')
 OUTPUT_TUTO_DIR = os.path.join(SRC_DIR, 'notebooks')
 NOTEBOOKS = []
 
-ipy_cmd = get_ipython_cmd(as_string=True) + " "
+#ipy_cmd = get_ipython_cmd(as_string=True) + " "
 
 def clean():
     # Clean tutorial file
@@ -49,7 +39,7 @@ def main():
     notebooks.sort(key=lambda x: x[1])
     NOTEBOOKS = copy.copy(notebooks)
 
-    create_notebooks(notebooks)
+    #create_notebooks(notebooks)
 
     # Get tutorial notebooks
     notebooks = list(get_notebook_filenames(OUTPUT_TUTO_DIR))
@@ -71,17 +61,25 @@ def get_notebook_filenames(notebooks_dir):
             yield filename, name
 
 def create_notebooks(notebooks):
+    from nbconvert import RSTExporter
+    import io
+    import nbformat
+    rst_exporter = RSTExporter() 
 
     for filename, name in notebooks:
         head, tail = os.path.split(filename)
         print("\tgenerate {0}.rst".format(name))
-        #command = ipy_cmd +'nbconvert --to rst --execute {0} --output {1}.rst --template myrst.tpl'.format(filename, SRC_DIR + name)
-        command = ipy_cmd +'nbconvert --to rst {0} --output-dir {1} --template myrst.tpl'.format(filename, head)
-        out, err, return_code = get_output_error_code(command)
-        if return_code != 0:
-            print(err)
-            clean()
-            sys.exit()
+        with io.open(filename, encoding='utf-8') as source:
+            notebook = nbformat.reads(source.read(), as_version=4)
+            (body, resources) = rst_exporter.from_notebook_node(notebook)
+            body = body.replace(".. code:: python", ".. code-block:: python")
+            with io.open(filename.replace('.ipynb', '.rst'), "w", encoding='utf-8') as target:
+                target.write(body)
+            path = os.path.split(filename)[0]
+            print(path)
+            for k, v in resources['outputs'].items():
+                with io.open(path + '/' + k, "wb") as target:
+                    target.write(v)
 
 def create_tutorial_rst(notebooks):
     export = os.path.join(SRC_DIR, './tutorial.rst')

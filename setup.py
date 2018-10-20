@@ -22,11 +22,11 @@ CLASSIFIERS = [
 
 
 MAJOR = "0"
-MINOR = "2"
-PATCH = "1"
+MINOR = "3"
+PATCH = "2"
 VERSION = "{0}.{1}.{2}".format(MAJOR, MINOR, PATCH)
 
-def write_version_py(filename='pyLBM/version.py'):
+def write_version_py(filename='pylbm/version.py'):
     a = open(filename, 'w')
     try:
         a.write("version = '{}'".format(VERSION))
@@ -38,33 +38,27 @@ README = open("README.rst").readlines()
 write_version_py()
 
 setup(
-    name           = "pyLBM",
+    name           = "pylbm",
     version        = VERSION,
     description    = README[0],
     long_description = "".join(README[1:]),
     author         = "Benjamin Graille, Loic Gouarin",
-    author_email   = "benjamin.graille@math.u-psud.fr, loic.gouarin@math.u-psud.fr",
-    url            = "http://www.math.u-psud.fr/pyLBM",
+    author_email   = "benjamin.graille@math.u-psud.fr, loic.gouarin@polytechnique.edu",
+    url            = "https://github.com/pylbm/pylbm",
     license        = "BSD",
     keywords       = "Lattice Boltzmann Methods",
     classifiers    = CLASSIFIERS,
     packages       = find_packages(exclude=['demo', 'doc', 'tests*']),
-    #package_data   = {'pyLBM': ['../tests/data/domain/*']},
     include_package_data=True,
     install_requires=[
                       'numpy>=1.9.2',
-                      'sympy>=0.7.6',
+                      'sympy>=1.1.1<1.2',
                       'colorlog>=2.4.0',
+                      'colorama',
+                      'cerberus',
                       'Cython>=0.21.1',
                       'mpi4py>=1.3.1',
                       'matplotlib>=1.4.0',
-                      'future',
-                      'pyevtk>=1.0.0'
+                      'h5py'
                       ],
-    dependency_links=[
-        "hg+https://bitbucket.org/pauloh/pyevtk"
-    ],
-    extras_require={'pythran': ["pythran>=0.7.1"],
-                    'numba': ["numba>=0.19.1"]
-                    },
 )

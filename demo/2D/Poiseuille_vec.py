@@ -1,5 +1,5 @@
-from __future__ import print_function
-from __future__ import division
+
+
 """
  Solver D2Q(4,4,4) for a Poiseuille flow
 
@@ -32,7 +32,7 @@ from __future__ import division
 from six.moves import range
 import numpy as np
 import sympy as sp
-import pyLBM
+import pylbm
 
 X, Y, LA = sp.symbols('X, Y, LA')
 p, ux, uy = sp.symbols('p, ux, uy')
@@ -44,7 +44,7 @@ def bc_in(f, m, x, y, width, height, max_velocity, grad_pressure, cte):
 def bc_out(f, m, x, y, width, grad_pressure, cte):
     m[p] = (x-0.5*width) * grad_pressure * cte
 
-def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     """
     Parameters
     ----------
@@ -55,7 +55,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -111,20 +111,20 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
         ],
         'parameters': {LA: la},
         'boundary_conditions':{
-            0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back,
-                         1: pyLBM.bc.Bouzidi_anti_bounce_back,
-                         2: pyLBM.bc.Bouzidi_anti_bounce_back
+            0:{'method':{0: pylbm.bc.BouzidiBounceBack,
+                         1: pylbm.bc.BouzidiAntiBounceBack,
+                         2: pylbm.bc.BouzidiAntiBounceBack
                          },
             },
-            1:{'method':{0: pyLBM.bc.Bouzidi_anti_bounce_back,
-                         1: pyLBM.bc.Neumann_x,
-                         2: pyLBM.bc.Neumann_x
+            1:{'method':{0: pylbm.bc.BouzidiAntiBounceBack,
+                         1: pylbm.bc.NeumannX,
+                         2: pylbm.bc.NeumannX
                          },
                 'value':(bc_out, (width, grad_pressure, cte))
             },
-            2:{'method':{0: pyLBM.bc.Bouzidi_anti_bounce_back,
-                         1: pyLBM.bc.Bouzidi_anti_bounce_back,
-                         2: pyLBM.bc.Bouzidi_anti_bounce_back
+            2:{'method':{0: pylbm.bc.BouzidiAntiBounceBack,
+                         1: pylbm.bc.BouzidiAntiBounceBack,
+                         2: pylbm.bc.BouzidiAntiBounceBack
                          },
                 'value':(bc_in, (width, height, max_velocity, grad_pressure, cte)),
             },
@@ -132,7 +132,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
         'generator': generator,
     }
 
-    sol = pyLBM.Simulation(dico, sorder=sorder)
+    sol = pylbm.Simulation(dico, sorder=sorder)
 
     while sol.t<Tf:
         sol.one_time_step()
@@ -152,7 +152,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
         print("Norm of the error on qy:  {0:10.3e}".format(Err_uy))
 
         # init viewer
-        viewer = pyLBM.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig()
         ax = fig[0]
 

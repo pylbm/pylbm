@@ -1,7 +1,7 @@
-from __future__ import print_function
-from __future__ import division
+
+
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
@@ -10,7 +10,7 @@ from __future__ import division
 Example of a nine velocities scheme for Navier-Stokes equations
 """
 import sympy as sp
-import pyLBM
+import pylbm
 
 X, Y, LA = sp.symbols('X, Y, LA')
 rho, qx, qy = sp.symbols('rho, qx, qy')
@@ -65,4 +65,4 @@ dico = {
     },
 }
 
-S = pyLBM.Scheme(dico)
+S = pylbm.Scheme(dico)

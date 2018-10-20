@@ -1,11 +1,11 @@
 The Geometry of the simulation
 ##############################
 
-With pyLBM, the numerical simulations can be performed in a domain
+With pylbm, the numerical simulations can be performed in a domain
 with a complex geometry. This geometry is construct without considering a
 particular mesh but only with geometrical objects.
 All the geometrical informations are defined through a dictionary and
-put into an object of the class :py:class:`Geometry <pyLBM.geometry.Geometry>`.
+put into an object of the class :py:class:`Geometry <pylbm.geometry.Geometry>`.
 
 First, the domain is put into a box: a segment in 1D, a rectangle in 2D, and
 a rectangular parallelepipoid in 3D.
@@ -13,22 +13,22 @@ a rectangular parallelepipoid in 3D.
 Then, the domain is modified by adding or deleting some elementary shapes.
 In 2D, the elementary shapes are
 
-* a :py:class:`Circle <pyLBM.elements.Circle>`
-* an :py:class:`Ellipse <pyLBM.elements.Ellipse>`
-* a :py:class:`Parallelogram <pyLBM.elements.Parallelogram>`
-* a :py:class:`Triangle <pyLBM.elements.Triangle>`
+* a :py:class:`Circle <pylbm.elements.Circle>`
+* an :py:class:`Ellipse <pylbm.elements.Ellipse>`
+* a :py:class:`Parallelogram <pylbm.elements.Parallelogram>`
+* a :py:class:`Triangle <pylbm.elements.Triangle>`
 
 From version 0.2, the geometrical elements are implemented in 3D.
 The elementary shapes are
 
-* a :py:class:`Sphere <pyLBM.elements.Sphere>`
-* an :py:class:`Ellipsoid <pyLBM.elements.Ellipsoid>`
-* a :py:class:`Parallelepiped <pyLBM.elements.Parallelepiped>`
+* a :py:class:`Sphere <pylbm.elements.Sphere>`
+* an :py:class:`Ellipsoid <pylbm.elements.Ellipsoid>`
+* a :py:class:`Parallelepiped <pylbm.elements.Parallelepiped>`
 * a Cylinder with a 2D-base
 
-  - :py:class:`Cylinder (Circle) <pyLBM.elements.Cylinder_Circle>`
-  - :py:class:`Cylinder (Ellipse) <pyLBM.elements.Cylinder_Ellipse>`
-  - :py:class:`Cylinder (Triangle) <pyLBM.elements.Cylinder_Triangle>`
+  - :py:class:`Cylinder (Circle) <pylbm.elements.CylinderCircle>`
+  - :py:class:`Cylinder (Ellipse) <pylbm.elements.CylinderEllipse>`
+  - :py:class:`Cylinder (Triangle) <pylbm.elements.CylinderTriangle>`
 
 Several examples of geometries can be found in
 demo/examples/geometry/
@@ -49,7 +49,7 @@ The segment :math:`[0, 1]`
 The segment :math:`[0,1]` is created by the dictionary with the key ``box``.
 We then add the labels 0 and 1 on the edges with the key ``label``.
 The result is then visualized with the labels by using the method
-:py:meth:`visualize<pyLBM.geometry.Geometry.visualize>`.
+:py:meth:`visualize<pylbm.geometry.Geometry.visualize>`.
 If no labels are given in the dictionary, the default value is -1.
 
 
@@ -68,7 +68,7 @@ The square :math:`[0,1]^2`
 
 The square :math:`[0,1]^2` is created by the dictionary with the key ``box``.
 The result is then visualized by using the method
-:py:meth:`visualize <pyLBM.geometry.Geometry.visualize>`.
+:py:meth:`visualize <pylbm.geometry.Geometry.visualize>`.
 
 We then add the labels on each edge of the square
 through a list of integers with the conventions:
@@ -102,7 +102,7 @@ or with a triangular or with a parallelogram (script 3)
 
 In the first example,
 a solid disc lies in the fluid domain defined by
-a :py:class:`circle <pyLBM.elements.Circle>`
+a :py:class:`circle <pylbm.elements.Circle>`
 with a center of (0.5, 0.5) and a radius of 0.125
 
 .. literalinclude:: codes/geometry_2D_square_hole.py
@@ -114,14 +114,14 @@ The dictionary of the geometry then contains an additional key ``elements``
 that is a list of elements.
 In this example, the circle is labelized by 1 while the edges of the square by 0.
 
-The element can be also a :py:class:`triangle <pyLBM.elements.Triangle>`
+The element can be also a :py:class:`triangle <pylbm.elements.Triangle>`
 
 .. literalinclude:: codes/geometry_2D_square_triangle.py
     :lines: 11-
 
 .. plot:: codes/geometry_2D_square_triangle.py
 
-or a :py:class:`parallelogram <pyLBM.elements.Parallelogram>`
+or a :py:class:`parallelogram <pylbm.elements.Parallelogram>`
 
 .. literalinclude:: codes/geometry_2D_square_parallelogram.py
     :lines: 11-
@@ -168,7 +168,7 @@ The cube :math:`[0,1]^3`
 
 The cube :math:`[0,1]^3` is created by the dictionary with the key ``box``.
 The result is then visualized by using the method
-:py:meth:`visualize <pyLBM.geometry.Geometry.visualize>`.
+:py:meth:`visualize <pylbm.geometry.Geometry.visualize>`.
 
 We then add the labels on each edge of the square
 through a list of integers with the conventions:
@@ -198,4 +198,4 @@ The cube :math:`[0,1]^3` with a hole
 The cube :math:`[0,1]^3` and the spherical hole are created
 by the dictionary with the keys ``box`` and ``elements``.
 The result is then visualized by using the method
-:py:meth:`visualize <pyLBM.geometry.Geometry.visualize>`.
+:py:meth:`visualize <pylbm.geometry.Geometry.visualize>`.

@@ -1,5 +1,5 @@
-from __future__ import print_function
-from __future__ import division
+
+
 """
  Solver D1Q2Q2 for the shallow water system on [0, 1]
 
@@ -16,7 +16,7 @@ from __future__ import division
 """
 import sympy as sp
 import numpy as np
-import pyLBM
+import pylbm
 
 h, q, X, LA, g = sp.symbols('h, q, X, LA, g')
 
@@ -28,7 +28,7 @@ def Riemann_pb(x, xmin, xmax, uL, uR):
     u[x > xm] = uR
     return u
 
-def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator="numpy", sorder=None, withPlot=True):
     """
     Parameters
     ----------
@@ -39,7 +39,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -79,17 +79,17 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
             },
         ],
         'boundary_conditions':{
-            0:{'method':{0: pyLBM.bc.Neumann, 1: pyLBM.bc.Neumann}},
+            0:{'method':{0: pylbm.bc.Neumann, 1: pylbm.bc.Neumann}},
         },
         'generator': generator,
         'parameters':{LA:la, g:1.},
     }
 
-    sol = pyLBM.Simulation(dico, sorder=sorder)
+    sol = pylbm.Simulation(dico, sorder=sorder)
 
     if withPlot:
         # create the viewer to plot the solution
-        viewer = pyLBM.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig(2, 1)
         ax1 = fig[0]
         ax1.axis(xmin, xmax, .9*ymina, 1.1*ymaxa)
@@ -119,4 +119,4 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
 if __name__ == '__main__':
     dx = 1./256
     Tf = .25
-    run(dx, Tf, generator=pyLBM.generator.CythonGenerator)
+    run(dx, Tf)

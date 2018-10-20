@@ -1,5 +1,5 @@
-from __future__ import print_function
-from __future__ import division
+
+
 """
  Solver D3Q6^4 for a Poiseuille flow
 
@@ -36,25 +36,23 @@ from six.moves import range
 import numpy as np
 import sympy as sp
 
-import pyLBM
+import pylbm
 
 X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
 p, ux, uy, uz = sp.symbols('p,ux,uy,uz')
 
 
-def plot(x, y, z, m, num):
-    init_pvd = False
-    if im == 1:
-        init_pvd = True
+def save(sol, num):
+    x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
 
-    vtk = pyLBM.VTKFile('poiseuille', './data', im, init_pvd=init_pvd)
-    vtk.set_grid(x, y, z)
-    vtk.add_scalar('pressure', m[p])
-    qx_n, qy_n, qz_n = m[ux], m[uy], m[uz]
-    vtk.add_vector('velocity', [qx_n, qy_n, qz_n])
-    vtk.save()
+    h5 = pylbm.H5File(sol.mpi_topo, 'poiseuille', './poiseuille', num)
+    h5.set_grid(x, y, z)
+    h5.add_scalar('pressure', sol.m[p])
+    qx_n, qy_n, qz_n = sol.m[ux], sol.m[uy], sol.m[uz]
+    h5.add_vector('velocity', [qx_n, qy_n, qz_n])
+    h5.save()
 
-def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     """
     Parameters
     ----------
@@ -65,7 +63,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -139,23 +137,23 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
             },
         ],
         'boundary_conditions':{
-            0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back,
-                         1: pyLBM.bc.Bouzidi_anti_bounce_back,
-                         2: pyLBM.bc.Bouzidi_anti_bounce_back,
-                         3: pyLBM.bc.Bouzidi_anti_bounce_back,
+            0:{'method':{0: pylbm.bc.BouzidiBounceBack,
+                         1: pylbm.bc.BouzidiAntiBounceBack,
+                         2: pylbm.bc.BouzidiAntiBounceBack,
+                         3: pylbm.bc.BouzidiAntiBounceBack,
                          },
             },
-            1:{'method':{0: pyLBM.bc.Bouzidi_anti_bounce_back,
-                         1: pyLBM.bc.Neumann_vertical,
-                         2: pyLBM.bc.Neumann_vertical,
-                         3: pyLBM.bc.Neumann_vertical,
+            1:{'method':{0: pylbm.bc.BouzidiAntiBounceBack,
+                         1: pylbm.bc.NeumannX,
+                         2: pylbm.bc.NeumannX,
+                         3: pylbm.bc.NeumannX,
                          },
                 'value':bc_out,
             },
-            2:{'method':{0: pyLBM.bc.Bouzidi_anti_bounce_back,
-                         1: pyLBM.bc.Bouzidi_anti_bounce_back,
-                         2: pyLBM.bc.Bouzidi_anti_bounce_back,
-                         3: pyLBM.bc.Bouzidi_anti_bounce_back,
+            2:{'method':{0: pylbm.bc.BouzidiAntiBounceBack,
+                         1: pylbm.bc.BouzidiAntiBounceBack,
+                         2: pylbm.bc.BouzidiAntiBounceBack,
+                         3: pylbm.bc.BouzidiAntiBounceBack,
                          },
                 'value':bc_in,
             },
@@ -164,23 +162,18 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
         'generator': generator,
     }
 
-    sol = pyLBM.Simulation(dico, sorder=sorder)
-
-    x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
+    sol = pylbm.Simulation(dico, sorder=sorder)
 
     im = 0
-    c = 0
     while sol.t < Tf:
-        sol.one_time_step()
-        c += 1
-        if c == 16 and withPlot:
-            im += 1
-            plot(x, y, z, sol.m, im)
-            c = 0
-
+        nrep = 100
+        for i in range(nrep):
+                 sol.one_time_step()
+        im += 1
+        save(sol, im)
     return sol
 
 if __name__ == '__main__':
-    dx = 1./64
+    dx = 1./256
     Tf= 50.
     run(dx, Tf)

@@ -1,6 +1,6 @@
-from __future__ import print_function
+
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
@@ -10,7 +10,7 @@ Example of a D2Q9 for Navier-Stokes
 """
 from six.moves import range
 import sympy as sp
-import pyLBM
+import pylbm
 rho, qx, qy, X, Y = sp.symbols('rho, qx, qy, X, Y')
 
 dx = 1./256    # space step
@@ -41,5 +41,5 @@ d = {
         ],
     },],
 }
-s = pyLBM.Scheme(d)
+s = pylbm.Scheme(d)
 print(s)

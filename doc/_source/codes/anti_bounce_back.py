@@ -1,4 +1,4 @@
-from __future__ import print_function, division
+, division
 from six.moves import range
 
 import numpy as np
@@ -12,7 +12,6 @@ color_out = 'r'
 
 fig = plt.figure(1, figsize=(8, 8), facecolor='white')
 ax = fig.add_subplot(111, aspect='equal')
-#plt.hold(True)
 ax.plot([0, 0], [-H, H-1], 'k-', linewidth = 2)
 ax.add_patch(Rectangle((0, -H), -L, 2*H-1, alpha=0.1, fill=True, color=color_in))
 # inner points
@@ -50,6 +49,5 @@ for j in [-1,0,1]:
              ec=color_out)
     ax.plot([x+1-e, x+0.5], [y+(1-e)*j,y+.5*j], c=color_out, linestyle='--')
 ax.axis('off')
-#plt.hold(False)
 plt.title("anti bounce back: the exiting particles bounce back with sign modification")
 plt.show()
