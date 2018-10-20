@@ -1,0 +1,25 @@
+======================================
+the classes for anti bounce back
+======================================
+
+Two classes are given for anti bounce back conditions: the classical one
+antibounce_back and a second one that is more accurate to take into account
+the geometry (Bouzidi type conditions) [BFL01].
+
+If the bound is located exactly in the middle of two mesh points, the two
+conditions are equivalent (but in that case, anti_bounce_back is probably more efficient).
+
+
+the class anti_bounce_back
+--------------------------
+
+.. autoclass:: pylbm.boundary.anti_bounce_back
+   :members:
+   :no-undoc-members:
+
+the class Bouzidi_anti_bounce_back
+----------------------------------
+
+.. autoclass:: pylbm.boundary.Bouzidi_anti_bounce_back
+   :members:
+   :no-undoc-members:

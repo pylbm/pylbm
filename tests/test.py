@@ -1,4 +1,4 @@
-from __future__ import division
+
 from six.moves import range
 import sys
 import cmath
@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.cm as cm
 
-import pyLBM
+import pylbm
 
 u, X, LA = sp.symbols('u, X, LA')
 
@@ -47,7 +47,7 @@ if __name__ == "__main__":
             }
         ],
         'boundary_conditions':{
-            0:{'method':{0: pyLBM.bc.Neumann,},},
+            0:{'method':{0: pylbm.bc.Neumann,},},
         },
     }
 
@@ -67,14 +67,14 @@ if __name__ == "__main__":
             }
         ],
         'boundary_conditions':{
-            0:{'method':{0: pyLBM.bc.Neumann,},},
+            0:{'method':{0: pylbm.bc.Neumann,},},
         },
     }
 
-    sol2 = pyLBM.Simulation(dicoQ2)
-    sol3 = pyLBM.Simulation(dicoQ3)
+    sol2 = pylbm.Simulation(dicoQ2)
+    sol3 = pylbm.Simulation(dicoQ3)
 
-    viewer = pyLBM.viewer.matplotlibViewer
+    viewer = pylbm.viewer.matplotlib_viewer
     fig = viewer.Fig()
     ax = fig[0]
     ymin, ymax = -.2, 1.2

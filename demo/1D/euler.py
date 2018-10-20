@@ -1,5 +1,5 @@
-from __future__ import print_function
-from __future__ import division
+
+
 """
  Solver D1Q2Q2 for the Euler system on [0, 1]
 
@@ -28,7 +28,7 @@ from __future__ import division
 
 import sympy as sp
 import numpy as np
-import pyLBM
+import pylbm
 
 rho, q, E, X, LA = sp.symbols('rho, q, E, X, LA')
 
@@ -40,7 +40,7 @@ def Riemann_pb(x, xmin, xmax, uL, uR):
     u[x > xm] = uR
     return u
 
-def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     """
     Parameters
     ----------
@@ -51,7 +51,7 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -104,9 +104,9 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
         'boundary_conditions':{
             0:{
                 'method':{
-                    0: pyLBM.bc.Neumann,
-                    1: pyLBM.bc.Neumann,
-                    2: pyLBM.bc.Neumann
+                    0: pylbm.bc.Neumann,
+                    1: pylbm.bc.Neumann,
+                    2: pylbm.bc.Neumann
                 },
             },
         },
@@ -114,7 +114,7 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
         'generator': generator,
     }
 
-    sol = pyLBM.Simulation(dico, sorder=sorder)
+    sol = pylbm.Simulation(dico, sorder=sorder)
 
     while (sol.t<Tf):
         sol.one_time_step()
@@ -128,7 +128,7 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
         p = (gamma-1.)*(E_n - .5*rho_n*u**2)
         e = E_n/rho_n - .5*u**2
 
-        viewer= pyLBM.viewer.matplotlibViewer
+        viewer= pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig(2, 3)
 
         fig[0,0].plot(x, rho_n)
@@ -151,4 +151,4 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
 if __name__ == '__main__':
     dx = 1.e-3
     Tf = .14
-    run(dx, Tf)
+    run(dx, Tf, generator='numpy')

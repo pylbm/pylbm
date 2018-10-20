@@ -1,6 +1,6 @@
-from __future__ import print_function
+
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
@@ -9,7 +9,7 @@ from __future__ import print_function
 Example of a vectorial D2Q444 for shallow water
 """
 import sympy as sp
-import pyLBM
+import pylbm
 
 X, Y, LA, g = sp.symbols('X, Y, LA, g')
 h, qx, qy = sp.symbols('h, qx, qy')
@@ -51,5 +51,5 @@ d = {
     'parameters': {LA: la, g: 1.},
 }
 
-s = pyLBM.Scheme(d)
+s = pylbm.Scheme(d)
 print(s)

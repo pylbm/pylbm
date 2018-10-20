@@ -1,13 +1,13 @@
-from __future__ import print_function
-from __future__ import division
+
+
 """
 test: True
 """
 from six.moves import range
 import numpy as np
 import sympy as sp
-
-import pyLBM
+import mpi4py.MPI as mpi
+import pylbm
 
 X, Y, LA = sp.symbols('X, Y, LA')
 rho, qx, qy = sp.symbols('rho, qx, qy')
@@ -23,7 +23,7 @@ def vorticity(sol):
                   - qy_n[2:, 1:-1] + qy_n[:-2, 1:-1])
     return vort.T
 
-def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     """
     Parameters
     ----------
@@ -34,7 +34,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -87,26 +87,28 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
                 'init': {rho: 1., qx: 0., qy: 0.},
             },
         ],
+        #'relative_velocity': [qx/rho, qy/rho],
         'boundary_conditions':{
-            0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}},
-            1:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}, 'value':(bc_up, (driven_velocity,))}
+            0:{'method':{0: pylbm.bc.BouzidiBounceBack}},
+            1:{'method':{0: pylbm.bc.BouzidiBounceBack}, 'value':(bc_up, (driven_velocity,))}
         },
         'generator': generator,
+        'show_code': True,
     }
 
-    sol = pyLBM.Simulation(lid_cavity, sorder=sorder)
+    sol = pylbm.Simulation(lid_cavity, sorder=sorder)
 
     if withPlot:
         # init viewer
-        viewer = pyLBM.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig()
         ax = fig[0]
-        image = ax.image(vorticity, (sol,), cmap='cubehelix', clim=[0, .1])
+        image = ax.image(vorticity, (sol,), cmap='jet', clim=[0, .1])
 
         def update(iframe):
             nrep = 100
             for i in range(nrep):
-                 sol.one_time_step()
+                sol.one_time_step()
 
             image.set_data(vorticity(sol))
             ax.title = "Solution t={0:f}".format(sol.t)
@@ -116,7 +118,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
         fig.show()
     else:
         while sol.t < Tf:
-            sol.one_time_step()
+           sol.one_time_step()
 
     return sol
 

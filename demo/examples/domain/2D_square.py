@@ -1,7 +1,7 @@
-from __future__ import print_function
-from __future__ import division
+
+
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
@@ -10,12 +10,12 @@ from __future__ import division
 Example of a square in 2D
 """
 from six.moves import range
-import pyLBM
+import pylbm
 dico = {
     'box':{'x': [0, 1], 'y': [0, 1], 'label': [0,1,2,3]},
     'space_step':0.1,
     'schemes':[{'velocities':list(range(9))}],
 }
-dom = pyLBM.Domain(dico)
+dom = pylbm.Domain(dico)
 dom.visualize()
 dom.visualize(view_distance=True)
