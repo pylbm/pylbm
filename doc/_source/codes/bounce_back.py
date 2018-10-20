@@ -1,4 +1,4 @@
-, division
+
 from six.moves import range
 
 import numpy as np
