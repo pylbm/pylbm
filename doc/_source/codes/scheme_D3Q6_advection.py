@@ -1,6 +1,6 @@
-from __future__ import print_function
+
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
@@ -10,7 +10,7 @@ Example of a D3Q6 for advection
 """
 from six.moves import range
 import sympy as sp
-import pyLBM
+import pylbm
 u, X, Y, Z = sp.symbols('u, X, Y, Z')
 
 cx, cy, cz = .1, -.1, .2
@@ -25,5 +25,5 @@ d = {
         'relaxation_parameters': [0., 1.5, 1.5, 1.5, 1.5, 1.5],
     },],
 }
-s = pyLBM.Scheme(d)
+s = pylbm.Scheme(d)
 print(s)

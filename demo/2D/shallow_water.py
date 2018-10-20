@@ -1,5 +1,5 @@
-from __future__ import print_function
-from __future__ import division
+
+
 """
 test: True
 """
@@ -8,7 +8,7 @@ from six.moves import range
 import numpy as np
 import sympy as sp
 
-import pyLBM
+import pylbm
 
 import pylab as plt
 import matplotlib.cm as cm
@@ -26,7 +26,7 @@ def plot_init(num = 0):
     return l
 
 
-def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     """
     Parameters
     ----------
@@ -37,7 +37,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -62,7 +62,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     s1  = [0., s_1qx, s_1qx, s_1xy]
 
     vitesse = list(range(1,5))
-    polynomes = [1, LA*X, LA*Y, X**2-Y**2]
+    polynomes = [1, X, Y, (X**2-Y**2)/LA**2]
 
     def initialization_rho(x,y):
         return rhoo * np.ones((x.size, y.size)) + deltarho * ((x-0.5*(xmin+xmax))**2+(y-0.5*(ymin+ymax))**2 < 0.25**2)
@@ -101,10 +101,10 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
         'generator': generator,
         }
 
-    sol = pyLBM.Simulation(dico, sorder=sorder)
+    sol = pylbm.Simulation(dico, sorder=sorder)
 
     if withPlot:
-        viewer = pyLBM.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig()
         ax = fig[0]
 
@@ -128,4 +128,4 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
 if __name__ == '__main__':
     dx = 1./128
     Tf = 20
-    run(dx, Tf)
+    run(dx, Tf, generator="cython")

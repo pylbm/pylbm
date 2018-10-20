@@ -1,7 +1,7 @@
-from __future__ import print_function
-from __future__ import division
+
+
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
@@ -12,7 +12,7 @@ Stability of the D1Q2
 import numpy as np
 import pylab as plt
 import sympy as sp
-import pyLBM
+import pylbm
 
 u, X = sp.symbols('u,X')
 
@@ -34,7 +34,7 @@ def scheme_constructor(ux, s):
             'test_L2_stability':False,
         },
     }
-    return pyLBM.Scheme(dico)
+    return pylbm.Scheme(dico)
 
 def vp_plot(ux):
     Nk = 100

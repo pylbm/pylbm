@@ -1,6 +1,6 @@
-from __future__ import print_function
+
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
@@ -10,7 +10,7 @@ Example of a D1Q3 for the wave equation
 """
 import numpy as np
 import sympy as sp
-import pyLBM
+import pylbm
 u, v, X, c, LA = sp.symbols('u, v, X, c, LA')
 
 def init_u(x):
@@ -35,16 +35,16 @@ d = {
         },
     ],
     'boundary_conditions':{
-        0:{'method': {0: pyLBM.bc.bounce_back}, 'value': None},
+        0:{'method': {0: pylbm.bc.BounceBack}, 'value': None},
     },
 }
-#s = pyLBM.Scheme(d)
+#s = pylbm.Scheme(d)
 
 """
 import matplotlib.pyplot as plt
-sol = pyLBM.Simulation(d)
+sol = pylbm.Simulation(d)
 
-viewer = pyLBM.viewer.matplotlibViewer
+viewer = pylbm.viewer.matplotlib_viewer
 fig = viewer.Fig()
 ax = fig[0]
 xmin, xmax, ymin, ymax = 0., 3., -2.2, 2.2

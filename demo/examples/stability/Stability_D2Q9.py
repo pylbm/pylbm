@@ -1,7 +1,7 @@
-from __future__ import print_function
-from __future__ import division
+
+
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
@@ -13,7 +13,7 @@ from six.moves import range
 import numpy as np
 import pylab as plt
 import sympy as sp
-import pyLBM
+import pylbm
 
 rho, qx, qy, X, Y, LA = sp.symbols('rho,qx,qy,X,Y,LA')
 
@@ -64,7 +64,7 @@ def scheme_constructor(ux, uy, s_mu, s_eta):
             'test_L2_stability':False,
         },
     }
-    return pyLBM.Scheme(dico)
+    return pylbm.Scheme(dico)
 
 def vp_plot(ux, uy, s_mu, s_eta):
     S = scheme_constructor(ux, uy, s_mu, s_eta)

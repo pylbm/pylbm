@@ -1,5 +1,5 @@
-from __future__ import print_function
-from __future__ import division
+
+
 """
  Solver D3Q6 for the advection equation on the 3D-torus
 
@@ -17,21 +17,18 @@ from __future__ import division
 from six.moves import range
 import numpy as np
 import sympy as sp
-import pyLBM
+import pylbm
 
 u, X, Y, Z, LA = sp.symbols('u, X, Y, Z, LA')
 
-def save(x, y, z, m, im):
-    init_pvd = False
-    if im == 1:
-        init_pvd = True
+def save(sol, im):
+    x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
+    h5 = pylbm.H5File(sol.mpi_topo, 'advection', './advection', im)
+    h5.set_grid(x, y, z)
+    h5.add_scalar('u', sol.m[u])
+    h5.save()
 
-    vtk = pyLBM.VTKFile('advection', './data', im, init_pvd=init_pvd)
-    vtk.set_grid(x, y, z)
-    vtk.add_scalar('u', m[u])
-    vtk.save()
-
-def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     """
     Parameters
     ----------
@@ -42,7 +39,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -80,9 +77,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
         'generator': generator,
     }
 
-    sol = pyLBM.Simulation(d, sorder=sorder)
-
-    x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
+    sol = pylbm.Simulation(d, sorder=sorder)
 
     im = 0
     while sol.t < Tf:
@@ -90,7 +85,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
 
         if withPlot:
             im += 1
-            save(x, y, z, sol.m, im)
+            save(sol, im)
 
     return sol
 

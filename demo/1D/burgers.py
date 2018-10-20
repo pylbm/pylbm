@@ -1,5 +1,5 @@
-from __future__ import print_function
-from __future__ import division
+
+
 """
  Solver D1Q2 and D1Q3 for the Burger's equation on [-1, 1]
 
@@ -20,7 +20,7 @@ from six.moves import range
 import numpy as np
 import sympy as sp
 
-import pyLBM
+import pylbm
 
 X, LA, u = sp.symbols('X, LA, u')
 
@@ -48,7 +48,7 @@ def solution(t, x, xmin, xmax, uL, uR): # solution
         u[x > xR] = uR
     return u
 
-def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator="numpy", sorder=None, withPlot=True):
     """
     Parameters
     ----------
@@ -59,7 +59,7 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -92,7 +92,7 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
             },
         ],
         'boundary_conditions':{
-            0:{'method':{0: pyLBM.bc.Neumann}},
+            0:{'method':{0: pylbm.bc.Neumann}},
         },
         'generator': generator,
         'parameters': {LA: la},
@@ -113,47 +113,44 @@ def run(dx, Tf, generator=pyLBM.generator.NumpyGenerator, sorder=None, withPlot=
             },
         ],
         'boundary_conditions':{
-            0:{'method':{0: pyLBM.bc.Neumann}},
+            0:{'method':{0: pylbm.bc.Neumann}},
         },
         'generator': generator,
         'parameters': {LA: la},
     }
     # simulation
-    sol1 = pyLBM.Simulation(dico1, sorder=sorder) # build the simulation with D1Q2
-    sol2 = pyLBM.Simulation(dico2, sorder=sorder) # build the simulation with D1Q3
+    sol = pylbm.Simulation(dico1, sorder=sorder) # build the simulation with D1Q2
+    title = 'D1Q2'
+    # sol = pylbm.Simulation(dico2, sorder=sorder) # build the simulation with D1Q3
+    # title = 'D1Q3'
 
     if withPlot:
         # create the viewer to plot the solution
-        viewer = pyLBM.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig()
         ax = fig[0]
         ymin, ymax = min([uL,uR])-.1*abs(uL-uR), max([uL,uR])+.1*abs(uL-uR)
         ax.axis(xmin, xmax, ymin, ymax)
 
-        x1 = sol1.domain.x
-        l1 = ax.plot(x1, sol1.m[u], width=1, color='b', label='D1Q2')[0]
-        x2 = sol2.domain.x
-        l2 = ax.plot(x2, sol2.m[u], width=1, color='r', label='D1Q3')[0]
-        le = ax.plot(x1, solution(sol1.t, x1, xmin, xmax, uL, uR), width=1, color='k', label='exact')[0]
+        x = sol.domain.x
+        l = ax.plot(x, sol.m[u], width=1, color='b', label=title)[0]
+        le = ax.plot(x, solution(sol.t, x, xmin, xmax, uL, uR), width=1, color='k', label='exact')[0]
 
         def update(iframe):
-            if sol1.t<Tf:
-                sol1.one_time_step()
-                sol2.one_time_step()
-                l1.set_data(x1, sol1.m[u])
-                l2.set_data(x2, sol2.m[u])
-                le.set_data(x1, solution(sol1.t, x1, xmin, xmax, uL, uR))
-                ax.title = 'solution at t = {0:f}'.format(sol1.t)
+            if sol.t<Tf:
+                sol.one_time_step()
+                l.set_data(x, sol.m[u])
+                le.set_data(x, solution(sol.t, x, xmin, xmax, uL, uR))
+                ax.title = 'solution at t = {0:f}'.format(sol.t)
                 ax.legend()
 
         fig.animate(update)
         fig.show()
     else:
-        while sol1.t < Tf:
-            sol1.one_time_step()
-            sol2.one_time_step()
+        while sol.t < Tf:
+            sol.one_time_step()
 
-    return sol1, sol2
+    return sol
 
 if __name__ == '__main__':
     dx = 1./128

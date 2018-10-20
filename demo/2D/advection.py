@@ -1,5 +1,5 @@
-from __future__ import print_function
-from __future__ import division
+
+
 """
  Solver D2Q4 for the advection equation on the 2D-torus
 
@@ -17,7 +17,7 @@ import numpy as np
 import sympy as sp
 from six.moves import range
 
-import pyLBM
+import pylbm
 
 u, X, Y, LA = sp.symbols('u, X, Y, LA')
 
@@ -27,7 +27,7 @@ def u0(x, y, xmin, xmax, ymin, ymax):
     return np.ones((x.shape[0], y.shape[0]), dtype='float64') \
            + .5 * ((x-0.25*(xmin+xmax))**2+(y-0.5*(ymin+ymax))**2 < 0.01)
 
-def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     """
     Parameters
     ----------
@@ -38,7 +38,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -60,12 +60,12 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     dico = {
         'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':-1},
         'space_step':dx,
-        'scheme_velocity':la,
+        'scheme_velocity':LA,
         'schemes':[
             {
                 'velocities':list(range(1,5)),
                 'conserved_moments':u,
-                'polynomials':[1, LA*X, LA*Y, X**2-Y**2],
+                'polynomials':[1, X, Y, X**2-Y**2],
                 'relaxation_parameters':s,
                 'equilibrium':[u, cx*u, cy*u, 0],
                 'init':{u:(u0,(xmin, xmax, ymin, ymax))},
@@ -73,13 +73,14 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
         ],
         'generator': generator,
         'parameters':{LA:la},
+        #'relative_velocity': [cx, cy],
         }
 
-    sol = pyLBM.Simulation(dico, sorder=sorder)
+    sol = pylbm.Simulation(dico, sorder=sorder)
 
     if withPlot:
         # create the viewer to plot the solution
-        viewer = pyLBM.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig()
         ax = fig[0]
         im = ax.image(sol.m[u].transpose())
@@ -103,4 +104,4 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
 if __name__ == '__main__':
     dx = 1./256
     Tf = 10.
-    run(dx, Tf, generator=pyLBM.generator.CythonGenerator)
+    run(dx, Tf)

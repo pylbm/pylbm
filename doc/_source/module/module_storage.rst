@@ -1,7 +1,7 @@
 the module storage
 ======================
 
-.. currentmodule:: pyLBM.storage
+.. currentmodule:: pylbm.storage
 
 .. autosummary::
    :toctree: generated/

@@ -1,10 +1,8 @@
-from __future__ import print_function
-from __future__ import division
 import numpy as np
-import pyLBM.elements as elem
+import pylbm.elements as elem
 
-class TestParallelogram(object):
-    def setUp(self):
+class TestParallelogram:
+    def __init__(self):
         self.nx, self.ny = 10, 20
         x = np.arange(self.nx)
         y = np.arange(self.ny)
@@ -18,8 +16,8 @@ class TestParallelogram(object):
     def test_bounds(self):
         np.testing.assert_array_equal(self.p1.get_bounds(), [[0, 0], [self.nx, self.ny]])
 
-class TestTriangle(object):
-    def setUp(self):
+class TestTriangle:
+    def __init__(self):
         nx, ny = 11, 11
         x = np.linspace(0, 1, nx)
         y = np.linspace(0, 1, ny)

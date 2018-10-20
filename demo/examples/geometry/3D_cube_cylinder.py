@@ -1,7 +1,7 @@
-from __future__ import print_function
-from __future__ import division
+
+
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
@@ -9,7 +9,7 @@ from __future__ import division
 """
 Example of a 3D geometry: the cube [0,1] x [0,1] x [0,1] with a cylindrical hole
 """
-import pyLBM
+import pylbm
 
 v1 = [0, 1., 1.]
 v2 = [0,-1.5, 1.5]
@@ -19,10 +19,10 @@ w2 = [0,.5,0]
 w3 = [0,0,1.5]
 dico = {
     'box':{'x': [-3, 3], 'y': [-3, 3], 'z':[-3, 3], 'label':9},
-    'elements':[#pyLBM.Cylinder_Ellipse((0.5,0,0), v1, v2, v3, label=[1,0,0]),
-                pyLBM.Cylinder_Triangle((0.5,0,0), v1, v2, v3, label=0),
-                pyLBM.Cylinder_Circle((-1.5,-1.5,0), w1, w2, w3, label=[1,0,0]),],
+    'elements':[#pylbm.CylinderEllipse((0.5,0,0), v1, v2, v3, label=[1,0,0]),
+                pylbm.CylinderTriangle((0.5,0,0), v1, v2, v3, label=0),
+                pylbm.CylinderCircle((-1.5,-1.5,0), w1, w2, w3, label=[1,0,0]),],
 }
-geom = pyLBM.Geometry(dico)
+geom = pylbm.Geometry(dico)
 print(geom)
 geom.visualize(viewlabel=True)

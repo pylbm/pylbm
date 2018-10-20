@@ -1,6 +1,6 @@
-from __future__ import print_function
+
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
@@ -9,7 +9,7 @@ from __future__ import print_function
 Example of a D1Q2 for advection
 """
 import sympy as sp
-import pyLBM
+import pylbm
 u, X = sp.symbols('u, X')
 
 d = {
@@ -25,5 +25,5 @@ d = {
         },
     ],
 }
-s = pyLBM.Scheme(d)
+s = pylbm.Scheme(d)
 print(s)
