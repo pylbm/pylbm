@@ -20,33 +20,13 @@ from .domain import Domain
 from .scheme import Scheme
 from .boundary import Boundary
 from . import utils
-from . import validate_dictionary as valid_dic
+from .validator import validate
 from .context import set_queue
 from .generator import generator
 
 from .storage import Array, AOS, SOA
 
 log = logging.getLogger(__name__) #pylint: disable=invalid-name
-
-proto_simu = { #pylint: disable=invalid-name
-    'name':(type(None),) + string_types,
-    'box':(valid_dic.is_dico_box,),
-    'elements':(type(None), valid_dic.is_list_elem),
-    'dim':(type(None), int),
-    'space_step':(int, float, sp.Symbol),
-    'scheme_velocity':(int, float, sp.Symbol),
-    'parameters':(type(None), valid_dic.is_dico_sp_sporfloat),
-    'schemes':(valid_dic.is_list_sch,),
-    'relative_velocity': (type(None), valid_dic.is_list_sp_or_nb,),
-    'boundary_conditions':(type(None), valid_dic.is_dico_bc),
-    'generator':(type(None), valid_dic.is_generator),
-    'show_code':(type(None), bool),
-    'ode_solver':(type(None), valid_dic.is_ode_solver),
-    'split_pattern': (type(None), valid_dic.is_list_string_or_tuple),
-    'stability':(type(None), valid_dic.is_dico_stab),
-    'consistency':(type(None), valid_dic.is_dico_cons),
-    'inittype':(type(None),) + string_types,
-}
 
 class Simulation:
     """
@@ -127,13 +107,7 @@ class Simulation:
         self.order = 'C'
         self._update_m = True
 
-        log.info('Check the dictionary (by Simulation)')
-        test, aff = valid_dic.validate(dico, proto_simu)
-        if test:
-            log.info(aff)
-        else:
-            log.error(aff)
-            sys.exit()
+        validate(dico, __class__.__name__)
 
         self.name = dico.get('name', None)
 
@@ -142,7 +116,7 @@ class Simulation:
             if domain is not None:
                 self.domain = domain
             else:
-                self.domain = Domain(dico)
+                self.domain = Domain(dico, need_validation=False)
         except KeyError:
             log.error('Error in the creation of the domain: wrong dictionnary')
             sys.exit()
@@ -152,7 +126,7 @@ class Simulation:
             if scheme is not None:
                 self.scheme = scheme
             else:
-                self.scheme = Scheme(dico, check_inverse=check_inverse)
+                self.scheme = Scheme(dico, check_inverse=check_inverse, need_validation=False)
         except KeyError:
             log.error('Error in the creation of the scheme: wrong dictionnary')
             sys.exit()

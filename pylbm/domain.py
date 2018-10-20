@@ -19,30 +19,10 @@ from six import string_types
 from .geometry import Geometry
 from .stencil import Stencil
 from .mpi_topology import MpiTopology
-from . import validate_dictionary as valid_dic
+from .validator import validate
 from . import viewer
 
 log = logging.getLogger(__name__) #pylint: disable=invalid-name
-
-proto_domain = {  #pylint: disable=invalid-name
-    'name':(type(None),) + string_types,
-    'box':(valid_dic.is_dico_box,),
-    'elements':(type(None), valid_dic.is_list_elem),
-    'dim':(type(None), int),
-    'space_step':(int, float, sp.Symbol),
-    'scheme_velocity':(type(None), int, float, sp.Symbol),
-    'parameters':(type(None), valid_dic.is_dico_sp_sporfloat),
-    'schemes':(valid_dic.is_list_sch_dom,),
-    'relative_velocity': (type(None), valid_dic.is_list_sp_or_nb,),
-    'boundary_conditions':(type(None), valid_dic.is_dico_bc),
-    'generator':(type(None), valid_dic.is_generator),
-    'show_code':(type(None), bool),
-    'ode_solver':(type(None), valid_dic.is_ode_solver),
-    'split_pattern': (type(None), valid_dic.is_list_string_or_tuple),
-    'stability':(type(None), valid_dic.is_dico_stab),
-    'consistency':(type(None), valid_dic.is_dico_cons),
-    'inittype':(type(None),) + string_types,
-}
 
 class Domain:
     """
@@ -173,14 +153,15 @@ class Domain:
 
     """
 
-    def __init__(self, dico=None, geometry=None, stencil=None, space_step=None):
+    def __init__(self, dico=None, geometry=None, stencil=None, space_step=None, need_validation=True):
         self.valin = 999  # value in the fluid domain
         self.valout = -1   # value in the solid domain
 
-        self.check_dictionary(dico)
+        if dico is not None and need_validation:
+            validate(dico, __class__.__name__)
 
-        self.geom = Geometry(dico) if geometry is None else geometry
-        self.stencil = Stencil(dico) if stencil is None else stencil
+        self.geom = Geometry(dico, need_validation=False) if geometry is None else geometry
+        self.stencil = Stencil(dico, need_validation=False) if stencil is None else stencil
         self.dx = dico['space_step'] if space_step is None else space_step
         self.dim = self.geom.dim
 
@@ -276,26 +257,6 @@ class Domain:
         s += "\t space step: dx={0:10.3e}\n".format(self.dx)
         #s += "\t Number of points in each direction: N=" + self.N.__str__() + ", Na=" + self.Na.__str__() + "\n"
         return s
-
-    @staticmethod
-    def check_dictionary(dico):
-        """
-        Check the validity of the dictionnary which define the domain.
-
-        Parameter
-        ---------
-
-        dico : dictionary
-
-        """
-        if dico is not None:
-            log.info('Check the dictionary')
-            test, aff = valid_dic.validate(dico, proto_domain, test_comp=False)
-            if test:
-                log.info(aff)
-            else:
-                log.error(aff)
-                sys.exit()
 
     def construct_mpi_topology(self, dico):
         """
