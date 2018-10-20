@@ -14,16 +14,9 @@ from six import string_types
 import numpy as np
 
 from . import viewer
-from . import validate_dictionary as valid_dic
+from .validator import validate
 
 log = logging.getLogger(__name__) #pylint: disable=invalid-name
-
-proto_box = { #pylint: disable=invalid-name
-    'x': (valid_dic.is_2_list_int_or_float,),
-    'y': (type(None), valid_dic.is_2_list_int_or_float,),
-    'z': (type(None), valid_dic.is_2_list_int_or_float,),
-    'label': (type(None), int, valid_dic.is_list_int_or_string) + string_types,
-}
 
 def get_box(dico):
     """
@@ -102,7 +95,10 @@ class Geometry:
     see demo/examples/geometry/
     """
 
-    def __init__(self, dico):
+    def __init__(self, dico, need_validation=True):
+        if need_validation:
+            validate(dico, __class__.__name__)
+
         self.dim, self.bounds = get_box(dico)
 
         self.list_elem = []

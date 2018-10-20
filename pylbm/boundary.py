@@ -16,15 +16,9 @@ from six.moves import range
 from sympy import symbols, IndexedBase, Idx, Eq
 
 from .storage import Array
-from .validate_dictionary import is_dico_bcmethod
 from .generator import generator
 
 log = logging.getLogger(__name__) #pylint: disable=invalid-name
-
-proto_bc = { #pylint: disable=invalid-name
-    'method':(is_dico_bcmethod, ),
-    'value':(type(None), types.FunctionType, tuple),
-}
 
 #pylint: disable=too-few-public-methods
 class BoundaryVelocity:

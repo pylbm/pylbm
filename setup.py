@@ -52,12 +52,13 @@ setup(
     include_package_data=True,
     install_requires=[
                       'numpy>=1.9.2',
-                      'sympy>=1.1.1',
+                      'sympy>=1.1.1<1.2',
                       'colorlog>=2.4.0',
+                      'colorama',
+                      'cerberus',
                       'Cython>=0.21.1',
                       'mpi4py>=1.3.1',
                       'matplotlib>=1.4.0',
-                      'future',
                       'h5py'
                       ],
 )
