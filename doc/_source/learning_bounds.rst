@@ -3,7 +3,7 @@ The Boundary Conditions
 
 The simulations are performed in a bounded domain with optional obstacles.
 Boundary conditions have then to be imposed on all the bounds.
-With pyLBM, the user can use the classical boundary conditions (classical for the lattice Boltzmann method)
+With pylbm, the user can use the classical boundary conditions (classical for the lattice Boltzmann method)
 that are already implemented or implement his own conditions.
 
 Note that periodical boundary conditions are used as default conditions.

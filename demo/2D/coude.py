@@ -1,12 +1,12 @@
-from __future__ import print_function
-from __future__ import division
+
+
 """
 test: True
 """
 from six.moves import range
 import numpy as np
 import sympy as sp
-import pyLBM
+import pylbm
 
 X, Y, LA = sp.symbols('X, Y, LA')
 rho, qx, qy = sp.symbols('rho, qx, qy')
@@ -28,7 +28,7 @@ def norme_q(sol):
     nv = qx_n**2 + qy_n**2
     return nv.T
 
-def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     """
     Parameters
     ----------
@@ -39,7 +39,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -74,7 +74,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
 
     dico = {
         'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[2, 0, 1, 0]},
-        'elements':[pyLBM.Parallelogram((xmin,ymin),(xc,ymin),(xmin,yc), label=0)],
+        'elements':[pylbm.Parallelogram((xmin,ymin),(xc,ymin),(xmin,yc), label=0)],
         'scheme_velocity':la,
         'space_step': dx,
         'schemes':[{'velocities':list(range(9)),
@@ -94,19 +94,19 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
                     'init': {rho: rhoo, qx: 0., qy: 0.},
         }],
         'boundary_conditions':{
-           0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}},
-           1:{'method':{0: pyLBM.bc.Neumann_y}},
-           2:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}, 'value':(bc_in, (rhoo, uo, ymin, ymax))}
+           0:{'method':{0: pylbm.bc.BouzidiBounceBack}},
+           1:{'method':{0: pylbm.bc.NeumannY}},
+           2:{'method':{0: pylbm.bc.BouzidiBounceBack}, 'value':(bc_in, (rhoo, uo, ymin, ymax))}
         },
         'generator': generator,
         'parameters':{'LA':la},
       }
 
-    sol = pyLBM.Simulation(dico, sorder=sorder)
+    sol = pylbm.Simulation(dico, sorder=sorder)
 
     if withPlot:
         # init viewer
-        viewer = pyLBM.viewer.matplotlibViewer
+        viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig()
         ax = fig[0]
         image = ax.image(norme_q, (sol,), cmap='jet', clim=[0, uo**2])
@@ -131,4 +131,4 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
 if __name__ == '__main__':
     dx = 1./512
     Tf = 1.
-    run(dx, Tf, generator=pyLBM.generator.CythonGenerator)
+    run(dx, Tf)

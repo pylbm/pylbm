@@ -1,10 +1,10 @@
-from __future__ import print_function
-from __future__ import division
+
+
 """
 test: True
 """
 from six.moves import range
-import pyLBM
+import pylbm
 import sympy as sp
 import math
 
@@ -15,19 +15,17 @@ def bc_up(f, m, x, y, z):
     m[qx] = -math.sqrt(2)/20.
     m[qy] = -math.sqrt(2)/20.
 
-def save(x, y, z, m, im):
-    init_pvd = False
-    if im == 1:
-        init_pvd = True
+def save(sol, im):
+    x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
 
-    vtk = pyLBM.VTKFile('lid_cavity', './data', im, init_pvd=init_pvd)
-    vtk.set_grid(x, y, z)
-    vtk.add_scalar('mass', m[mass])
-    qx_n, qy_n, qz_n = m[qx], m[qy], m[qz]
-    vtk.add_vector('velocity', [qx_n, qy_n, qz_n])
-    vtk.save()
+    h5 = pylbm.H5File(sol.mpi_topo, 'lid_cavity', './lid_cavity', im)
+    h5.set_grid(x, y, z)
+    h5.add_scalar('mass', sol.m[mass])
+    qx_n, qy_n, qz_n = sol.m[qx], sol.m[qy], sol.m[qz]
+    h5.add_vector('velocity', [qx_n, qy_n, qz_n])
+    h5.save()
 
-def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     """
     Parameters
     ----------
@@ -38,7 +36,7 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
     Tf: double
         final time
 
-    generator: pyLBM generator
+    generator: pylbm generator
 
     sorder: list
         storage order
@@ -104,16 +102,14 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
             },
         }],
         'boundary_conditions':{
-            0:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}},
-            1:{'method':{0: pyLBM.bc.Bouzidi_bounce_back}, 'value':bc_up},
+            0:{'method':{0: pylbm.bc.BouzidiBounceBack}},
+            1:{'method':{0: pylbm.bc.BouzidiBounceBack}, 'value':bc_up},
         },
         'parameters': {LA: la},
         'generator': generator,
     }
 
-    sol = pyLBM.Simulation(dico, sorder=sorder)
-
-    x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
+    sol = pylbm.Simulation(dico, sorder=sorder)
 
     im = 0
     compt = 0
@@ -122,12 +118,12 @@ def run(dx, Tf, generator=pyLBM.generator.CythonGenerator, sorder=None, withPlot
         compt += 1
         if compt == 16 and withPlot:
             im += 1
-            save(x, y, z, sol.m, im)
+            save(sol, im)
             compt = 0
 
     return sol
 
 if __name__ == '__main__':
-    dx = 1./64
+    dx = 1./128
     Tf= 5.
-    run(dx, Tf)
+    run(dx, Tf, generator="cython")

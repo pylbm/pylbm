@@ -1,0 +1,185 @@
+
+body {
+    font-family: "Lora";
+    font-size: 16px;
+}
+
+a {
+    color: #CE5C00;
+}
+
+div.prompt{
+    display: none;
+}
+
+.nav-link{
+  font-weight: bold;
+  color: #197395 !important;
+  background: transparent;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    clear: left;
+    border-bottom: 1px solid #ccc;
+    color: #197395;
+}
+h1 {
+    font-size: 30px;
+    line-height: 36px;
+}
+h2 {
+    font-size: 24px;
+    line-height: 30px;
+}
+h3 {
+    font-size: 19px;
+    line-height: 21px;
+}
+h4 {
+    font-size: 17px;
+    line-height: 19px;
+}
+h5 {
+    font-size: 15px;
+    line-height: 17px;
+}
+h6 {
+    font-size: 13px;
+    line-height: 15px;
+}
+blockquote {
+    border-left: 0;
+}
+dt {
+    font-weight: normal;
+}
+
+.logo {
+    /*logo on the left*/
+    /*float: left;
+    margin: 20px 0 20px 22px;*/
+    /*logo centered*/
+    margin:0px auto;
+    display:block;
+}
+.logo img {
+    height: 100px;
+    margin:0px auto;
+    display:block;
+}
+
+.figure{
+    display: flex;
+}
+
+
+.footer {
+    margin-top: 30px;
+    padding: 5px 10px;
+    color: #999;
+}
+.footer a {
+    color: #999;
+    text-decoration: underline;
+}
+
+.section img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 60%;
+}
+
+.figure .caption {
+    /*width: 200px;*/
+    text-align: center !important;
+}
+
+.figure .caption .caption-text{
+    width: 200px;
+    text-align: center !important;
+}
+
+/* misc */
+div.math {
+    text-align: center;
+}
+
+p{
+  text-align: justify;
+}
+
+.highlight{
+    display: block;
+    padding: 9.5px;
+    margin: 0 0 10px;
+    background-color: #f5f5f5;
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: 4px;
+}
+
+pre{
+    margin: 0;
+}
+
+/* module summary table */
+.longtable.docutils {
+    font-size: 12px;
+    margin-bottom: 30px;
+}
+.longtable.docutils, .longtable.docutils td {
+    border-color: #ccc;
+}
+
+/* general table settings */
+table.docutils {
+    margin-bottom: 10px;
+    border: 0px;
+}
+table.docutils td, table.docutils th {
+    padding: 1px 8px 1px 5px;
+    border: 0px;
+    border-color: #ccc;
+    text-align: left;
+}
+
+.card-footer{
+    background: transparent;
+    border: 0;
+}
+
+code {
+    color: #CE5C00;
+}
+
+.navbar{
+  background-color: #F9FAFF;
+  background-image: linear-gradient(to bottom, #FFF, #F9FAFF);
+  border: #ccc solid 1px;
+  border-radius: 5px;
+}
+
+a.download{
+  display: block;
+  float: right;
+  color: #197395;
+  border-radius: 50px;
+}
+
+div.nbinput div.prompt{
+    display: none;
+}
+
+.footer {
+    margin-top: 30px;
+    padding: 5px 10px;
+    color: #999;
+    background-color: #f5f5f5;
+    border: 1px solid #e3e3e3;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+.headerlink{
+    display: none;
+}

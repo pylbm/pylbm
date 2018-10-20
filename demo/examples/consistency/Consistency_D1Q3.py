@@ -1,7 +1,7 @@
-from __future__ import print_function
-from __future__ import division
+
+
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
@@ -10,7 +10,7 @@ from __future__ import division
 Example of a three velocities scheme for the wave equation in 1D
 """
 import sympy as sp
-import pyLBM
+import pylbm
 u, v, X = sp.symbols('u, v, X')
 LA, c, sigma = sp.symbols('LA, c, sigma')
 
@@ -29,4 +29,4 @@ d = {
     'parameters':{LA:1., c:.1, sigma:1./1.9-.5},
     'consistency':{'order':2}
 }
-s = pyLBM.Scheme(d)
+s = pylbm.Scheme(d)

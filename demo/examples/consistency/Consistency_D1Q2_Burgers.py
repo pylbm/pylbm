@@ -1,7 +1,7 @@
-from __future__ import print_function
-from __future__ import division
+
+
 # Authors:
-#     Loic Gouarin <loic.gouarin@math.u-psud.fr>
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
@@ -10,7 +10,7 @@ from __future__ import division
 Example of a two velocities scheme for the advection equation in 1D
 """
 import sympy as sp
-import pyLBM
+import pylbm
 u, X = sp.symbols('u,X')
 LA, c, sigma = sp.symbols('LA, c, sigma')
 
@@ -32,4 +32,4 @@ d = {
         'linearization':{u:c}
     }
 }
-s = pyLBM.Scheme(d)
+s = pylbm.Scheme(d)
