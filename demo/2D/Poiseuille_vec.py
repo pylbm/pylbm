@@ -86,7 +86,6 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[2, 1, 0, 0]},
         'space_step':dx,
         'scheme_velocity':la,
-        'inittype': 'moments',
         'schemes':[{'velocities': velocities,
                     'polynomials': polynomes,
                     'relaxation_parameters': [0., s1, s1, 1.],
