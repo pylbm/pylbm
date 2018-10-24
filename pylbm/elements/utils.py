@@ -68,7 +68,7 @@ def distance_ellipse(x, y, v, center, v1, v2, dmax, label):
     b = 2*X*v[0]*vy2 + 2*Y*v[1]*vx2 - 2*(X*v[1]+Y*v[0])*vxy
     c = X**2*vy2 + Y**2*vx2 - 2*X*Y*vxy - (v1[0]*v2[1]-v1[1]*v2[0])**2
     delta = b**2 - 4*a*c
-    ind = delta >= 0 # wird but it works
+    ind = delta >= 0
     delta[ind] = np.sqrt(delta[ind])
     d1 = 1e16*np.ones(delta.shape)
     d2 = 1e16*np.ones(delta.shape)
