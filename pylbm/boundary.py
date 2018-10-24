@@ -119,6 +119,7 @@ class Boundary:
 
         # for each method create the instance associated
         self.methods = []
+        # FIXME: set in a different way the default generator
         backend = dico.get("generator", "cython").upper()
         for k in list(istore.keys()):
             self.methods.append(k(istore[k], ilabel[k], distance[k], stencil, value_bc, domain.distance.shape, backend))
@@ -358,7 +359,7 @@ class BounceBack(BoundaryMethod):
         fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], permutation=sorder)
         fload = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], permutation=sorder)
 
-        generator.add_routine(('bounce_back', For(idx, Eq(fstore, fload + rhs[ix]))))
+        generator.add_routine(('bounce_back', For(idx, Eq(fstore, fload + rhs[idx]))))
 
     @property
     def function(self):
@@ -407,6 +408,31 @@ class BouzidiBounceBack(BoundaryMethod):
         self.iload.append(iload1)
         self.iload.append(iload2)
 
+    def _get_args(self, ff):
+        dim = len(ff.nspace)
+        nx = ff.nspace[0]
+        if dim > 1:
+            ny = ff.nspace[1]
+        if dim > 2:
+            nz = ff.nspace[2]
+
+        f = ff.array
+        # FIXME: needed to have the same results between numpy and cython
+        # That means that there are dependencies between the rhs and the lhs
+        # during the loop over the boundary elements
+        # check why (to test it use air_conditioning example)
+        fcopy = ff.array.copy()
+
+        for i in range(len(self.iload)):
+            exec('iload{i} = self.iload[{i}]'.format(i=i)) #pylint: disable=exec-used
+
+        istore = self.istore
+        rhs = self.rhs
+        if hasattr(self, 's'):
+            dist = self.s
+        ncond = istore.shape[0]
+        return locals()
+
     def set_rhs(self):
         """
         Compute and set the additional terms to fix the boundary values.
@@ -436,8 +462,8 @@ class BouzidiBounceBack(BoundaryMethod):
 
         idx = Idx(ix, (0, ncond))
         fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], permutation=sorder)
-        fload0 = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], permutation=sorder)
-        fload1 = indexed('f', [ns, nx, ny, nz], index=[iload[1][idx, k] for k in range(dim+1)], permutation=sorder)
+        fload0 = indexed('fcopy', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], permutation=sorder)
+        fload1 = indexed('fcopy', [ns, nx, ny, nz], index=[iload[1][idx, k] for k in range(dim+1)], permutation=sorder)
 
         generator.add_routine(('Bouzidi_bounce_back', For(idx, Eq(fstore, dist[idx]*fload0 + (1-dist[idx])*fload1 + rhs[idx]))))
 
@@ -546,6 +572,7 @@ class Neumann(BoundaryMethod):
     Boundary condition of type Neumann
 
     """
+    name = 'neumann'
     def set_rhs(self):
         """
         Compute and set the additional terms to fix the boundary values.
@@ -583,7 +610,7 @@ class Neumann(BoundaryMethod):
         fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], permutation=sorder)
         fload = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], permutation=sorder)
 
-        generator.add_routine(('neumann', For(idx, Eq(fstore, fload))))
+        generator.add_routine((self.name, For(idx, Eq(fstore, fload))))
 
     @property
     def function(self):
@@ -595,6 +622,7 @@ class NeumannX(Neumann):
     Boundary condition of type Neumann along the x direction
 
     """
+    name = 'neumannx'
     def set_iload(self):
         """
         Compute the indices that are needed (symmertic velocities and space indices).
@@ -605,11 +633,17 @@ class NeumannX(Neumann):
         indices[0] += v[k].T[0]
         self.iload.append(np.concatenate([k[np.newaxis, :], indices]))
 
+    @property
+    def function(self):
+        """Return the generated function"""
+        return generator.module.neumannx
+
 class NeumannY(Neumann):
     """
     Boundary condition of type Neumann along the y direction
 
     """
+    name = 'neumanny'
     def set_iload(self):
         """
         Compute the indices that are needed (symmertic velocities and space indices).
@@ -620,11 +654,17 @@ class NeumannY(Neumann):
         indices[1] += v[k].T[1]
         self.iload.append(np.concatenate([k[np.newaxis, :], indices]))
 
+    @property
+    def function(self):
+        """Return the generated function"""
+        return generator.module.neumanny
+
 class NeumannZ(Neumann):
     """
     Boundary condition of type Neumann along the z direction
 
     """
+    name = 'neumannz'
     def set_iload(self):
         """
         Compute the indices that are needed (symmertic velocities and space indices).
@@ -634,3 +674,8 @@ class NeumannZ(Neumann):
         indices = self.istore[1:].copy()
         indices[1] += v[k].T[2]
         self.iload.append(np.concatenate([k[np.newaxis, :], indices]))
+
+    @property
+    def function(self):
+        """Return the generated function"""
+        return generator.module.neumannz
