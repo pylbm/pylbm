@@ -165,12 +165,15 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     sol = pylbm.Simulation(dico, sorder=sorder)
 
     im = 0
+    compt = 0
     while sol.t < Tf:
-        nrep = 100
-        for i in range(nrep):
-                 sol.one_time_step()
-        im += 1
-        save(sol, im)
+        sol.one_time_step()
+        compt += 1
+        if compt == 100 and withPlot:
+            im += 1
+            save(sol, im)
+            compt = 0
+
     return sol
 
 if __name__ == '__main__':

@@ -31,15 +31,14 @@ hdf5_save = True
 GA, X, Y, LA = sp.symbols('GA, X, Y, LA')
 rho, qx, qy, E, Bx, By = sp.symbols('rho, qx, qy, E, Bx, By')
 p, ps = sp.symbols('p, ps')
-gamma = 5./3.
 
-def init_rho(x, y):
+def init_rho(x, y, gamma):
     return gamma**2 * np.ones(x.shape)
 
-def init_qx(x, y):
+def init_qx(x, y, gamma):
     return -gamma**2 * np.sin(y)
 
-def init_qy(x, y):
+def init_qy(x, y, gamma):
     return gamma**2 * np.sin(x)
 
 def init_Bx(x, y):
@@ -48,16 +47,10 @@ def init_Bx(x, y):
 def init_By(x, y):
     return np.sin(2*x)
 
-def init_E(x, y):
-    Ec = 0.5 * (init_qx(x, y)**2 + init_qy(x, y)**2)/init_rho(x, y)
+def init_E(x, y, gamma):
+    Ec = 0.5 * (init_qx(x, y, gamma)**2 + init_qy(x, y, gamma)**2)/init_rho(x, y, gamma)
     EB = 0.5 * (init_Bx(x, y)**2 + init_By(x, y)**2)
     return Ec + EB + gamma/(gamma-1)
-
-def update(iframe):
-    for k in range(16):
-        sol.one_time_step()      # increment the solution of one time step
-    im.set_data(sol.m[rho][na:nb, ma:mb].transpose())
-    ax.title = 'solution at t = {0:f}'.format(sol.t)
 
 def save(mpi_topo, x, y, m, num):
     h5 = pylbm.H5File(mpi_topo, filename, path, num)
@@ -68,15 +61,31 @@ def save(mpi_topo, x, y, m, num):
     h5.add_vector('B', [m[Bx], m[By]])
     h5.save()
 
-if __name__ == "__main__":
+def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
+    """
+    Parameters
+    ----------
+
+    dx: double
+        spatial step
+
+    Tf: double
+        final time
+
+    generator: pylbm generator
+
+    sorder: list
+        storage order
+
+    withPlot: boolean
+        if True plot the solution otherwise just compute the solution
+
+    """
     # parameters
     xmin, xmax, ymin, ymax = 0., 2*np.pi, 0., 2*np.pi
-    if hdf5_save:
-        dx = np.pi / 256
-        s0, s1, s2, s3 = [1.9]*4
-    else:
-        dx = np.pi / 64
-        s0, s1, s2, s3 = [1.95]*4
+    gamma = 5./3.
+
+    s0, s1, s2, s3 = [1.95]*4
     la = 10.
     s_rho = [0., s1, s1, s0]
     s_q = [0., s2, s2, s0]
@@ -98,7 +107,7 @@ if __name__ == "__main__":
                 'polynomials':[1, LA*X, LA*Y, X**2-Y**2],
                 'relaxation_parameters':s_rho,
                 'equilibrium':[rho, qx, qy, 0.],
-                'init':{rho:(init_rho,)},
+                'init':{rho:(init_rho, (gamma,))},
             },
             {
                 'velocities':list(range(1,5)),
@@ -111,7 +120,7 @@ if __name__ == "__main__":
                     qx*qy/rho - Bx*By,
                     0.
                 ],
-                'init':{qx:(init_qx,)},
+                'init':{qx:(init_qx, (gamma,))},
             },
             {
                 'velocities':list(range(1,5)),
@@ -124,7 +133,7 @@ if __name__ == "__main__":
                     qy**2/rho + ps - By**2,
                     0.
                 ],
-                'init':{qy:(init_qy,)},
+                'init':{qy:(init_qy, (gamma,))},
             },
             {
                 'velocities':list(range(1,5)),
@@ -137,7 +146,7 @@ if __name__ == "__main__":
                     (E+ps)*qy/rho - vB*By,
                     0.
                 ],
-                'init':{E:(init_E,)},
+                'init':{E:(init_E, (gamma,))},
             },
             {
                 'velocities':list(range(1,5)),
@@ -150,7 +159,7 @@ if __name__ == "__main__":
                     (qy*Bx - qx*By)/rho,
                     0.
                 ],
-                'init':{Bx:(init_Bx,)},
+                'init':{Bx: init_Bx},
             },
             {
                 'velocities':list(range(1,5)),
@@ -163,28 +172,17 @@ if __name__ == "__main__":
                     0,
                     0.
                 ],
-                'init':{By:(init_By,)},
+                'init':{By: init_By},
             },
         ],
         'parameters':{LA:la, GA:gamma},
-        'generator': 'cython',
+        'generator': generator,
     }
 
     sol = pylbm.Simulation(dico)
 
 
-    if hdf5_save:
-        filename = 'Orszag_Tang_vortex'
-        path = './data_Orszag_Tang_vortex'
-        im = 0
-        x, y = sol.domain.x, sol.domain.y
-        save(sol.mpi_topo, x, y, sol.m, im)
-        while sol.t < 100.:
-            for k in range(256):
-                sol.one_time_step()
-            im += 1
-            save(sol.mpi_topo, x, y, sol.m, im)
-    else:
+    if withPlot:
         # init viewer
         viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig()
@@ -194,6 +192,23 @@ if __name__ == "__main__":
         ma, mb = 1, M-1
         im = ax.image(sol.m[rho][na:nb, ma:mb].transpose(), clim=[0.5, 7.2])
         ax.title = 'solution at t = {0:f}'.format(sol.t)
+
+        def update(iframe):
+            for k in range(16):
+                sol.one_time_step()      # increment the solution of one time step
+            im.set_data(sol.m[rho][na:nb, ma:mb].transpose())
+            ax.title = 'solution at t = {0:f}'.format(sol.t)
+
         # run the simulation
         fig.animate(update, interval=1)
         fig.show()
+    else:
+        while sol.t < Tf:
+           sol.one_time_step()
+
+    return sol
+
+if __name__ == '__main__':
+    dx = 2.*np.pi/256
+    Tf = 10.
+    run(dx, Tf)

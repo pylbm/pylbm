@@ -71,7 +71,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
             'polynomials': [1, LA*X, LA*Y, LA*Z, X**2-Y**2, X**2-Z**2],
             'equilibrium': [u, ux*u, uy*u, uz*u, 0., 0.],
             'relaxation_parameters': [0., s, s, s, s, s],
-            'init':{u:(u0,)},
+            'init':{u: u0},
         },],
         'parameters': {LA: la},
         'generator': generator,

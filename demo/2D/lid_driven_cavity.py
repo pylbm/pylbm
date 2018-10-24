@@ -52,7 +52,6 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     s1 = 1.0/(0.5+zeta*dummy)
     s2 = 1.0/(0.5+mu*dummy)
     s  = [0.,0.,0.,s1,s1,s1,s1,s2,s2]
-    Tf = 10.
     dummy = 1./(LA**2*rhoo)
     qx2 = dummy*qx**2
     qy2 = dummy*qy**2
@@ -93,7 +92,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
             1:{'method':{0: pylbm.bc.BouzidiBounceBack}, 'value':(bc_up, (driven_velocity,))}
         },
         'generator': generator,
-        'show_code': True,
+        #'show_code': True,
     }
 
     sol = pylbm.Simulation(lid_cavity, sorder=sorder)
