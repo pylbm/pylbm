@@ -6,7 +6,7 @@ import pytest
 
 path = os.path.dirname(__file__) + '/../demo/1D'
 path = os.path.abspath(path)
-dx = 1./32
+dx = 1./64
 Tf = 0.5
 
 @pytest.fixture
