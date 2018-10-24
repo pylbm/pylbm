@@ -10,6 +10,7 @@ pylbm simulation
 
 import sys
 import logging
+import types
 from six.moves import range
 from six import string_types
 import numpy as np
@@ -64,27 +65,6 @@ class Simulation:
     --------
 
     see demo/examples/
-
-    Access to the distribution functions and the moments.
-
-    In 1D::
-
-    >>>F[n][k][i]
-    >>>m[n][k][i]
-
-    get the kth distribution function of the nth elementary scheme
-    and the kth moment of the nth elementary scheme
-    at the point x[0][i].
-
-    In 2D::
-
-    >>>F[n][k][j, i]
-    >>>m[n][k][j, i]
-
-    get the kth distribution function of the nth elementary scheme
-    and the kth moment of the nth elementary scheme
-    at the point x[0][i], x[1][j].
-
 
     Notes
     -----
@@ -370,6 +350,9 @@ class Simulation:
                 extraargs = v[1] if len(v) == 2 else ()
                 fargs = tuple(coords) + extraargs
                 array_to_init[k] = f(*fargs)
+            elif isinstance(v, types.FunctionType):
+                fargs = tuple(coords)
+                array_to_init[k] = v(*fargs)
             else:
                 array_to_init[k] = v
 
