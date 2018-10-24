@@ -39,4 +39,4 @@ install:
 
 script:
   - pytest --pylint --pylint-rcfile=.pyrcfile --pylint-error-types=EF pylbm
-  - cd tests; pytest --cov=pylbm
+  - cd tests; pytest --mpl --h5diff --cov=pylbm
