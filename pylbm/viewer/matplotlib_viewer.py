@@ -51,6 +51,9 @@ class Fig:
     def show():
         plt.show()
 
+    def close(self):
+        plt.close(self.fig)
+
 #pylint: disable=too-many-public-methods
 class PlotWidget:
     def __init__(self, parent):
