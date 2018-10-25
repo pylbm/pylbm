@@ -54,6 +54,8 @@ class Parallelogram(Element):
 
     number_of_bounds : int
         4
+    dim: int
+        2
     point : ndarray
         the coordinates of the first point of the parallelogram
     v0 : ndarray
@@ -69,6 +71,7 @@ class Parallelogram(Element):
     """
     def __init__(self, point, vecta, vectb, label=0, isfluid=False):
         self.number_of_bounds = 4 # number of edges
+        self.dim = 2
         self.point = np.asarray(point)
         self.v0 = np.asarray(vecta)
         self.v1 = np.asarray(vectb)

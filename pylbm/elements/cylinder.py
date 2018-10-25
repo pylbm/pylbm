@@ -28,6 +28,8 @@ class Cylinder(Element):
 
     generic class for the cylinders
     """
+    dim = 3
+
     def change_of_variables(self):
         """
         matrix for the change of variables
@@ -50,8 +52,9 @@ class Cylinder(Element):
             minimal box where the cylinder is included
 
         """
-        lw = [abs(self.w[k]) for k in range(len(self.w))]
+        lw = [0.5*abs(self.w[k]) for k in range(len(self.w))]
         bounds_base = self.base.get_bounds()
+        print(bounds_base)
         return bounds_base[0] - lw, bounds_base[1] + lw
 
     def point_inside(self, grid):
@@ -212,6 +215,8 @@ class CylinderCircle(Cylinder):
     ----------
     number_of_bounds : int
         3
+    dim: int
+        3
     center : ndarray
         the coordinates of the center of the cylinder
     v1 : list
@@ -288,6 +293,8 @@ class CylinderEllipse(Cylinder):
     ----------
     number_of_bounds : int
         3
+    dim: int
+        3
     center : ndarray
         the coordinates of the center of the cylinder
     v1 : list
@@ -358,6 +365,8 @@ class CylinderTriangle(Cylinder):
     ----------
     number_of_bounds : int
         5
+    dim: int
+        3
     center : numpy array
         the coordinates of the center of the cylinder
     v1 : list of doubles
@@ -428,6 +437,8 @@ class Parallelepiped(Cylinder):
     ----------
     number_of_bounds : int
         6
+    dim: int
+        3
     point : ndarray
         the coordinates of the first point of the parallelepiped
     v0 : list

@@ -40,6 +40,8 @@ class Sphere(Element):
 
     number_of_bounds : int
         1
+    dim: int
+        3
     center : ndarray
         the coordinates of the center of the sphere
     radius : real
@@ -63,6 +65,7 @@ class Sphere(Element):
     """
     def __init__(self, center, radius, label=0, isfluid=False):
         self.number_of_bounds = 1 # number of edges
+        self.dim = 3
         self.center = np.asarray(center)
         if radius >= 0:
             self.radius = radius
