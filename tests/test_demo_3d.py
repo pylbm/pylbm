@@ -15,6 +15,7 @@ def test_case_dir():
     yield
     sys.path.pop()
 
+@pytest.mark.slow
 @pytest.mark.h5diff(single_reference=True)
 @pytest.mark.usefixtures("test_case_dir")
 @pytest.mark.parametrize('generator', ['numpy', 'cython'])
