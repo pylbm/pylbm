@@ -49,6 +49,7 @@ setup(
     keywords       = "Lattice Boltzmann Methods",
     classifiers    = CLASSIFIERS,
     packages       = find_packages(exclude=['demo', 'doc', 'tests*']),
+    package_data   = {'pylbm': ['templates/*']},
     include_package_data=True,
     install_requires=[
                       'numpy>=1.9.2',

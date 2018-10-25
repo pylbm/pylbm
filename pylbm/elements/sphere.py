@@ -11,6 +11,7 @@ Sphere element
 #pylint: disable=invalid-name
 
 import logging
+from textwrap import dedent
 import numpy as np
 
 from .base import Element
@@ -60,7 +61,14 @@ class Sphere(Element):
     >>> center = [0., 0., 0.]
     >>> radius = 1.
     >>> Sphere(center, radius)
-        Sphere([0 0 0],1) (solid)
+    +--------+
+    | Sphere |
+    +--------+
+        - dimension: 3
+        - center: [0. 0. 0.]
+        - radius: 1.0
+        - label: [0]
+        - type: solid
 
     """
     def __init__(self, center, radius, label=0, isfluid=False):
@@ -138,14 +146,12 @@ class Sphere(Element):
         v3 = self.radius*np.array([0, 0, 1])
         return distance_ellipsoid(x, y, z, v, self.center, v1, v2, v3, dmax, self.label)
 
-
     def __str__(self):
-        s = 'Sphere(' + self.center.__str__() + ',' + str(self.radius) + ') '
-        if self.isfluid:
-            s += '(fluid)'
-        else:
-            s += '(solid)'
-        return s
+        from ..utils import header_string
+        from ..jinja_env import env
+        template = env.get_template('circle.tpl')
+        elem_type = 'fluid' if self.isfluid else 'solid'
+        return template.render(header=header_string(self.__class__.__name__), elem=self, type=elem_type)
 
     def visualize(self, viewer, color, viewlabel=False, scale=np.ones(3), alpha=1.):
         v1 = self.radius*np.array([1, 0, 0])*scale

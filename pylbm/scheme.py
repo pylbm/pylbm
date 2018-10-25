@@ -11,7 +11,6 @@ import sys
 import logging
 from textwrap import dedent
 from six import string_types
-from six.moves import range
 
 import sympy as sp
 from sympy.parsing.sympy_parser import parse_expr
@@ -389,46 +388,28 @@ class Scheme:
                                has not the same size of the stencil {1}: {2}, {3}""".format(key, i, ls, nv)))
 
     def __str__(self):
-        s = "Scheme informations\n"
-        s += "\t spatial dimension: dim={0:d}\n".format(self.dim)
-        s += "\t number of schemes: nscheme={0:d}\n".format(self.nscheme)
-        s += "\t number of velocities:\n"
+        from .utils import header_string
+        from .jinja_env import env
+        template = env.get_template('scheme.tpl')
+        P = []
+        EQ = []
+        s = []
+        header_scheme = []
         for k in range(self.nscheme):
-            s += "    Stencil.nv[{0:d}]=".format(k) + str(self.stencil.nv[k]) + "\n"
-        s += "\t velocities value:\n"
-        for k in range(self.nscheme):
-            s += "    v[{0:d}] = ".format(k)
-            for v in self.stencil.v[k]:
-                s += v.__str__() + ', '
-            s += '\n'
-        s += "\t polynomials:\n"
-        kl = 0
-        for k in range(self.nscheme):
-            s += "    P[{0:d}] = ".format(k)
-            for l in range(self.stencil.nv[k]): #pylint: disable=unused-variable
-                s += self.P[kl].__str__() + ", "
-                kl += 1
-            s += "\n"
-        s += "\t equilibria:\n"
-        kl = 0
-        for k in range(self.nscheme):
-            s += "    EQ[{0:d}] = ".format(k)
-            for l in range(self.stencil.nv[k]):
-                s += self.EQ_non_swap[kl].__str__() + ", "
-                kl += 1
-            s += "\n"
-        s += "\t relaxation parameters:\n"
-        kl = 0
-        for k in range(self.nscheme):
-            s += "    s[{0:d}] = ".format(k)
-            for l in range(self.stencil.nv[k]):
-                s += self.s_non_swap[kl].__str__() + ", "
-                kl += 1
-            s += "\n"
-        s += "\t moments matrices\n"
-        s += "M      = " + self.M.__str__() + "\n"
-        s += "M^(-1) = " + self.invM.__str__() + "\n"
-        return s
+            myslice = slice(self.stencil.nv_ptr[k], self.stencil.nv_ptr[k+1])
+            header_scheme.append(header_string("Scheme %d"%k))
+            P.append(sp.pretty(sp.Matrix(self.P[myslice])))
+            EQ.append(sp.pretty(sp.Matrix(self.EQ_non_swap[myslice])))
+            s.append(sp.pretty(sp.Matrix(self.s_non_swap[myslice])))
+        return template.render(header=header_string("Scheme information"),
+                               scheme=self,
+                               consm=sp.pretty(list(self.consm.keys())),
+                               header_scheme=header_scheme,
+                               P=P,
+                               EQ=EQ,
+                               s=s,
+                               M=sp.pretty(self.M),
+                               invM=sp.pretty(self.invM))
 
     def create_moments_matrices(self):
         """
