@@ -20,12 +20,15 @@ class H5File:
     """
     class to manage hfd5 and xdmf file.
     """
-    def __init__(self, mpi_topo, filename, path='', timestep=0, init_xdmf=False):
-        self.timestep = timestep
-        prefix = '_{}'.format(timestep)
+    def __init__(self, mpi_topo, filename, path='', timestep=None, init_xdmf=False):
+        if timestep:
+            prefix = '_{}'.format(timestep)
+        else:
+            prefix = ''
         self.path = path
-        self.filename = filename + prefix
-        self.h5filename = filename + prefix + '.h5'
+        name, ext = os.path.splitext(filename)
+        self.filename = name + prefix
+        self.h5filename = name + prefix + '.h5'
 
         self.origin = None
         self.dx = None

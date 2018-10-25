@@ -32,7 +32,8 @@ class Domain:
     Parameters
     ----------
 
-    dico : a dictionary that contains the following `key:value`
+    dico : dictionary
+        that contains the following `key:value`
 
         - box : a dictionary that defines the computational box
         - elements : the list of the elements
@@ -40,6 +41,7 @@ class Domain:
         - space_step : the spatial step
         - schemes : a list of dictionaries,
           each of them defining a elementary :py:class:`Scheme <pylbm.scheme.Scheme>`
+          we only need the velocities to define a domain
 
     Notes
     -----
@@ -54,18 +56,6 @@ class Domain:
       used to label each edge (optional)
 
     See :py:class:`Geometry <pylbm.geometry.Geometry>` for more details.
-
-    If the geometry and/or the stencil were previously generated,
-    it can be used directly as following
-
-    >>> Domain(dico, geometry = geom, stencil = sten)
-
-    where geom is an object of the class
-    :py:class:`Geometry <pylbm.geometry.Geometry>`
-    and sten an object of the class
-    :py:class:`Stencil <pylbm.stencil.Stencil>`
-    In that case, dico does not need to contain the informations for generate
-    the geometry and/or the stencil
 
     In 1D, distance[q, i] is the distance between the point x[i]
     and the border in the direction of the qth velocity.
@@ -148,21 +138,35 @@ class Domain:
     Examples
     --------
 
+    >>> dico = {'box': {'x': [0, 1], 'label': 0},
+    ...         'space_step': 0.1,
+    ...         'schemes': [{'velocities': list(range(3))}],
+    ...        }
+    >>> dom = Domain(dico)
+
+    >>> dico = {'box': {'x': [0, 1], 'y': [0, 1], 'label': [0, 0, 1, 1]},
+    ...         'space_step': 0.1,
+    ...         'schemes': [{'velocities': list(range(9))},
+    ...                     {'velocities': list(range(5))}
+    ...                    ],
+    ...        }
+    >>> dom = Domain(dico)
+
     see demo/examples/domain/
 
 
     """
 
-    def __init__(self, dico=None, geometry=None, stencil=None, space_step=None, need_validation=True):
+    def __init__(self, dico, need_validation=True):
         self.valin = 999  # value in the fluid domain
         self.valout = -1   # value in the solid domain
 
         if dico is not None and need_validation:
             validate(dico, __class__.__name__)
 
-        self.geom = Geometry(dico, need_validation=False) if geometry is None else geometry
-        self.stencil = Stencil(dico, need_validation=False) if stencil is None else stencil
-        self.dx = dico['space_step'] if space_step is None else space_step
+        self.geom = Geometry(dico, need_validation=False)
+        self.stencil = Stencil(dico, need_validation=False)
+        self.dx = dico['space_step']
         self.dim = self.geom.dim
 
         self.box_label = copy.copy(self.geom.box_label)
@@ -283,6 +287,8 @@ class Domain:
                 log.error('The length of the box in the direction %d must be a multiple of the space step', k)
                 sys.exit()
 
+        # we now are sure that global_size item are integers
+        self.global_size = np.asarray(self.global_size, dtype='int')
         region = self.mpi_topo.get_region(*self.global_size) #pylint: disable=no-value-for-parameter
         region_size = [r[1] - r[0] for r in region]
 
@@ -724,3 +730,4 @@ class Domain:
 
         view.title = "Domain"
         fig.show()
+        return fig

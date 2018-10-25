@@ -8,8 +8,10 @@ mpi4py
 colorlog
 colorama
 cerberus
+jinja2
 pytest
 pylint
 pytest-pylint
 pytest-cov
+pytest-mpl
 codecov

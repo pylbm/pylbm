@@ -56,6 +56,7 @@ setup(
                       'colorlog>=2.4.0',
                       'colorama',
                       'cerberus',
+                      'jinja2',
                       'Cython>=0.21.1',
                       'mpi4py>=1.3.1',
                       'matplotlib>=1.4.0',

@@ -57,7 +57,7 @@ def permute_in_place(iterable):
     .. code::python
         >>> import itertools
         >>> for k in itertools.permutations([0, 0, 1]):
-        ...     print k
+        ...     print(k)
         ...
         (0, 0, 1)
         (0, 1, 0)
@@ -67,7 +67,7 @@ def permute_in_place(iterable):
         (1, 0, 0)
 
         >>> for k in permute_in_place([0, 0, 1]):
-        ...     print k
+        ...     print(k)
         ...
         [0, 0, 1]
         [0, 1, 0]
@@ -149,18 +149,15 @@ class Velocity:
 
     Create a velocity with the dimension and the number
 
-    >>> v = Velocity(dim = 1, num = 2)
+    >>> v = Velocity(dim=1, num=2)
     >>> v
-    velocity 2
-     vx: -1
+    (2: -1)
 
     Create a velocity with a direction
 
     >>> v = Velocity(vx=1, vy=1)
     >>> v
-    velocity 5
-     vx: 1
-     vy: 1
+    (5: 1, 1)
 
     Notes
     ------
@@ -469,105 +466,103 @@ class Stencil(list):
     --------
 
     >>> s = Stencil({'dim': 1,
-                 'schemes':[{'velocities': range(9)}, ],
-                    })
+    ...              'schemes':[{'velocities': list(range(9))},],
+    ...             })
     >>> s
     Stencil informations
     ====================
-      * spatial dimension: 1
-      * maximal velocity in each direction: [4 None None]
-      * minimal velocity in each direction: [-4 None None]
-      * Informations for each elementary stencil:
+        * spatial dimension: 1
+        * maximal velocity in each direction: [4]
+        * minimal velocity in each direction: [-4]
+        * information for each elementary stencil:
             stencil 0
-            - number of velocities:  9
-            - velocities:
-                (0: 0)
-                (1: 1)
-                (2: -1)
-                (3: 2)
-                (4: -2)
-                (5: 3)
-                (6: -3)
-                (7: 4)
-                (8: -4)
-
+                - number of velocities: 9
+                - velocities
+                    (0: 0)
+                    (1: 1)
+                    (2: -1)
+                    (3: 2)
+                    (4: -2)
+                    (5: 3)
+                    (6: -3)
+                    (7: 4)
+                    (8: -4)
     >>> s = Stencil({'dim': 2,
-                     'schemes':[{'velocities':range(9)},
-                                {'velocities':range(49)},
-                               ],
-                    })
+    ...              'schemes':[{'velocities': list(range(9))},
+    ...                         {'velocities': list(range(49))},
+    ...                        ],
+    ...            })
     >>> s
     Stencil informations
     ====================
         * spatial dimension: 2
         * maximal velocity in each direction: [3 3]
         * minimal velocity in each direction: [-3 -3]
-        * Informations for each elementary stencil:
+        * information for each elementary stencil:
             stencil 0
-            - number of velocities:  9
-            - velocities:
-                (0: 0, 0)
-                (1: 1, 0)
-                (2: 0, 1)
-                (3: -1, 0)
-                (4: 0, -1)
-                (5: 1, 1)
-                (6: -1, 1)
-                (7: -1, -1)
-                (8: 1, -1)
-
+                - number of velocities: 9
+                - velocities
+                    (0: 0, 0)
+                    (1: 1, 0)
+                    (2: 0, 1)
+                    (3: -1, 0)
+                    (4: 0, -1)
+                    (5: 1, 1)
+                    (6: -1, 1)
+                    (7: -1, -1)
+                    (8: 1, -1)
             stencil 1
-            - number of velocities: 49
-            - velocities:
-                (0: 0, 0)
-                (1: 1, 0)
-                (2: 0, 1)
-                (3: -1, 0)
-                (4: 0, -1)
-                (5: 1, 1)
-                (6: -1, 1)
-                (7: -1, -1)
-                (8: 1, -1)
-                (9: 2, 0)
-                (10: 0, 2)
-                (11: -2, 0)
-                (12: 0, -2)
-                (13: 2, 2)
-                (14: -2, 2)
-                (15: -2, -2)
-                (16: 2, -2)
-                (17: 2, 1)
-                (18: 1, 2)
-                (19: -1, 2)
-                (20: -2, 1)
-                (21: -2, -1)
-                (22: -1, -2)
-                (23: 1, -2)
-                (24: 2, -1)
-                (25: 3, 0)
-                (26: 0, 3)
-                (27: -3, 0)
-                (28: 0, -3)
-                (29: 3, 3)
-                (30: -3, 3)
-                (31: -3, -3)
-                (32: 3, -3)
-                (33: 3, 1)
-                (34: 1, 3)
-                (35: -1, 3)
-                (36: -3, 1)
-                (37: -3, -1)
-                (38: -1, -3)
-                (39: 1, -3)
-                (40: 3, -1)
-                (41: 3, 2)
-                (42: 2, 3)
-                (43: -2, 3)
-                (44: -3, 2)
-                (45: -3, -2)
-                (46: -2, -3)
-                (47: 2, -3)
-                (48: 3, -2)
+                - number of velocities: 49
+                - velocities
+                    (0: 0, 0)
+                    (1: 1, 0)
+                    (2: 0, 1)
+                    (3: -1, 0)
+                    (4: 0, -1)
+                    (5: 1, 1)
+                    (6: -1, 1)
+                    (7: -1, -1)
+                    (8: 1, -1)
+                    (9: 2, 0)
+                    (10: 0, 2)
+                    (11: -2, 0)
+                    (12: 0, -2)
+                    (13: 2, 2)
+                    (14: -2, 2)
+                    (15: -2, -2)
+                    (16: 2, -2)
+                    (17: 2, 1)
+                    (18: 1, 2)
+                    (19: -1, 2)
+                    (20: -2, 1)
+                    (21: -2, -1)
+                    (22: -1, -2)
+                    (23: 1, -2)
+                    (24: 2, -1)
+                    (25: 3, 0)
+                    (26: 0, 3)
+                    (27: -3, 0)
+                    (28: 0, -3)
+                    (29: 3, 3)
+                    (30: -3, 3)
+                    (31: -3, -3)
+                    (32: 3, -3)
+                    (33: 3, 1)
+                    (34: 1, 3)
+                    (35: -1, 3)
+                    (36: -3, 1)
+                    (37: -3, -1)
+                    (38: -1, -3)
+                    (39: 1, -3)
+                    (40: 3, -1)
+                    (41: 3, 2)
+                    (42: 2, 3)
+                    (43: -2, 3)
+                    (44: -3, 2)
+                    (45: -3, -2)
+                    (46: -2, -3)
+                    (47: 2, -3)
+                    (48: 3, -2)
 
     get the x component of the unique velocities
 
@@ -580,36 +575,31 @@ class Stencil(list):
 
     >>> s.vy[1]
     array([ 0,  0,  1,  0, -1,  1,  1, -1, -1,  0,  2,  0, -2,  2,  2, -2, -2,
-        1,  2,  2,  1, -1, -2, -2, -1,  0,  3,  0, -3,  3,  3, -3, -3,  1,
-        3,  3,  1, -1, -3, -3, -1,  2,  3,  3,  2, -2, -3, -3, -2])
+            1,  2,  2,  1, -1, -2, -2, -1,  0,  3,  0, -3,  3,  3, -3, -3,  1,
+            3,  3,  1, -1, -3, -3, -1,  2,  3,  3,  2, -2, -3, -3, -2])
+
     """
     def __init__(self, dico, need_validation=True):
         super(Stencil, self).__init__()
+
         if need_validation:
             validate(dico, __class__.__name__)
+
         # get the dimension of the stencil (given in the dictionnary or computed
         # through the geometrical box)
         self.dim = self.extract_dim(dico)
 
         # get the schemes
-        try:
-            schemes_velocities = []
-            schemes = dico['schemes']
-            if not isinstance(schemes, list):
-                log.error("The entry 'schemes' must be a list.")
-
-            for scheme in schemes:
-                # get the list of the velocities of each stencil
-                schemes_velocities.append(np.asarray(scheme['velocities']))
-        except KeyError:
-            log.error("unable to read the scheme.")
+        schemes_velocities = []
+        schemes = dico['schemes']
+        for scheme in schemes:
+            schemes_velocities.append(np.asarray(scheme['velocities']))
         self.nstencils = len(schemes_velocities)
 
         # get the unique velocities involved in the stencil
         unique_indices = np.empty(0, dtype=np.int32)
         for velocities in schemes_velocities:
             unique_indices = np.union1d(unique_indices, velocities)
-
         self.unique_velocities = np.asarray([Velocity(dim=self.dim, num=i) for i in unique_indices])
 
         self.v = []
@@ -648,18 +638,9 @@ class Stencil(list):
         """Extract the dimension from the dictionary"""
         dim = dico.get('dim', None)
 
-        box = dico.get('box', None)
-        if box is not None:
-            box_dim, _ = get_box(dico)
+        if not dim:
+            dim, _ = get_box(dico)
 
-        if dim is None:
-            dim = box_dim
-
-        if box is not None and box_dim != dim:
-            log.warning(dedent("""\
-                             you define a scheme with dimension {0} and
-                             a box with dimension {1}.
-                             They must be the same.""".format(dim, box_dim)))
         return dim
 
     @property
@@ -778,22 +759,24 @@ class Stencil(list):
         return ksym
 
     def __str__(self):
-        output = "Stencil informations\n"
-        output += "="*(len(output)-1) + "\n"
-        output += "\t * spatial dimension: {0:1d}\n".format(self.dim)
-        output += "\t * maximal velocity in each direction: "
-        output += str(self.vmax)
-        output += "\n\t * minimal velocity in each direction: "
-        output += str(self.vmin)
-        output += "\n\t * Informations for each elementary stencil:\n"
-        for k in range(self.nstencils):
-            output += "\t\tstencil {0:1d}\n".format(k)
-            output += "\t\t - number of velocities: {0:2d}\n".format(self.nv[k])
-            output += "\t\t - velocities:\n"
-            for v in self.v[k]:
-                output += '\t\t\t' + v.__str__() + '\n'
-            output += '\n'
-        return output
+        from jinja2 import Template
+        template = Template(dedent('''\
+        Stencil informations
+        ====================
+            * spatial dimension: {{ stencil.dim }}
+            * maximal velocity in each direction: {{ stencil.vmax }}
+            * minimal velocity in each direction: {{ stencil.vmin }}
+            * information for each elementary stencil:
+            {%- for k in range(stencil.nstencils) %}
+                stencil {{ k }}
+                    - number of velocities: {{ stencil.nv[k] }}
+                    - velocities
+                    {%- for v in stencil.v[k] %}
+                        {{ v }}
+                    {%- endfor %}
+            {%- endfor %}
+        '''))
+        return template.render(stencil=self)
 
     def __repr__(self):
         return self.__str__()
@@ -814,7 +797,7 @@ class Stencil(list):
                 log.info("The stencil %d is symmetric", n)
             else:
                 log.warning("The stencil %d is not symmetric", n)
-
+        return is_sym
 
     #pylint: disable=too-many-locals, too-many-branches, too-many-statements
     def visualize(self, viewer_mod=viewer.matplotlib_viewer, k=None, unique_velocities=False):
@@ -830,53 +813,27 @@ class Stencil(list):
             if None plot all stencils
         unique_velocities : if True plot the unique velocities
 
+        Returns
+        -------
+
+        fig
+            the figure (fig if matplotlib is used)
+
         """
-        # if self.dim == 3 and not viewer.is3d:
-        #     #raise ValueError("viewer doesn't support 3D visualization")
-        #     log.error("viewer doesn't support 3D visualization")
-
-        xmin = xmax = 0
-        ymin = ymax = 0
-        zmin = zmax = 0
-
-
-        if unique_velocities:
-            views = viewer_mod.Fig(figsize=(5, 5))
-            view = views[0]
-
-            vx = self.uvx
-            vy = vz = 0
-            if self.dim >= 2:
-                vy = self.uvy
-            if self.dim == 3:
-                vz = self.uvz
-
-            pos = np.zeros((vx.size, 3))
-            pos[:, 0] = vx
-            pos[:, 1] = vy
-            pos[:, 2] = vz
-
-            view.text(list(map(str, self.unum)), pos[:, :max(2, self.dim)])
-
-            xmin, xmax = np.min(vx) - 1, np.max(vx) + 1
-            ymin, ymax = np.min(vy) - 1, np.max(vy) + 1
-            zmin, zmax = np.min(vz) - 1, np.max(vz) + 1
-            view.title = "Stencil of the unique velocities"
+        def populate(vx, vy, vz):
+            dummy = np.asarray([vx, vy, vz][:self.dim])
             if self.dim == 1:
-                view.axis(xmin, xmax, ymin, ymax)
-                view.xaxis(np.arange(xmin, xmax+1))
-                view.yaxis_set_visible(False)
-            if self.dim == 2:
-                view.axis(xmin, xmax, ymin, ymax, aspect='equal')
-                view.xaxis(np.arange(xmin, xmax+1))
-                view.yaxis(np.arange(ymin, ymax+1))
-            if self.dim == 3:
-                view.axis(xmin, xmax, ymin, ymax, zmin, zmax, self.dim, aspect='equal')
-                view.xaxis(np.arange(xmin, xmax+1))
-                view.yaxis(np.arange(ymin, ymax+1))
-                view.zaxis(np.arange(zmin, zmax+1))
-            view.grid(visible=True, which='major', alpha=0.5)
+                pos = np.zeros((dummy.size, 2))
+                pos[:, 0] = dummy
+            else:
+                pos = dummy.T
+            return pos
 
+        pos = []
+        title = []
+        if unique_velocities:
+            pos.append(populate(self.uvx, self.uvy, self.uvz))
+            title.append("Stencil of the unique velocities")
         else:
             if k is None:
                 schemes2plot = list(range(self.nstencils))
@@ -884,51 +841,37 @@ class Stencil(list):
                 schemes2plot = [k]
             else:
                 schemes2plot = k
+            for i in schemes2plot:
+                pos.append(populate(self.vx[i], self.vy[i], self.vz[i]))
+                title.append("Stencil {0:d}".format(i))
 
-            views = viewer_mod.Fig(len(schemes2plot), 1, dim=self.dim, figsize=(5, 5*len(schemes2plot)))
-            views.fix_space(wspace=0.25, hspace=0.25)
+        views = viewer_mod.Fig(len(pos), 1, dim=self.dim, figsize=(5, 5*len(pos)))
+        views.fix_space(wspace=0.25, hspace=0.25)
 
-            for i, scheme_id in enumerate(schemes2plot):
-                view = views[i]
+        for i, p in enumerate(pos):
+            view = views[i]
 
-                vx = self.vx[scheme_id]
-                vy = vz = 0
-                if self.dim >= 2:
-                    vy = self.vy[scheme_id]
-                if self.dim == 3:
-                    vz = self.vz[scheme_id]
+            pminmax = np.zeros(6 if self.dim == 3 else 4)
+            pminmax[::2] = np.min(p, axis=0) - 1
+            pminmax[1::2] = np.max(p, axis=0) + 1
+            view.axis(*pminmax, aspect='equal')
 
-                pos = np.zeros((vx.size, 3))
-                pos[:, 0] = vx
-                pos[:, 1] = vy
-                pos[:, 2] = vz
+            view.title = title[i]
+            view.xaxis(np.arange(pminmax[0], pminmax[1] + 1))
+            if self.dim == 1:
+                view.yaxis_set_visible(False)
+            view.plot(pminmax[:2], [0, 0], color='orange', alpha=0.25)
 
-                xmin, xmax = np.min(vx) - 1, np.max(vx) + 1
-                ymin, ymax = np.min(vy) - 1, np.max(vy) + 1
-                zmin, zmax = np.min(vz) - 1, np.max(vz) + 1
-                view.title = "Stencil {0:d}".format(i)
-                if self.dim == 1:
-                    view.axis(xmin, xmax, ymin, ymax)
-                    view.xaxis(np.arange(xmin, xmax+1))
-                    view.yaxis_set_visible(False)
-                    view.plot([xmin, xmax], [0, 0], color='orange', alpha=0.25)
-                if self.dim == 2:
-                    view.axis(xmin, xmax, ymin, ymax, aspect='equal')
-                    view.xaxis(np.arange(xmin, xmax+1))
-                    view.yaxis(np.arange(ymin, ymax+1))
-                    view.plot([xmin, xmax], [0, 0], color='orange', alpha=0.25)
-                    view.plot([0, 0], [ymin, ymax], color='orange', alpha=0.25)
-                if self.dim == 3:
-                    view.axis(xmin, xmax, ymin, ymax, zmin, zmax, self.dim, aspect='equal')
-                    view.xaxis(np.arange(xmin, xmax+1))
-                    view.yaxis(np.arange(ymin, ymax+1))
-                    view.zaxis(np.arange(zmin, zmax+1))
-                    view.plot([xmin, xmax], [0, 0], [0, 0], color='orange', alpha=0.25)
-                    view.plot([0, 0], [ymin, ymax], [0, 0], color='orange', alpha=0.25)
-                    view.plot([0, 0], [0, 0], [zmin, zmax], color='orange', alpha=0.25)
+            if self.dim >= 2:
+                view.yaxis(np.arange(pminmax[2], pminmax[3] + 1))
+                view.plot([0, 0], pminmax[2:4], color='orange', alpha=0.25)
+            if self.dim == 3:
+                view.zaxis(np.arange(pminmax[4], pminmax[5] + 1))
+                view.plot([0, 0], [0, 0], pminmax[4:], color='orange', alpha=0.25)
 
-                view.text(list(map(str, self.num[i])), pos[:, :max(2, self.dim)],
-                          fontsize=12, color='navy', fontweight='bold')
-                view.grid(visible=True, which='major', alpha=0.25)
+            view.text(list(map(str, self.num[i])), p,
+                      fontsize=12, color='navy', fontweight='bold')
+            view.grid(visible=True, which='major', alpha=0.25)
 
         views.show()
+        return views

@@ -79,7 +79,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
                 'polynomials':polynomes,
                 'relaxation_parameters':s0,
                 'equilibrium':[rho, qx, qy, 0.],
-                'init':{rho:(initialization_rho,)},
+                'init':{rho: initialization_rho},
             },
             {
                 'velocities':vitesse,
