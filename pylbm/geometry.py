@@ -121,6 +121,8 @@ class Geometry:
         elem = dico.get('elements', None)
         if elem is not None:
             for elemk in elem:
+                if elemk.dim != self.dim:
+                    raise ValueError('Element must have the same dimension of the box')
                 self.list_elem.append(elemk)
         log.debug(self.__str__())
 
@@ -259,6 +261,7 @@ class Geometry:
 
         views.title = "Geometry"
         views.show()
+        return views
 
     def list_of_labels(self):
         """

@@ -11,7 +11,6 @@
 """
 from six.moves import range
 import numpy as np
-from scipy import stats
 import sympy as sp
 import pylbm
 
@@ -106,8 +105,7 @@ def run(dt, Tf, generator = 'numpy', sorder=None, withPlot=True):
         while sol.t < Tf:
             sol.one_time_step()
 
-    sol.time_info()
-    return np.linalg.norm(sol.m[u] - solution(sol.t, sol.domain.x, xmin, xmax, c, mu), np.inf)
+    return sol
 
 if __name__ == '__main__':
     Tf = 2.

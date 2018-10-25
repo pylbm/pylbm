@@ -1,10 +1,9 @@
 
-from six.moves import range
 import numpy as np
 import copy
 import pylbm
 
-class test_domain1D(object):
+class TestDomain1D:
     dom1d = {'box':{'x': [0, 1], 'label': 0},
              'space_step':0.25,
              'schemes': [{'velocities':list(range(3))}],
@@ -23,11 +22,6 @@ class test_domain1D(object):
         assert(np.all(dom.geom.bounds == [[0., 1.]]))
         assert(np.all(dom.x_halo == np.linspace(-.125, 1.125, 6)))
 
-    def test_with_given_geometry_and_stencil(self):
-        geom = pylbm.Geometry({'box': {'x': [0, 1]}})
-        sten = pylbm.Stencil({'dim': 1, 'schemes': [{'velocities':list(range(3))}]})
-        dom = pylbm.Domain(geometry = geom, stencil=sten, space_step=.25)
-
     def test_domain_with_one_scheme(self):
         dom = pylbm.Domain(self.dom1d)
 
@@ -36,12 +30,12 @@ class test_domain1D(object):
         assert(np.all(dom.in_or_out == desired_in_or_out))
 
         desired_distance = self.valin*np.ones((3, 6))
-        desired_distance[[(1, 2), (-2, 1)]] = .5
+        desired_distance[tuple(((1, 2), (-2, 1)))] = .5
         print(dom.distance)
         assert(np.all(dom.distance == desired_distance))
 
         desired_flag = self.valin*np.ones((3, 6), dtype=int)
-        desired_flag[[(1, 2), (-2, 1)]] = 0
+        desired_flag[tuple(((1, 2), (-2, 1)))] = 0
         assert(np.all(dom.flag == desired_flag))
 
     def test_domain_with_two_schemes_without_label(self):
@@ -55,15 +49,15 @@ class test_domain1D(object):
         assert(np.all(dom.in_or_out == desired_in_or_out))
 
         desired_distance = self.valin*np.ones((5, 8))
-        desired_distance[[(1, 2), (-3, 2)]] = .5
-        desired_distance[[(3, 4), (-3, 2)]] = .25
-        desired_distance[[(3, 4), (-4, 3)]] = .75
+        desired_distance[tuple(((1, 2), (-3, 2)))] = .5
+        desired_distance[tuple(((3, 4), (-3, 2)))] = .25
+        desired_distance[tuple(((3, 4), (-4, 3)))] = .75
         assert(np.all(dom.distance == desired_distance))
 
         desired_flag = self.valin*np.ones((5, 8), dtype=int)
         ind0 = (1, 2) + (3, 4)*2
         ind1 = (-3, 2)*2 + (-4, 3)
-        desired_flag[[ind0, ind1]] = 0
+        desired_flag[tuple((ind0, ind1))] = 0
         assert(np.all(dom.flag == desired_flag))
 
     def test_domain_with_two_schemes_with_label(self):
@@ -79,9 +73,9 @@ class test_domain1D(object):
         assert(np.all(dom.in_or_out == desired_in_or_out))
 
         desired_distance = self.valin*np.ones((5, 8))
-        desired_distance[[(1, 2), (-3, 2)]] = .5
-        desired_distance[[(3, 4), (-3, 2)]] = .25
-        desired_distance[[(3, 4), (-4, 3)]] = .75
+        desired_distance[tuple(((1, 2), (-3, 2)))] = .5
+        desired_distance[tuple(((3, 4), (-3, 2)))] = .25
+        desired_distance[tuple(((3, 4), (-4, 3)))] = .75
         assert(np.all(dom.distance == desired_distance))
 
         desired_flag = self.valin*np.ones((5, 8), dtype=int)
@@ -89,6 +83,6 @@ class test_domain1D(object):
         ind1_left = (2,)*2 + (3,)
         ind0_right = (1,) + (3,)*2
         ind1_right = (-3,)*2 + (-4,)
-        desired_flag[[ind0_left, ind1_left]] = lleft
-        desired_flag[[ind0_right, ind1_right]] = lright
+        desired_flag[tuple((ind0_left, ind1_left))] = lleft
+        desired_flag[tuple((ind0_right, ind1_right))] = lright
         assert(np.all(dom.flag == desired_flag))

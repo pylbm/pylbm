@@ -28,4 +28,4 @@ install:
 build: off
 
 test_script:
-  - pytest
+  - pytest --mpl --h5diff -m "not slow"

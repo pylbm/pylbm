@@ -37,6 +37,8 @@ class Circle(Element):
     ----------
     number_of_bounds : int
         1
+    dimension: int
+        2
     center : ndarray
         the coordinates of the center of the circle
     radius : double
@@ -60,6 +62,7 @@ class Circle(Element):
     """
     def __init__(self, center, radius, label=0, isfluid=False):
         self.number_of_bounds = 1 # number of edges
+        self.dim = 2
         self.center = np.asarray(center)
         if radius >= 0:
             self.radius = radius

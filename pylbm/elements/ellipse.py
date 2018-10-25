@@ -39,6 +39,8 @@ class Ellipse(Element):
     ----------
     number_of_bounds : int
         1
+    dim: int
+        2
     center : ndarray
         the coordinates of the center of the ellipse
     v1 : ndarray
@@ -65,6 +67,7 @@ class Ellipse(Element):
     """
     def __init__(self, center, v1, v2, label=0, isfluid=False):
         self.number_of_bounds = 1 # number of edges
+        self.dim = 2
         self.center = np.asarray(center)
         if abs(v1[0]*v2[0] + v1[1]*v2[1]) > 1.e-14:
             log.error('The vectors of the ellipse are not orthogonal')

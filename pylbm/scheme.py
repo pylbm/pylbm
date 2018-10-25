@@ -849,10 +849,8 @@ class Scheme:
             m = indexed('m', [ns, nx, ny, nz], index=[nv] + iloop, ranges=range(ns), permutation=sorder)
             dummy = eq.subs(list(zip(mv, m)) + subs_param).expand()
             source_eq = source_eq.subs(list(zip(mv, m)) + subs_param).expand()
-            # FIX: have a unique version for source terms. The issue here is that sympy
-            #      return True for Eq(m, source_eq) if there are no source terms which is not
-            #      a valid expression for codegen (could be fix if we can use Assignment instead of Eq)
-            if Eq(m, source_eq):
+
+            if all([src_t is None for src_t in self._source_terms]):
                 generator.add_routine(('one_time_step',
                                        For(iloop,
                                            [Eq(m, Mu*f),  # transport + f2m
@@ -1084,7 +1082,7 @@ class Scheme:
 
     #     The output matrix corresponds to the linear operator involved
     #     in the relaxation phase. If the equilibrium is not a linear combination
-    #     of the conserved moments, a linearization is done arround a given state.
+    #     of the conserved moments, a linearization is done around a given state.
     #     """
     #     ns = self.stencil.nstencils # number of stencil
     #     nv = self.stencil.nv # number of velocities for each stencil

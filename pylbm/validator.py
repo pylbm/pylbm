@@ -176,7 +176,7 @@ def validate(dico, name):
                              'required': name in ['Domain', 'Scheme', 'Simulation', 'Stencil']
                             },
               'polynomials': {'type': 'list',
-                              'schema': {'type': ['number', 'expr']},
+                              'schema': {'anyof_type': ['number', 'expr']},
                               'required': name in ['Scheme', 'Simulation']
                              },
               'relaxation_parameters': {'type': 'list',
@@ -184,22 +184,33 @@ def validate(dico, name):
                                         'required': name in ['Scheme', 'Simulation']
                                        },
               'equilibrium': {'type': 'list',
-                              'schema': {'type': ['number', 'expr']},
+                              'schema': {'anyof_type': ['number', 'expr']},
                               'excludes': 'feq',
                               'required': name in ['Scheme', 'Simulation']
                              },
               'feq': {'type': 'list',
-                      'schema': {'type': ['number', 'expr']},
+                      'items': [{'type': 'function'}, {'type': 'list'}],
                       'excludes': 'equilibrium',
                       'required': name in ['Scheme', 'Simulation']
                      },
-              'conserved_moments': {'type': 'list',
-                                    'schema': {'type': 'symbol'},
+              'conserved_moments': {'anyof': [{'type': 'symbol'},
+                                              {'type': 'list',
+                                               'schema': {'type': 'symbol'}}
+                                             ],
                                     'required': name in ['Scheme', 'Simulation']
                                    },
+              'source_terms': {'type': 'dict',
+                               'keyschema': {'type': 'symbol'},
+                               'valueschema': {'type': 'expr'},
+                              },
               'init': {'type': 'dict',
                        'keyschema': {'type': 'symbol'},
-                       'valueschema': {'type': ['number', 'function']},
+                       'valueschema': {'anyof': [{'type': 'number'},
+                                                 {'type': 'function'},
+                                                 {'type': 'list',
+                                                  'items': [{'type': 'function'}, {'type': 'list'}]}
+                                                ]
+                                      },
                        'required': name in ['Simulation']
                       }
              }
@@ -208,8 +219,10 @@ def validate(dico, name):
                            'keyschema': {'type': 'integer'},
                            'valueschema': {'isboundary': True}
                           },
-                'value': {'type': ['function', 'list'],
-                          'items': [{'type': 'function'}, {'type': 'list'}]
+                'value': {'anyof': [{'type': 'function'},
+                                    {'type': 'list',
+                                     'items': [{'type': 'function'}, {'type': 'list', 'nullable': True}],
+                                    }]
                          }
                }
 
@@ -234,8 +247,10 @@ def validate(dico, name):
                                                      {'type': 'number'}
                                                     ]
                                           },
-                                     'label': {'type': ['integer', 'list'],
-                                               'schema': {'type': 'integer'}
+                                     'label': {'anyof': [{'type': 'integer'},
+                                                         {'type' : 'list',
+                                                          'schema': {'type': 'integer'}}
+                                                        ]
                                               }
                                     },
                           'excludes': 'dim',
@@ -248,16 +263,17 @@ def validate(dico, name):
                                  'min': 0,
                                  'required': name in ['Domain', 'Scheme', 'Simulation']
                                 },
-                  'scheme_velocity': {'type': ['number', 'symbol'],
+                  'scheme_velocity': {'anyof_type': ['number', 'symbol'],
                                       'required': name in ['Scheme', 'Simulation']
                                      },
                   'schemes': {'type': 'list',
                               'schema': {'type': 'dict',
                                          'schema': scheme
-                                        }
+                                        },
+                              'required': name in ['Domain', 'Scheme', 'Simulation', 'Stencil']
                              },
                   'parameters': {'type': 'dict',
-                                 'keyschema': {'type': ['symbol', 'string']},
+                                 'keyschema': {'anyof_type': ['symbol', 'string']},
                                  'valueschema': {'type': 'number'}
                                 },
                   'boundary_conditions': {'type': 'dict',
@@ -266,7 +282,8 @@ def validate(dico, name):
                                          },
                   'generator': {'type': 'string',
                                 'allowed':['numpy', 'cython', 'loopy']
-                               }
+                               },
+                  'show_code': {'type': 'boolean'}
                  }
 
     v = MyValidator(simulation)

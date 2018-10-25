@@ -12,38 +12,18 @@ import pylbm
 X, Y = sp.symbols('X, Y')
 rho, qx, qy, T, LA = sp.symbols('rho, qx, qy, T, LA', real=True)
 
-# parameters
-Tu = -0.5
-Td =  0.5
-xmin, xmax, ymin, ymax = 0., 1., 0., 1.
-Ra = 100
-Pr = 0.71
-Ma = 0.01
-alpha = .005
-la = 1. # velocity of the scheme
-rhoo = 1.
-g = 9.81
-
-nu = np.sqrt(Pr*alpha*9.81*(Td-Tu)*(ymax-ymin)/Ra)
-diffusivity = nu/Pr
-tau = 1./(.5+3*nu)
-taup = 1./(.5+2*diffusivity)
-print(tau, taup)
-tau=1.99
-taup=1.991
-sf = [0]*3 + [tau]*6
-sT = [0] + [taup]*3
-
-def init_T(x, y):
-    return Td + (Tu-Td)/(ymax-ymin)*(y-ymin)
+def init_T(x, y, Td, Tu, xmin, xmax, ymin, ymax):
+    xmid = (xmax+xmin)/2
+    print((Tu-Td)*(x<1.2*xmid)*(x>0.8*xmid))
+    return Td + (Tu-Td)/(ymax-ymin)*(y-ymin) + (Tu-Td)*(x<1.2*xmid)*(x>0.8*xmid)
     #return Td + (Tu-Td)/(ymax-ymin)*(y-ymin) + (Td-Tu) * (0.1*np.random.random_sample((x.shape[0],y.shape[1]))-0.05)
 
-def bc_up(f, m, x, y):
+def bc_up(f, m, x, y, Tu):
     m[qx] = 0.
     m[qy] = 0.
     m[T] = Tu
 
-def bc_down(f, m, x, y):
+def bc_down(f, m, x, y, Td):
     np.random.seed(1)
     m[qx] = 0.
     m[qy] = 0.
@@ -68,7 +48,6 @@ def feq_T(v, u):
     c0 = 1#LA
     x, y = sp.symbols('x, y')
     vsymb = sp.Matrix([x, y])
-    print(u)
     f = T/4*(1 + 2*u.dot(vsymb)/c0)
     return sp.Matrix([f.subs([(x, vv[0]), (y, vv[1])]) for iv, vv in enumerate(v)])
 
@@ -92,6 +71,26 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         if True plot the solution otherwise just compute the solution
 
     """
+    # parameters
+    Tu = -0.5
+    Td =  0.5
+    xmin, xmax, ymin, ymax = 0., 1., 0., 1.
+    Ra = 100
+    Pr = 0.71
+    Ma = 0.01
+    alpha = .005
+    la = 1. # velocity of the scheme
+    rhoo = 1.
+    g = 9.81
+
+    nu = np.sqrt(Pr*alpha*9.81*(Td-Tu)*(ymax-ymin)/Ra)
+    diffusivity = nu/Pr
+    tau = 1./(.5+3*nu)
+    taup = 1./(.5+2*diffusivity)
+    tau=1.99
+    taup=1.991
+    sf = [0]*3 + [tau]*6
+    sT = [0] + [taup]*3
 
     dico = {
         'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[-1, -1, 0, 1]},
@@ -119,35 +118,37 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
                 'polynomials':[1, X, Y, X**2-Y**2],
                 'feq':(feq_T, (sp.Matrix([qx/rho, qy/rho]),)),
                 'relaxation_parameters':sT,
-                'init':{T:(init_T,)},
+                'init':{T:(init_T, (Td, Tu, xmin, xmax, ymin, ymax))},
             },
         ],
         'boundary_conditions':{
-            0:{'method':{0: pylbm.bc.BouzidiBounceBack, 1: pylbm.bc.BouzidiAntiBounceBack}, 'value':bc_down},
-            1:{'method':{0: pylbm.bc.BouzidiBounceBack, 1: pylbm.bc.BouzidiAntiBounceBack}, 'value':bc_up},
+            0:{'method':{0: pylbm.bc.BouzidiBounceBack, 1: pylbm.bc.BouzidiAntiBounceBack}, 'value':(bc_down, (Td,))},
+            1:{'method':{0: pylbm.bc.BouzidiBounceBack, 1: pylbm.bc.BouzidiAntiBounceBack}, 'value':(bc_up, (Tu,))},
         },
-        'generator': "cython",
+        'generator': generator,
     }
 
     sol = pylbm.Simulation(dico)
 
-    x, y = sol.domain.x, sol.domain.y
+    if withPlot:
+        viewer = pylbm.viewer.matplotlib_viewer
+        fig = viewer.Fig()
+        ax = fig[0]
+        image = ax.image(sol.m[T].T, cmap='cubehelix', clim=[Tu, Td+.25])
 
-    viewer = pylbm.viewer.matplotlib_viewer
-    fig = viewer.Fig()
-    ax = fig[0]
-    image = ax.image(sol.m[T].T, cmap='cubehelix', clim=[Tu, Td+.25])
+        def update(iframe):
+            nrep = 1    
+            for i in range(nrep):
+                sol.one_time_step()
+            image.set_data(sol.m[T].T)
+            ax.title = "Solution t={0:f}".format(sol.t)
 
-    def update(iframe):
-        nrep = 1    
-        for i in range(nrep):
-            sol.one_time_step()
-        image.set_data(sol.m[T].T)
-        ax.title = "Solution t={0:f}".format(sol.t)
-
-    # run the simulation
-    fig.animate(update, interval=1)
-    fig.show()
+        # run the simulation
+        fig.animate(update, interval=1)
+        fig.show()
+    else:
+        while sol.t < Tf:
+           sol.one_time_step()
 
     return sol
 
