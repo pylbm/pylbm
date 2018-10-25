@@ -800,7 +800,7 @@ class Stencil(list):
         return is_sym
 
     #pylint: disable=too-many-locals, too-many-branches, too-many-statements
-    def visualize(self, viewer_mod=viewer.matplotlib_viewer, k=None, unique_velocities=False, show=True):
+    def visualize(self, viewer_mod=viewer.matplotlib_viewer, k=None, unique_velocities=False):
         """
         plot the velocities
 
@@ -812,10 +812,7 @@ class Stencil(list):
         k : list of stencil index to plot
             if None plot all stencils
         unique_velocities : if True plot the unique velocities
-        show : boolean
-            show the figure if True
-            default: True
-        
+
         Returns
         -------
 
@@ -876,6 +873,5 @@ class Stencil(list):
                       fontsize=12, color='navy', fontweight='bold')
             view.grid(visible=True, which='major', alpha=0.25)
 
-        if show:
-            views.show()
+        views.show()
         return views
