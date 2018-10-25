@@ -64,11 +64,14 @@ class Triangle(Element):
         True if the triangle is added
         and False if the triangle is deleted
     number_of_bounds : int
-        number of edges
+        number of edges: 3
+    dim: int
+        2
 
     """
     def __init__(self, point, vecta, vectb, label=0, isfluid=False):
         self.number_of_bounds = 3 # number of edges
+        self.dim = 2
         self.point = np.asarray(point)
         self.v0 = np.asarray(vecta)
         self.v1 = np.asarray(vectb)

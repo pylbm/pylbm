@@ -42,6 +42,8 @@ class Ellipsoid(Element):
     ----------
     number_of_bounds : int
         1
+    dim: int
+        3
     center : ndarray
         the coordinates of the center of the sphere
     v1 : ndarray
@@ -69,6 +71,7 @@ class Ellipsoid(Element):
     """
     def __init__(self, center, v1, v2, v3, label=0, isfluid=False):
         self.number_of_bounds = 1 # number of edges
+        self.dim = 3
         self.center = np.asarray(center)
         p12 = abs(v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2])
         p23 = abs(v2[0]*v3[0] + v2[1]*v3[1] + v2[2]*v3[2])
