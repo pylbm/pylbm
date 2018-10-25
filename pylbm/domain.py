@@ -730,3 +730,4 @@ class Domain:
 
         view.title = "Domain"
         fig.show()
+        return fig
