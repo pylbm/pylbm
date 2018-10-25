@@ -11,7 +11,7 @@ pylbm simulation
 import sys
 import logging
 import types
-from six.moves import range
+from textwrap import dedent
 from six import string_types
 import numpy as np
 import sympy as sp
@@ -24,7 +24,6 @@ from . import utils
 from .validator import validate
 from .context import set_queue
 from .generator import generator
-
 from .storage import Array, AOS, SOA
 
 log = logging.getLogger(__name__) #pylint: disable=invalid-name
@@ -242,13 +241,11 @@ class Simulation:
         return self._F._in(i) #pylint: disable=protected-access
 
     def __str__(self):
-        s = "Simulation informations: "
-        if self.name is not None:
-            s += "[ " + self.name + " ]"
-        s += '\n'
-        s += self.domain.__str__()
-        s += self.scheme.__str__()
-        return s
+        from .utils import header_string
+        from .jinja_env import env
+        template = env.get_template('simulation.tpl')
+        return template.render(header=header_string("Simulation information"),
+                               simu=self)
 
     #pylint: disable=too-many-locals
     def time_info(self):

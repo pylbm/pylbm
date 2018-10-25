@@ -229,7 +229,7 @@ def validate(dico, name):
     simulation = {'dim': {'type': 'integer',
                           'allowed': [1, 2, 3],
                           'excludes': 'box',
-                          'required': name in ['Stencil']
+                          'required': name in ['Stencil', 'Scheme']
                          },
                   'box': {'type': 'dict',
                           'schema': {'x': {'type': 'list',
@@ -261,7 +261,7 @@ def validate(dico, name):
                               },
                   'space_step': {'type': 'number',
                                  'min': 0,
-                                 'required': name in ['Domain', 'Scheme', 'Simulation']
+                                 'required': name in ['Domain', 'Simulation']
                                 },
                   'scheme_velocity': {'anyof_type': ['number', 'symbol'],
                                       'required': name in ['Scheme', 'Simulation']

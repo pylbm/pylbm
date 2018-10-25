@@ -47,6 +47,9 @@ class Element(ABC):
     def visualize(self, viewer, color, viewlabel=False, scale=np.ones(2), alpha=1.):
         pass
 
+    def __repr__(self):
+        return self.__str__()
+
     def test_label(self):
         """
         test if the number of labels is equal to the number of bounds.

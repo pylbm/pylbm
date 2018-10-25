@@ -9,7 +9,7 @@ Geometry module
 """
 
 import logging
-from six.moves import range
+from textwrap import dedent
 from six import string_types
 import numpy as np
 
@@ -128,14 +128,10 @@ class Geometry:
 
 
     def __str__(self):
-        s = "Geometry informations\n"
-        s += "\t spatial dimension: {0:d}\n".format(self.dim)
-        s += "\t bounds of the box: \n" + self.bounds.__str__() + "\n"
-        if self.list_elem:
-            s += "\t List of elements added or deleted in the box\n"
-            for k in range(len(self.list_elem)):
-                s += "\t\t Element number {0:d}: ".format(k) + self.list_elem[k].__str__() + "\n"
-        return s
+        from .utils import header_string
+        from .jinja_env import env
+        template = env.get_template('geometry.tpl')
+        return template.render(header=header_string('Geometry information'), geom=self)
 
     def add_elem(self, elem):
         """
