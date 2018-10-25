@@ -9,13 +9,13 @@ Cylinder element with
     - circle base
     - ellipse base
     - triangle base
-    - arallelogram base
+    - parallelogram base
 """
 
 #pylint: disable=invalid-name, no-member, attribute-defined-outside-init, wildcard-import, unused-wildcard-import
 
 import logging
-from six.moves import range
+from textwrap import dedent
 import numpy as np
 
 from .base import *
@@ -160,7 +160,11 @@ class Cylinder(Element):
         return alpha, border
 
     def __str__(self):
-        pass
+        from ..utils import header_string
+        from ..jinja_env import env
+        template = env.get_template('cylinder.tpl')
+        elem_type = 'fluid' if self.isfluid else 'solid'
+        return template.render(header=header_string(self.__class__.__name__), elem=self, type=elem_type)
 
     #pylint: disable=too-many-locals
     def visualize(self, viewer, color, viewlabel=False, scale=np.ones(3), alpha=1.):
@@ -240,8 +244,16 @@ class CylinderCircle(Cylinder):
     >>> v1, v2 = [1., 0., 0.], [0., 1., 0.]
     >>> w = [0., 0., 1.]
     >>> CylinderCircle(center, v1, v2, w)
-        CylinderCircle([0 0 0.5], [1 0 0], [0 1 0], [0 0 1]) (solid)
-
+    +----------------+
+    | CylinderCircle |
+    +----------------+
+        - dimension: 3
+        - center: [0.  0.  0.5]
+        - v1: [1. 0. 0.]
+        - v2: [0. 1. 0.]
+        - w: [0. 0. 1.]
+        - label: [0, 0, 0]
+        - type: solid
     """
     def __init__(self, center, v1, v2, w, label=0, isfluid=False):
         self.number_of_bounds = 3 # number of edges
@@ -252,17 +264,6 @@ class CylinderCircle(Cylinder):
         self.change_of_variables()
         self.base = BaseCircle(self.center, self.v1, self.v2)
         Cylinder.__init__(self, label, isfluid)
-
-    def __str__(self):
-        s = 'CylinderCircle(' + self.center.__str__() + ', '
-        s += self.v1.__str__() + ', ' + self.v2.__str__() + ', '
-        s += self.w.__str__() +  ') '
-        if self.isfluid:
-            s += '(fluid)'
-        else:
-            s += '(solid)'
-        return s
-
 
 class CylinderEllipse(Cylinder):
     """
@@ -318,7 +319,16 @@ class CylinderEllipse(Cylinder):
     >>> v1, v2 = [1., 0., 0.], [0., 1., 0.]
     >>> w = [0., 0., 1.]
     >>> CylinderEllipse(center, v1, v2, w)
-        CylinderEllipse([0 0 0.5], [1 0 0], [0 1 0], [0 0 1]) (solid)
+    +-----------------+
+    | CylinderEllipse |
+    +-----------------+
+        - dimension: 3
+        - center: [0.  0.  0.5]
+        - v1: [1. 0. 0.]
+        - v2: [0. 1. 0.]
+        - w: [0. 0. 1.]
+        - label: [0, 0, 0]
+        - type: solid
 
     """
     def __init__(self, center, v1, v2, w, label=0, isfluid=False):
@@ -330,16 +340,6 @@ class CylinderEllipse(Cylinder):
         self.change_of_variables()
         self.base = BaseEllipse(self.center, self.v1, self.v2)
         Cylinder.__init__(self, label, isfluid)
-
-    def __str__(self):
-        s = 'CylinderEllipse(' + self.center.__str__() + ', '
-        s += self.v1.__str__() + ', ' + self.v2.__str__() + ', '
-        s += self.w.__str__() +  ') '
-        if self.isfluid:
-            s += '(fluid)'
-        else:
-            s += '(solid)'
-        return s
 
 class CylinderTriangle(Cylinder):
     """
@@ -390,7 +390,16 @@ class CylinderTriangle(Cylinder):
     >>> v1, v2 = [1., 0., 0.], [0., 1., 0.]
     >>> w = [0., 0., 1.]
     >>> CylinderTriangle(center, v1, v2, w)
-        CylinderTriangle([0 0 0.5], [1 0 0], [0 1 0], [0 0 1]) (solid)
+    +------------------+
+    | CylinderTriangle |
+    +------------------+
+        - dimension: 3
+        - center: [0.  0.  0.5]
+        - v1: [1. 0. 0.]
+        - v2: [0. 1. 0.]
+        - w: [0. 0. 1.]
+        - label: [0, 0, 0, 0, 0]
+        - type: solid
 
     """
     def __init__(self, center, v1, v2, w, label=0, isfluid=False):
@@ -402,16 +411,6 @@ class CylinderTriangle(Cylinder):
         self.change_of_variables()
         self.base = BaseTriangle(self.center, self.v1, self.v2)
         Cylinder.__init__(self, label, isfluid)
-
-    def __str__(self):
-        s = 'CylinderTriangle(' + self.center.__str__() + ', '
-        s += self.v1.__str__() + ', ' + self.v2.__str__() + ', '
-        s += self.w.__str__() +  ') '
-        if self.isfluid:
-            s += '(fluid)'
-        else:
-            s += '(solid)'
-        return s
 
 class Parallelepiped(Cylinder):
     """
@@ -461,7 +460,16 @@ class Parallelepiped(Cylinder):
     >>> center = [0., 0., 0.5]
     >>> v0, v1, v2 = [1., 0., 0.], [0., 1., 0.], [0., 0., 1.]
     >>> Parallelepiped(center, v0, v1, v2)
-        Parallelepiped([0 0 0], [1 0 0], [0 1 0], [0 0 1]) (solid)
+    +----------------+
+    | Parallelepiped |
+    +----------------+
+        - dimension: 3
+        - center: [0. 0. 1.]
+        - v1: [1. 0. 0.]
+        - v2: [0. 1. 0.]
+        - w: [0.  0.  0.5]
+        - label: [0, 0, 0, 0, 0, 0]
+        - type: solid
 
     """
     def __init__(self, point, v0, v1, v2, label=0, isfluid=False):
@@ -474,13 +482,3 @@ class Parallelepiped(Cylinder):
         self.change_of_variables()
         self.base = BaseParallelogram(self.center, self.v1, self.v2)
         Cylinder.__init__(self, label, isfluid)
-
-    def __str__(self):
-        s = 'Parallelepiped(' + self.point.__str__() + ', '
-        s += self.v1.__str__() + ', ' + self.v2.__str__() + ', '
-        s += (2*self.w).__str__() +  ') '
-        if self.isfluid:
-            s += '(fluid)'
-        else:
-            s += '(solid)'
-        return s

@@ -10,6 +10,7 @@ Circle element
 #pylint: disable=invalid-name
 
 import logging
+from textwrap import dedent
 import numpy as np
 
 from .base import Element
@@ -57,7 +58,14 @@ class Circle(Element):
     >>> center = [0., 0.]
     >>> radius = 1.
     >>> Circle(center, radius)
-        Circle([0 0],1) (solid)
+    +--------+
+    | Circle |
+    +--------+
+        - dimension: 2
+        - center: [0. 0.]
+        - radius: 1.0
+        - label: [0]
+        - type: solid
 
     """
     def __init__(self, center, radius, label=0, isfluid=False):
@@ -135,12 +143,11 @@ class Circle(Element):
         return distance_ellipse(x, y, v, self.center, v1, v2, dmax, self.label)
 
     def __str__(self):
-        s = 'Circle(' + self.center.__str__() + ',' + str(self.radius) + ') '
-        if self.isfluid:
-            s += '(fluid)'
-        else:
-            s += '(solid)'
-        return s
+        from ..utils import header_string
+        from ..jinja_env import env
+        template = env.get_template('circle.tpl')
+        elem_type = 'fluid' if self.isfluid else 'solid'
+        return template.render(header=header_string('Circle'), elem=self, type=elem_type)
 
     def visualize(self, viewer, color, viewlabel=False, scale=np.ones(2), alpha=1.):
         viewer.ellipse(self.center*scale, tuple(self.radius*scale), color, alpha=alpha)

@@ -9,11 +9,11 @@ Domain definitions for LBM
 import logging
 import sys
 import copy
+from textwrap import dedent
 
 import numpy as np
 import sympy as sp
 import mpi4py.MPI as mpi
-from six.moves import range
 from six import string_types
 
 from .geometry import Geometry
@@ -143,6 +143,24 @@ class Domain:
     ...         'schemes': [{'velocities': list(range(3))}],
     ...        }
     >>> dom = Domain(dico)
+    >>> dom
+    +--------------------+
+    | Domain information |
+    +--------------------+
+        - spatial dimension: 1
+        - space step: 0.1
+        - with halo:
+            bounds of the box: [-0.05] x [1.05]
+            number of points: [12]
+        - without halo:
+            bounds of the box: [0.05] x [0.95]
+            number of points: [10]
+    <BLANKLINE>
+        +----------------------+
+        | Geometry information |
+        +----------------------+
+            - spatial dimension: 1
+            - bounds of the box: [0. 1.]
 
     >>> dico = {'box': {'x': [0, 1], 'y': [0, 1], 'label': [0, 0, 1, 1]},
     ...         'space_step': 0.1,
@@ -151,6 +169,24 @@ class Domain:
     ...                    ],
     ...        }
     >>> dom = Domain(dico)
+    >>> dom
+    +--------------------+
+    | Domain information |
+    +--------------------+
+        - spatial dimension: 2
+        - space step: 0.1
+        - with halo:
+            bounds of the box: [-0.05 -0.05] x [1.05 1.05]
+            number of points: [12, 12]
+        - without halo:
+            bounds of the box: [0.05 0.05] x [0.95 0.95]
+            number of points: [10, 10]
+    <BLANKLINE>
+        +----------------------+
+        | Geometry information |
+        +----------------------+
+            - spatial dimension: 2
+            - bounds of the box: [0. 1.] x [0. 1.]
 
     see demo/examples/domain/
 
@@ -255,12 +291,13 @@ class Domain:
         return self.coords_halo[2]
 
     def __str__(self):
-        s = "Domain informations\n"
-        s += "\t spatial dimension: {0:d}\n".format(self.dim)
-        #s += "\t bounds of the box: bounds = " + self.bounds.__str__() + "\n"
-        s += "\t space step: dx={0:10.3e}\n".format(self.dx)
-        #s += "\t Number of points in each direction: N=" + self.N.__str__() + ", Na=" + self.Na.__str__() + "\n"
-        return s
+        from .utils import header_string
+        from .jinja_env import env
+        template = env.get_template('domain.tpl')
+        return template.render(header=header_string('Domain information'), dom=self)
+
+    def __repr__(self):
+        return self.__str__()
 
     def construct_mpi_topology(self, dico):
         """

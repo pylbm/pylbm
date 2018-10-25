@@ -12,7 +12,6 @@ import collections
 import logging
 import types
 import numpy as np
-from six.moves import range
 from sympy import symbols, IndexedBase, Idx, Eq
 
 from .storage import Array

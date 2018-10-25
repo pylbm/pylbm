@@ -11,7 +11,6 @@ lattice Boltzmann schemes.
 from math import sqrt
 from textwrap import dedent
 import logging
-from six.moves import range
 import numpy as np
 
 from .utils import itemproperty
@@ -469,12 +468,13 @@ class Stencil(list):
     ...              'schemes':[{'velocities': list(range(9))},],
     ...             })
     >>> s
-    Stencil informations
-    ====================
-        * spatial dimension: 1
-        * maximal velocity in each direction: [4]
-        * minimal velocity in each direction: [-4]
-        * information for each elementary stencil:
+    +---------------------+
+    | Stencil information |
+    +---------------------+
+        - spatial dimension: 1
+        - minimal velocity in each direction: [-4]
+        - maximal velocity in each direction: [4]
+        - information for each elementary stencil:
             stencil 0
                 - number of velocities: 9
                 - velocities
@@ -493,12 +493,13 @@ class Stencil(list):
     ...                        ],
     ...            })
     >>> s
-    Stencil informations
-    ====================
-        * spatial dimension: 2
-        * maximal velocity in each direction: [3 3]
-        * minimal velocity in each direction: [-3 -3]
-        * information for each elementary stencil:
+    +---------------------+
+    | Stencil information |
+    +---------------------+
+        - spatial dimension: 2
+        - minimal velocity in each direction: [-3 -3]
+        - maximal velocity in each direction: [3 3]
+        - information for each elementary stencil:
             stencil 0
                 - number of velocities: 9
                 - velocities
@@ -760,13 +761,13 @@ class Stencil(list):
 
     def __str__(self):
         from jinja2 import Template
+        from .utils import header_string
         template = Template(dedent('''\
-        Stencil informations
-        ====================
-            * spatial dimension: {{ stencil.dim }}
-            * maximal velocity in each direction: {{ stencil.vmax }}
-            * minimal velocity in each direction: {{ stencil.vmin }}
-            * information for each elementary stencil:
+        {{ header }}
+            - spatial dimension: {{ stencil.dim }}
+            - minimal velocity in each direction: {{ stencil.vmin }}
+            - maximal velocity in each direction: {{ stencil.vmax }}
+            - information for each elementary stencil:
             {%- for k in range(stencil.nstencils) %}
                 stencil {{ k }}
                     - number of velocities: {{ stencil.nv[k] }}
@@ -776,7 +777,7 @@ class Stencil(list):
                     {%- endfor %}
             {%- endfor %}
         '''))
-        return template.render(stencil=self)
+        return template.render(header=header_string('Stencil information'), stencil=self)
 
     def __repr__(self):
         return self.__str__()
