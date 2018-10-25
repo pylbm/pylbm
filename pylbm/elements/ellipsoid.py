@@ -11,6 +11,7 @@ Ellipsoid element
 #pylint: disable=invalid-name
 
 import logging
+from textwrap import dedent
 import numpy as np
 
 from .base import Element
@@ -66,7 +67,16 @@ class Ellipsoid(Element):
     >>> center = [0., 0., 0.]
     >>> v1, v2, v3 = [3,0,0], [0,2,0], [0,0,1]
     >>> Ellipsoid(center, v1, v2, v3)
-        Ellipsoid([0 0 0], [3 0 0], [0 2 0], [0 0 1]) (solid)
+    +-----------+
+    | Ellipsoid |
+    +-----------+
+        - dimension: 3
+        - center: [0. 0. 0.]
+        - v1: [3 0 0]
+        - v2: [0 2 0]
+        - v3: [0 0 1]
+        - label: [0]
+        - type: solid
 
     """
     def __init__(self, center, v1, v2, v3, label=0, isfluid=False):
@@ -164,12 +174,11 @@ class Ellipsoid(Element):
         return distance_ellipsoid(x, y, z, v, self.center, self.v1, self.v2, self.v3, dmax, self.label)
 
     def __str__(self):
-        s = 'Ellipsoid(' + self.center.__str__() + ',' + str(self.v1) + ',' + str(self.v2) + ',' + str(self.v3) + ') '
-        if self.isfluid:
-            s += '(fluid)'
-        else:
-            s += '(solid)'
-        return s
+        from ..utils import header_string
+        from ..jinja_env import env
+        template = env.get_template('ellipsoid.tpl')
+        elem_type = 'fluid' if self.isfluid else 'solid'
+        return template.render(header=header_string(self.__class__.__name__), elem=self, type=elem_type)
 
     def visualize(self, viewer, color, viewlabel=False, scale=np.ones(3), alpha=1.):
         v1 = scale*self.v1

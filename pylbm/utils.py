@@ -58,3 +58,10 @@ class bound2itemproperty:
         if fset is None:
             raise AttributeError("can't set attribute item")
         fset(self.__instance, self.key, key, value)
+
+def header_string(title):
+    from colorama import init, Fore, Style, Back
+    init()
+    bar = '+' + '-'*(len(title)+2) + '+'
+    output = '\n| %s |\n'%title
+    return Fore.BLUE + bar + output + bar + Fore.RESET

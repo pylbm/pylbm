@@ -10,6 +10,7 @@ Ellipse element
 #pylint: disable=invalid-name
 
 import logging
+from textwrap import dedent
 import numpy as np
 
 from .base import Element
@@ -62,7 +63,15 @@ class Ellipse(Element):
     >>> v1 = [2., 0.]
     >>> v2 = [0., 1.]
     >>> Ellipse(center, v1, v2)
-        Ellipse([0 0], [2 0], [0 1]) (solid)
+    +---------+
+    | Ellipse |
+    +---------+
+        - dimension: 2
+        - center: [0. 0.]
+        - v1: [2. 0.]
+        - v2: [0. 1.]
+        - label: [0]
+        - type: solid
 
     """
     def __init__(self, center, v1, v2, label=0, isfluid=False):
@@ -143,12 +152,11 @@ class Ellipse(Element):
         return distance_ellipse(x, y, v, self.center, self.v1, self.v2, dmax, self.label)
 
     def __str__(self):
-        s = 'Ellipse(' + self.center.__str__() + ',' + str(self.v1) + ',' + str(self.v2) + ') '
-        if self.isfluid:
-            s += '(fluid)'
-        else:
-            s += '(solid)'
-        return s
+        from ..utils import header_string
+        from ..jinja_env import env
+        template = env.get_template('ellipse.tpl')
+        elem_type = 'fluid' if self.isfluid else 'solid'
+        return template.render(header=header_string(self.__class__.__name__), elem=self, type=elem_type)
 
     def visualize(self, viewer, color, viewlabel=False, scale=np.ones(2), alpha=1.):
         nv1 = np.linalg.norm(self.v1)
