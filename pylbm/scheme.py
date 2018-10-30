@@ -10,7 +10,6 @@ Description of a LBM scheme
 import sys
 import logging
 from textwrap import dedent
-from six import string_types
 
 import sympy as sp
 from sympy.parsing.sympy_parser import parse_expr
@@ -75,6 +74,7 @@ def param_to_tuple(param):
         the values of param
 
     """
+
     if param is not None:
         keys, values = list(param.keys()), list(param.values())
     else:
@@ -126,7 +126,7 @@ class Scheme:
       time step
     la : double
       scheme velocity, ratio dx/dt
-    nscheme : int
+    nschemes : int
       number of elementary schemes
     stencil : object of class :py:class:`Stencil <pylbm.stencil.Stencil>`
       a stencil of velocities
@@ -162,121 +162,79 @@ class Scheme:
     see demo/examples/scheme/
 
     """
-    def __init__(self, dico, stencil=None, check_inverse=False, need_validation=True):
+    def __init__(self, dico, check_inverse=False, need_validation=True):
         if need_validation:
             validate(dico, __class__.__name__)
-        self.check_inverse = check_inverse
-        # symbolic parameters
-        self.param = dico.get('parameters', None)
-        pk, pv = param_to_tuple(self.param)
 
-        if stencil is not None:
-            self.stencil = stencil
-        else:
-            self.stencil = Stencil(dico, need_validation=False)
+        self.stencil = Stencil(dico, need_validation=False)
         self.dim = self.stencil.dim
 
-        la = dico.get('scheme_velocity', None)
-        if isinstance(la, (int, float)):
-            self.symb_la = None
-            self.la = la
-        elif isinstance(la, sp.Symbol):
-            self.symb_la = la
-            self.la = float(la.subs(list(zip(pk, pv))))
-        else:
-            log.error("The entry 'scheme_velocity' is wrong.")
-        dx = dico.get('space_step', None)
-        if isinstance(dx, (int, float)):
-            self.symb_dx = None
-            self.dx = dx
-        elif isinstance(dx, sp.Symbol):
-            self.symb_dx = dx
-            self.dx = float(dx.subs(list(zip(pk, pv))))
-        else:
-            self.dx = 1.
-            s = "The value 'space_step' is not given or wrong.\n"
-            s += "The scheme takes default value: dx = 1."
-            log.warning(s)
+        # symbolic parameters
+        self.param = dico.get('parameters', {})
 
-        self.dt = self.dx / self.la
+        self.symb_la, self.la = self._get_var_symbolic(dico, 'scheme_velocity')
+        if not self.la:
+            log.error("The entry 'scheme_velocity' is wrong.")
 
         # set relative velocity
         self.rel_vel = dico.get('relative_velocity', [0]*self.dim)
-        self.backend = dico.get('backend', "cython").upper()
 
         # fix the variables of time and space
-        self.symb_t, self.symb_coord = None, [None, None, None]
-        if self.param is not None:
-            self.symb_t = self.param.get('time', None)
-            self.symb_coord[0] = self.param.get('space_x', None)
-            self.symb_coord[1] = self.param.get('space_y', None)
-            self.symb_coord[2] = self.param.get('space_z', None)
-        if self.symb_t is None:
-            self.symb_t = sp.Symbol('t')
-        if self.symb_coord[0] is None:
-            self.symb_coord[0] = sp.Symbol('X')
-        if self.symb_coord[1] is None:
-            self.symb_coord[1] = sp.Symbol('Y')
-        if self.symb_coord[2] is None:
-            self.symb_coord[2] = sp.Symbol('Z')
+        self.symb_t, self.symb_coord = self._get_space_and_time_symbolic()
 
-        self.nscheme = self.stencil.nstencils
+        self.nschemes = self.stencil.nstencils
         scheme = dico['schemes']
-        if not isinstance(scheme, list):
-            log.error("The entry 'schemes' must be a list.")
-
-        # def create_matrix(exprs):
-        #     """
-        #     convert a list of strings to a sympy Matrix.
-        #     """
-        #     #pylint: disable=undefined-loop-variable, unused-argument
-        #     def auto_moments(tokens, local_dict, global_dict):
-        #         """
-        #         if the user uses a string to describe the moments like
-        #         'm[0][0]', this function converts it as Symbol('m[0][0]').
-        #         This fix the problem of auto_symbol that doesn't support
-        #         indexing.
-        #         """
-        #         result = []
-        #         i = 0
-        #         while i < len(tokens):
-        #             _, tok_val = tokens[i]
-        #             if tok_val == 'm':
-        #                 name = ''.join([val for n, val in tokens[i:i+7]])
-        #                 result.extend([(1, 'Symbol'),
-        #                                (51, '('),
-        #                                (3, "'{0}'".format(name)),
-        #                                (51, ')')])
-        #                 i += 7
-        #             else:
-        #                 result.append(tokens[i])
-        #                 i += 1
-        #         return result
-        #     res = []
-        #     for expr in exprs:
-        #         if isinstance(expr, string_types):
-        #             res.append(parse_expr(expr, transformations=(auto_moments,) + standard_transformations))
-        #         else:
-        #             res.append(expr)
-        #     return sp.Matrix(res)
 
         self._check_entry_size(scheme, 'polynomials')
-        #self._check_entry_size(scheme, 'equilibrium')
         self._check_entry_size(scheme, 'relaxation_parameters')
 
         self.P = sp.Matrix([p for s in scheme for p in s['polynomials']])
-        self._source_terms = [s.get('source_terms', None) for s in scheme]
-
-        self.M = None
-        self.invM = None
-        self.Tu = None
-
-        self.create_moments_matrices()
-
-        # self.EQ = sp.Matrix([e for s in scheme for e in s['equilibrium']])
         self.s = sp.Matrix([r for s in scheme for r in s['relaxation_parameters']])
-        self.s_non_swap = self.s.copy()
+        self._source_terms = [s.get('source_terms', None) for s in scheme]
+        self.M, self.invM, self.Tu, self.Tmu = self._create_moments_matrices()
+        self.EQ = self._get_equilibrium(scheme)
 
+        self.s_no_swap = self.s.copy()
+        self.EQ_no_swap = self.EQ.copy()
+        self.M_no_swap = self.M.copy()
+        self.invM_no_swap = self.invM.copy()
+
+        self.consm = self._get_conserved_moments(scheme)
+        # put conserved moments at the beginning of EQ and s
+        # and permute M, invM, Tu, and Tmu accordingly
+        self._permute_consm_in_front()
+
+        self.init = self.set_initialization(scheme)
+
+        self.generator = dico.get('generator', "CYTHON").upper()
+
+        if check_inverse:
+            self._check_inverse(self.M, self.invM, 'M')
+            self._check_inverse_of_Tu()
+
+        log.info(self.__str__())
+
+    def _get_var_symbolic(self, dico, entry):
+        value = dico.get(entry, None)
+        symb, num = None, None
+        if isinstance(value, (int, float)):
+            num = value
+        elif isinstance(value, sp.Symbol):
+            symb = value
+            num = float(value.subs(self.param.items()))
+        return symb, num
+
+    def _get_space_and_time_symbolic(self):
+        symb_t = self.param.get('time', sp.Symbol('t'))
+
+        symb_coord = [None, None, None]
+        symb_coord[0] = self.param.get('space_x', sp.Symbol('X'))
+        symb_coord[1] = self.param.get('space_y', sp.Symbol('Y'))
+        symb_coord[2] = self.param.get('space_z', sp.Symbol('Z'))
+
+        return symb_t, symb_coord
+
+    def _get_equilibrium(self, scheme):
         eq = []
         for i, s in enumerate(scheme):
             feq = s.get('feq', None)
@@ -291,19 +249,14 @@ class Scheme:
                 meq_tmp = self.M[sli, sli]*feq[0](self.stencil.get_all_velocities(i), *feq[1])
                 meq_tmp.simplify()
                 eq.append([e for e in meq_tmp])
-        self.EQ = sp.Matrix([e for sublist in eq for e in sublist])
-        self.EQ_non_swap = self.EQ.copy()
-        log.info("Equilibrium:\n%s", sp.pretty(self.EQ))
-        log.info("Matrix M to transform the distribution into the moments\n%s", sp.pretty(self.M))
-        log.info("Matrix M^(-1) to transform the moments into the distribution\n%s", sp.pretty(self.invM))
-        # put conserved moments at the beginning of P, EQ and s
-        self.consm = self._get_conserved_moments(scheme)
+        return sp.Matrix([e for sublist in eq for e in sublist])
 
-        permutations = []
+    def _permute_consm_in_front(self):
+        self.permutations = []
         for ic, c in enumerate(self.consm.values()):
-            permutations.append([ic, c])
+            self.permutations.append([ic, c])
 
-        for p in permutations:
+        for p in self.permutations:
             self.EQ.row_swap(p[0], p[1])
             self.s.row_swap(p[0], p[1])
             self.M.row_swap(p[0], p[1])
@@ -315,68 +268,6 @@ class Scheme:
 
         for ic, c in enumerate(self.consm.keys()):
             self.consm[c] = ic
-
-        self.init = self.set_initialization(scheme)
-
-        #self._source_terms = dico.get('source_terms', None)
-        # if self.source_terms is not None:
-
-        #     self._source_terms = [create_matrix(s) for s in self.source_terms]
-        #     for cm, icm in self.consm.items():
-        #         for i, eq in enumerate(self._source_terms):
-        #             for j, e in enumerate(eq):
-        #                 if e is not None:
-        #                     self._source_terms[i][j] = e.subs(cm, m[icm])
-        #     self.ode_solver = dico.get('ode_solver', basic)()
-        # else:
-        #     self._source_terms = None
-        #     self.ode_solver = None
-
-        # generate the code
-        # if self._source_terms is None:
-        #     dummypattern = ['transport', 'relaxation']
-        # else:
-        #     dummypattern = ['transport', ('source_term', 0.5), 'relaxation', ('source_term', 0.5)]
-        # self.pattern = dico.get('split_pattern', dummypattern)
-        self.generator = dico.get('generator', "CYTHON").upper()
-        ssss = "Generator used for the scheme functions:\n{0}\n".format(self.generator)
-        #ssss += "with the pattern " + self.pattern.__str__() + "\n"
-        log.info(ssss)
-
-        self.bc_compute = True
-
-        if self.check_inverse:
-            self._check_inverse_of_Tu()
-
-        # # stability
-        # dicostab = dico.get('stability', None)
-        # if dicostab is not None:
-        #     dico_linearization = dicostab.get('linearization', None)
-        #     if dico_linearization is not None:
-        #         self.list_linearization = []
-        #         for cm, cv in dico_linearization.items():
-        #             icm = self.consm[cm]
-        #             self.list_linearization.append((m[icm[0]][icm[1]], cv))
-        #     else:
-        #         self.list_linearization = None
-        #     self.compute_amplification_matrix_relaxation()
-        #     Li_stab = dicostab.get('test_monotonic_stability', False)
-        #     if Li_stab:
-        #         if self.is_monotonically_stable():
-        #             print("The scheme is monotonically stable")
-        #         else:
-        #             print("The scheme is not monotonically stable")
-        #     L2_stab = dicostab.get('test_L2_stability', False)
-        #     if L2_stab:
-        #         if self.is_L2_stable():
-        #             print("The scheme is stable for the norm L2")
-        #         else:
-        #             print("The scheme is not stable for the norm L2")
-
-        # # consistency
-        # dicocons = dico.get('consistency', None)
-        # if dicocons is not None:
-        #     self.compute_consistency(dicocons)
 
     def _check_entry_size(self, schemes, key):
         for i, s in enumerate(schemes):
@@ -395,12 +286,12 @@ class Scheme:
         EQ = []
         s = []
         header_scheme = []
-        for k in range(self.nscheme):
+        for k in range(self.nschemes):
             myslice = slice(self.stencil.nv_ptr[k], self.stencil.nv_ptr[k+1])
             header_scheme.append(header_string("Scheme %d"%k))
             P.append(sp.pretty(sp.Matrix(self.P[myslice])))
-            EQ.append(sp.pretty(sp.Matrix(self.EQ_non_swap[myslice])))
-            s.append(sp.pretty(sp.Matrix(self.s_non_swap[myslice])))
+            EQ.append(sp.pretty(sp.Matrix(self.EQ_no_swap[myslice])))
+            s.append(sp.pretty(sp.Matrix(self.s_no_swap[myslice])))
         return template.render(header=header_string("Scheme information"),
                                scheme=self,
                                consm=sp.pretty(list(self.consm.keys())),
@@ -408,10 +299,10 @@ class Scheme:
                                P=P,
                                EQ=EQ,
                                s=s,
-                               M=sp.pretty(self.M),
-                               invM=sp.pretty(self.invM))
+                               M=sp.pretty(self.M_no_swap),
+                               invM=sp.pretty(self.invM_no_swap))
 
-    def create_moments_matrices(self):
+    def _create_moments_matrices(self):
         """
         Create the moments matrices M and M^{-1} used to transform the repartition functions into the moments
 
@@ -421,12 +312,7 @@ class Scheme:
           - a numerical version Mnum and invMnum for each scheme
           - a global numerical version MnumGlob and invMnumGlob for all the schemes
         """
-        compt = 0
-        M = []
-        invM = []
-        Mu = []
-        Tu = []
-
+        M_, invM_, Mu_, Tu_ = [], [], [], []
         u_tild = sp.Matrix([rel_ux, rel_uy, rel_uz])
 
         if self.symb_la is not None:
@@ -434,53 +320,50 @@ class Scheme:
         else:
             LA = self.la
 
+        compt = 0
         for iv, v in enumerate(self.stencil.v):
             p = self.P[self.stencil.nv_ptr[iv] : self.stencil.nv_ptr[iv+1]]
             compt += 1
             lv = len(v)
-            M.append(sp.zeros(lv, lv))
-            Mu.append(sp.zeros(lv, lv))
+            M_.append(sp.zeros(lv, lv))
+            Mu_.append(sp.zeros(lv, lv))
             for i in range(lv):
                 for j in range(lv):
                     sublist = [(str(self.symb_coord[d]), sp.Integer(v[j].v[d])*LA) for d in range(self.dim)]
-                    M[-1][i, j] = p[i].subs(sublist)
+                    M_[-1][i, j] = p[i].subs(sublist)
 
                     if self.rel_vel != [0]*self.dim:
                         sublist = [(str(self.symb_coord[d]), v[j].v[d]*LA - u_tild[d]) for d in range(self.dim)]
-                        Mu[-1][i, j] = p[i].subs(sublist)
+                        Mu_[-1][i, j] = p[i].subs(sublist)
 
-            invM.append(M[-1].inv())
-            Tu.append(Mu[-1]*invM[-1])
+            invM_.append(M_[-1].inv())
+            Tu_.append(Mu_[-1]*invM_[-1])
 
         gshape = (self.stencil.nv_ptr[-1], self.stencil.nv_ptr[-1])
-        self.Tu = sp.eye(gshape[0])
-        self.M = sp.zeros(*gshape)
-        self.invM = sp.zeros(*gshape)
+        Tu = sp.eye(gshape[0])
+        M = sp.zeros(*gshape)
+        invM = sp.zeros(*gshape)
 
         try:
-            for k in range(self.nscheme):
+            for k in range(self.nschemes):
                 nvk = self.stencil.nv[k]
                 for i in range(nvk):
                     for j in range(nvk):
                         index = self.stencil.nv_ptr[k] + i, self.stencil.nv_ptr[k] + j
-                        self.M[index] = M[k][i, j]
-                        self.invM[index] = invM[k][i, j]
+                        M[index] = M_[k][i, j]
+                        invM[index] = invM_[k][i, j]
 
                         if self.rel_vel != [0]*self.dim:
-                            self.Tu[index] = Tu[k][i, j]
+                            Tu[index] = Tu_[k][i, j]
         except TypeError:
-            log.error("Unable to convert to float the expression %s or %s.\nCheck the 'parameters' entry.", self.M[k][i, j], self.invM[k][i, j]) #pylint: disable=undefined-loop-variable
+            log.error("Unable to convert to float the expression %s or %s.\nCheck the 'parameters' entry.", M[k][i, j], invM[k][i, j]) #pylint: disable=undefined-loop-variable
             sys.exit()
 
-        alltogether(self.Tu)
-        alltogether(self.M)
-        alltogether(self.invM)
-        # compute the inverse of self.Tu by formula T(u)T(-u)=Id
-        #self.Tmu = sp.eye(gshape[0])
-        self.Tmu = self.Tu.subs(list(zip(u_tild, -u_tild)))
-        # for k in range(gshape[0]):
-        #     for l in range(gshape[0]):
-        #         self.Tmu[k,l] = self.Tu[k,l].subs(list(zip(u_tild, -u_tild)))
+        alltogether(Tu)
+        alltogether(M)
+        alltogether(invM)
+        Tmu = Tu.subs(list(zip(u_tild, -u_tild)))
+        return M, invM, Tu, Tmu
 
     def _check_inverse_of_Tu(self):
         # verification
@@ -545,49 +428,11 @@ class Scheme:
             leq = self.EQ[self.stencil.nv_ptr[i]:self.stencil.nv_ptr[i+1]]
             cm_ieq = consm_tmp[i]
             if cm_ieq is not None:
-                if isinstance(cm_ieq, sp.Symbol):
+                if isinstance(cm_ieq, (sp.Symbol, sp.IndexedBase)):
                     consm[cm_ieq] = self.stencil.nv_ptr[i] + leq.index(cm_ieq)
                 else:
                     for c in cm_ieq:
                         consm[c] = self.stencil.nv_ptr[i] + leq.index(c)
-
-        # for s in scheme:
-        #     tmp = s.get('conserved_moments', None)
-        #     if s.get('conserved_moments', None):
-        #         if isinstance(tmp, (list, tuple)):
-        #             consm_tmp += tmp
-        #         else:
-        #             consm_tmp.append(tmp)
-
-        # leq = self.EQ.tolist()
-
-        # consm = {}
-        # for c in consm_tmp:
-        #     consm[c] = leq.index([c])
-
-        # consm_tmp = [s.get('conserved_moments', None) for s in scheme]
-
-        # def find_indices(ieq, list_eq, c):
-        #     if [c] in leq:
-        #         ic = (ieq, leq.index([c]))
-        #         if isinstance(c, str):
-        #             cm = parse_expr(c)
-        #         else:
-        #             cm = c
-        #         return ic, cm
-
-        # # find the indices of the conserved moments in the equilibrium equations
-        # for ieq, eq in enumerate(self.EQ):
-        #     leq = eq.tolist()
-        #     cm_ieq = consm_tmp[ieq]
-        #     if cm_ieq is not None:
-        #         if isinstance(cm_ieq, sp.Symbol):
-        #             ic, cm = find_indices(ieq, leq, cm_ieq)
-        #             consm[cm] = ic
-        #         else:
-        #             for c in cm_ieq:
-        #                 ic, cm = find_indices(ieq, leq, c)
-        #                 consm[cm] = ic
         return consm
 
     def _get_indices_cons_noncons(self):
@@ -646,7 +491,7 @@ class Scheme:
                 try:
                     if isinstance(k, str):
                         indices = self.consm[parse_expr(k)]
-                    elif isinstance(k, sp.Symbol):
+                    elif isinstance(k, (sp.Symbol, sp.IndexedBase)):
                         indices = self.consm[k]
                     elif isinstance(k, int):
                         indices = (ns, k)
@@ -780,9 +625,9 @@ class Scheme:
             list_rel_vel = []
 
         # fix execution time
-        if self.check_inverse:
-            self._check_inverse(self.M, self.invM, 'M')
-            self._check_inverse(Mu, invMu, 'Mu')
+        # if self.check_inverse:
+        #     self._check_inverse(self.M, self.invM, 'M')
+        #     self._check_inverse(Mu, invMu, 'Mu')
 
         M = self.M.subs(subs_param)
         invM = self.invM.subs(subs_param)
