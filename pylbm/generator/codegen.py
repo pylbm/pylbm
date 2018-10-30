@@ -82,8 +82,13 @@ class Routine(object):
         # InputArguments/InOutArguments---subset because user could
         # specify additional (unused) InputArguments or local_vars.
         dummy = [i.label for i in idx_vars]
+        symbol_indexed_local = set()
+        for l in local_vars:
+            for ll in l.atoms(IndexedBase):
+                symbol_indexed_local.update(ll.atoms(Symbol) - ll.shape.atoms(Symbol))
+
         notcovered = symbols.difference(
-            input_symbols.union(dummy).union(local_vars))
+            input_symbols.union(dummy).union(local_vars).union(symbol_indexed_local))
         if notcovered != set([]):
             raise ValueError("Symbols needed for output are not in input " +
                              ", ".join([str(x) for x in notcovered]))
@@ -224,8 +229,14 @@ class LBMCodeGen(CodeGen):
         local_vars = set() if local_vars is None else set(local_vars)
 
         # symbols that should be arguments
-        symbols = expressions.free_symbols - idx_vars - local_vars - symbol_idx_vars
+        symbol_indexed_local = set()
+        for l in local_vars:
+            for ll in l.atoms(IndexedBase):
+                symbol_indexed_local.update(ll.atoms(Symbol) - ll.shape.atoms(Symbol))
 
+        print(expressions.free_symbols, local_vars, symbol_indexed_local)
+        symbols = expressions.free_symbols - idx_vars - local_vars - symbol_idx_vars - symbol_indexed_local
+        print(symbols)
         new_symbols = set([])
         new_symbols.update(symbols)
 
@@ -362,6 +373,7 @@ class CythonCodeGen(LBMCodeGen):
                       "#cython: binding=True\n",
                       "#import cython\n",
                       "from libc.math cimport *\n",
+                      "import numpy as np\n",
                      ]
         return code_lines + ["\n\n"]
 
@@ -427,7 +439,10 @@ class CythonCodeGen(LBMCodeGen):
                 args.append("cdef double %s\n"%(self._get_symbol(g)))
             else:
                 shape = [d for d in g.shape if d!=1]
-                args.append("cdef double %s[%s]\n"%(self._get_symbol(g), ','.join("%s"%s for s in shape)))
+                if isinstance(g, Indexed):
+                    args.append("cdef double[%s] %s = np.zeros((%s))\n"%(', '.join([':']*len(shape)) + ':1', g.base, ','.join("%s"%s for s in shape)))
+                else:
+                    args.append("cdef double %s[%s]\n"%(self._get_symbol(g), ','.join("%s"%s for s in shape)))
         return ["".join(args)]
 
     def _declare_locals(self, routine):
