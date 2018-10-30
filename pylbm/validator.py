@@ -20,7 +20,7 @@ from .boundary import BoundaryMethod
 log = logging.getLogger(__name__) #pylint: disable=invalid-name
 init(autoreset=True)
 
-symbol_type = TypeDefinition('symbol', (sympy.Symbol,), ())
+symbol_type = TypeDefinition('symbol', (sympy.Symbol, sympy.IndexedBase), ())
 Validator.types_mapping['symbol'] = symbol_type
 
 expr_type = TypeDefinition('expr', (sympy.Expr,), ())
