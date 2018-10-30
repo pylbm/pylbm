@@ -55,6 +55,21 @@ def space_loop(ranges, permutation=None):
         idx.append(sp.Idx(indices[ir], r))
     return set_order([0] + idx, permutation, remove_ind=[0])
 
+def alltogether(M):
+    """
+    Simplify all the elements of sympy matrix M
+
+    Parameters
+    ----------
+
+    M : sympy matrix
+       matrix to simplify
+
+    """
+    for i in range(M.shape[0]):
+        for j in range(M.shape[1]):
+            M[i, j] = M[i, j].expand().together().factor()
+
 def getargspec_permissive(func):
     """
     find in https://github.com/neithere/argh/blob/master/argh/compat.py
