@@ -18,7 +18,7 @@ import sympy as sp
 import numpy as np
 import pylbm
 
-h, q, X, LA, g = sp.symbols('h, q, X, LA, g')
+h, q, X, LA, g = sp.symbols('h, q, X, lambda, g')
 
 def Riemann_pb(x, xmin, xmax, uL, uR):
     xm = 0.5*(xmin+xmax)

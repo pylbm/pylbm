@@ -8,7 +8,7 @@ import pylbm
 import sympy as sp
 import math
 
-X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
+X, Y, Z, LA = sp.symbols('X,Y,Z,lambda')
 mass, qx, qy, qz = sp.symbols('mass,qx,qy,qz')
 
 def bc_up(f, m, x, y, z):

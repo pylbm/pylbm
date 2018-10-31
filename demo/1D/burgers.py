@@ -22,7 +22,7 @@ import sympy as sp
 
 import pylbm
 
-X, LA, u = sp.symbols('X, LA, u')
+X, LA, u = sp.symbols('X, lambda, u')
 
 def u0(x, xmin, xmax, uL, uR): # initial condition
     xm = 0.5*(xmin+xmax)

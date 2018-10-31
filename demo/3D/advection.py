@@ -19,7 +19,7 @@ import numpy as np
 import sympy as sp
 import pylbm
 
-u, X, Y, Z, LA = sp.symbols('u, X, Y, Z, LA')
+u, X, Y, Z, LA = sp.symbols('u, X, Y, Z, lambda')
 
 def save(sol, im):
     x, y, z = sol.domain.x, sol.domain.y, sol.domain.z

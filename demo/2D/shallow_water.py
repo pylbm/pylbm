@@ -13,7 +13,7 @@ import pylbm
 import pylab as plt
 import matplotlib.cm as cm
 
-X, Y, LA = sp.symbols('X, Y, LA')
+X, Y, LA = sp.symbols('X, Y, lambda')
 rho, qx, qy = sp.symbols('rho, qx, qy')
 
 

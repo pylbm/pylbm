@@ -34,7 +34,7 @@ import numpy as np
 import sympy as sp
 import pylbm
 
-X, Y, LA = sp.symbols('X, Y, LA')
+X, Y, LA = sp.symbols('X, Y, lambda')
 p, ux, uy = sp.symbols('p, ux, uy')
 
 def bc_in(f, m, x, y, width, height, max_velocity, grad_pressure, cte):
