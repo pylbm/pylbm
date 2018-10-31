@@ -19,7 +19,7 @@ from six.moves import range
 
 import pylbm
 
-u, X, Y, LA = sp.symbols('u, X, Y, LA')
+u, X, Y, LA = sp.symbols('u, X, Y, lambda')
 
 compt = 0
 

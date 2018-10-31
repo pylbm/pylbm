@@ -1,10 +1,10 @@
 {%- from 'wrap.tpl' import wrap -%}
 {{ header }}
     - spatial dimension: {{ scheme.dim }}
-    - number of schemes: {{ scheme.nscheme }}
+    - number of schemes: {{ scheme.nschemes }}
     - number of velocities: {{ scheme.stencil.nv[-1] }}
     - conserved moments: {{ consm }}
-    {%- for k in range(scheme.nscheme) %}
+    {%- for k in range(scheme.nschemes) %}
     {{ wrap(header_scheme[k]) | indent(4, True)}}
         - velocities
         {%- for v in scheme.stencil.v[k] %}

@@ -122,7 +122,7 @@ class H5File:
             grid.append(data.domain.y)
         if data.dim == 3:
             grid.append(data.domain.z)
-        h5 = pylbm.H5File(data.mpi_topo, os.path.basename(filename), os.path.dirname(filename))
+        h5 = pylbm.H5File(data.domain.mpi_topo, os.path.basename(filename), os.path.dirname(filename))
         h5.set_grid(*grid)
 
         slices = []

@@ -34,7 +34,7 @@ def printProgress (iteration, total, prefix = '', suffix = '', decimals = 1, bar
 
 HDF_save = False
 
-X, Y, LA = sp.symbols('X, Y, LA')
+X, Y, LA = sp.symbols('X, Y, lambda')
 rho, qx, qy, T = sp.symbols('rho, qx, qy, T')
 
 def init_T(x, y, Td, Tu, xmin, xmax, ymin, ymax):

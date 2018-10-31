@@ -28,7 +28,7 @@ import pylbm
 
 hdf5_save = True
 
-GA, X, Y, LA = sp.symbols('GA, X, Y, LA')
+GA, X, Y, LA = sp.symbols('GA, X, Y, lambda')
 rho, qx, qy, E, Bx, By = sp.symbols('rho, qx, qy, E, Bx, By')
 p, ps = sp.symbols('p, ps')
 
@@ -180,7 +180,6 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     }
 
     sol = pylbm.Simulation(dico)
-
 
     if withPlot:
         # init viewer
