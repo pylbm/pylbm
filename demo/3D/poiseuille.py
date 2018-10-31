@@ -38,7 +38,7 @@ import sympy as sp
 
 import pylbm
 
-X, Y, Z, LA = sp.symbols('X,Y,Z,LA')
+X, Y, Z, LA = sp.symbols('X,Y,Z,lambda')
 p, ux, uy, uz = sp.symbols('p,ux,uy,uz')
 
 

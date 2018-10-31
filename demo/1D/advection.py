@@ -16,7 +16,8 @@ import numpy as np
 import sympy as sp
 import pylbm
 
-X, LA, u = sp.symbols('X, LA, u')
+X, u = sp.symbols('X, u')
+C, LA = sp.symbols('c, lambda', constants=True)
 
 def u0(x, xmin, xmax):
     milieu = 0.5*(xmin+xmax)
@@ -60,12 +61,12 @@ def run(dx, Tf, generator="numpy", sorder=None, withPlot=True):
             'conserved_moments':u,
             'polynomials':[1,LA*X],
             'relaxation_parameters':[0., s],
-            'equilibrium':[u, c*u],
+            'equilibrium':[u, C*u],
             'init':{u:(u0,(xmin, xmax))},
         },
         ],
         'generator': generator,
-        'parameters': {LA: la},
+        'parameters': {LA: la, C:c},
     }
 
     # simulation
@@ -102,4 +103,4 @@ def run(dx, Tf, generator="numpy", sorder=None, withPlot=True):
 if __name__ == '__main__':
     dx = 1./128
     Tf = 1.
-    sol = run(dx, Tf)
+    sol = run(dx, Tf, generator='cython')
