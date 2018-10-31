@@ -234,9 +234,8 @@ class LBMCodeGen(CodeGen):
             for ll in l.atoms(IndexedBase):
                 symbol_indexed_local.update(ll.atoms(Symbol) - ll.shape.atoms(Symbol))
 
-        print(expressions.free_symbols, local_vars, symbol_indexed_local)
         symbols = expressions.free_symbols - idx_vars - local_vars - symbol_idx_vars - symbol_indexed_local
-        print(symbols)
+
         new_symbols = set([])
         new_symbols.update(symbols)
 
