@@ -13,3 +13,4 @@ dist
 generated
 *.xdmf
 version.py
+demo/*h5
