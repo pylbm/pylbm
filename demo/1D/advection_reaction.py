@@ -14,8 +14,8 @@ import numpy as np
 import sympy as sp
 import pylbm
 
-t, X, LA, u = sp.symbols('t, X, LA, u')
-C, MU = sp.symbols('C, MU')
+t, X, u = sp.symbols('t, X, u')
+C, MU, LA = sp.symbols('c, mu, lambda', constants=True)
 
 
 def u0(x, xmin, xmax):
@@ -77,7 +77,6 @@ def run(dt, Tf, generator = 'numpy', sorder=None, withPlot=True):
 
     # simulation
     sol = pylbm.Simulation(dico, sorder=sorder) # build the simulation
-
 
     if withPlot:
         # create the viewer to plot the solution

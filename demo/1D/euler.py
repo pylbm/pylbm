@@ -30,7 +30,8 @@ import sympy as sp
 import numpy as np
 import pylbm
 
-rho, q, E, X, LA = sp.symbols('rho, q, E, X, LA')
+rho, q, E, X = sp.symbols('rho, q, E, X')
+LA = sp.symbols('lambda', constants=True)
 
 def Riemann_pb(x, xmin, xmax, uL, uR):
     xm = 0.5*(xmin+xmax)

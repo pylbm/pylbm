@@ -10,7 +10,7 @@ import mpi4py.MPI as mpi
 import pylbm
 
 X, Y = sp.symbols('X, Y')
-rho, qx, qy, LA = sp.symbols('rho, qx, qy, LA', real=True)
+rho, qx, qy, LA = sp.symbols('rho, qx, qy, lambda', real=True)
 
 def bc_up(f, m, x, y, driven_velocity):
     m[qx] = driven_velocity
@@ -112,12 +112,6 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
 
     sol = pylbm.Simulation(kelvin_helmoltz, sorder=sorder)
 
-    # f = feq(sp.Matrix([qx/rho, qy/rho]))
-    # out = sol.scheme.M*f
-    # out.simplify()
-    # print(f)
-    # print(sol.scheme.M)
-    # print(out)
     if withPlot:
         # init viewer
         viewer = pylbm.viewer.matplotlib_viewer

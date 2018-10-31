@@ -9,7 +9,7 @@ import sympy as sp
 import mpi4py.MPI as mpi
 import pylbm
 
-X, Y, LA = sp.symbols('X, Y, LA')
+X, Y, LA = sp.symbols('X, Y, lambda')
 rho, qx, qy = sp.symbols('rho, qx, qy')
 
 def bc_up(f, m, x, y, driven_velocity):

@@ -9,7 +9,7 @@ import sympy as sp
 import math
 import mpi4py.MPI as mpi
 
-X, Y, Z, LA = sp.symbols('X, Y, Z, LA')
+X, Y, Z, LA = sp.symbols('X, Y, Z, lambda')
 mass, qx, qy, qz = sp.symbols('mass, qx, qy, qz')
 
 def bc_up(f, m, x, y, z):

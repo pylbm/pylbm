@@ -156,8 +156,6 @@ class CythonCodePrinter(CodePrinter):
             lines = self._format_code(lines)
             result = (self._number_symbols, self._not_supported,
                     "\n".join(lines))
-        #del self._not_supported
-        #del self._number_symbols
         return result
 
     def _get_expression_indices(self, expr, assign_to):
@@ -168,15 +166,9 @@ class CythonCodePrinter(CodePrinter):
         rinds = expr.atoms(Idx)
         linds = assign_to.atoms(Idx)
 
-        #rinds, junk = get_indices(expr)
-        #linds, junk = get_indices(assign_to)
-
         # support broadcast of scalar
         if linds and not rinds:
             rinds = linds
-        # if rinds != linds:
-        #     raise ValueError("lhs indices must match non-dummy"
-        #             " rhs indices in %s" % expr)
         return self._sort_optimized(rinds, assign_to)
 
     def _rate_index_position(self, p):
@@ -265,18 +257,6 @@ class CythonCodePrinter(CodePrinter):
                 lines.append(output)
         lines.append("#end")
         return "\n".join(lines)
-
-        # for i, (c, e) in enumerate(expr.statement):
-        #     if i == 0:
-        #         lines.append("if (%s):" % self._print(c))
-        #     for ee in e:
-        #         temp1, temp2, addlines = self.doprint(ee)
-        #         if isinstance(addlines, str):
-        #             lines.append(addlines)
-        #         else:
-        #             lines += addlines
-        #     lines.append("#end")
-        # return "\n".join(lines)
 
     def _print_Piecewise(self, expr):
         if expr.args[-1].cond != True:
@@ -397,7 +377,6 @@ class CythonCodePrinter(CodePrinter):
                 conditions.append(c)
             temp = Piecewise(*zip(expressions, conditions))
             return self._print(temp)
-        #elif isinstance(lhs, MatrixSymbol):
         elif isinstance(lhs, (MatrixBase, MatrixSymbol)):
             # Here we form an Assignment for each element in the array,
             # printing each one.

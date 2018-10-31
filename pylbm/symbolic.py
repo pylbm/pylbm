@@ -39,7 +39,7 @@ def indexed(name, shape, index=(iv, ix, iy, iz), list_ind=None, ranges=None, per
         for il, l in enumerate(list_ind): #pylint: disable=invalid-name
             tmp_ind = []
             for ik, k in enumerate(l): #pylint: disable=invalid-name
-                tmp_ind.append(indices[ik] - int(k))
+                tmp_ind.append(indices[ik] + int(k))
             ind.append(set_order([il] + tmp_ind, permutation, remove_ind))
         return sp.Matrix([output[i] for i in ind])
     else:
@@ -54,6 +54,21 @@ def space_loop(ranges, permutation=None):
     for ir, r in enumerate(ranges): #pylint: disable=invalid-name
         idx.append(sp.Idx(indices[ir], r))
     return set_order([0] + idx, permutation, remove_ind=[0])
+
+def alltogether(M):
+    """
+    Simplify all the elements of sympy matrix M
+
+    Parameters
+    ----------
+
+    M : sympy matrix
+       matrix to simplify
+
+    """
+    for i in range(M.shape[0]):
+        for j in range(M.shape[1]):
+            M[i, j] = M[i, j].expand().together().factor()
 
 def getargspec_permissive(func):
     """

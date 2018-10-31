@@ -9,7 +9,7 @@ import sympy as sp
 
 import pylbm
 
-X, Y, LA = sp.symbols('X, Y, LA')
+X, Y, LA = sp.symbols('X, Y, lambda')
 rho, qx, qy = sp.symbols('rho, qx, qy')
 
 def bc_rect(f, m, x, y, rhoo, uo):
@@ -66,7 +66,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[0, 1, 0, 0]},
         'elements':[pylbm.Circle([.3, 0.5*(ymin+ymax)+2*dx], radius, label=2)],
         'space_step':dx,
-        'scheme_velocity':la,
+        'scheme_velocity': la,
         'schemes':[
             {
                 'velocities':list(range(9)),
@@ -95,13 +95,14 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
                 },
             },
         ],
-        'parameters':{'LA':la},
+        'parameters':{LA:la},
         'boundary_conditions':{
             0:{'method':{0: pylbm.bc.BouzidiBounceBack}, 'value':(bc_rect, (rhoo, uo))},
             1:{'method':{0: pylbm.bc.NeumannX}},
             2:{'method':{0: pylbm.bc.BouzidiBounceBack}},
         },
         'generator': generator,
+        'show_code': True
     }
 
     sol = pylbm.Simulation(dico, sorder=sorder)
@@ -136,24 +137,6 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     return sol
 
 if __name__ == '__main__':
-    dx = 1./64
-    Tf = .5
-    generators = ['numpy', 'cython']
-    for generator in generators:
-        data = run(dx, Tf, generator=generator, withPlot=False)
-
-        grid = [data.domain.x, data.domain.y]
-        h5 = pylbm.H5File(data.mpi_topo, generator, './')
-        h5.set_grid(*grid)
-
-        slices = []
-        for i in data.domain.in_or_out.shape:
-            slices.append(slice(1, i-1))
-        slices = tuple(slices)
-        
-        for consm in data.scheme.consm.keys():
-            clean_data = data.m[consm].copy()
-            clean_data[data.domain.in_or_out[slices] != data.domain.valin] = 0
-            h5.add_scalar(consm.name, clean_data)
-        
-        h5.save()
+    dx = 1./128
+    Tf = 10.
+    data = run(dx, Tf)

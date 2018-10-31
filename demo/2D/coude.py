@@ -8,7 +8,7 @@ import numpy as np
 import sympy as sp
 import pylbm
 
-X, Y, LA = sp.symbols('X, Y, LA')
+X, Y, LA = sp.symbols('X, Y, lambda')
 rho, qx, qy = sp.symbols('rho, qx, qy')
 
 def bc_in(f, m, x, y, rhoo, uo, ymin, ymax):
@@ -99,7 +99,8 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
            2:{'method':{0: pylbm.bc.BouzidiBounceBack}, 'value':(bc_in, (rhoo, uo, ymin, ymax))}
         },
         'generator': generator,
-        'parameters':{'LA':la},
+        'parameters':{LA: la},
+        # 'show_code': True
       }
 
     sol = pylbm.Simulation(dico, sorder=sorder)
@@ -129,28 +130,6 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     return sol
 
 if __name__ == '__main__':
-    # dx = 1./512
-    # Tf = 1.
-
-    dx = 1./64
-    Tf = .5
-
-    generators = ['numpy', 'cython']
-    for generator in generators:
-        data = run(dx, Tf, generator=generator, withPlot=False)
-
-        grid = [data.domain.x, data.domain.y]
-        h5 = pylbm.H5File(data.mpi_topo, generator, './')
-        h5.set_grid(*grid)
-
-        slices = []
-        for i in data.domain.in_or_out.shape:
-            slices.append(slice(1, i-1))
-        slices = tuple(slices)
-        
-        for consm in data.scheme.consm.keys():
-            clean_data = data.m[consm].copy()
-            clean_data[data.domain.in_or_out[slices] != data.domain.valin] = 0
-            h5.add_scalar(consm.name, clean_data)
-        
-        h5.save()
+    dx = 1./512
+    Tf = 1.
+    run(dx, Tf)

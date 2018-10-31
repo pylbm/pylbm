@@ -9,7 +9,7 @@ import sympy as sp
 
 import pylbm
 
-X, Y, LA = sp.symbols('X, Y, LA')
+X, Y, LA = sp.symbols('X, Y, lambda')
 rho, qx, qy = sp.symbols('rho, qx, qy')
 
 def bc_in(f, m, x, y, width, height, max_velocity, grad_pressure):
@@ -84,7 +84,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
                             qy: 0.
                             },
                     }],
-        'parameters':{'LA':la},
+        'parameters':{LA:la},
         'boundary_conditions':{
             0:{'method':{0: pylbm.bc.BouzidiBounceBack}},
             1:{'method':{0: pylbm.bc.NeumannX}},

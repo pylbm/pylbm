@@ -760,23 +760,9 @@ class Stencil(list):
         return ksym
 
     def __str__(self):
-        from jinja2 import Template
         from .utils import header_string
-        template = Template(dedent('''\
-        {{ header }}
-            - spatial dimension: {{ stencil.dim }}
-            - minimal velocity in each direction: {{ stencil.vmin }}
-            - maximal velocity in each direction: {{ stencil.vmax }}
-            - information for each elementary stencil:
-            {%- for k in range(stencil.nstencils) %}
-                stencil {{ k }}
-                    - number of velocities: {{ stencil.nv[k] }}
-                    - velocities
-                    {%- for v in stencil.v[k] %}
-                        {{ v }}
-                    {%- endfor %}
-            {%- endfor %}
-        '''))
+        from .jinja_env import env
+        template = env.get_template('stencil.tpl')
         return template.render(header=header_string('Stencil information'), stencil=self)
 
     def __repr__(self):
