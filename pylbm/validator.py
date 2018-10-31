@@ -16,6 +16,7 @@ import sympy
 
 from .elements.base import Element
 from .boundary import BoundaryMethod
+from .algorithm import BaseAlgorithm
 
 log = logging.getLogger(__name__) #pylint: disable=invalid-name
 init(autoreset=True)
@@ -28,9 +29,6 @@ Validator.types_mapping['expr'] = expr_type
 
 element_type = TypeDefinition('element', (Element,), ())
 Validator.types_mapping['element'] = element_type
-
-boundary_type = TypeDefinition('boundary', (BoundaryMethod,), ())
-Validator.types_mapping['boundary'] = boundary_type
 
 function_type = TypeDefinition('function', (types.FunctionType,), ())
 Validator.types_mapping['function'] = function_type
@@ -45,13 +43,22 @@ class MyValidator(Validator):
     New Validator to check boundary methods.
     """
     def _validate_isboundary(self, isboundary, field, value):
-        """ Test if value is a subclass of BondaryMethod.
+        """ Test if value is a subclass of BoundaryMethod.
         The rule's arguments are validated against this schema:
         {'type': 'boolean'}
         """
         if isboundary:
             if not isinstance(value, type) or not issubclass(value, BoundaryMethod):
                 self._error(field, "Must be a BoundaryMethod")
+
+    def _validate_isalgorithm(self, isalgorithm, field, value):
+        """ Test if value is a subclass of BaseAlgorithm.
+        The rule's arguments are validated against this schema:
+        {'type': 'boolean'}
+        """
+        if isalgorithm:
+            if not isinstance(value, type) or not issubclass(value, BaseAlgorithm):
+                self._error(field, "Must be a BaseAlgorithm")
 
 def rec_list(mylist, errors, indent=0):
     """
@@ -274,7 +281,7 @@ def validate(dico, name):
                               'required': name in ['Domain', 'Scheme', 'Simulation', 'Stencil']
                              },
                   'parameters': {'type': 'dict',
-                                 'keyschema': {'anyof_type': ['symbol', 'string']},
+                                 'keyschema': {'type': 'symbol'},
                                  'valueschema': {'type': 'number'}
                                 },
                   'boundary_conditions': {'type': 'dict',
@@ -284,6 +291,11 @@ def validate(dico, name):
                   'generator': {'type': 'string',
                                 'allowed':['numpy', 'cython', 'loopy']
                                },
+                  'lbm_algorithm': {'type': 'dict',
+                                    'schema': {'name': {'isalgorithm': True},
+                                               'settings': {'type': 'dict'}
+                                              }
+                                   },
                   'show_code': {'type': 'boolean'}
                  }
 

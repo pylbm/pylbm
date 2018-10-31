@@ -24,7 +24,8 @@ from . import utils
 from .validator import validate
 from .context import set_queue
 from .generator import generator
-from .storage import Array, AOS, SOA
+from .container import NumpyContainer, CythonContainer, LoopyContainer
+from .algorithm import PullAlgorithm
 
 log = logging.getLogger(__name__) #pylint: disable=invalid-name
 
@@ -81,101 +82,44 @@ class Simulation:
     :py:class:`Scheme<pylbm.scheme.Scheme>`.
     """
     #pylint: disable=too-many-branches, too-many-statements, too-many-locals
-    def __init__(self, dico, domain=None, scheme=None, sorder=None, dtype='float64', check_inverse=False):
-        self.type = dtype
-        self.order = 'C'
-        self._update_m = True
-
+    def __init__(self, dico, sorder=None, dtype='float64', check_inverse=False):
         validate(dico, __class__.__name__)
 
-        self.name = dico.get('name', None)
-
-        log.info('Build the domain')
-        try:
-            if domain is not None:
-                self.domain = domain
-            else:
-                self.domain = Domain(dico, need_validation=False)
-        except KeyError:
-            log.error('Error in the creation of the domain: wrong dictionnary')
-            sys.exit()
-
-        log.info('Build the scheme')
-        try:
-            if scheme is not None:
-                self.scheme = scheme
-            else:
-                self.scheme = Scheme(dico, check_inverse=check_inverse, need_validation=False)
-        except KeyError:
-            log.error('Error in the creation of the scheme: wrong dictionnary')
-            sys.exit()
-
-        self.t = 0.
-        self.nt = 0
-        self.dt = self.domain.dx/self.scheme.la
+        self.domain = Domain(dico, need_validation=False)
+        self.scheme = Scheme(dico, check_inverse=check_inverse, need_validation=False)
         if self.domain.dim != self.scheme.dim:
             log.error('Solution: the dimension of the domain and of the scheme are not the same\n')
             sys.exit()
 
+        self._update_m = True
+        self.t = 0.
+        self.nt = 0
+        self.dt = self.domain.dx/self.scheme.la
         self.dim = self.domain.dim
-
-        log.info('Build arrays')
-
-        self.mpi_topo = self.domain.mpi_topo
-
-        nv = self.scheme.stencil.nv_ptr[-1]
-        nspace = self.domain.global_size
-        vmax = self.domain.stencil.vmax
 
         self.generator = dico.get('generator', "CYTHON").upper()
         self.show_code = dico.get('show_code', False)
+
+        # FIXME remove that !!
         set_queue(self.generator)
-        self.gpu_support = True if self.generator == "LOOPY" else False
 
-        if sorder is None:
-            if self.generator == "NUMPY":
-                self._m = SOA(nv, nspace, vmax, self.mpi_topo, gpu_support=self.gpu_support)
-                self._F = SOA(nv, nspace, vmax, self.mpi_topo, gpu_support=self.gpu_support)
-                #self._Fold = self._F
-                sorder = [i for i in range(self.dim + 1)]
-            else:
-                self._m = AOS(nv, nspace, vmax, self.mpi_topo, gpu_support=self.gpu_support)
-                self._F = AOS(nv, nspace, vmax, self.mpi_topo, gpu_support=self.gpu_support)
-                sorder = [self.dim] + [i for i in range(self.dim)]
-        else:
-            self._m = Array(nv, nspace, vmax, sorder, self.mpi_topo, gpu_support=self.gpu_support)
-            self._F = Array(nv, nspace, vmax, sorder, self.mpi_topo, gpu_support=self.gpu_support)
+        self.container = self._get_container(sorder)
+        if self.container.gpu_support:
+            self.domain.in_or_out = self.container.move2gpu(self.domain.in_or_out)
+        sorder = self.container.sorder
 
-        self._m.set_conserved_moments(self.scheme.consm)
-        self._F.set_conserved_moments(self.scheme.consm)
-
-        if self.generator == "NUMPY":
-            self._Fold = self._F
-        else:
-            self._Fold = Array(nv, nspace, vmax, sorder, self.mpi_topo, gpu_support=self.gpu_support)
-            self._Fold.set_conserved_moments(self.scheme.consm)
-
-        self.scheme.generate(self.generator, sorder, self.domain.valin)
-
-        log.info('Build boundary conditions')
-
-        if self.gpu_support:
-            try:
-                import pyopencl as cl
-                import pyopencl.array #pylint: disable=unused-variable
-                from .context import queue
-            except ImportError:
-                raise ImportError("Please install loo.py")
-            self.domain.in_or_out = cl.array.to_device(queue, self.domain.in_or_out)
+        # Generate the numerical code for the LBM and for the boundary conditions
+        self.algo = self._get_algorithm(dico, sorder)
+        self.algo.generate()
 
         self.bc = Boundary(self.domain, dico)
         for method in self.bc.methods:
             method.set_iload()
-            method.generate(sorder)
+            method.generate(self.container.sorder)
 
         generator.compile(backend=self.generator, verbose=self.show_code)
 
-        log.info('Initialization')
+        # Initialize the solution and the rhs of boundary conditions
         self.initialization(dico)
         for method in self.bc.methods:
             method.prepare_rhs(self)
@@ -183,17 +127,32 @@ class Simulation:
             method.fix_iload()
             method.move2gpu()
 
-        #computational time measurement
-        self.cpu_time = {
-            'relaxation':0.,
-            'source_term':0.,
-            'transport':0.,
-            'f2m_m2f':0.,
-            'boundary_conditions':0.,
-            'total':0.,
-            'number_of_iterations':0,
-            'MLUPS':0.,
+        log.info(self.__str__())
+
+    def _get_container(self, sorder):
+        container_type = {'NUMPY': NumpyContainer,
+                          'CYTHON': CythonContainer,
+                          'LOOPY': LoopyContainer
         }
+        return container_type[self.generator](self.domain, self.scheme, sorder)
+
+    def _get_default_algo_settings(self):
+        if self.generator == 'NUMPY':
+            return {'m_local': False, 'split': False, 'check_isfluid': False}
+        else:
+            return {'m_local': True, 'split': False, 'check_isfluid': True}
+
+    def _get_algorithm(self, dico, sorder):
+        algo_method = PullAlgorithm
+        user_settings = {}
+        dummy = dico.get('lbm_algorithm', None)
+        if dummy:
+            algo_method = dummy.get('name', PullAlgorithm)
+            user_settings = dummy.get('settings', {})
+        algo_settings = self._get_default_algo_settings()
+        algo_settings.update(user_settings)
+
+        return algo_method(self.scheme, sorder, algo_settings)
 
     @utils.itemproperty
     def m_halo(self, i):
@@ -203,12 +162,12 @@ class Simulation:
         if self._update_m:
             self._update_m = False
             self.f2m()
-        return self._m[i]
+        return self.container.m[i]
 
     @m_halo.setter
     def m_halo(self, i, value):
         self._update_m = False
-        self._m[i] = value
+        self.container.m[i] = value
 
     @utils.itemproperty
     def m(self, i):
@@ -219,26 +178,26 @@ class Simulation:
             self._update_m = False
             self.f2m()
 
-        return self._m._in(i) #pylint: disable=protected-access
+        return self.container.m._in(i) #pylint: disable=protected-access
 
     @utils.itemproperty
     def F_halo(self, i):
         """
         get the distribution function i on the whole domain with halo points.
         """
-        return self._F[i]
+        return self.container.F[i]
 
     @F_halo.setter
     def F_halo(self, i, value):
         self._update_m = True
-        self._F[i] = value
+        self.container.F[i] = value
 
     @utils.itemproperty
     def F(self, i):
         """
         get the distribution function i in the interior domain.
         """
-        return self._F._in(i) #pylint: disable=protected-access
+        return self.container.F._in(i) #pylint: disable=protected-access
 
     def __str__(self):
         from .utils import header_string
@@ -246,63 +205,6 @@ class Simulation:
         template = env.get_template('simulation.tpl')
         return template.render(header=header_string("Simulation information"),
                                simu=self)
-
-    #pylint: disable=too-many-locals
-    def time_info(self):
-        """
-        get performance information about the simulation
-        """
-        t = self.cpu_time
-        # tranform the seconds into days, hours, minutes, seconds
-        ttot = int(t['total'])
-        tms = int(1000*(t['total'] - ttot))
-        second = 1 # 1 second
-        minute = 60*second # 1 minute
-        hour = 60*minute # 1 hour
-        day = 24*hour # 1 day
-        unity = [day, hour, minute, second]
-        unity_name = ['d', 'h', 'm', 's']
-        tcut = []
-        for unit in unity:
-            tcut.append(ttot//unit)
-            ttot -= tcut[-1]*unit
-        #computational time measurement
-        s = '*'*50
-        s += '\n* Time informations' + ' '*30 + '*'
-        s += '\n* ' + '-'*46 + ' *'
-        s += '\n* MLUPS {0:5.1f}'.format(t['MLUPS']) + ' '*36 + '*'
-        s += '\n* Nminuteber of iterations {0:10.3e}'.format(t['number_of_iterations'])
-        s += ' '*16 + '*'
-        s += '\n* Total time   '
-        test_dummy = True
-        for k in range(len(unity)-1):
-            if (test_dummy and tcut[k] == 0):
-                s += ' '*4
-            else:
-                test_dummy = False
-                s += '{0:2d}{1} '.format(int(tcut[k]), unity_name[k])
-        s += '{0:2d}{1} '.format(int(tcut[-1]), unity_name[-1])
-        if test_dummy:
-            s += '{0:3d}ms'.format(tms) + ' '*13 + '*'
-        else:
-            s += ' '*18 + '*'
-        if t['total'] == 0:
-            ttotal = 1.e-15
-        else:
-            ttotal = t['total']
-        s += '\n* ' + '-'*46 + ' *'
-        s += '\n* relaxation         : {0:2d}%'.format(int(100*t['relaxation']/ttotal))
-        s += ' '*23 + '*'
-        s += '\n* source term        : {0:2d}%'.format(int(100*t['source_term']/ttotal))
-        s += ' '*23 + '*'
-        s += '\n* transport          : {0:2d}%'.format(int(100*t['transport']/ttotal))
-        s += ' '*23 + '*'
-        s += '\n* f2m_m2f            : {0:2d}%'.format(int(100*t['f2m_m2f']/ttotal))
-        s += ' '*23 + '*'
-        s += '\n* boundary conditions: {0:2d}%'.format(int(100*t['boundary_conditions']/ttotal))
-        s += ' '*23 + '*'
-        s += '\n' + '*'*50
-        print(s)
 
     def initialization(self, dico):
         """
@@ -332,9 +234,9 @@ class Simulation:
         coords = np.meshgrid(*(c for c in self.domain.coords_halo), sparse=True, indexing='ij')
 
         if inittype == 'moments':
-            array_to_init = self._m
+            array_to_init = self.container.m
         elif inittype == 'distributions':
-            array_to_init = self._F
+            array_to_init = self.container.F
         else:
             sss = 'Error in the creation of the scheme: wrong dictionnary\n'
             sss += 'the key `inittype` should be moments or distributions'
@@ -354,59 +256,49 @@ class Simulation:
                 array_to_init[k] = v
 
         if inittype == 'moments':
-            self.scheme.equilibrium(self._m)
-            self.scheme.m2f(self._m, self._F)
+            self.equilibrium()
+            self.m2f()
         elif inittype == 'distributions':
-            self.scheme.f2m(self._F, self._m)
+            self.f2m()
 
-        self._Fold.array[:] = self._F.array[:]
+        self.container.Fnew.array[:] = self.container.F.array[:]
 
     def transport(self):
         """
         compute the transport phase on distribution functions
         (the array _F is modified)
         """
-        t = mpi.Wtime()
-        self.scheme.transport(self._F)
-        self.cpu_time['transport'] += mpi.Wtime() - t
+        self.algo.call_function('transport', self)
 
     def relaxation(self):
         """
         compute the relaxation phase on moments
         (the array _m is modified)
         """
-        t = mpi.Wtime()
-        self.scheme.relaxation(self._m)
-        self.cpu_time['relaxation'] += mpi.Wtime() - t
+        self.algo.call_function('relaxation', self)
 
     def source_term(self, fraction_of_time_step=1.):
         """
         compute the source term phase on moments
         (the array _m is modified)
         """
-        t = mpi.Wtime()
-        self.scheme.source_term(self._m, self.t, fraction_of_time_step * self.dt, *self.domain.coords)
-        self.cpu_time['source_term'] += mpi.Wtime() - t
+        self.algo.call_function('source_term', self)
 
     def f2m(self):
         """
         compute the moments from the distribution functions
         (the array _m is modified)
         """
-        t = mpi.Wtime()
-        self.scheme.f2m(self._F, self._m)
-        self.cpu_time['f2m_m2f'] += mpi.Wtime() - t
+        self.algo.call_function('f2m', self)
 
-    def m2f(self):
+    def m2f(self, m_user=None, f_user=None):
         """
         compute the distribution functions from the moments
         (the array _F is modified)
         """
-        t = mpi.Wtime()
-        self.scheme.m2f(self._m, self._F)
-        self.cpu_time['f2m_m2f'] += mpi.Wtime() - t
+        self.algo.call_function('m2f', self, m_user, f_user)
 
-    def equilibrium(self):
+    def equilibrium(self, m_user=None):
         """
         set the moments to the equilibrium values
         (the array _m is modified)
@@ -417,7 +309,7 @@ class Simulation:
         Another moments vector can be set to equilibrium values:
         use directly the method of the class Scheme
         """
-        self.scheme.equilibrium(self._m)
+        self.algo.call_function('equilibrium', self, m_user)
 
     def boundary_condition(self):
         """
@@ -429,9 +321,11 @@ class Simulation:
         The array _F is modified in the phantom array (outer points)
         according to the specified boundary conditions.
         """
-        t = mpi.Wtime()
-        self.scheme.set_boundary_conditions(self._F, self._m, self.bc, self.mpi_topo)
-        self.cpu_time['boundary_conditions'] += mpi.Wtime() - t
+        f = self.container.F
+        f.update()
+
+        for method in self.bc.methods:
+            method.update(f)
 
     def one_time_step(self):
         """
@@ -453,12 +347,9 @@ class Simulation:
 
         self.boundary_condition()
 
-        self.scheme.onetimestep(self._m, self._F, self._Fold, self.domain.in_or_out, self.domain.valin, self.t, self.dt,
-                                *self.domain.coords)
-        self._F, self._Fold = self._Fold, self._F
+        self.algo.call_function('one_time_step', self)
+        self.container.F, self.container.Fnew = self.container.Fnew, self.container.F
 
         self.t += self.dt
         self.nt += 1
 
-if __name__ == "__main__":
-    pass

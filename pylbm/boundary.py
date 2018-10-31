@@ -188,12 +188,12 @@ class BoundaryMethod:
 
         """
 
-        nv = simulation._m.nv
-        sorder = simulation._m.sorder
+        nv = simulation.container.nv
+        sorder = simulation.container.sorder
         nspace = [1]*(len(sorder)-1)
         v = self.stencil.get_all_velocities()
 
-        gpu_support = True if self.backend == "LOOPY" else False
+        gpu_support = simulation.container.gpu_support
 
         for key, value in self.value_bc.items():
             if value is not None:
@@ -227,8 +227,8 @@ class BoundaryMethod:
                                        of size 2 with function name and extra args.""")
                     args = coords + value[1]
                     value[0](f, m, *args)
-                simulation.scheme.equilibrium(m)
-                simulation.scheme.m2f(m, f)
+                simulation.equilibrium(m)
+                simulation.m2f(m, f)
 
                 if self.backend.upper() == "LOOPY":
                     f.array_cpu[...] = f.array.get()
