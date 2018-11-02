@@ -17,6 +17,7 @@ import sympy as sp
 import mpi4py.MPI as mpi
 
 from .generator import generator, For
+from .monitoring import monitor
 
 log = logging.getLogger(__name__) #pylint: disable=invalid-name
 
@@ -140,7 +141,7 @@ class Array:
 
         if self.gpu_support:
             self.array_cpu[...] = self.array.get()
-        if isinstance(key, sp.Symbol):
+        if isinstance(key, (sp.Symbol, sp.IndexedBase)):
             return self.swaparray[self.consm[key]][tuple(ind)]
         return self.swaparray[key][tuple(ind)]
 
@@ -268,6 +269,7 @@ class Array:
             recv.Commit()
 
     #pylint: disable=possibly-unused-variable
+    @monitor
     def update(self):
         """
         update ghost points on the interface with the datas of the neighbors.

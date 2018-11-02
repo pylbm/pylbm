@@ -12,6 +12,7 @@ from ..symbolic import ix, iy, iz, nx, ny, nz, nv, indexed, space_loop, alltoget
 from ..generator import generator
 from .transform import parse_expr
 from .ode import euler
+from ..monitoring import monitor
 
 class BaseAlgorithm:
     def __init__(self, scheme, sorder, settings=None):
@@ -215,6 +216,7 @@ class BaseAlgorithm:
 
         return {'code': code, 'local_vars': local_vars+self.local_vars}
 
+    @monitor
     def generate(self):
         to_generate = [self.transport,
                        self.f2m,

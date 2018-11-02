@@ -105,6 +105,7 @@ else:
     getargspec = getargspec_permissive #pylint: disable=invalid-name
 
 def call_genfunction(function, args):
+    from .monitoring import monitor
     from .context import queue
     try:
         func_args = function.arg_dict.keys()
@@ -113,4 +114,4 @@ def call_genfunction(function, args):
     except: #pylint: disable=bare-except
         func_args = getargspec(function).args
         d = {k:args[k] for k in func_args} #pylint: disable=invalid-name
-    function(**d)
+    monitor(function)(**d)
