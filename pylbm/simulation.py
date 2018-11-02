@@ -26,6 +26,7 @@ from .context import set_queue
 from .generator import generator
 from .container import NumpyContainer, CythonContainer, LoopyContainer
 from .algorithm import PullAlgorithm
+from .monitoring import Monitor, monitor
 
 log = logging.getLogger(__name__) #pylint: disable=invalid-name
 
@@ -86,6 +87,9 @@ class Simulation:
         validate(dico, __class__.__name__)
 
         self.domain = Domain(dico, need_validation=False)
+        domain_size = mpi.COMM_WORLD.allreduce(sendobj=np.prod(self.domain.shape_in))
+        Monitor.set_size(domain_size)
+
         self.scheme = Scheme(dico, check_inverse=check_inverse, need_validation=False)
         if self.domain.dim != self.scheme.dim:
             log.error('Solution: the dimension of the domain and of the scheme are not the same\n')
@@ -206,6 +210,7 @@ class Simulation:
         return template.render(header=header_string("Simulation information"),
                                simu=self)
 
+    @monitor
     def initialization(self, dico):
         """
         initialize all the numy array with the initial conditions
@@ -284,6 +289,7 @@ class Simulation:
         """
         self.algo.call_function('source_term', self)
 
+    @monitor
     def f2m(self):
         """
         compute the moments from the distribution functions
@@ -291,6 +297,7 @@ class Simulation:
         """
         self.algo.call_function('f2m', self)
 
+    @monitor
     def m2f(self, m_user=None, f_user=None):
         """
         compute the distribution functions from the moments
@@ -298,6 +305,7 @@ class Simulation:
         """
         self.algo.call_function('m2f', self, m_user, f_user)
 
+    @monitor
     def equilibrium(self, m_user=None):
         """
         set the moments to the equilibrium values
@@ -311,6 +319,7 @@ class Simulation:
         """
         self.algo.call_function('equilibrium', self, m_user)
 
+    @monitor
     def boundary_condition(self):
         """
         perform the boundary conditions
@@ -327,6 +336,7 @@ class Simulation:
         for method in self.bc.methods:
             method.update(f)
 
+    @monitor
     def one_time_step(self):
         """
         compute one time step
@@ -352,4 +362,3 @@ class Simulation:
 
         self.t += self.dt
         self.nt += 1
-
