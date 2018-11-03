@@ -18,27 +18,10 @@ from sympy import symbols, Eq
 from .stencil import Stencil
 from .validator import validate
 from .generator import generator
-
+from .symbolic import rel_ux, rel_uy, rel_uz, alltogether
 #pylint: disable=too-many-lines
 
 log = logging.getLogger(__name__) #pylint: disable=invalid-name
-
-rel_ux, rel_uy, rel_uz = sp.symbols('rel_ux, rel_uy, rel_uz', real=True) #pylint: disable=invalid-name
-
-def alltogether(M):
-    """
-    Simplify all the elements of sympy matrix M
-
-    Parameters
-    ----------
-
-    M : sympy matrix
-       matrix to simplify
-
-    """
-    for i in range(M.shape[0]):
-        for j in range(M.shape[1]):
-            M[i, j] = M[i, j].expand().together().factor()
 
 def allfactor(M):
     """
@@ -177,7 +160,7 @@ class Scheme:
             log.error("The entry 'scheme_velocity' is wrong.")
 
         # set relative velocity
-        self.rel_vel = dico.get('relative_velocity', [0]*self.dim)
+        self.rel_vel = dico.get('relative_velocity', None)
 
         # fix the variables of time and space
         self.symb_t, self.symb_coord = self._get_space_and_time_symbolic()
@@ -200,15 +183,16 @@ class Scheme:
         self.invM_no_swap = self.invM.copy()
 
         self.consm = self._get_conserved_moments(scheme)
-        # put conserved moments at the beginning of EQ and s
-        # and permute M, invM, Tu, and Tmu accordingly
-        self._permute_consm_in_front()
+        if self.rel_vel is not None:
+            self.Tu_no_swap = self.Tu.copy()
+            # put conserved moments at the beginning of EQ and s
+            # and permute M, invM, Tu, and Tmu accordingly
+            self._permute_consm_in_front()
 
         self.init = self.set_initialization(scheme)
 
-        if check_inverse:
-            self._check_inverse(self.M, self.invM, 'M')
-            self._check_inverse_of_Tu()
+        self._check_inverse(self.M, self.invM, 'M')
+        self._check_inverse_of_Tu()
 
         log.info(self.__str__())
 
@@ -290,6 +274,14 @@ class Scheme:
             P.append(sp.pretty(sp.Matrix(self.P[myslice])))
             EQ.append(sp.pretty(sp.Matrix(self.EQ_no_swap[myslice])))
             s.append(sp.pretty(sp.Matrix(self.s_no_swap[myslice])))
+        
+        if self.rel_vel:
+            addons = {'rel_vel': self.rel_vel,
+                      'Tu': sp.pretty(self.Tu_no_swap)
+                     }
+        else:
+            addons = {}
+
         return template.render(header=header_string("Scheme information"),
                                scheme=self,
                                consm=sp.pretty(list(self.consm.keys())),
@@ -298,7 +290,9 @@ class Scheme:
                                EQ=EQ,
                                s=s,
                                M=sp.pretty(self.M_no_swap),
-                               invM=sp.pretty(self.invM_no_swap))
+                               invM=sp.pretty(self.invM_no_swap),
+                               **addons
+                              )
 
     def _create_moments_matrices(self):
         """
@@ -330,7 +324,7 @@ class Scheme:
                     sublist = [(str(self.symb_coord[d]), sp.Integer(v[j].v[d])*LA) for d in range(self.dim)]
                     M_[-1][i, j] = p[i].subs(sublist)
 
-                    if self.rel_vel != [0]*self.dim:
+                    if self.rel_vel is not None:
                         sublist = [(str(self.symb_coord[d]), v[j].v[d]*LA - u_tild[d]) for d in range(self.dim)]
                         Mu_[-1][i, j] = p[i].subs(sublist)
 
@@ -351,15 +345,15 @@ class Scheme:
                         M[index] = M_[k][i, j]
                         invM[index] = invM_[k][i, j]
 
-                        if self.rel_vel != [0]*self.dim:
+                        if self.rel_vel is not None:
                             Tu[index] = Tu_[k][i, j]
         except TypeError:
             log.error("Unable to convert to float the expression %s or %s.\nCheck the 'parameters' entry.", M[k][i, j], invM[k][i, j]) #pylint: disable=undefined-loop-variable
             sys.exit()
 
-        alltogether(Tu)
-        alltogether(M)
-        alltogether(invM)
+        alltogether(Tu, nsimplify=True)
+        alltogether(M, nsimplify=True)
+        alltogether(invM, nsimplify=True)
         Tmu = Tu.subs(list(zip(u_tild, -u_tild)))
         return M, invM, Tu, Tmu
 

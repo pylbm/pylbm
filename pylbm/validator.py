@@ -288,6 +288,9 @@ def validate(dico, name):
                                           'keyschema': {'type': 'integer'},
                                           'valueschema': {'schema': boundary},
                                          },
+                  'relative_velocity': {'type': 'list',
+                                        'schema': {'anyof_type': ['number', 'expr']}
+                                       },
                   'generator': {'type': 'string',
                                 'allowed':['numpy', 'cython', 'loopy']
                                },
