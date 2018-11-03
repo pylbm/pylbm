@@ -27,3 +27,11 @@
 
     - inverse of moments matrices
         {{ wrap(invM) | indent(8, True) }}
+
+    {% if rel_vel is defined %}
+    - relative velocities
+        {{ wrap(rel_vel) | indent(8, True) }}
+
+    - Transition matrix
+        {{ wrap(Tu) | indent(8, True) }}
+    {%- endif %}
