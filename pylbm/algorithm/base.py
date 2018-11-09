@@ -154,7 +154,9 @@ class BaseAlgorithm:
                         'default_index': [0],
                         }
         else:
-            indices = list(m[0].indices[1:])
+            indices = []
+            for sorder in self.sorder[1:]:
+                indices.append(m[0].indices[sorder])
             indices_str = ['ix', 'iy', 'iz']
             local_dict = {'m': m[0].base,
                         'consm': self.consm,
@@ -263,7 +265,8 @@ class BaseAlgorithm:
             loop = lambda x: For(iloop, x)
         
         if split:
-            code = [loop([*self.coords(), i]) for i in internal]
+            # code = [loop([*self.coords(), i]) for i in internal]
+            code = [loop([i]) for i in internal]
         else:
             # code = loop([*self.coords(), *internal])
             code = loop([*internal])
