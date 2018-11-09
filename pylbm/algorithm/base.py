@@ -128,7 +128,6 @@ class BaseAlgorithm:
             return Eq(f, self.invMu*m)
         else:
             return Eq(f, self.invM*m)
-        return Eq(f, self.invM*m)
 
     def equilibrium_local(self, m):
         eq = self.eq.subs(list(zip(self.mv, m)))
