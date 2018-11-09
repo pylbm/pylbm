@@ -144,7 +144,7 @@ class Simulation:
         if self.generator == 'NUMPY':
             return {'m_local': False, 'split': False, 'check_isfluid': False}
         else:
-            return {'m_local': True, 'split': False, 'check_isfluid': True}
+            return {'m_local': True, 'split': False, 'check_isfluid': False}
 
     def _get_algorithm(self, dico, sorder):
         algo_method = PullAlgorithm
