@@ -12,11 +12,7 @@ import pylbm
 X, Y = sp.symbols('X, Y')
 rho, qx, qy, LA = sp.symbols('rho, qx, qy, lambda', real=True)
 
-def bc_up(f, m, x, y, driven_velocity):
-    m[qx] = driven_velocity
-
 def vorticity(sol):
-    #sol.f2m()
     qx_n = sol.m[qx]
     qy_n = sol.m[qy]
     vort = np.abs(qx_n[1:-1, 2:] - qx_n[1:-1, :-2]
@@ -30,6 +26,7 @@ def qy0(x, y, U, delta):
     return np.zeros_like(y) + U*delta*np.sin(2*np.pi*(x + .25)) 
 
 def feq(v, u):
+    # Qian equilibrium
     c0 = LA/sp.sqrt(3)
     x, y = sp.symbols('x, y')
     vsymb = sp.Matrix([x, y])
@@ -62,10 +59,10 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     k = 80
     delta = .05
 
-    Ma = .04
+    Ma = .1
     lamb = np.sqrt(3)/Ma
     mu = .0366
-    nu = 1e-4
+    nu = 1e-6
 
     sigma3 = 3*mu/(rhoo*lamb*dx)
     sigma4 = 3*nu/(rhoo*lamb*dx)
@@ -81,31 +78,40 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         'schemes':[
             {
                 'velocities':list(range(9)),
+                # 'polynomials':[
+                #     1, X, Y,
+                #     X**2 + Y**2,
+                #     X**2 - Y**2,
+                #     X*Y,
+                #     X*(X**2+Y**2),
+                #     Y*(X**2+Y**2),
+                #     (X**2+Y**2)**2                    
+                # ], # polynomials of P. Lallemand
                 'polynomials':[
                     1, X, Y,
                     X**2 + Y**2,
                     X**2 - Y**2,
                     X*Y,
-                    X*(X**2+Y**2),
-                    Y*(X**2+Y**2),
-                    (X**2+Y**2)**2                    
-                ],
+                    X*Y**2,
+                    Y*X**2,
+                    X**2*Y**2                    
+                ], # polynomials of M. Geier
                 'relaxation_parameters':s,
-                'feq': (feq, (sp.Matrix([qx/rho, qy/rho]),)),
-                # 'equilibrium':[
-                #     rho, qx, qy, 
-                #     (qx**2 + qy**2 + 2*rho**2/3)/rho, 
-                #     (qx**2 - qy**2)/rho, 
-                #     qx*qy/rho, 
-                #     4*qx/3, 
-                #     4*qy/3, 
-                #     (15*qx**2 + 15*qy**2 + 8*rho**2)/(9*rho)
-                # ],
+                #'feq': (feq, (sp.Matrix([qx/rho, qy/rho]),)), # Qian equilibrium 
+                'equilibrium':[
+                    rho, qx, qy, 
+                    (qx**2 + qy**2 + 2*LA**2*rho**2/3)/rho, 
+                    (qx**2 - qy**2)/rho, 
+                    qx*qy/rho, 
+                    qx*(LA**2/3+qy**2/rho**2),
+                    qy*(LA**2/3+qx**2/rho**2),
+                    rho*(LA**2/3+qx**2/rho**2)*(LA**2/3+qy**2/rho**2),
+                ], # maxwellian equilibrium
                 'conserved_moments': [rho, qx, qy],
                 'init': {rho: 1., qx: (qx0, (U, k)), qy: (qy0, (U, delta))},
             },
         ],
-        #'relative_velocity': [qx/rho, qy/rho],
+        'relative_velocity': [qx/rho, qy/rho],
         'generator': generator,
     }
 
@@ -120,7 +126,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         image = ax.image(vorticity, (sol,), cmap='jet')#, clim=[-60, 50])
 
         def update(iframe):
-            nrep = 100
+            nrep = 128
             for i in range(nrep):
                 sol.one_time_step()
 
@@ -137,6 +143,6 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     return sol
 
 if __name__ == '__main__':
-    dx = 1./128
+    dx = 1./256
     Tf = 0.6
     run(dx, Tf)
