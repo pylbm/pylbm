@@ -139,7 +139,7 @@ class BaseAlgorithm:
         else:
             eq = self.eq.subs(list(zip(self.mv, m)))
         relax = (sp.ones(*self.s.shape) - self.s).multiply_elementwise(sp.Matrix(m)) + self.s.multiply_elementwise(eq)
-        alltogether(relax, nsimplify=True)
+        alltogether(relax)
         return Eq(m, relax)
 
     def source_term_local(self, m):
