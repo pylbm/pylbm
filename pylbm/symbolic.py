@@ -14,6 +14,7 @@ import sympy as sp
 
 nx, ny, nz, nv = sp.symbols("nx, ny, nz, nv", integer=True) #pylint: disable=invalid-name
 ix, iy, iz, iv = sp.symbols("ix, iy, iz, iv", integer=True) #pylint: disable=invalid-name
+rel_ux, rel_uy, rel_uz = sp.symbols('rel_ux, rel_uy, rel_uz', real=True) #pylint: disable=invalid-name
 
 def set_order(array, sorder, remove_ind=None):
     out = [-1]*len(sorder)
@@ -55,7 +56,7 @@ def space_loop(ranges, permutation=None):
         idx.append(sp.Idx(indices[ir], r))
     return set_order([0] + idx, permutation, remove_ind=[0])
 
-def alltogether(M):
+def alltogether(M, nsimplify=False):
     """
     Simplify all the elements of sympy matrix M
 
@@ -68,7 +69,14 @@ def alltogether(M):
     """
     for i in range(M.shape[0]):
         for j in range(M.shape[1]):
-            M[i, j] = M[i, j].expand().together().factor()
+            if nsimplify:
+                # FIXME bug with factor in sympy 1.1 (solved in 1.3)
+                # M[i, j] = M[i, j].expand().together().factor().nsimplify()
+                M[i, j] = M[i, j].expand().together().nsimplify()
+            else:
+                # FIXME bug with factor in sympy 1.1 (solved in 1.3)
+                # M[i, j] = M[i, j].expand().together().factor()
+                M[i, j] = M[i, j].expand().together()
 
 def getargspec_permissive(func):
     """
