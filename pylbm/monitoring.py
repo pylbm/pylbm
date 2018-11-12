@@ -4,6 +4,8 @@ from functools import wraps
 import numpy as np
 import mpi4py.MPI as mpi
 
+from .options import options
+
 class perf_monitor:
     def __init__(self):
         self.count = 0
@@ -79,7 +81,9 @@ class Monitoring:
 
 Monitor = Monitoring()
 import atexit
-atexit.register(Monitor.__str__)
+
+if options().monitoring:
+    atexit.register(Monitor.__str__)
 
 def monitor(f):
     @wraps(f)

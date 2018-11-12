@@ -18,6 +18,9 @@ def options():
     logging.add_argument("--log", dest="loglevel", default="WARNING",
                          choices=['WARNING', 'INFO', 'DEBUG', 'ERROR'],
                          help="Set the log level")
+    monitoring = parser.add_argument_group('monitoring')
+    monitoring.add_argument("--monitoring", action="store_true",
+                            help="Set the monitoring")
     mpi = parser.add_argument_group('mpi splitting')
     mpi.add_argument("-npx", dest="npx", default=1, type=int,
                      help="Set the number of processes in x direction")
