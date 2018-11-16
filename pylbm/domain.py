@@ -321,8 +321,18 @@ class Domain:
         for k in range(self.dim):
             self.global_size.append((phys_box[k][1] - phys_box[k][0])/self.dx)
             if not self.global_size[-1].is_integer():
-                log.error('The length of the box in the direction %d must be a multiple of the space step', k)
-                sys.exit()
+                dummy = round(self.global_size[-1])
+                diff_n = dummy - self.global_size[-1]
+                if abs(diff_n) < self.dx:
+                    message = "The length of the box in the direction {0:d} is not exactly a multiple of the space step\n".format(k)
+                    message += "The error in the length of the domain in the direction {0:d} is {1:10.3e}".format(k, diff_n*self.dx)
+                    log.info(message)
+                    self.global_size[-1] = dummy
+                else:
+                    message = "The length of the box in the direction {0:d} must be a multiple of the space step\n".format(k)
+                    message += "The number of points is {0:.15f}".format(self.global_size[-1])
+                    log.error(message)
+                    sys.exit()
 
         # we now are sure that global_size item are integers
         self.global_size = np.asarray(self.global_size, dtype='int')
