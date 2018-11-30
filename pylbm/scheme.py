@@ -183,11 +183,11 @@ class Scheme:
         self.invM_no_swap = self.invM.copy()
 
         self.consm = self._get_conserved_moments(scheme)
+        # put conserved moments at the beginning of EQ and s
+        # and permute M, invM, Tu, and Tmu accordingly
+        self._permute_consm_in_front()
         if self.rel_vel is not None:
             self.Tu_no_swap = self.Tu.copy()
-            # put conserved moments at the beginning of EQ and s
-            # and permute M, invM, Tu, and Tmu accordingly
-            self._permute_consm_in_front()
 
         self.init = self.set_initialization(scheme)
 
