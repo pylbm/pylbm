@@ -1,106 +1,129 @@
+# Authors:
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
+#     Benjamin Graille <benjamin.graille@math.u-psud.fr>
+#
+# License: BSD 3 clause
 
+"""
+Symbolic computation of equivalent equations
+"""
 
+#pylint: disable=invalid-name
 import sympy as sp
+from .symbolic import alltogether
 
-def equivalent_equation(scheme):
-    t, x, y, z, f = sp.symbols("t x y z f", type='real')
-    consm = list(scheme.consm.keys())
-    nconsm = len(scheme.consm)
+class EquivalentEquation:
+    def __init__(self, scheme):
+        # TODO: add source terms
 
-    dx = sp.Derivative(f, x)
-    dy = sp.Derivative(f, y)
-    dz = sp.Derivative(f, z)
-    dspace = [dx, dy, dz]
-    dt = sp.Derivative(f, t)
-    LA = scheme.symb_la
-    if not LA:
-        LA = scheme.la
+        t, x, y, z = sp.symbols("t x y z", type='real')
+        consm = list(scheme.consm.keys())
+        nconsm = len(scheme.consm)
 
-    func = []
-    for i in range(nconsm):
-        func.append(sp.Function('f{}'.format(i))(t, x))
+        self.consm = sp.Matrix(consm)
+        self.dim = scheme.dim
 
-    sublist = [(i, j) for i, j in zip(consm, func)]
-    sublist_inv = [(j, i) for i, j in zip(consm, func)]
-    eq_func = sp.Matrix(scheme.EQ[nconsm:]).subs(sublist)
-    s = sp.Matrix(scheme.s[nconsm:])
+        space = [x, y, z]
 
-    source = {}
-    for sterm in scheme._source_terms:
-        if sterm:
-            for k, v in sterm.items():
-                source[k] = v
+        LA = scheme.symb_la
+        if not LA:
+            LA = scheme.la
 
-    vd = []
-    all_vel = scheme.stencil.get_all_velocities()
-    for p in scheme.permutations:
-        all_vel[p] = all_vel[p[-1::-1]]
-    for vv in all_vel:
-        som = 0
-        for i, vvv in enumerate(vv):
-            som += vvv*LA*dspace[i]
-        vd.append(som)
-    vd = sp.diag(*vd)
+        func = []
+        for i in range(nconsm):
+            func.append(sp.Function('f{}'.format(i))(t, x, y, z))
+        func = sp.Matrix(func)
 
-    Gamma = scheme.M*vd*scheme.invM
+        sublist = [(i, j) for i, j in zip(consm, func)]
+        sublist_inv = [(j, i) for i, j in zip(consm, func)]
 
-    A, B = sp.Matrix([Gamma[:nconsm, :nconsm]]), sp.Matrix([Gamma[:nconsm, nconsm:]])
-    C, D = sp.Matrix([Gamma[nconsm:, :nconsm]]), sp.Matrix([Gamma[nconsm:, nconsm:]])
+        eq_func = sp.Matrix(scheme.EQ[nconsm:]).subs(sublist)
+        s = sp.Matrix(scheme.s[nconsm:])
 
-    gamma_1 = sp.zeros(A.shape[0], 1)
-    for i in range(gamma_1.shape[0]):
-        dummy = 0
-        for j in range(A.shape[1]):
-            dummy += A[(i,j)].replace(f, func[j])
-        gamma_1[i] = dummy
-        
-        dummy = 0
-        for j in range(B.shape[1]):
-            dummy += B[(i, j)].replace(f, eq_func[j])
-        gamma_1[i] += dummy 
-        
-    sigma = sp.diag(*s).inv() - sp.eye(len(s))/2
+        all_vel = scheme.stencil.get_all_velocities()
 
-    phi1 = sp.zeros(C.shape[0], 1)
-    for i in range(phi1.shape[0]):
-        dummy = 0
-        for j in range(C.shape[1]):
-            dummy += C[(i,j)].replace(f, func[j])
-        phi1[i] = -dummy
-        
-        dummy = 0
-        for j in range(D.shape[1]):
-            dummy += D[(i, j)].replace(f, eq_func[j])
-        phi1[i] -= dummy  
+        Lambda = []
+        for i in range(all_vel.shape[1]):
+            vd = LA*sp.diag(*all_vel[:, i])
+            Lambda.append(scheme.M*vd*scheme.invM)
 
-    delta1 = sp.zeros(phi1.shape[0], 1)
-    meq = sp.Matrix(scheme.EQ[nconsm:])
-    print(consm)
-    jac = meq.jacobian(consm)
-    jac = jac.subs(sublist)
-    for i in range(delta1.shape[0]):
-        for j in range(jac.shape[1]):
-            delta1[i] += jac[(i, j)]*gamma_1[j]
+        phi1 = sp.zeros(s.shape[0], 1)
+        sigma = sp.diag(*s).inv() - sp.eye(len(s))/2
+        gamma_1 = sp.zeros(nconsm, 1)
 
-    phi1 += delta1
-    sphi1 = sigma*phi1
-    gamma_2 = sp.zeros(B.shape[0], 1)
+        self.coeff_order1 = []
+        for dim, lambda_ in enumerate(Lambda):
+            A, B = sp.Matrix([lambda_[:nconsm, :nconsm]]), sp.Matrix([lambda_[:nconsm, nconsm:]])
+            C, D = sp.Matrix([lambda_[nconsm:, :nconsm]]), sp.Matrix([lambda_[nconsm:, nconsm:]])
 
-    for i in range(gamma_2.shape[0]):
-        dummy = 0
-        for j in range(B.shape[1]):
-            dummy += B[(i,j)].replace(f, sphi1[j])
-        gamma_2[i] = dummy
+            self.coeff_order1.append(A*func + B*eq_func)
+            alltogether(self.coeff_order1[-1], nsimplify=True)
+            for i in range(nconsm):
+                gamma_1[i] += sp.Derivative(self.coeff_order1[-1][i], space[dim])
 
-    time = sp.zeros(A.shape[0], 1)
-    for i in range(time.shape[0]):
-        time[i] = dt.replace(f, func[i])
+            dummy = -C*func - D*eq_func
+            alltogether(dummy, nsimplify=True)
+            for i in range(dummy.shape[0]):
+                phi1[i] += sp.Derivative(dummy[i], space[dim])
 
-    res = (time + gamma_1 + gamma_2).doit().subs(sublist_inv)
-    for i, c in enumerate(consm):
-        res[i] = sp.Eq(res[i], source.get(c, 0))
+        self.coeff_order2 = [[sp.zeros(nconsm) for _ in range(scheme.dim)] for _ in range(scheme.dim)]
 
-    return {'full': res,
-            'order1': gamma_1.subs(sublist_inv),
-            'order2': gamma_2.subs(sublist_inv),
-    }
+        for dim, lambda_ in enumerate(Lambda):
+            A, B = sp.Matrix([lambda_[:nconsm, :nconsm]]), sp.Matrix([lambda_[:nconsm, nconsm:]])
+
+            meq = sp.Matrix(scheme.EQ[nconsm:])
+            jac = meq.jacobian(consm)
+            jac = jac.subs(sublist)
+            delta1 = jac*gamma_1
+
+            phi1_ = phi1 + delta1
+            sphi1 = B*sigma*phi1_
+            sphi1 = sphi1.doit()
+            alltogether(sphi1, nsimplify=True)
+
+            for i in range(scheme.dim):
+                for jc in range(nconsm):
+                    for ic in range(nconsm):
+                        self.coeff_order2[dim][i][ic, jc] += sphi1[ic].expand().coeff(sp.Derivative(func[jc], space[i]))
+
+        for ic, c in enumerate(self.coeff_order1):
+            self.coeff_order1[ic] = c.subs(sublist_inv)
+
+        for ic, c in enumerate(self.coeff_order2):
+            for jc, cc in enumerate(c):
+                self.coeff_order2[ic][jc] = cc.subs(sublist_inv)
+
+    def __str__(self):
+        from .utils import header_string
+        from .jinja_env import env
+        template = env.get_template('equivalent_equation.tpl')
+        t, x, y, z, U, Fx, Fy, Fz, Delta = sp.symbols('t, x, y, z, U, Fx, Fy, Fz, Delta_t')
+        Bxx, Bxy, Bxz = sp.symbols('Bxx, Bxy, Bxz')
+        Byx, Byy, Byz = sp.symbols('Byx, Byy, Byz')
+        Bzx, Bzy, Bzz = sp.symbols('Bzx, Bzy, Bzz')
+
+        phys_equation = sp.Derivative(U, t) + sp.Derivative(Fx, x)
+        if self.dim > 1:
+            phys_equation += sp.Derivative(Fy, y)
+        if self.dim == 3:
+            phys_equation += sp.Derivative(Fz, z)
+
+        order2 = []
+        space = [x, y, z]
+        B = [[Bxx, Bxy, Bxz],
+             [Byx, Byy, Byz],
+             [Bzx, Bzy, Bzz],
+            ]
+
+        phys_equation_rhs = 0
+        for i in range(self.dim):
+            for j in range(self.dim):
+                order2.append(sp.pretty(sp.Eq(B[i][j], -Delta*self.coeff_order2[i][j], evaluate=False)))
+                phys_equation_rhs += sp.Derivative(B[i][j]*sp.Derivative(U, space[j]), space[i])
+        return template.render(header=header_string('Equivalent Equations'),
+                               dim=self.dim,
+                               phys_equation=sp.pretty(sp.Eq(phys_equation, phys_equation_rhs)),
+                               conserved_moments=sp.pretty(sp.Eq(U, self.consm, evaluate=False)),
+                               order1=[sp.pretty(sp.Eq(F, coeff, evaluate=False)) for F, coeff in zip([Fx, Fy, Fz][:self.dim], self.coeff_order1)],
+                               order2=order2
+                              )
