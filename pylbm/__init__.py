@@ -19,6 +19,7 @@ from . import viewer
 from .hdf5 import H5File
 from .options import options
 from . import monitoring
+from .equivalent_equation import EquivalentEquation
 
 from .version import version as __version__
 

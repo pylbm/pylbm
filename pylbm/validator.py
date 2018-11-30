@@ -187,7 +187,7 @@ def validate(dico, name):
                               'required': name in ['Scheme', 'Simulation']
                              },
               'relaxation_parameters': {'type': 'list',
-                                        'schema': {'type': 'number'},
+                                        'schema': {'anyof_type': ['number', 'expr']},
                                         'required': name in ['Scheme', 'Simulation']
                                        },
               'equilibrium': {'type': 'list',
