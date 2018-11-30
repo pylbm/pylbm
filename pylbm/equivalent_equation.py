@@ -31,7 +31,7 @@ class EquivalentEquation:
 
         func = []
         for i in range(nconsm):
-            func.append(sp.Function('f{}'.format(i))(t, x, y, z))
+            func.append(sp.Function('f{}'.format(i))(t, x, y, z)) #pylint: disable=not-callable
         func = sp.Matrix(func)
 
         sublist = [(i, j) for i, j in zip(consm, func)]
@@ -47,7 +47,7 @@ class EquivalentEquation:
             vd = LA*sp.diag(*all_vel[:, i])
             Lambda.append(scheme.M*vd*scheme.invM)
 
-        phi1 = sp.zeros(s.shape[0], 1)
+        phi1 = sp.zeros(s.shape[0], 1) #pylint: disable=unsubscriptable-object
         sigma = sp.diag(*s).inv() - sp.eye(len(s))/2
         gamma_1 = sp.zeros(nconsm, 1)
 
