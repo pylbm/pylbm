@@ -153,8 +153,10 @@ class PlotWidget:
             self.ax.set_zticks(minor_ticks, minor=True)
 
     def set_label(self, xlab, ylab, zlab=None):
-        self.ax.set_xlabel(xlab)
-        self.ax.set_ylabel(ylab)
+        if xlab is not None:
+            self.ax.set_xlabel(xlab)
+        if ylab is not None:
+            self.ax.set_ylabel(ylab)
         if zlab is not None:
             self.ax.set_zlabel(zlab)
 
