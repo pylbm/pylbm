@@ -67,8 +67,12 @@ class PlotWidget:
     def title(self, text):
         self.ax.set_title(text)
 
-    def legend(self, loc='upper left'):
-        self.ax.legend(loc=loc)
+    def legend(self, 
+               loc='upper left',
+               frameon=True,
+               shadow=False
+               ):
+        self.ax.legend(loc=loc, shadow=shadow, frameon=frameon)
 
     def text(self, text, pos, fontsize=18, fontweight='normal', color='k', horizontalalignment='center', verticalalignment='center'):
         allt = []
