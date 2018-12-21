@@ -36,20 +36,3 @@ class BurgersSolver(GenericSolver):
             self.waves.append('shock')
         self.values.append(self.u_right)
         return self.velocities
-
-    # def evaluate(self, x, t):
-    #     y = np.zeros(x.shape)
-
-    #     if t == 0:
-    #         y[x < self.pos_disc] = self.u_left
-    #         y[x >= self.pos_disc] = self.u_right
-    #     else:
-    #         vxi = (x - self.pos_disc)/t
-    #         for k, xik in enumerate(vxi):
-    #             if xik < self.velocities[0][0]:
-    #                 y[k] = self.u_left
-    #             elif xik < self.velocities[0][1]:
-    #                 y[k] = xik
-    #             else:
-    #                 y[k] = self.u_right
-    #     return y

@@ -131,41 +131,41 @@ def run(space_step,
         # create the viewer to plot the solution
         viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig(2, 1)
-        ax1 = fig[0]
-        ax1.axis(xmin, xmax, ymina, ymaxa)
-        ax1.set_label(None, "height")
-        ax1.xaxis_set_visible(False)
-        ax2 = fig[1]
-        ax2.axis(xmin, xmax, yminb, ymaxb)
-        ax2.set_label(r"$x$", "velocity")
+        axe1 = fig[0]
+        axe1.axis(xmin, xmax, ymina, ymaxa)
+        axe1.set_label(None, "height")
+        axe1.xaxis_set_visible(False)
+        axe2 = fig[1]
+        axe2.axis(xmin, xmax, yminb, ymaxb)
+        axe2.set_label(r"$x$", "velocity")
 
         x = sol.domain.x
-        l1a = ax1.plot(x, sol.m[H],
+        l1a = axe1.plot(x, sol.m[H],
                        color='navy',
                        alpha=0.5,
                        label=r'$D_1Q_2$',
                        )[0]
         sole = exact_solution.evaluate(x, sol.t)
-        l1e = ax1.plot(x, sole[0], width=1,
+        l1e = axe1.plot(x, sole[0], width=1,
                        color='black',
                        alpha=0.5,
                        label='exact',
                        )[0]
-        l2a = ax2.plot(x, sol.m[Q]/sol.m[H],
+        l2a = axe2.plot(x, sol.m[Q]/sol.m[H],
                        color='orange',
                        alpha=0.5,
                        label=r'$D_1Q_2$',
                        )[0]
-        l2e = ax2.plot(x, sole[1]/sole[0], width=1,
+        l2e = axe2.plot(x, sole[1]/sole[0], width=1,
                        color='black',
                        alpha=0.5,
                        label='exact',
                        )[0]
-        ax1.legend(loc='upper right',
+        axe1.legend(loc='upper right',
                    shadow=False,
                    frameon=False,
                    )
-        ax2.legend(loc='upper left',
+        axe2.legend(loc='upper left',
                    shadow=False,
                    frameon=False,
                    )
@@ -178,7 +178,7 @@ def run(space_step,
                 sole = exact_solution.evaluate(x, sol.t)
                 l1e.set_data(x, sole[0])
                 l2e.set_data(x, sole[1]/sole[0])
-                ax1.title = r'shallow water at $t = {0:f}$'.format(sol.t)
+                axe1.title = r'shallow water at $t = {0:f}$'.format(sol.t)
 
         fig.animate(update)
         fig.show()
