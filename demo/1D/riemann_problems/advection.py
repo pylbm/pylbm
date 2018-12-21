@@ -56,12 +56,12 @@ def run(space_step,
 
     """
     # parameters
-    xmin, xmax = 0., 1.     # bounds of the domain
-    la = 1.                 # scheme velocity (la = dx/dt)
-    velocity = 0.25         # velocity of the advection
-    s = 1.9                 # relaxation parameter
+    xmin, xmax = 0., 1.         # bounds of the domain
+    la = 1.                     # lattice velocity (la = dx/dt)
+    velocity = 0.25             # velocity of the advection
+    s = 1.9                     # relaxation parameter
 
-    symb_s = 1/(0.5+SIGMA)  # symbolic relaxation parameter
+    symb_s = 1/(0.5+SIGMA)      # symbolic relaxation parameter
 
     # initial values
     u_left, u_right = 1., 0.
