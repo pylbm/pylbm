@@ -110,8 +110,8 @@ class Array:
         if mpi_topo is not None:
             self._set_subarray()
 
-        if self.gpu_support:
-            self.generate()
+        # if self.gpu_support:
+        #     self.generate()
 
     def __getitem__(self, key):
         if self.gpu_support:
@@ -275,77 +275,78 @@ class Array:
         """
         update ghost points on the interface with the datas of the neighbors.
         """
-        if self.gpu_support:
-            from .symbolic import call_genfunction
+        # if self.gpu_support:
+            # FIXME: move the generated code outside for loopy
+            # from .symbolic import call_genfunction
 
-            dim = len(self.nspace)
-            nx = self.nspace[0]
-            if dim > 1:
-                ny = self.nspace[1]
-            if dim > 2:
-                nz = self.nspace[2]
-            nv = self.nv
+            # dim = len(self.nspace)
+            # nx = self.nspace[0]
+            # if dim > 1:
+            #     ny = self.nspace[1]
+            # if dim > 2:
+            #     nz = self.nspace[2]
+            # nv = self.nv
 
-            f = self.array
+            # f = self.array
 
-            args = locals()
-            call_genfunction(generator.module.update_x, args)
+            # args = locals()
+            # call_genfunction(generator.module.update_x, args)
 
-            if dim > 1:
-                call_genfunction(generator.module.update_y, args)
-            if dim > 2:
-                call_genfunction(generator.module.update_z, args)
+            # if dim > 1:
+            #     call_genfunction(generator.module.update_y, args)
+            # if dim > 2:
+            #     call_genfunction(generator.module.update_z, args)
 
-        else:
-            for d in range(self.dim): #pylint: disable=invalid-name
-                req = []
+        # else:
+        for d in range(self.dim): #pylint: disable=invalid-name
+            req = []
 
-                req.append(self.comm.Irecv([self.array, self.recv_type[2*d]], source=self.neighbors[2*d], tag=self.recv_tag[2*d]))
-                req.append(self.comm.Irecv([self.array, self.recv_type[2*d + 1]], source=self.neighbors[2*d + 1], tag=self.recv_tag[2*d + 1]))
+            req.append(self.comm.Irecv([self.array, self.recv_type[2*d]], source=self.neighbors[2*d], tag=self.recv_tag[2*d]))
+            req.append(self.comm.Irecv([self.array, self.recv_type[2*d + 1]], source=self.neighbors[2*d + 1], tag=self.recv_tag[2*d + 1]))
 
-                req.append(self.comm.Isend([self.array, self.send_type[2*d]], dest=self.neighbors[2*d], tag=self.send_tag[2*d]))
-                req.append(self.comm.Isend([self.array, self.send_type[2*d + 1]], dest=self.neighbors[2*d + 1], tag=self.send_tag[2*d + 1]))
+            req.append(self.comm.Isend([self.array, self.send_type[2*d]], dest=self.neighbors[2*d], tag=self.send_tag[2*d]))
+            req.append(self.comm.Isend([self.array, self.send_type[2*d + 1]], dest=self.neighbors[2*d + 1], tag=self.send_tag[2*d + 1]))
 
-                mpi.Request.Waitall(req)
+            mpi.Request.Waitall(req)
 
     #pylint: disable=too-many-locals
-    def generate(self):
-        """
-        generate periodic conditions functions for loo.py backend.
-        """
-        def set_order(array, remove_index=None):
-            out = [-1]*len(self.sorder)
-            for i, s in enumerate(self.sorder):
-                out[s] = array[i]
-            if remove_index:
-                out.pop(self.sorder[remove_index])
-            return out
+    # def generate(self):
+    #     """
+    #     generate periodic conditions functions for loo.py backend.
+    #     """
+    #     def set_order(array, remove_index=None):
+    #         out = [-1]*len(self.sorder)
+    #         for i, s in enumerate(self.sorder):
+    #             out[s] = array[i]
+    #         if remove_index:
+    #             out.pop(self.sorder[remove_index])
+    #         return out
 
-        nx, ny, nz, nv = sp.symbols('nx, ny, nz, nv', integer=True)
-        shape = set_order([nv, nx, ny, nz])
+    #     nx, ny, nz, nv = sp.symbols('nx, ny, nz, nv', integer=True)
+    #     shape = set_order([nv, nx, ny, nz])
 
-        i = sp.Idx('i', (0, nx))
-        j = sp.Idx('j', (0, ny))
-        k = sp.Idx('k', (0, nz))
-        s = sp.Idx('s', (0, nv))
+    #     i = sp.Idx('i', (0, nx))
+    #     j = sp.Idx('j', (0, ny))
+    #     k = sp.Idx('k', (0, nz))
+    #     s = sp.Idx('s', (0, nv))
 
-        fi = sp.IndexedBase('f', shape) #pylint: disable=invalid-name
-        f_store = sp.Matrix([fi[set_order([s, 0, j, k])], fi[set_order([s, nx-1, j, k])]])
-        f_load = sp.Matrix([fi[set_order([s, nx-2, j, k])], fi[set_order([s, 1, j, k])]])
-        iloop = set_order([s, i, j, k], remove_index=1)
-        generator.add_routine(('update_x', For(iloop, sp.Eq(f_store, f_load))))
+    #     fi = sp.IndexedBase('f', shape) #pylint: disable=invalid-name
+    #     f_store = sp.Matrix([fi[set_order([s, 0, j, k])], fi[set_order([s, nx-1, j, k])]])
+    #     f_load = sp.Matrix([fi[set_order([s, nx-2, j, k])], fi[set_order([s, 1, j, k])]])
+    #     iloop = set_order([s, i, j, k], remove_index=1)
+    #     generator.add_routine(('update_x', For(iloop, sp.Eq(f_store, f_load))))
 
-        if len(self.sorder) > 2:
-            f_store = sp.Matrix([fi[set_order([s, i, 0, k])], fi[set_order([s, i, ny-1, k])]])
-            f_load = sp.Matrix([fi[set_order([s, i, ny-2, k])], fi[set_order([s, i, 1, k])]])
-            iloop = set_order([s, i, j, k], remove_index=2)
-            generator.add_routine(('update_y', For(iloop, sp.Eq(f_store, f_load))))
+    #     if len(self.sorder) > 2:
+    #         f_store = sp.Matrix([fi[set_order([s, i, 0, k])], fi[set_order([s, i, ny-1, k])]])
+    #         f_load = sp.Matrix([fi[set_order([s, i, ny-2, k])], fi[set_order([s, i, 1, k])]])
+    #         iloop = set_order([s, i, j, k], remove_index=2)
+    #         generator.add_routine(('update_y', For(iloop, sp.Eq(f_store, f_load))))
 
-        if len(self.sorder) > 3:
-            f_store = sp.Matrix([fi[set_order([s, i, j, 0])], fi[set_order([s, i, j, nz-1])]])
-            f_load = sp.Matrix([fi[set_order([s, i, j, nz-2])], fi[set_order([s, i, j, 1])]])
-            iloop = set_order([s, i, j, k], remove_index=3)
-            generator.add_routine(('update_z', For(iloop, sp.Eq(f_store, f_load))))
+    #     if len(self.sorder) > 3:
+    #         f_store = sp.Matrix([fi[set_order([s, i, j, 0])], fi[set_order([s, i, j, nz-1])]])
+    #         f_load = sp.Matrix([fi[set_order([s, i, j, nz-2])], fi[set_order([s, i, j, 1])]])
+    #         iloop = set_order([s, i, j, k], remove_index=3)
+    #         generator.add_routine(('update_z', For(iloop, sp.Eq(f_store, f_load))))
 
 class SOA(Array):
     """
