@@ -10,7 +10,6 @@ from sympy import Eq
 from ..generator import For, If
 from ..symbolic import ix, iy, iz, nx, ny, nz, nv, indexed, space_loop, alltogether
 from ..symbolic import rel_ux, rel_uy, rel_uz
-from ..generator import generator
 from .transform import parse_expr
 from .ode import euler
 from ..monitoring import monitor
@@ -26,7 +25,7 @@ def permute_sympy(sympy_matrix, permutations, row=False, col=False):
             sympy_matrix.col_swap(p[0], p[1])
 
 class BaseAlgorithm:
-    def __init__(self, scheme, sorder, settings=None):
+    def __init__(self, scheme, sorder, generator, settings=None):
         xx, yy, zz = sp.symbols('xx, yy, zz')
         self.symb_coord_local = [xx, yy, zz]
         self.symb_coord = scheme.symb_coord
@@ -56,6 +55,7 @@ class BaseAlgorithm:
             self.consm[str(k)] = v
 
         self.sorder = sorder
+        self.generator = generator
 
         subs_coords = list(zip(self.symb_coord, self.symb_coord_local))
         subs_moments = list(zip(scheme.consm.keys(), [self.mv[int(i), 0] for i in scheme.consm.values()]))
@@ -287,7 +287,7 @@ class BaseAlgorithm:
             output = gen()
             code = output['code']
             local_vars = output.get('local_vars', [])
-            generator.add_routine((name, code), local_vars=local_vars)
+            self.generator.add_routine((name, code), local_vars=local_vars)
 
     def _get_args(self, simulation, m_user=None, f_user=None):
         if m_user:
@@ -321,7 +321,7 @@ class BaseAlgorithm:
 
     def call_function(self, function_name, simulation, m_user=None, f_user=None):
         from ..symbolic import call_genfunction
-        func = getattr(generator.module, function_name)
+        func = getattr(self.generator.module, function_name)
 
         args = self._get_args(simulation, m_user, f_user)
         call_genfunction(func, args)

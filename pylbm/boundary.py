@@ -15,7 +15,6 @@ import numpy as np
 from sympy import symbols, IndexedBase, Idx, Eq
 
 from .storage import Array
-from .generator import generator
 
 log = logging.getLogger(__name__) #pylint: disable=invalid-name
 
@@ -70,7 +69,7 @@ class Boundary:
 
     """
     #pylint: disable=too-many-locals
-    def __init__(self, domain, dico):
+    def __init__(self, domain, generator, dico):
         self.domain = domain
 
         # build the list of indices for each unique velocity and for each label
@@ -118,10 +117,8 @@ class Boundary:
 
         # for each method create the instance associated
         self.methods = []
-        # FIXME: set in a different way the default generator
-        backend = dico.get("generator", "cython").upper()
         for k in list(istore.keys()):
-            self.methods.append(k(istore[k], ilabel[k], distance[k], stencil, value_bc, domain.distance.shape, backend))
+            self.methods.append(k(istore[k], ilabel[k], distance[k], stencil, value_bc, domain.distance.shape, generator))
 
 
 #pylint: disable=protected-access
@@ -151,7 +148,7 @@ class BoundaryMethod:
        the prescribed values on the border
 
     """
-    def __init__(self, istore, ilabel, distance, stencil, value_bc, nspace, backend):
+    def __init__(self, istore, ilabel, distance, stencil, value_bc, nspace, generator):
         self.istore = istore
         self.feq = np.zeros((stencil.nv_ptr[-1], istore.shape[1]))
         self.rhs = np.zeros(istore.shape[1])
@@ -163,7 +160,7 @@ class BoundaryMethod:
         for k in np.unique(self.ilabel):
             self.value_bc[k] = value_bc[k]
         self.nspace = nspace
-        self.backend = backend
+        self.generator = generator
 
     def fix_iload(self):
         """
@@ -230,7 +227,7 @@ class BoundaryMethod:
                 simulation.equilibrium(m)
                 simulation.m2f(m, f)
 
-                if self.backend.upper() == "LOOPY":
+                if self.generator.backend.upper() == "LOOPY":
                     f.array_cpu[...] = f.array.get()
                 self.feq[:, indices[0]] = f.swaparray.reshape((nv, indices[0].size))
 
@@ -292,7 +289,7 @@ class BoundaryMethod:
         """
         Move arrays needed to compute the boundary on the GPU memory.
         """
-        if self.backend.upper() == "LOOPY":
+        if self.generator.backend.upper() == "LOOPY":
             try:
                 import pyopencl as cl
                 import pyopencl.array #pylint: disable=unused-variable
@@ -358,12 +355,12 @@ class BounceBack(BoundaryMethod):
         fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], permutation=sorder)
         fload = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], permutation=sorder)
 
-        generator.add_routine(('bounce_back', For(idx, Eq(fstore, fload + rhs[idx]))))
+        self.generator.add_routine(('bounce_back', For(idx, Eq(fstore, fload + rhs[idx]))))
 
     @property
     def function(self):
         """Return the generated function"""
-        return generator.module.bounce_back
+        return self.generator.module.bounce_back
 
 class BouzidiBounceBack(BoundaryMethod):
     """
@@ -375,8 +372,8 @@ class BouzidiBounceBack(BoundaryMethod):
     .. plot:: codes/Bouzidi.py
 
     """
-    def __init__(self, istore, ilabel, distance, stencil, value_bc, nspace, backend):
-        super(BouzidiBounceBack, self).__init__(istore, ilabel, distance, stencil, value_bc, nspace, backend)
+    def __init__(self, istore, ilabel, distance, stencil, value_bc, nspace, generator):
+        super(BouzidiBounceBack, self).__init__(istore, ilabel, distance, stencil, value_bc, nspace, generator)
         self.s = np.empty(self.istore.shape[1])
 
     def set_iload(self):
@@ -464,12 +461,12 @@ class BouzidiBounceBack(BoundaryMethod):
         fload0 = indexed('fcopy', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], permutation=sorder)
         fload1 = indexed('fcopy', [ns, nx, ny, nz], index=[iload[1][idx, k] for k in range(dim+1)], permutation=sorder)
 
-        generator.add_routine(('Bouzidi_bounce_back', For(idx, Eq(fstore, dist[idx]*fload0 + (1-dist[idx])*fload1 + rhs[idx]))))
+        self.generator.add_routine(('Bouzidi_bounce_back', For(idx, Eq(fstore, dist[idx]*fload0 + (1-dist[idx])*fload1 + rhs[idx]))))
 
     @property
     def function(self):
         """Return the generated function"""
-        return generator.module.Bouzidi_bounce_back
+        return self.generator.module.Bouzidi_bounce_back
 
 class AntiBounceBack(BounceBack):
     """
@@ -512,11 +509,11 @@ class AntiBounceBack(BounceBack):
         fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], permutation=sorder)
         fload = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], permutation=sorder)
 
-        generator.add_routine(('anti_bounce_back', For(idx, Eq(fstore, -fload + rhs[idx]))))
+        self.generator.add_routine(('anti_bounce_back', For(idx, Eq(fstore, -fload + rhs[idx]))))
 
     @property
     def function(self):
-        return generator.module.anti_bounce_back
+        return self.generator.module.anti_bounce_back
 
 class BouzidiAntiBounceBack(BouzidiBounceBack):
     """
@@ -560,11 +557,11 @@ class BouzidiAntiBounceBack(BouzidiBounceBack):
         fload0 = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], permutation=sorder)
         fload1 = indexed('f', [ns, nx, ny, nz], index=[iload[1][idx, k] for k in range(dim+1)], permutation=sorder)
 
-        generator.add_routine(('Bouzidi_anti_bounce_back', For(idx, Eq(fstore, -dist[idx]*fload0 + (1-dist[idx])*fload1 + rhs[idx]))))
+        self.generator.add_routine(('Bouzidi_anti_bounce_back', For(idx, Eq(fstore, -dist[idx]*fload0 + (1-dist[idx])*fload1 + rhs[idx]))))
 
     @property
     def function(self):
-        return generator.module.Bouzidi_anti_bounce_back
+        return self.generator.module.Bouzidi_anti_bounce_back
 
 class Neumann(BoundaryMethod):
     """
@@ -609,12 +606,12 @@ class Neumann(BoundaryMethod):
         fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], permutation=sorder)
         fload = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], permutation=sorder)
 
-        generator.add_routine((self.name, For(idx, Eq(fstore, fload))))
+        self.generator.add_routine((self.name, For(idx, Eq(fstore, fload))))
 
     @property
     def function(self):
         """Return the generated function"""
-        return generator.module.neumann
+        return self.generator.module.neumann
 
 class NeumannX(Neumann):
     """
@@ -635,7 +632,7 @@ class NeumannX(Neumann):
     @property
     def function(self):
         """Return the generated function"""
-        return generator.module.neumannx
+        return self.generator.module.neumannx
 
 class NeumannY(Neumann):
     """
@@ -656,7 +653,7 @@ class NeumannY(Neumann):
     @property
     def function(self):
         """Return the generated function"""
-        return generator.module.neumanny
+        return self.generator.module.neumanny
 
 class NeumannZ(Neumann):
     """
@@ -677,4 +674,4 @@ class NeumannZ(Neumann):
     @property
     def function(self):
         """Return the generated function"""
-        return generator.module.neumannz
+        return self.generator.module.neumannz

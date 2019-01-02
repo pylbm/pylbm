@@ -23,7 +23,7 @@ from .boundary import Boundary
 from . import utils
 from .validator import validate
 from .context import set_queue
-from .generator import generator
+from .generator import Generator
 from .container import NumpyContainer, CythonContainer, LoopyContainer
 from .algorithm import PullAlgorithm
 from .monitoring import Monitor, monitor
@@ -101,11 +101,11 @@ class Simulation:
         self.dt = self.domain.dx/self.scheme.la
         self.dim = self.domain.dim
 
-        self.generator = dico.get('generator', "CYTHON").upper()
-        self.show_code = dico.get('show_code', False)
+        self.generator = Generator(dico.get('generator', "CYTHON").upper(),
+                                   dico.get('show_code', False))
 
         # FIXME remove that !!
-        set_queue(self.generator)
+        set_queue(self.generator.backend)
 
         self.container = self._get_container(sorder)
         if self.container.gpu_support:
@@ -116,12 +116,12 @@ class Simulation:
         self.algo = self._get_algorithm(dico, sorder)
         self.algo.generate()
 
-        self.bc = Boundary(self.domain, dico)
+        self.bc = Boundary(self.domain, self.generator, dico)
         for method in self.bc.methods:
             method.set_iload()
             method.generate(self.container.sorder)
 
-        generator.compile(backend=self.generator, verbose=self.show_code)
+        self.generator.compile()
 
         # Initialize the solution and the rhs of boundary conditions
         self.initialization(dico)
@@ -138,10 +138,10 @@ class Simulation:
                           'CYTHON': CythonContainer,
                           'LOOPY': LoopyContainer
         }
-        return container_type[self.generator](self.domain, self.scheme, sorder)
+        return container_type[self.generator.backend](self.domain, self.scheme, sorder)
 
     def _get_default_algo_settings(self):
-        if self.generator == 'NUMPY':
+        if self.generator.backend == 'NUMPY':
             return {'m_local': False, 'split': False, 'check_isfluid': False}
         else:
             return {'m_local': True, 'split': False, 'check_isfluid': False}
@@ -156,7 +156,7 @@ class Simulation:
         algo_settings = self._get_default_algo_settings()
         algo_settings.update(user_settings)
 
-        return algo_method(self.scheme, sorder, algo_settings)
+        return algo_method(self.scheme, sorder, self.generator, algo_settings)
 
     @utils.itemproperty
     def m_halo(self, i):

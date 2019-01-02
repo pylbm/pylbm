@@ -17,7 +17,6 @@ from sympy import symbols, Eq
 
 from .stencil import Stencil
 from .validator import validate
-from .generator import generator
 from .symbolic import rel_ux, rel_uy, rel_uz, alltogether
 #pylint: disable=too-many-lines
 
@@ -77,11 +76,6 @@ class Scheme:
       - scheme_velocity : the value of the ratio space step over time step
         (la = dx / dt)
       - schemes : a list of dictionaries, one for each scheme
-      - generator : a generator for the code, optional
-        (see :py:class:`Generator <pylbm.generator.base.Generator>`)
-      - ode_solver : a method to integrate the source terms, optional
-        (see :py:class:`ode_solver <pylbm.generator.ode_schemes.ode_solver>`)
-      - test_stability : boolean (optional)
 
     Notes
     -----
@@ -128,16 +122,6 @@ class Scheme:
       the symbolic inverse matrix
     invMnum : numpy array
       the numeric inverse matrix (F = invMnum m)
-    generator : :py:class:`Generator <pylbm.generator.base.Generator>`
-      the used generator (
-      :py:class:`NumpyGenerator<pylbm.generator.NumpyGenerator>`,
-      :py:class:`CythonGenerator<pylbm.generator.CythonGenerator>`,
-      ...)
-    ode_solver : :py:class:`ode_solver <pylbm.generator.ode_schemes.ode_solver>`,
-      the used ODE solver (
-      :py:class:`explicit_euler<pylbm.generator.explicit_euler>`,
-      :py:class:`heun<pylbm.generator.heun>`,
-      ...)
 
     Examples
     --------
