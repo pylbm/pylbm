@@ -228,7 +228,7 @@ class BaseAlgorithm:
         return {'code': For(iloop, self.relaxation_local(m))}
 
     def source_term(self):
-        iloop = self._get_loop_0()
+        iloop = self._get_loop()
         m = self._get_indexed_1('m', iloop)
         return {'code': For(iloop, self.source_term_local(m))}
 
@@ -280,6 +280,7 @@ class BaseAlgorithm:
                        self.m2f,
                        self.relaxation,
                        self.equilibrium,
+                    #    self.source_term,
                        self.one_time_step
                       ]
         for gen in to_generate:
