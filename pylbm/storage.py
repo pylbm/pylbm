@@ -16,10 +16,11 @@ import numpy as np
 import sympy as sp
 import mpi4py.MPI as mpi
 
-from .generator import generator, For
+from .generator import For
 from .monitoring import monitor
 
-log = logging.getLogger(__name__) #pylint: disable=invalid-name
+log = logging.getLogger(__name__) # pylint: disable=invalid-name
+
 
 class Array:
     """
