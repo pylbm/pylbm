@@ -26,4 +26,4 @@ from .burgers_solver import BurgersSolver
 from .shallow_water_solver import ShallowWaterSolver
 from .p_system_solver import PSystemSolver
 from .euler_solver import EulerSolver
-# from .euler_isothermal_solver import EulerIsothermalSolver
+from .euler_isothermal_solver import EulerIsothermalSolver

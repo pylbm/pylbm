@@ -1,5 +1,5 @@
 """
-full Euler (with temperature)
+compressible Euler (with temperature)
 """
 
 import numpy as np
@@ -17,7 +17,7 @@ class EulerSolver(GenericSolver):
 
     then p = (gamma-1)(E - rho u^2/2)
     rho u^2 + p = (gamma-1)E + rho u^2 (3-gamma)/2
-    E + p = 1/2 rho u^2 + p (1)
+    E + p = 1/2 rho u^2 + p
 
     The 3 variables used to parametrize the solution are
     rho, u, and p.
