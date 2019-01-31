@@ -1,7 +1,7 @@
 
 
 """
- Solver D1Q2Q2 for the Euler system on [0, 1]
+ Solver D1Q(2,2,2) for the Euler system on [0, 1]
 
  d_t(rho)   + d_x(rho u)     = 0, t > 0, 0 < x < 1,
  d_t(rho u) + d_x(rho u^2+p) = 0, t > 0, 0 < x < 1,

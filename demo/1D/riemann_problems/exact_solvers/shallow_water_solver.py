@@ -14,7 +14,7 @@ class ShallowWaterSolver(GenericSolver):
     """
     def _read_particular_parameters(self, parameters):
         self.gravity = parameters.get('g', 9.81)
-        self.fields = parameters.get('fields name', [r'$h$', r'$q$'])
+        self.fields = parameters.get('fields name', [r'$h$', r'$u$'])
 
     def _compute_interstate(self):
         """
@@ -138,32 +138,32 @@ class ShallowWaterSolver(GenericSolver):
         # 1-wave
         vq1 = np.zeros(v_h.shape)
         for i, vhi in enumerate(v_h):
-            vq1[i] = self._f1(vhi)[0]
+            vq1[i] = self._f1(vhi)[0]/vhi
         # 2-wave
         vq2 = np.zeros(v_h.shape)
         for i, vhi in enumerate(v_h):
-            vq2[i] = self._f2(vhi)[0]
+            vq2[i] = self._f2(vhi)[0]/vhi
 
         fig = plt.figure()
         axes = fig.add_subplot(1, 1, 1)
-        axes.plot(v_h, vq1, color='orange', label='1-wave', alpha=0.5)
-        axes.plot(v_h, vq2, color='navy', label='2-wave', alpha=0.5)
-        axes.scatter(self.u_left[0], self.u_left[1],
+        axes.plot(vq1, v_h, color='orange', label='1-wave', alpha=0.5)
+        axes.plot(vq2, v_h, color='navy', label='2-wave', alpha=0.5)
+        axes.scatter(self.u_left[1]/self.u_left[0], self.u_left[0],
                      color='orange',
                      s=20,
                      label='left state'
                      )
-        axes.scatter(self.u_right[0], self.u_right[1],
+        axes.scatter(self.u_right[1]/self.u_right[0], self.u_right[0],
                      color='navy',
                      s=20,
                      label='right state'
                      )
-        axes.scatter(self.u_star[0], self.u_star[1],
+        axes.scatter(self.u_star[1]/self.u_star[0], self.u_star[0],
                      color='red',
                      s=20,
                      label='intermediate state'
                      )
         axes.set_title(type(self).__name__)
-        axes.set_xlabel(self.fields[0])
-        axes.set_ylabel(self.fields[1])
+        axes.set_xlabel(self.fields[1])
+        axes.set_ylabel(self.fields[0])
         axes.legend()
