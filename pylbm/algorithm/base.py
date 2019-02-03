@@ -14,15 +14,6 @@ from .transform import parse_expr
 from .ode import euler
 from ..monitoring import monitor
 
-def compute_permutation(consm):
-    return [[ic, c] for ic, c in enumerate(consm.values())]
-
-def permute_sympy(sympy_matrix, permutations, row=False, col=False):
-    for p in self.permutations:
-        if row:
-            sympy_matrix.row_swap(p[0], p[1])
-        if col:
-            sympy_matrix.col_swap(p[0], p[1])
 
 class BaseAlgorithm:
     def __init__(self, scheme, sorder, generator, settings=None):
@@ -114,7 +105,7 @@ class BaseAlgorithm:
     def transport_local(self, f, fnew):
         return Eq(fnew, f)
 
-    def f2m_local(self, f, m, with_rel_velocity = False):
+    def f2m_local(self, f, m, with_rel_velocity=False):
         if with_rel_velocity:
             nconsm = len(self.consm)
             return [Eq(m[:nconsm], sp.Matrix((self.M*f)[:nconsm])),
@@ -123,7 +114,7 @@ class BaseAlgorithm:
         else:
             return Eq(m, self.M*f)
 
-    def m2f_local(self, m, f, with_rel_velocity = False):
+    def m2f_local(self, m, f, with_rel_velocity=False):
         if with_rel_velocity:
             return Eq(f, self.invMu*m)
         else:
@@ -133,7 +124,7 @@ class BaseAlgorithm:
         eq = self.eq.subs(list(zip(self.mv, m)))
         return Eq(m, eq)
 
-    def relaxation_local(self, m, with_rel_velocity = False):
+    def relaxation_local(self, m, with_rel_velocity=False):
         if with_rel_velocity:
             eq = (self.Tu*self.eq).subs(list(zip(self.mv, m)))
         else:
@@ -147,22 +138,27 @@ class BaseAlgorithm:
         m_local = self.settings.get('m_local', False)
         split = self.settings.get('split', False)
 
+        indices = []
         if m_local and not split:
             local_dict = {'m': m,
-                        'consm': self.consm,
-                        'sorder': None,
-                        'default_index': [0],
-                        }
+                          'consm': self.consm,
+                          'sorder': None,
+                          'default_index': [0],
+                          }
         else:
-            indices = []
-            for sorder in self.sorder[1:]:
+            indices_str = ['ix_', 'iy_', 'iz_']
+            lbm_ind = [ix, iy, iz]
+            ind_to_subs = []
+            for i, sorder in enumerate(self.sorder[1:]):
                 indices.append(m[0].indices[sorder])
-            indices_str = ['ix', 'iy', 'iz']
+                ind_to_subs.extend([(indices_str[i], indices[i]),
+                                    (lbm_ind[i], indices[i]),
+                                    ])
             local_dict = {'m': m[0].base,
-                        'consm': self.consm,
-                        'sorder': self.sorder,
-                        'default_index': indices,
-            }
+                          'consm': self.consm,
+                          'sorder': self.sorder,
+                          'default_index': indices,
+                          }
             for i, ind in enumerate(indices):
                 local_dict[indices_str[i]] = ind
 
@@ -173,7 +169,10 @@ class BaseAlgorithm:
             else:
                 rhs_m = parse_expr(rhs, local_dict)
             dummy = euler(lhs_m, rhs_m)
-            rhs_eq[lhs.i] = dummy.rhs
+            if indices:
+                rhs_eq[lhs.i] = dummy.rhs.subs(ind_to_subs)
+            else:
+                rhs_eq[lhs.i] = dummy.rhs
         return [Eq(m, sp.Matrix(rhs_eq))]
 
     def relative_velocity(self, m):
@@ -259,7 +258,8 @@ class BaseAlgorithm:
 
         if check_isfluid:
             valin = sp.Symbol('valin', real=True)
-            in_or_out = indexed('in_or_out', [self.ns, nx, ny, nz], permutation=self.sorder, remove_ind=[0])
+            in_or_out = indexed('in_or_out', [self.ns, nx, ny, nz],
+                                permutation=self.sorder, remove_ind=[0])
             loop = lambda x: For(iloop, If((Eq(in_or_out, valin), x)))
         else:
             loop = lambda x: For(iloop, x)
@@ -280,9 +280,12 @@ class BaseAlgorithm:
                        self.m2f,
                        self.relaxation,
                        self.equilibrium,
-                    #    self.source_term,
                        self.one_time_step
-                      ]
+                       ]
+
+        if self.source_eq:
+            to_generate.append(self.source_term)
+
         for gen in to_generate:
             name = gen.__name__
             output = gen()
@@ -320,7 +323,8 @@ class BaseAlgorithm:
 
         return locals()
 
-    def call_function(self, function_name, simulation, m_user=None, f_user=None):
+    def call_function(self, function_name, simulation,
+                      m_user=None, f_user=None):
         from ..symbolic import call_genfunction
         func = getattr(self.generator.module, function_name)
 
