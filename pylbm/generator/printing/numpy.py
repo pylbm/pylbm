@@ -207,7 +207,7 @@ class NumpyCodePrinter(CodePrinter):
         if expr.exp == -1:
             return '1.0/%s' % (self.parenthesize(expr.base, PREC))
         elif expr.exp == 0.5:
-            return 'sqrt(%s)' % self._print(expr.base)
+            return 'np.sqrt(%s)' % self._print(expr.base)
         elif expr.exp > 0 and expr.exp.is_integer:
             line = self._print(expr.base)
             for i in range(1, expr.exp):
