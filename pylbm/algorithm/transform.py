@@ -52,7 +52,7 @@ def transform_expr(tokens, local_dict, global_dict):
                 else:
                     index_ordered = default_index
                 for index in index_ordered:
-                    if isinstance(index, sp.Symbol):
+                    if isinstance(index, sp.Idx):
                         result.append((NAME, '%s'%index))
                     else:
                         result.append((NUMBER, '%s'%index))
