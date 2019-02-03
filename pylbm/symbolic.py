@@ -14,6 +14,7 @@ import sympy as sp
 
 nx, ny, nz, nv = sp.symbols("nx, ny, nz, nv", integer=True) #pylint: disable=invalid-name
 ix, iy, iz, iv = sp.symbols("ix, iy, iz, iv", integer=True) #pylint: disable=invalid-name
+ix_, iy_, iz_, iv_ = sp.symbols("ix_, iy_, iz_, iv_", integer=True) #pylint: disable=invalid-name
 rel_ux, rel_uy, rel_uz = sp.symbols('rel_ux, rel_uy, rel_uz', real=True) #pylint: disable=invalid-name
 
 def set_order(array, sorder, remove_ind=None):
@@ -50,7 +51,7 @@ def space_loop(ranges, permutation=None):
     if not permutation:
         permutation = range(len(ranges) + 1)
 
-    indices = [ix, iy, iz]
+    indices = [ix_, iy_, iz_]
     idx = []
     for ir, r in enumerate(ranges): #pylint: disable=invalid-name
         idx.append(sp.Idx(indices[ir], r))
