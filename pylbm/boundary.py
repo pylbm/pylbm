@@ -352,8 +352,8 @@ class BounceBack(BoundaryMethod):
         rhs, _ = self._get_rhs_dist_symb(ncond)
 
         idx = Idx(ix, (0, ncond))
-        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], permutation=sorder)
-        fload = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], permutation=sorder)
+        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], priority=sorder)
+        fload = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], priority=sorder)
 
         self.generator.add_routine(('bounce_back', For(idx, Eq(fstore, fload + rhs[idx]))))
 
@@ -457,9 +457,9 @@ class BouzidiBounceBack(BoundaryMethod):
         rhs, dist = self._get_rhs_dist_symb(ncond)
 
         idx = Idx(ix, (0, ncond))
-        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], permutation=sorder)
-        fload0 = indexed('fcopy', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], permutation=sorder)
-        fload1 = indexed('fcopy', [ns, nx, ny, nz], index=[iload[1][idx, k] for k in range(dim+1)], permutation=sorder)
+        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], priority=sorder)
+        fload0 = indexed('fcopy', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], priority=sorder)
+        fload1 = indexed('fcopy', [ns, nx, ny, nz], index=[iload[1][idx, k] for k in range(dim+1)], priority=sorder)
 
         self.generator.add_routine(('Bouzidi_bounce_back', For(idx, Eq(fstore, dist[idx]*fload0 + (1-dist[idx])*fload1 + rhs[idx]))))
 
@@ -506,8 +506,8 @@ class AntiBounceBack(BounceBack):
         rhs, _ = self._get_rhs_dist_symb(ncond)
 
         idx = Idx(ix, (0, ncond))
-        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], permutation=sorder)
-        fload = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], permutation=sorder)
+        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], priority=sorder)
+        fload = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], priority=sorder)
 
         self.generator.add_routine(('anti_bounce_back', For(idx, Eq(fstore, -fload + rhs[idx]))))
 
@@ -553,9 +553,9 @@ class BouzidiAntiBounceBack(BouzidiBounceBack):
         rhs, dist = self._get_rhs_dist_symb(ncond)
 
         idx = Idx(ix, (0, ncond))
-        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], permutation=sorder)
-        fload0 = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], permutation=sorder)
-        fload1 = indexed('f', [ns, nx, ny, nz], index=[iload[1][idx, k] for k in range(dim+1)], permutation=sorder)
+        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], priority=sorder)
+        fload0 = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], priority=sorder)
+        fload1 = indexed('f', [ns, nx, ny, nz], index=[iload[1][idx, k] for k in range(dim+1)], priority=sorder)
 
         self.generator.add_routine(('Bouzidi_anti_bounce_back', For(idx, Eq(fstore, -dist[idx]*fload0 + (1-dist[idx])*fload1 + rhs[idx]))))
 
@@ -603,8 +603,8 @@ class Neumann(BoundaryMethod):
         istore, iload, ncond = self._get_istore_iload_symb(dim)
 
         idx = Idx(ix, (0, ncond))
-        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], permutation=sorder)
-        fload = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], permutation=sorder)
+        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], priority=sorder)
+        fload = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], priority=sorder)
 
         self.generator.add_routine((self.name, For(idx, Eq(fstore, fload))))
 
