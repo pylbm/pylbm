@@ -164,7 +164,8 @@ class Cylinder(Element):
         from ..jinja_env import env
         template = env.get_template('cylinder.tpl')
         elem_type = 'fluid' if self.isfluid else 'solid'
-        return template.render(header=header_string(self.__class__.__name__), elem=self, type=elem_type)
+        return template.render(header=header_string(self.__class__.__name__),
+                               elem=self, type=elem_type)
 
     #pylint: disable=too-many-locals
     def visualize(self, viewer, color, viewlabel=False, scale=np.ones(3), alpha=1.):
@@ -254,6 +255,7 @@ class CylinderCircle(Cylinder):
         - w: [0. 0. 1.]
         - label: [0, 0, 0]
         - type: solid
+
     """
     def __init__(self, center, v1, v2, w, label=0, isfluid=False):
         self.number_of_bounds = 3 # number of edges
