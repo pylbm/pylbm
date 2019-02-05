@@ -40,9 +40,9 @@ class Test2D:
         dx, Tf = 1./64, 0.5
         return self.runtest(dx, Tf, 'Karman_vortex_street', generator)
 
-    def test2D_kelvin_Helmotz(self, generator):
+    def test2D_kelvin_Helmoltz(self, generator):
         dx, Tf = 1./64, 0.5
-        return self.runtest(dx, Tf, 'Kelvin_Helmotz', generator)
+        return self.runtest(dx, Tf, 'Kelvin_Helmoltz', generator)
 
     def test2D_lid_driven_cavity(self, generator):
         dx, Tf = 1./64, 0.5
