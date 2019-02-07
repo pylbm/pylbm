@@ -17,7 +17,7 @@ def bc_up(f, m, x, y, z):
 
 def save(sol, im):
     x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
-    h5 = pylbm.H5File(sol.mpi_topo, 'karman', './karman', im)
+    h5 = pylbm.H5File(sol.domain.mpi_topo, 'karman', './karman', im)
     h5.set_grid(x, y, z)
     h5.add_scalar('mass', sol.m[mass])
     qx_n, qy_n, qz_n = sol.m[qx], sol.m[qy], sol.m[qz]
@@ -118,8 +118,6 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         sol.one_time_step()
         compt += 1
         if compt == 128 and withPlot:
-            if mpi.COMM_WORLD.Get_rank() == 0:
-                sol.time_info()
             im += 1
             save(sol, im)
             compt = 0

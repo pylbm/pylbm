@@ -18,7 +18,7 @@ def bc_up(f, m, x, y, z):
 def save(sol, im):
     x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
 
-    h5 = pylbm.H5File(sol.mpi_topo, 'lid_cavity', './lid_cavity', im)
+    h5 = pylbm.H5File(sol.domain.mpi_topo, 'lid_cavity', './lid_cavity', im)
     h5.set_grid(x, y, z)
     h5.add_scalar('mass', sol.m[mass])
     qx_n, qy_n, qz_n = sol.m[qx], sol.m[qy], sol.m[qz]

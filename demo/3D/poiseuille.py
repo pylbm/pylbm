@@ -45,7 +45,7 @@ p, ux, uy, uz = sp.symbols('p,ux,uy,uz')
 def save(sol, num):
     x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
 
-    h5 = pylbm.H5File(sol.mpi_topo, 'poiseuille', './poiseuille', num)
+    h5 = pylbm.H5File(sol.domain.mpi_topo, 'poiseuille', './poiseuille', num)
     h5.set_grid(x, y, z)
     h5.add_scalar('pressure', sol.m[p])
     qx_n, qy_n, qz_n = sol.m[ux], sol.m[uy], sol.m[uz]
