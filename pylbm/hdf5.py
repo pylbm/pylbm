@@ -224,7 +224,7 @@ class H5File:
 
         comm = self.mpi_topo.cartcomm
         if comm.Get_rank() == 0:
-            dset = self.h5file.create_dataset(name, self.global_size[::-1] + [self.dim], dtype=np.double)
+            dset = self.h5file.create_dataset(name, self.global_size[::-1] + [3], dtype=np.double)
             for i, data in enumerate(datas):
                 self._set_dset(dset, comm, data, i, with_index=True)
             self.vectors[name] = self.h5filename + ":/" + name
