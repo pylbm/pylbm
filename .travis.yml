@@ -34,6 +34,7 @@ install:
   - conda create -n pylbm_env python=$PYVER
   - source activate pylbm_env
   - conda install --file requirements-dev.txt -c conda-forge
+  - conda install libgfortran
   - python --version
   - python setup.py install
 
