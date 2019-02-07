@@ -14,3 +14,4 @@ generated
 *.xdmf
 version.py
 demo/**/*.h5
+.vscode
