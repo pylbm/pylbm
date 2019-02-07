@@ -72,7 +72,7 @@ class PlotWidget:
                frameon=True,
                shadow=False
                ):
-        self.ax.legend(loc=loc, shadow=shadow, frameon=frameon)
+        self.ax.legend(loc=loc)#, shadow=shadow, frameon=frameon)
 
     def text(self, text, pos, fontsize=18, fontweight='normal', color='k', horizontalalignment='center', verticalalignment='center'):
         allt = []

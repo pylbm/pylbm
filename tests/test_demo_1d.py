@@ -28,8 +28,8 @@ class Test1D:
     # def test1D_advection(self, generator):
     #     return self.runtest('advection', generator)
 
-    def test1D_advection_reaction(self, generator):
-        return self.runtest('advection_reaction', generator)
+    # def test1D_advection_reaction(self, generator):
+    #     return self.runtest('advection_reaction', generator)
 
     # def test1D_burgers(self, generator):
     #     return self.runtest('burgers', generator)
@@ -51,7 +51,8 @@ def test1D_riemann_case_dir():
 
 @pytest.mark.h5diff(single_reference=True)
 @pytest.mark.usefixtures("test1D_riemann_case_dir")
-@pytest.mark.parametrize('generator', ['numpy', 'cython'])
+#@pytest.mark.parametrize('generator', ['numpy', 'cython'])
+@pytest.mark.parametrize('generator', ['numpy'])
 class Test1DRiemann:
     def runtest(self, name, generator):
         module = importlib.import_module(name)
