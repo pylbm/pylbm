@@ -67,8 +67,12 @@ class PlotWidget:
     def title(self, text):
         self.ax.set_title(text)
 
-    def legend(self, loc='upper left'):
-        self.ax.legend(loc=loc)
+    def legend(self, 
+               loc='upper left',
+               frameon=True,
+               shadow=False
+               ):
+        self.ax.legend(loc=loc)#, shadow=shadow, frameon=frameon)
 
     def text(self, text, pos, fontsize=18, fontweight='normal', color='k', horizontalalignment='center', verticalalignment='center'):
         allt = []
@@ -153,8 +157,10 @@ class PlotWidget:
             self.ax.set_zticks(minor_ticks, minor=True)
 
     def set_label(self, xlab, ylab, zlab=None):
-        self.ax.set_xlabel(xlab)
-        self.ax.set_ylabel(ylab)
+        if xlab is not None:
+            self.ax.set_xlabel(xlab)
+        if ylab is not None:
+            self.ax.set_ylabel(ylab)
         if zlab is not None:
             self.ax.set_zlabel(zlab)
 
