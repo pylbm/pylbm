@@ -7,16 +7,18 @@
 """
 Circle element
 """
-#pylint: disable=invalid-name
+
+# pylint: disable=invalid-name
 
 import logging
-from textwrap import dedent
+# from textwrap import dedent
 import numpy as np
 
 from .base import Element
 from .utils import distance_ellipse
 
-log = logging.getLogger(__name__) #pylint: disable=invalid-name
+log = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
 
 class Circle(Element):
     """
@@ -69,7 +71,7 @@ class Circle(Element):
 
     """
     def __init__(self, center, radius, label=0, isfluid=False):
-        self.number_of_bounds = 1 # number of edges
+        self.number_of_bounds = 1  # number of edges
         self.dim = 2
         self.center = np.asarray(center)
         if radius >= 0:
@@ -147,11 +149,22 @@ class Circle(Element):
         from ..jinja_env import env
         template = env.get_template('circle.tpl')
         elem_type = 'fluid' if self.isfluid else 'solid'
-        return template.render(header=header_string('Circle'), elem=self, type=elem_type)
+        return template.render(
+            header=header_string('Circle'),
+            elem=self, type=elem_type
+        )
 
-    def visualize(self, viewer, color, viewlabel=False, scale=np.ones(2), alpha=1.):
-        viewer.ellipse(self.center*scale, tuple(self.radius*scale), color, alpha=alpha)
+    def visualize(self,
+                  viewer, color, viewlabel=False,
+                  scale=np.ones(2), alpha=1.
+                  ):
+        viewer.ellipse(self.center*scale,
+                       tuple(self.radius*scale),
+                       color,
+                       alpha=alpha
+                       )
         if viewlabel:
             theta = self.center[0] + 2*self.center[1]+10*self.radius
-            x, y = self.center[0] + self.radius*np.cos(theta), self.center[1] + self.radius*np.sin(theta)
+            x = self.center[0] + self.radius*np.cos(theta)
+            y = self.center[1] + self.radius*np.sin(theta)
             viewer.text(str(self.label[0]), [x*scale[0], y*scale[1]])
