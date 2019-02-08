@@ -29,4 +29,10 @@ ddom = {
 dom = pylbm.Domain(ddom)
 print(dom)
 dom.visualize()
-dom.visualize(view_distance=True, label=1)
+dom.visualize(
+    view_distance=True,
+    label=None,
+    view_in=False,
+    view_out=False,
+    view_bound=True,
+)

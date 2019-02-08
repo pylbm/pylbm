@@ -4,7 +4,12 @@
 #
 # License: BSD 3 clause
 
-#pylint: disable=invalid-name
+# pylint: disable=invalid-name, missing-docstring
+
+"""
+utils module
+"""
+
 
 class itemproperty(property):
     def __get__(self, obj, objtype=None):
@@ -13,12 +18,14 @@ class itemproperty(property):
         else:
             return bounditemproperty(self, obj)
 
+
 class item2property(property):
     def __get__(self, obj, objtype=None):
         if obj is None:
             return self
         else:
             return bounditemproperty(self, obj, True)
+
 
 class bounditemproperty:
     def __init__(self, item_property, instance, nextItem=False):
@@ -31,7 +38,11 @@ class bounditemproperty:
         if fget is None:
             raise AttributeError("unreadable attribute item")
         if self.nextItem:
-            return bound2itemproperty(self.__item_property, self.__instance, key)
+            return bound2itemproperty(
+                self.__item_property,
+                self.__instance,
+                key
+            )
         else:
             return fget(self.__instance, key)
 
@@ -40,6 +51,7 @@ class bounditemproperty:
         if fset is None:
             raise AttributeError("can't set attribute item")
         fset(self.__instance, key, value)
+
 
 class bound2itemproperty:
     def __init__(self, item_property, instance, key):
@@ -59,9 +71,11 @@ class bound2itemproperty:
             raise AttributeError("can't set attribute item")
         fset(self.__instance, self.key, key, value)
 
+
 def header_string(title):
+    # pylint: disable=unused-import
     from colorama import init, Fore, Style, Back
     init()
-    bar = '+' + '-'*(len(title)+2) + '+'
-    output = '\n| %s |\n'%title
-    return Fore.BLUE + bar + output + bar + Fore.RESET
+    barre = '+' + '-'*(len(title)+2) + '+'
+    output = '\n| %s |\n' % title
+    return Fore.BLUE + barre + output + barre + Fore.RESET
