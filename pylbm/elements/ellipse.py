@@ -7,16 +7,17 @@
 """
 Ellipse element
 """
-#pylint: disable=invalid-name
+# pylint: disable=invalid-name
 
 import logging
-from textwrap import dedent
+# from textwrap import dedent
 import numpy as np
 
 from .base import Element
 from .utils import distance_ellipse
 
-log = logging.getLogger(__name__) #pylint: disable=invalid-name
+log = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
 
 class Ellipse(Element):
     """
@@ -75,7 +76,7 @@ class Ellipse(Element):
 
     """
     def __init__(self, center, v1, v2, label=0, isfluid=False):
-        self.number_of_bounds = 1 # number of edges
+        self.number_of_bounds = 1  # number of edges
         self.dim = 2
         self.center = np.asarray(center)
         if abs(v1[0]*v2[0] + v1[1]*v2[1]) > 1.e-14:
@@ -149,16 +150,27 @@ class Ellipse(Element):
 
         """
         x, y = grid
-        return distance_ellipse(x, y, v, self.center, self.v1, self.v2, dmax, self.label)
+        return distance_ellipse(
+            x, y, v,
+            self.center, self.v1, self.v2,
+            dmax, self.label
+        )
 
     def __str__(self):
         from ..utils import header_string
         from ..jinja_env import env
         template = env.get_template('ellipse.tpl')
         elem_type = 'fluid' if self.isfluid else 'solid'
-        return template.render(header=header_string(self.__class__.__name__), elem=self, type=elem_type)
+        return template.render(
+            header=header_string(self.__class__.__name__),
+            elem=self,
+            type=elem_type
+        )
 
-    def visualize(self, viewer, color, viewlabel=False, scale=np.ones(2), alpha=1.):
+    def visualize(self,
+                  viewer, color, viewlabel=False,
+                  scale=np.ones(2), alpha=1.
+                  ):
         nv1 = np.linalg.norm(self.v1)
         nv2 = np.linalg.norm(self.v2)
         if nv1 > nv2:
@@ -172,7 +184,11 @@ class Ellipse(Element):
         else:
             theta = np.arctan(v[1]/v[0])
 
-        viewer.ellipse(self.center*scale, (r1*scale[0], r2*scale[1]), color, angle=theta, alpha=alpha)
+        viewer.ellipse(
+            self.center*scale, (r1*scale[0], r2*scale[1]),
+            color, angle=theta, alpha=alpha
+        )
         if viewlabel:
-            x, y = self.center[0] + r1*np.cos(theta), self.center[1] + r1*np.sin(theta)
+            x = self.center[0] + r1*np.cos(theta)
+            y = self.center[1] + r1*np.sin(theta)
             viewer.text(str(self.label[0]), [x*scale[0], y*scale[1]])
