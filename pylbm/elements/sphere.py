@@ -8,16 +8,17 @@
 Sphere element
 """
 
-#pylint: disable=invalid-name
+# pylint: disable=invalid-name
 
 import logging
-from textwrap import dedent
+# from textwrap import dedent
 import numpy as np
 
 from .base import Element
 from .utils import distance_ellipsoid
 
-log = logging.getLogger(__name__) #pylint: disable=invalid-name
+log = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
 
 class Sphere(Element):
     """
@@ -72,7 +73,7 @@ class Sphere(Element):
 
     """
     def __init__(self, center, radius, label=0, isfluid=False):
-        self.number_of_bounds = 1 # number of edges
+        self.number_of_bounds = 1  # number of edges
         self.dim = 3
         self.center = np.asarray(center)
         if radius >= 0:
@@ -112,7 +113,11 @@ class Sphere(Element):
 
         """
         x, y, z = grid
-        v2 = np.asarray([x - self.center[0], y - self.center[1], z - self.center[2]])
+        v2 = np.asarray([
+            x - self.center[0],
+            y - self.center[1],
+            z - self.center[2]
+        ])
         return (v2[0]**2 + v2[1]**2 + v2[2]**2) <= self.radius**2
 
     def distance(self, grid, v, dmax=None):
@@ -144,16 +149,25 @@ class Sphere(Element):
         v1 = self.radius*np.array([1, 0, 0])
         v2 = self.radius*np.array([0, 1, 0])
         v3 = self.radius*np.array([0, 0, 1])
-        return distance_ellipsoid(x, y, z, v, self.center, v1, v2, v3, dmax, self.label)
+        return distance_ellipsoid(
+            x, y, z, v, self.center,
+            v1, v2, v3, dmax, self.label
+        )
 
     def __str__(self):
         from ..utils import header_string
         from ..jinja_env import env
         template = env.get_template('circle.tpl')
         elem_type = 'fluid' if self.isfluid else 'solid'
-        return template.render(header=header_string(self.__class__.__name__), elem=self, type=elem_type)
+        return template.render(
+            header=header_string(self.__class__.__name__),
+            elem=self, type=elem_type
+        )
 
-    def visualize(self, viewer, color, viewlabel=False, scale=np.ones(3), alpha=1.):
+    def visualize(self,
+                  viewer, color, viewlabel=False,
+                  scale=np.ones(3), alpha=1.
+                  ):
         v1 = self.radius*np.array([1, 0, 0])*scale
         v2 = self.radius*np.array([0, 1, 0])*scale
         v3 = self.radius*np.array([0, 0, 1])*scale
