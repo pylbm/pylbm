@@ -9,14 +9,15 @@ Geometry module
 """
 
 import logging
-from textwrap import dedent
-from six import string_types
+# from textwrap import dedent
+# from six import string_types
 import numpy as np
 
 from . import viewer
 from .validator import validate
 
-log = logging.getLogger(__name__) #pylint: disable=invalid-name
+log = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
 
 def get_box(dico):
     """
@@ -51,10 +52,16 @@ def get_box(dico):
                     bounds.append(boxz)
                     dim += 1
         except KeyError:
-            log.error("'x' interval not found in the box definition of the geometry.")
+            err_msg = "'x' interval not found "
+            err_msg += "in the box definition of the geometry."
+            log.error(err_msg)
     except KeyError:
-        log.error("'box' key not found in the geometry definition. Check the input dictionnary.")
+        err_msg = "'box' key not found "
+        err_msg += "in the geometry definition. "
+        err_msg += "Check the input dictionnary."
+        log.error(err_msg)
     return dim, np.asarray(bounds, dtype='f8')
+
 
 class Geometry:
     """
@@ -67,15 +74,20 @@ class Geometry:
         dictionary that contains the following `key:value`
             - box : a dictionary for the definition of the computed box
             - elements : a list of elements (optional)
+    need_validation : bool
+        boolean to specify if the dictionary has to be validated (optional)
 
     Notes
     -----
 
-    The dictionary that defines the box should contains the following `key:value`
+    The dictionary that defines the box should contains the following
+        `key:value`
         - x : a list of the bounds in the first direction
         - y : a list of the bounds in the second direction (optional)
         - z : a list of the bounds in the third direction (optional)
-        - label : an integer or a list of integers (length twice the number of dimensions) used to label each edge (optional)
+        - label : an integer or a list of integers
+            (length twice the number of dimensions)
+            used to label each edge (optional)
 
     Attributes
     ----------
@@ -85,7 +97,8 @@ class Geometry:
     bounds : ndarray
         the bounds of the box in each spatial direction
     box_label : list
-        a list of the four labels for the left, right, bottom, top, front, and back edges
+        a list of the four labels for the
+            left, right, bottom, top, front, and back edges
     list_elem : list
         a list that contains each element added or deleted in the box
 
@@ -108,7 +121,9 @@ class Geometry:
             self.box_label = [dummylab]*2*self.dim
         elif isinstance(dummylab, list):
             if len(dummylab) != 2*self.dim:
-                log.error("The list label of the box has the wrong size (must be 2*dim)")
+                err_msg = "The list label of the box has the wrong size "
+                err_msg += "(must be 2*dim)"
+                log.error(err_msg)
             self.box_label = dummylab
         else:
             log.error("The labels of the box must be an integer or a list")
@@ -122,16 +137,20 @@ class Geometry:
         if elem is not None:
             for elemk in elem:
                 if elemk.dim != self.dim:
-                    raise ValueError('Element must have the same dimension of the box')
+                    raise ValueError(
+                        "Element must have the same dimension of the box"
+                    )
                 self.list_elem.append(elemk)
         log.debug(self.__str__())
-
 
     def __str__(self):
         from .utils import header_string
         from .jinja_env import env
         template = env.get_template('geometry.tpl')
-        return template.render(header=header_string('Geometry information'), geom=self)
+        return template.render(
+            header=header_string('Geometry information'),
+            geom=self
+        )
 
     def add_elem(self, elem):
         """
@@ -146,7 +165,7 @@ class Geometry:
         """
         self.list_elem.append(elem)
 
-    #pylint: disable=too-many-locals, too-many-branches, too-many-statements
+    # pylint: disable=too-many-locals, too-many-branches, too-many-statements
     def visualize(self,
                   viewer_app=viewer.matplotlib_viewer,
                   figsize=(6, 4),
@@ -166,6 +185,19 @@ class Geometry:
             activate the labels mark (default False)
         fluid_color : color
             color for the fluid part (default blue)
+        figsize : tuple
+            the size of the figure (default (6, 4))
+        viewgrid : bool
+            view the grid (default False)
+        alpha : double
+            transparency between 0 and 1 (default 1)
+
+
+        Returns
+        -------
+
+        object
+            views
 
         """
         views = viewer_app.Fig(dim=self.dim, figsize=figsize)
@@ -218,7 +250,13 @@ class Geometry:
                 elem.visualize(view, color, viewlabel, alpha=alpha_)
             xpercent = 0.05*(xmax-xmin)
             ypercent = 0.05*(ymax-ymin)
-            view.axis(xmin-xpercent, xmax+xpercent, ymin-ypercent, ymax+ypercent, aspect='equal')
+            view.axis(
+                xmin-xpercent,
+                xmax+xpercent,
+                ymin-ypercent,
+                ymax+ypercent,
+                aspect='equal'
+            )
             view.grid(viewgrid)
         elif self.dim == 3:
             couleurs = [(.5+.5/k, .5/k, 1.-1./k) for k in range(1, 11)]
@@ -230,17 +268,28 @@ class Geometry:
             ct_lab = 0
             for k in range(3):
                 for x0_ in [pmin[k], pmax[k]]:
-                    xgrid, ygrid = np.meshgrid([pmin[(k+1)%3], pmax[(k+1)%3]],
-                                               [pmin[(k+2)%3], pmax[(k+2)%3]])
+                    xgrid, ygrid = np.meshgrid(
+                        [pmin[(k+1) % 3], pmax[(k+1) % 3]],
+                        [pmin[(k+2) % 3], pmax[(k+2) % 3]]
+                    )
                     zgrid = x0_ + np.zeros(xgrid.shape)
                     coord = [xgrid, ygrid, zgrid]
-                    view.surface(coord[(2-k)%3], coord[(3-k)%3], coord[(1-k)%3],
-                                 color=couleurs[self.box_label[ct_lab]%10], alpha=min(alpha, 0.5))
+                    view.surface(
+                        coord[(2-k) % 3],
+                        coord[(3-k) % 3],
+                        coord[(1-k) % 3],
+                        color=couleurs[self.box_label[ct_lab] % 10],
+                        alpha=min(alpha, 0.5)
+                    )
                     if viewlabel:
-                        x = .25*np.sum(coord[(2-k)%3])
-                        y = .25*np.sum(coord[(3-k)%3])
-                        z = .25*np.sum(coord[(1-k)%3])
-                        view.text(str(self.box_label[ct_lab]), [x, y, z], fontsize=18)
+                        x = .25*np.sum(coord[(2-k) % 3])
+                        y = .25*np.sum(coord[(3-k) % 3])
+                        z = .25*np.sum(coord[(1-k) % 3])
+                        view.text(
+                            str(self.box_label[ct_lab]),
+                            [x, y, z],
+                            fontsize=18
+                        )
                     ct_lab += 1
             view.axis(xmin, xmax, ymin, ymax, zmin, zmax, aspect='equal')
             view.set_label("X", "Y", "Z")
@@ -249,11 +298,16 @@ class Geometry:
                     color = fluid_color
                     alpha_ = alpha
                 else:
-                    color = [couleurs[elem.label[k]] for k in range(elem.number_of_bounds)]
+                    color = [
+                        couleurs[elem.label[k]]
+                        for k in range(elem.number_of_bounds)
+                    ]
                     alpha_ = 1
                 elem.visualize(view, color, viewlabel, alpha=alpha_)
         else:
-            log.error('Error in geometry.visualize(): the dimension %d is not allowed', self.dim)
+            err_msg = "Error in geometry.visualize(): "
+            err_msg += "the dimension {:d} is not allowed".format(self.dim)
+            log.error(err_msg)
 
         views.title = "Geometry"
         views.show()
