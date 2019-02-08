@@ -12,15 +12,17 @@ Cylinder element with
     - parallelogram base
 """
 
-#pylint: disable=invalid-name, no-member, attribute-defined-outside-init, wildcard-import, unused-wildcard-import
+# pylint: disable=invalid-name, no-member, attribute-defined-outside-init
+# pylint: disable=wildcard-import, unused-wildcard-import
 
 import logging
-from textwrap import dedent
+# from textwrap import dedent
 import numpy as np
 
-from .base import *
+from .base import *  # pylint: disable=redefined-builtin
 
-log = logging.getLogger(__name__) #pylint: disable=invalid-name
+log = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
 
 class Cylinder(Element):
     """
@@ -84,12 +86,18 @@ class Cylinder(Element):
         xx = x - self.center[0]
         yy = y - self.center[1]
         zz = z - self.center[2]
-        x_cyl = self.iA[0, 0]*xx + self.iA[0, 1]*yy + self.iA[0, 2]*zz # the new x coordinates
-        y_cyl = self.iA[1, 0]*xx + self.iA[1, 1]*yy + self.iA[1, 2]*zz # the new y coordinates
-        z_cyl = self.iA[2, 0]*xx + self.iA[2, 1]*yy + self.iA[2, 2]*zz # the new z coordinates
-        return np.logical_and(self.base.point_inside((x_cyl, y_cyl)), np.abs(z_cyl) <= 1.)
+        # the new x coordinates
+        x_cyl = self.iA[0, 0]*xx + self.iA[0, 1]*yy + self.iA[0, 2]*zz
+        # the new y coordinates
+        y_cyl = self.iA[1, 0]*xx + self.iA[1, 1]*yy + self.iA[1, 2]*zz
+        # the new z coordinates
+        z_cyl = self.iA[2, 0]*xx + self.iA[2, 1]*yy + self.iA[2, 2]*zz
+        return np.logical_and(
+            self.base.point_inside((x_cyl, y_cyl)),
+            np.abs(z_cyl) <= 1.
+        )
 
-    #pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals
     def distance(self, grid, v, dmax=None):
         """
         Compute the distance in the v direction between
@@ -118,16 +126,23 @@ class Cylinder(Element):
         x, y, z = grid
 
         # rewritte the coordinates in the frame of the cylinder
-        v_cyl = self.iA.dot(np.asarray(v)) # the velocity
+        v_cyl = self.iA.dot(np.asarray(v))  # the velocity
         xx = x - self.center[0]
         yy = y - self.center[1]
         zz = z - self.center[2]
-        x_cyl = self.iA[0, 0]*xx + self.iA[0, 1]*yy + self.iA[0, 2]*zz # the new x coordinates
-        y_cyl = self.iA[1, 0]*xx + self.iA[1, 1]*yy + self.iA[1, 2]*zz # the new y coordinates
-        z_cyl = self.iA[2, 0]*xx + self.iA[2, 1]*yy + self.iA[2, 2]*zz # the new z coordinates
+        # the new x coordinates
+        x_cyl = self.iA[0, 0]*xx + self.iA[0, 1]*yy + self.iA[0, 2]*zz
+        # the new y coordinates
+        y_cyl = self.iA[1, 0]*xx + self.iA[1, 1]*yy + self.iA[1, 2]*zz
+        # the new z coordinates
+        z_cyl = self.iA[2, 0]*xx + self.iA[2, 1]*yy + self.iA[2, 2]*zz
 
         # considering the infinite cylinder
-        alpha, border = self.base.distance((x_cyl, y_cyl), v_cyl[:-1], dmax, self.label[:-2])
+        alpha, border = self.base.distance(
+            (x_cyl, y_cyl),
+            v_cyl[:-1],
+            dmax, self.label[:-2]
+        )
         # indices where the intersection is too high or to low
         alpha[alpha < 0] = 1.e16
         ind = np.logical_and(alpha > 0, np.abs(z_cyl + alpha*v_cyl[2]) > 1.)
@@ -136,19 +151,25 @@ class Cylinder(Element):
 
         # considering the two planes
         dummyf = self.base.point_inside
-        if v_cyl[2] == 0: # to avoid vertical velocities
+        if v_cyl[2] == 0:  # to avoid vertical velocities
             decal = 1.e-16
         else:
             decal = 0.
         alpha_top = (1.-z_cyl)/(v_cyl[2] + decal)
-        ind = np.logical_or(np.logical_or(alpha_top < 0, alpha_top > dmax),
-                            np.logical_not(dummyf((x_cyl + alpha_top*v_cyl[0],
-                                                   y_cyl + alpha_top*v_cyl[1]))))
+        ind = np.logical_or(
+            np.logical_or(alpha_top < 0, alpha_top > dmax),
+            np.logical_not(dummyf(
+                (x_cyl + alpha_top*v_cyl[0], y_cyl + alpha_top*v_cyl[1])
+            ))
+        )
         alpha_top[ind] = 1.e16
         alpha_bot = -(1.+z_cyl)/(v_cyl[2] + decal)
-        ind = np.logical_or(np.logical_or(alpha_bot < 0, alpha_bot > dmax),
-                            np.logical_not(dummyf((x_cyl + alpha_bot*v_cyl[0],
-                                                   y_cyl + alpha_bot*v_cyl[1]))))
+        ind = np.logical_or(
+            np.logical_or(alpha_bot < 0, alpha_bot > dmax),
+            np.logical_not(dummyf(
+                (x_cyl + alpha_bot*v_cyl[0], y_cyl + alpha_bot*v_cyl[1])
+            ))
+        )
         alpha_bot[ind] = 1.e16
 
         # considering the first intersection point
@@ -167,20 +188,29 @@ class Cylinder(Element):
         return template.render(header=header_string(self.__class__.__name__),
                                elem=self, type=elem_type)
 
-    #pylint: disable=too-many-locals
-    def visualize(self, viewer, color, viewlabel=False, scale=np.ones(3), alpha=1.):
+    # pylint: disable=too-many-locals
+    def visualize(self,
+                  viewer, color, viewlabel=False,
+                  scale=np.ones(3), alpha=1.
+                  ):
         if isinstance(color, int):
             color = [color]*self.number_of_bounds
-        lx_b, ly_b = self.base._visualize() #pylint: disable=protected-access
+        lx_b, ly_b = self.base._visualize()  # pylint: disable=protected-access
         c = self.center
-        for k in range(len(lx_b)-2): # loop over the faces of the side
+        for k in range(len(lx_b)-2):  # loop over the faces of the side
             x_b, y_b = lx_b[k], ly_b[k]
             z_b = [-1., 1.]
             X_cyl, Z_cyl = np.meshgrid(x_b, z_b)
             Y_cyl, Z_cyl = np.meshgrid(y_b, z_b)
-            X = c[0] + self.A[0, 0]*X_cyl + self.A[0, 1]*Y_cyl + self.A[0, 2]*Z_cyl
-            Y = c[1] + self.A[1, 0]*X_cyl + self.A[1, 1]*Y_cyl + self.A[1, 2]*Z_cyl
-            Z = c[2] + self.A[2, 0]*X_cyl + self.A[2, 1]*Y_cyl + self.A[2, 2]*Z_cyl
+            X = c[0] + self.A[0, 0]*X_cyl \
+                + self.A[0, 1]*Y_cyl \
+                + self.A[0, 2]*Z_cyl
+            Y = c[1] + self.A[1, 0]*X_cyl \
+                + self.A[1, 1]*Y_cyl \
+                + self.A[1, 2]*Z_cyl
+            Z = c[2] + self.A[2, 0]*X_cyl \
+                + self.A[2, 1]*Y_cyl \
+                + self.A[2, 2]*Z_cyl
             viewer.surface(X, Y, Z, color[k], alpha=alpha)
         vv = np.sin(np.linspace(0, np.pi, 10))
         Xbase = np.outer(lx_b[-2], vv)
@@ -225,11 +255,11 @@ class CylinderCircle(Cylinder):
     center : ndarray
         the coordinates of the center of the cylinder
     v1 : list
-        the three coordinates of the first vector that defines the base section
+        the three coordinates of the first vector defining the base section
     v2 : list
-        the three coordinates of the second vector that defines the base section
+        the three coordinates of the second vector defining the base section
     w : list
-        the three coordinates of the vector that defines the direction of the side
+        the three coordinates of the vector defining the direction of the side
     label : list
         the list of the label of the edge
     isfluid : boolean
@@ -258,7 +288,7 @@ class CylinderCircle(Cylinder):
 
     """
     def __init__(self, center, v1, v2, w, label=0, isfluid=False):
-        self.number_of_bounds = 3 # number of edges
+        self.number_of_bounds = 3  # number of edges
         self.center = np.asarray(center)
         self.v1 = np.asarray(v1)
         self.v2 = np.asarray(v2)
@@ -266,6 +296,7 @@ class CylinderCircle(Cylinder):
         self.change_of_variables()
         self.base = BaseCircle(self.center, self.v1, self.v2)
         Cylinder.__init__(self, label, isfluid)
+
 
 class CylinderEllipse(Cylinder):
     """
@@ -301,11 +332,11 @@ class CylinderEllipse(Cylinder):
     center : ndarray
         the coordinates of the center of the cylinder
     v1 : list
-        the three coordinates of the first vector that defines the base section
+        the three coordinates of the first vector defining the base section
     v2 : list
-        the three coordinates of the second vector that defines the base section
+        the three coordinates of the second vector defining the base section
     w : list
-        the three coordinates of the vector that defines the direction of the side
+        the three coordinates of the vector defining the direction of the side
     label : list
         the list of the label of the edge
     isfluid : boolean
@@ -334,7 +365,7 @@ class CylinderEllipse(Cylinder):
 
     """
     def __init__(self, center, v1, v2, w, label=0, isfluid=False):
-        self.number_of_bounds = 3 # number of edges
+        self.number_of_bounds = 3  # number of edges
         self.center = np.asarray(center)
         self.v1 = np.asarray(v1)
         self.v2 = np.asarray(v2)
@@ -342,6 +373,7 @@ class CylinderEllipse(Cylinder):
         self.change_of_variables()
         self.base = BaseEllipse(self.center, self.v1, self.v2)
         Cylinder.__init__(self, label, isfluid)
+
 
 class CylinderTriangle(Cylinder):
     """
@@ -372,11 +404,11 @@ class CylinderTriangle(Cylinder):
     center : numpy array
         the coordinates of the center of the cylinder
     v1 : list of doubles
-        the three coordinates of the first vector that defines the base section
+        the three coordinates of the first vector defining the base section
     v2 : list of doubles
-        the three coordinates of the second vector that defines the base section
+        the three coordinates of the second vector defining the base section
     w : list of doubles
-        the three coordinates of the vector that defines the direction of the side
+        the three coordinates of the vector defining the direction of the side
     label : list of integers
         the list of the label of the edge
     isfluid : boolean
@@ -405,7 +437,7 @@ class CylinderTriangle(Cylinder):
 
     """
     def __init__(self, center, v1, v2, w, label=0, isfluid=False):
-        self.number_of_bounds = 5 # number of edges
+        self.number_of_bounds = 5  # number of edges
         self.center = np.asarray(center)
         self.v1 = np.asarray(v1)
         self.v2 = np.asarray(v2)
@@ -413,6 +445,7 @@ class CylinderTriangle(Cylinder):
         self.change_of_variables()
         self.base = BaseTriangle(self.center, self.v1, self.v2)
         Cylinder.__init__(self, label, isfluid)
+
 
 class Parallelepiped(Cylinder):
     """
@@ -475,7 +508,7 @@ class Parallelepiped(Cylinder):
 
     """
     def __init__(self, point, v0, v1, v2, label=0, isfluid=False):
-        self.number_of_bounds = 6 # number of edges
+        self.number_of_bounds = 6  # number of edges
         self.point = np.asarray(point)
         self.v1 = np.asarray(v0)
         self.v2 = np.asarray(v1)

@@ -7,12 +7,13 @@
 # License: BSD 3 clause
 
 """
-Example of a 2D geometry: the square [0,1] x [0,1]
+Example of a 1D geometry: the segment [0,1]
 """
 import pylbm
-dgeom = {
-    'box':{'x': [0, 1], 'y': [0, 1], 'label':0},
-}
+
+# pylint: disable=invalid-name
+
+dgeom = {'box': {'x': [0, 1], 'label': [0, 1]}}
 geom = pylbm.Geometry(dgeom)
-#geom.visualize(pylbm.viewer.vispyViewer, viewlabel=True)
-geom.visualize()
+print(geom)
+geom.visualize(viewlabel=True)
