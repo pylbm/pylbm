@@ -51,19 +51,39 @@ or
 From source
 -----------
 
-You can also clone the project
+You can also clone the project and install the latest version
 
 .. code::
 
    git clone https://github.com/pylbm/pylbm
 
-and then use the command
+To install pylbm from source, we encourage you to create a fresh environment using conda.
+
+.. code::
+
+    conda create -n pylbm_env python=3.6
+
+As mentioned at the end of the creation of this environment, you can activate it
+using the comamnd line
+
+.. code::
+
+    conda activate pylbm_env
+
+Now, you just have to go into the pylbm directory that you cloned and install
+the dependencies
+
+.. code::
+
+    conda install --file requirements-dev.txt -c conda-forge
+
+and then, install pylbm
 
 .. code::
 
    python setup.py install
 
-For more information, take a look at the documentation
+For more information about what you can achieve with pylbm, take a look at the documentation
 
 `<http://pylbm.readthedocs.io>`_
 
