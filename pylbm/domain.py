@@ -9,12 +9,12 @@ Domain definitions for LBM
 import logging
 import sys
 import copy
-from textwrap import dedent
+# from textwrap import dedent
 
 import numpy as np
-import sympy as sp
+# import sympy as sp
 import mpi4py.MPI as mpi
-from six import string_types
+# from six import string_types
 
 from .geometry import Geometry
 from .stencil import Stencil
@@ -22,7 +22,32 @@ from .mpi_topology import MpiTopology
 from .validator import validate
 from . import viewer
 
-log = logging.getLogger(__name__) #pylint: disable=invalid-name
+log = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
+
+def _create_view_something(something, unvtot):
+    bool_something = False
+    lst_something = []
+    if isinstance(something, bool):
+        if something:
+            bool_something = True
+            lst_something = list(range(unvtot))
+    elif isinstance(something, int):
+        if something >= 0 and something < unvtot:
+            bool_something = True
+            lst_something = [something, ]
+    elif isinstance(something, (list, tuple)):
+        for s_k in something:
+            if s_k >= 0 and s_k < unvtot:
+                bool_something = True
+                lst_something.append(s_k)
+    else:
+        s = "Error in visualize (domain): \n"
+        s += "optional parameter view_distance and view_bound should be\n"
+        s += "  boolean, integer, list or tuple\n"
+        log.error(s)
+    return bool_something, lst_something
+
 
 class Domain:
     """
@@ -37,16 +62,22 @@ class Domain:
 
         - box : a dictionary that defines the computational box
         - elements : the list of the elements
-          (available elements are given in the module :py:mod:`elements <pylbm.elements>`)
+          (available elements are given in the module
+           :py:mod:`elements <pylbm.elements>`)
         - space_step : the spatial step
         - schemes : a list of dictionaries,
-          each of them defining a elementary :py:class:`Scheme <pylbm.scheme.Scheme>`
+          each of them defining a elementary
+          :py:class:`Scheme <pylbm.scheme.Scheme>`
           we only need the velocities to define a domain
+
+    need_validation : bool
+        boolean to specify if the dictionary has to be validated (optional)
 
     Notes
     -----
 
-    The dictionary that defines the box should contains the following `key:value`
+    The dictionary that defines the box should contains
+    the following `key:value`
 
     - x : a list of the bounds in the first direction
     - y : a list of the bounds in the second direction (optional)
@@ -213,7 +244,8 @@ class Domain:
         self.global_size = []
         self.create_coords()
 
-        region = self.mpi_topo.get_region(*self.global_size) #pylint: disable=no-value-for-parameter
+        # pylint: disable=no-value-for-parameter
+        region = self.mpi_topo.get_region(*self.global_size)
 
         # Modify box_label if the border becomes an interface
         for i in range(self.dim):
@@ -228,8 +260,10 @@ class Domain:
         self.distance = self.valin*np.ones(total_size)
         self.flag = self.valin*np.ones(total_size, dtype='int')
 
-        self.__add_init(self.box_label) # compute the distance and the flag for the primary box
-        for elem in self.geom.list_elem: # treat each element of the geometry
+        # compute the distance and the flag for the primary box
+        self.__add_init(self.box_label)
+        for elem in self.geom.list_elem:
+            # treat each element of the geometry
             self.__add_elem(elem)
 
         log.info(self.__str__())
@@ -272,21 +306,24 @@ class Domain:
     @property
     def x_halo(self):
         """
-        x component of the coordinates of the whole domain (halo points included).
+        x component of the coordinates of the whole domain
+        (halo points included).
         """
         return self.coords_halo[0]
 
     @property
     def y_halo(self):
         """
-        y component of the coordinates of the whole domain (halo points included).
+        y component of the coordinates of the whole domain
+        (halo points included).
         """
         return self.coords_halo[1]
 
     @property
     def z_halo(self):
         """
-        z component of the coordinates of the whole domain (halo points included).
+        z component of the coordinates of the whole domain
+        (halo points included).
         """
         return self.coords_halo[2]
 
@@ -294,7 +331,10 @@ class Domain:
         from .utils import header_string
         from .jinja_env import env
         template = env.get_template('domain.tpl')
-        return template.render(header=header_string('Domain information'), dom=self)
+        return template.render(
+            header=header_string('Domain information'),
+            dom=self
+        )
 
     def __repr__(self):
         return self.__str__()
@@ -313,9 +353,10 @@ class Domain:
 
     def create_coords(self):
         """
-        Create the coordinates of the interior domain and the whole domain with halo points.
+        Create the coordinates of the interior domain and the whole domain
+        with halo points.
         """
-        phys_box = self.geom.bounds # the physical box where the domain lies
+        phys_box = self.geom.bounds  # the physical box where the domain lies
 
         # validation of the space step with the physical box size
         for k in range(self.dim):
@@ -324,38 +365,58 @@ class Domain:
                 dummy = round(self.global_size[-1])
                 diff_n = dummy - self.global_size[-1]
                 if abs(diff_n) < self.dx:
-                    message = "The length of the box in the direction {0:d} is not exactly a multiple of the space step\n".format(k)
-                    message += "The error in the length of the domain in the direction {0:d} is {1:10.3e}".format(k, diff_n*self.dx)
+                    message = "The length of the box "
+                    message += "in the direction {0:d} ".format(k)
+                    message += "is not exactly a multiple of the space step\n"
+                    message += "The error in the length of the domain "
+                    message += "in the direction {0:d} ".format(k)
+                    message += "is {1:10.3e}".format(diff_n*self.dx)
                     log.info(message)
                     self.global_size[-1] = dummy
                 else:
-                    message = "The length of the box in the direction {0:d} must be a multiple of the space step\n".format(k)
-                    message += "The number of points is {0:.15f}".format(self.global_size[-1])
+                    message = "The length of the box "
+                    message += "in the direction {0:d} ".format(k)
+                    message += "must be a multiple of the space step\n"
+                    message += "The number of points is "
+                    message += "{0:.15f}".format(self.global_size[-1])
                     log.error(message)
                     sys.exit()
 
         # we now are sure that global_size item are integers
         self.global_size = np.asarray(self.global_size, dtype='int')
-        region = self.mpi_topo.get_region(*self.global_size) #pylint: disable=no-value-for-parameter
+        # pylint: disable=no-value-for-parameter
+        region = self.mpi_topo.get_region(*self.global_size)
         region_size = [r[1] - r[0] for r in region]
 
         # spatial mesh
         halo_size = np.asarray(self.stencil.vmax)
         halo_beg = self.dx*(halo_size - 0.5)
 
-        self.coords_halo = [np.linspace(phys_box[k][0] + self.dx*region[k][0] - halo_beg[k],
-                                        phys_box[k][0] + self.dx*region[k][1] + halo_beg[k],
-                                        region_size[k] + 2*halo_size[k]) for k in range(self.dim)]
+        self.coords_halo = [
+            np.linspace(
+                phys_box[k][0] + self.dx*region[k][0] - halo_beg[k],
+                phys_box[k][0] + self.dx*region[k][1] + halo_beg[k],
+                region_size[k] + 2*halo_size[k]
+            )
+            for k in range(self.dim)
+        ]
 
-        self.coords = [self.coords_halo[k][halo_size[k]:-halo_size[k]] for k in range(self.dim)]
+        self.coords = [
+            self.coords_halo[k][halo_size[k]:-halo_size[k]]
+            for k in range(self.dim)
+        ]
 
     def get_bounds_halo(self):
         """
         Return the coordinates of the bottom right and upper left corner of the
         whole domain with halo points.
         """
-        bottom_right = np.asarray([self.coords_halo[k][0] for k in range(self.dim)])
-        upper_left = np.asarray([self.coords_halo[k][-1] for k in range(self.dim)])
+        bottom_right = np.asarray(
+            [self.coords_halo[k][0] for k in range(self.dim)]
+        )
+        upper_left = np.asarray(
+            [self.coords_halo[k][-1] for k in range(self.dim)]
+        )
         return bottom_right, upper_left
 
     def get_bounds(self):
@@ -367,7 +428,7 @@ class Domain:
         upper_left = np.asarray([self.coords[k][-1] for k in range(self.dim)])
         return bottom_right, upper_left
 
-    #pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals
     def __add_init(self, label):
         halo_size = np.asarray(self.stencil.vmax)
         phys_domain = [slice(h, -h) for h in halo_size]
@@ -406,13 +467,13 @@ class Domain:
                         flag_view[tuple(nind)] = label[2*iuvel]
                 elif vk > 0 and label[2*iuvel + 1] != -2:
                     for i in range(vk):
-                        indices[iuvel + 1] = -i -1
+                        indices[iuvel + 1] = -i - 1
                         dvik = (i + .5)/vk
                         nind = new_indices(dvik, iuvel, indices, dist_view)
                         dist_view[tuple(nind)] = dvik
                         flag_view[tuple(nind)] = label[2*iuvel+1]
 
-    #pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals
     def __add_elem(self, elem):
         """
         Add an element
@@ -444,11 +505,11 @@ class Domain:
         tcoords = (self.coords_halo[d][s] for d, s in enumerate(space_slice))
         grid = np.meshgrid(*tcoords, sparse=True, indexing='ij')
 
-        if not elem.isfluid: # add a solid part
+        if not elem.isfluid:  # add a solid part
             ind_solid = elem.point_inside(grid)
             ind_fluid = np.logical_not(ind_solid)
             ioo_view[ind_solid] = self.valout
-        else: # add a fluid part
+        else:  # add a fluid part
             ind_fluid = elem.point_inside(grid)
             ind_solid = np.logical_not(ind_fluid)
             ioo_view[ind_fluid] = self.valin
@@ -456,8 +517,12 @@ class Domain:
         for k in range(self.stencil.unvtot):
             vk = np.asarray(self.stencil.unique_velocities[k].v)
             if np.any(vk != 0):
-                space_slice = [slice(imin + vk[d], imax + vk[d]) for imin, imax, d in zip(nmin, nmax, range(self.dim))]
-                # check the cells that are out when we move with the vk velocity
+                space_slice = [
+                    slice(imin + vk[d], imax + vk[d])
+                    for imin, imax, d in zip(nmin, nmax, range(self.dim))
+                ]
+                # check the cells that are out
+                # when we move with the vk velocity
                 out_cells = self.in_or_out[tuple(space_slice)] == self.valout
                 # compute the distance and set the boundary label
                 # of each cell and the element with the vk velocity
@@ -472,21 +537,30 @@ class Domain:
                 if elem.isfluid:
                     # take all points in the fluid in the ioo_view
                     indfluidinbox = ioo_view == self.valin
-                    # take all the fluid points in the box (not only in the created element)
-                    # which always are in fluid after a displacement of the velocity vk
-                    border_to_interior = np.logical_and(np.logical_not(out_cells), indfluidinbox)
+                    # take all the fluid points in the box
+                    # (not only in the created element)
+                    # which always are in fluid after a displacement
+                    # of the velocity vk
+                    border_to_interior = np.logical_and(
+                        np.logical_not(out_cells), indfluidinbox
+                    )
                     dist_view[k][border_to_interior] = self.valin
                     flag_view[k][border_to_interior] = self.valin
                 else:
                     dist_view[k][ind_solid] = self.valin
                     flag_view[k][ind_solid] = self.valin
 
-                #set distance
+                # set distance
                 ind4 = np.where(indx)
                 if not elem.isfluid:
                     ind3 = np.where(alpha[ind4] < dist_view[k][ind4])[0]
                 else:
-                    ind3 = np.where(np.logical_or(alpha[ind4] > dist_view[k][ind4], dist_view[k][ind4] == self.valin))[0]
+                    ind3 = np.where(
+                        np.logical_or(
+                            alpha[ind4] > dist_view[k][ind4],
+                            dist_view[k][ind4] == self.valin
+                        )
+                    )[0]
 
                 ind = [i[ind3] for i in ind4]
                 dist_view[k][tuple(ind)] = alpha[tuple(ind)]
@@ -499,7 +573,8 @@ class Domain:
         labels = np.unique(self.box_label)
         return np.union1d(labels, self.geom.list_of_elements_labels())
 
-    #pylint: disable=too-many-locals, too-many-branches, too-many-nested-blocks, too-many-statements
+    # pylint: disable=too-many-locals, too-many-branches,
+    # pylint: disable=too-many-nested-blocks, too-many-statements
     def visualize(self,
                   viewer_app=viewer.matplotlib_viewer,
                   view_distance=False,
@@ -524,7 +599,7 @@ class Domain:
         view_out : boolean, optional
             view the outer points
             default is True
-        view_bound : boolean, optional
+        view_bound : boolean or int or list, optional
             view the points on the bounds
             default is False
         label : int or list, optional
@@ -532,7 +607,9 @@ class Domain:
 
         Returns
         -------
-        a figure representing the domain
+
+        object
+            views
 
         """
         # TODO: rewrite this method (it's too long)
@@ -540,39 +617,12 @@ class Domain:
         fig = viewer_app.Fig(dim=self.dim)
         view = fig[0]
 
-        if isinstance(view_distance, bool):
-            view_seg = view_distance
-            if view_seg:
-                view_distance = list(range(self.stencil.unvtot))
-            else:
-                view_distance = []
-        elif isinstance(view_distance, int):
-            view_seg = True
-            view_distance = (view_distance,)
-        elif isinstance(view_distance, (list, tuple)):
-            view_seg = True
-        else:
-            s = "Error in visualize (domain): \n"
-            s += "optional parameter view_distance should be\n"
-            s += "  boolean, integer, list or tuple\n"
-            log.error(s)
-
-        if isinstance(view_bound, bool):
-            view_bnd = view_bound
-            if view_bnd:
-                view_bound = list(range(self.stencil.unvtot))
-            else:
-                view_bound = []
-        elif isinstance(view_bound, int):
-            view_bnd = True
-            view_bound = (view_bound,)
-        elif isinstance(view_bound, (list, tuple)):
-            view_bnd = True
-        else:
-            s = "Error in visualize (domain): \n"
-            s += "optional parameter view_bound should be\n"
-            s += "  boolean, integer, list or tuple\n"
-            log.error(s)
+        view_seg, view_distance = _create_view_something(
+            view_distance, self.stencil.unvtot
+        )
+        view_bnd, view_bound = _create_view_something(
+            view_bound, self.stencil.unvtot
+        )
 
         if self.dim == 1:
             x = self.coords_halo[0]
@@ -581,7 +631,11 @@ class Domain:
                 vxkmax = self.stencil.vmax[0]
                 for k in range(self.stencil.unvtot):
                     vxk = self.stencil.unique_velocities[k].vx
-                    color = (1.-(vxkmax+vxk)*0.5/vxkmax, 0., (vxkmax+vxk)*0.5/vxkmax)
+                    color = (
+                        1.-(vxkmax+vxk)*0.5/vxkmax,
+                        0.,
+                        (vxkmax+vxk)*0.5/vxkmax
+                    )
                     indbord = np.where(self.distance[k, :] <= 1)[0]
                     if indbord.size != 0:
                         xbound = x[indbord]
@@ -591,17 +645,41 @@ class Domain:
                         if view_seg:
                             lines = np.empty((2*xbound.size, 2))
                             lines[::2, :] = np.asarray([xbound, ybound]).T
-                            lines[1::2, :] = np.asarray([xbound + dx*dist*vxk, ybound]).T
-                            view.segments(lines, alpha=0.75, width=2, color=color)
+                            lines[1::2, :] = np.asarray([
+                                xbound + dx*dist*vxk, ybound
+                            ]).T
+                            view.segments(lines,
+                                          alpha=0.75,
+                                          width=2,
+                                          color=color
+                                          )
                         if view_bound:
-                            lines = np.asarray([xbound + dx*dist*vxk, ybound]).T
-                            view.markers(lines, 200*self.dx, symbol='d', color=color)
+                            lines = np.asarray([
+                                xbound + dx*dist*vxk, ybound
+                            ]).T
+                            view.markers(
+                                lines,
+                                200*self.dx,
+                                symbol='d',
+                                color=np.array([[*color]])
+                            )
             if view_in:
                 indin = np.where(self.in_or_out == self.valin)
-                view.markers(np.asarray([x[indin], y[indin]]).T, 200*self.dx, symbol='o', alpha=0.5, color='navy')
+                view.markers(
+                    np.asarray([x[indin], y[indin]]).T,
+                    200*self.dx,
+                    symbol='o',
+                    alpha=0.5,
+                    color='navy'
+                )
             if view_out:
                 indout = np.where(self.in_or_out == self.valout)
-                view.markers(np.asarray([x[indout], y[indout]]).T, 200*self.dx, symbol='s', color='orange')
+                view.markers(
+                    np.asarray([x[indout], y[indout]]).T,
+                    200*self.dx,
+                    symbol='s',
+                    color='orange'
+                )
 
             xmin, xmax = self.geom.bounds[0][:]
             length = xmax - xmin
@@ -617,7 +695,10 @@ class Domain:
                 ymax -= 1
                 xpercent = 0.05*xmax
                 ypercent = 0.05*ymax
-                view.axis(-xpercent, xmax + xpercent, -ypercent, ymax + ypercent)
+                view.axis(
+                    -xpercent, xmax + xpercent,
+                    -ypercent, ymax + ypercent
+                )
                 view.image(self.in_or_out.transpose() >= 0)
                 view.grid(False)
                 view.xaxis_set_visible(False)
@@ -628,7 +709,11 @@ class Domain:
 
                 xpercent = 2*self.dx
                 ypercent = 2*self.dx
-                view.axis(xmin-xpercent, xmax+xpercent, ymin-ypercent, ymax+ypercent, aspect='equal')
+                view.axis(
+                    xmin - xpercent, xmax + xpercent,
+                    ymin - ypercent, ymax + ypercent,
+                    aspect='equal'
+                )
 
                 x, y = self.coords_halo
                 dx = self.dx
@@ -637,16 +722,28 @@ class Domain:
                 for k in view_distance:
                     vxk = self.stencil.unique_velocities[k].vx
                     vyk = self.stencil.unique_velocities[k].vy
-                    color = (1.-(vxkmax+vxk)*0.5/vxkmax, (vykmax+vyk)*0.25/vykmax, (vxkmax+vxk)*0.25/vxkmax)
+                    color = (
+                        1.-(vxkmax+vxk)*0.5/vxkmax,
+                        (vykmax+vyk)*0.25/vykmax,
+                        (vxkmax+vxk)*0.25/vxkmax
+                    )
                     if label is not None:
                         dummy = np.zeros(self.distance.shape[1:])
                         if isinstance(label, int):
-                            dummy = np.logical_or(dummy, self.flag[k, :] == label)
+                            dummy = np.logical_or(
+                                dummy,
+                                self.flag[k, :] == label
+                            )
                         elif isinstance(label, (tuple, list)):
                             for labelk in label:
-                                dummy = np.logical_or(dummy, self.flag[k, :] == labelk)
+                                dummy = np.logical_or(
+                                    dummy,
+                                    self.flag[k, :] == labelk
+                                )
                         else:
-                            log.error("Error in visualize (domain): wrong type for optional argument label")
+                            err_msg = "Error in visualize (domain): "
+                            err_msg += "wrong type for optional argument label"
+                            log.error(err_msg)
                     else:
                         dummy = np.ones(self.distance.shape[1:])
                     dummy = np.logical_and(dummy, self.distance[k, :] <= 1)
@@ -657,22 +754,37 @@ class Domain:
                         ybound = y[indbordy]
                         lines = np.empty((2*xbound.size, 2))
                         lines[::2, :] = np.asarray([xbound, ybound]).T
-                        lines[1::2, :] = np.asarray([xbound + dx*dist*vxk, ybound + dx*dist*vyk]).T
+                        lines[1::2, :] = np.asarray([
+                            xbound + dx*dist*vxk,
+                            ybound + dx*dist*vyk
+                        ]).T
                         view.segments(lines, alpha=0.75, width=2, color=color)
 
                 for k in view_bound:
                     vxk = self.stencil.unique_velocities[k].vx
                     vyk = self.stencil.unique_velocities[k].vy
-                    color = (1.-(vxkmax+vxk)*0.5/vxkmax, (vykmax+vyk)*0.25/vykmax, (vxkmax+vxk)*0.25/vxkmax)
+                    color = np.array([[
+                        1.-(vxkmax+vxk)*0.5/vxkmax,
+                        (vykmax+vyk)*0.25/vykmax,
+                        (vxkmax+vxk)*0.25/vxkmax
+                    ]])
                     if label is not None:
                         dummy = np.zeros(self.distance.shape[1:])
                         if isinstance(label, int):
-                            dummy = np.logical_or(dummy, self.flag[k, :] == label)
+                            dummy = np.logical_or(
+                                dummy,
+                                self.flag[k, :] == label
+                            )
                         elif isinstance(label, (tuple, list)):
                             for labelk in label:
-                                dummy = np.logical_or(dummy, self.flag[k, :] == labelk)
+                                dummy = np.logical_or(
+                                    dummy,
+                                    self.flag[k, :] == labelk
+                                )
                         else:
-                            log.error("Error in visualize (domain): wrong type for optional argument label")
+                            err_msg = "Error in visualize (domain): "
+                            err_msg += "wrong type for optional argument label"
+                            log.error(err_msg)
                     else:
                         dummy = np.ones(self.distance.shape[1:])
                     dummy = np.logical_and(dummy, self.distance[k, :] <= 1)
@@ -681,15 +793,29 @@ class Domain:
                         dist = self.distance[k, indbordx, indbordy]
                         xbound = x[indbordx]
                         ybound = y[indbordy]
-                        lines = np.asarray([xbound + dx*dist*vxk, ybound + dx*dist*vyk]).T
-                        view.markers(lines, 200*self.dx, symbol='d', color=color)
+                        lines = np.asarray([
+                            xbound + dx*dist*vxk,
+                            ybound + dx*dist*vyk
+                        ]).T
+                        view.markers(
+                            lines,
+                            200*self.dx,
+                            symbol='d',
+                            color=color
+                        )
 
                 if view_in:
                     indinx, indiny = np.where(self.in_or_out == self.valin)
-                    view.markers(np.asarray([x[indinx], y[indiny]]).T, 500*self.dx, symbol='o', alpha=0.5, color='navy')
+                    view.markers(
+                        np.asarray([x[indinx], y[indiny]]).T,
+                        500*self.dx, symbol='o', alpha=0.5, color='navy'
+                    )
                 if view_out:
                     indoutx, indouty = np.where(self.in_or_out == self.valout)
-                    view.markers(np.asarray([x[indoutx], y[indouty]]).T, 500*self.dx, symbol='s', color='orange')
+                    view.markers(
+                        np.asarray([x[indoutx], y[indouty]]).T,
+                        500*self.dx, symbol='s', color='orange'
+                    )
 
         elif self.dim == 3:
             x, y, z = self.coords_halo
@@ -700,10 +826,18 @@ class Domain:
 
             if view_in:
                 indinx, indiny, indinz = np.where(self.in_or_out == self.valin)
-                view.markers(np.asarray([x[indinx], y[indiny], z[indinz]]).T, 50*self.dx**2, symbol='o', alpha=0.5, color='navy')
+                view.markers(
+                    np.asarray([x[indinx], y[indiny], z[indinz]]).T,
+                    50*self.dx**2, symbol='o', alpha=0.5, color='navy'
+                )
             if view_out:
-                indoutx, indouty, indoutz = np.where(self.in_or_out == self.valout)
-                view.markers(np.asarray([x[indoutx], y[indouty], z[indoutz]]).T, 100*self.dx**2, symbol='s', color='orange')
+                indoutx, indouty, indoutz = np.where(
+                    self.in_or_out == self.valout
+                )
+                view.markers(
+                    np.asarray([x[indoutx], y[indouty], z[indoutz]]).T,
+                    100*self.dx**2, symbol='s', color='orange'
+                )
             view.set_label("X", "Y", "Z")
             if view_seg or view_bnd:
                 vxkmax, vykmax, vzkmax = self.stencil.vmax
@@ -711,16 +845,26 @@ class Domain:
                     vxk = self.stencil.unique_velocities[k].vx
                     vyk = self.stencil.unique_velocities[k].vy
                     vzk = self.stencil.unique_velocities[k].vz
-                    color = (1.-(vxkmax+vxk)*0.5/vxkmax, (vykmax+vyk)*0.25/vykmax, (vzkmax+vzk)*0.25/vzkmax)
+                    color = (
+                        1.-(vxkmax+vxk)*0.5/vxkmax,
+                        (vykmax+vyk)*0.25/vykmax,
+                        (vzkmax+vzk)*0.25/vzkmax
+                    )
                     if label is not None:
                         dummy = np.zeros(self.distance.shape[1:])
                         if isinstance(label, int):
-                            dummy = np.logical_or(dummy, self.flag[k, :] == label)
+                            dummy = np.logical_or(
+                                dummy, self.flag[k, :] == label
+                            )
                         elif isinstance(label, (tuple, list)):
                             for labelk in label:
-                                dummy = np.logical_or(dummy, self.flag[k, :] == labelk)
+                                dummy = np.logical_or(
+                                    dummy, self.flag[k, :] == labelk
+                                )
                         else:
-                            log.error("Error in visualize (domain): wrong type for optional argument label")
+                            err_msg = "Error in visualize (domain): "
+                            err_msg += "wrong type for optional argument label"
+                            log.error(err_msg)
                     else:
                         dummy = np.ones(self.distance.shape[1:])
                     dummy = np.logical_and(dummy, self.distance[k, :] <= 1)
@@ -732,22 +876,36 @@ class Domain:
                         zbound = z[indbordz]
                         lines = np.empty((2*xbound.size, 3))
                         lines[::2, :] = np.asarray([xbound, ybound, zbound]).T
-                        lines[1::2, :] = np.asarray([xbound + dx*dist*vxk, ybound + dx*dist*vyk, zbound + dx*dist*vzk]).T
+                        lines[1::2, :] = np.asarray([
+                            xbound + dx*dist*vxk,
+                            ybound + dx*dist*vyk,
+                            zbound + dx*dist*vzk
+                        ]).T
                         view.segments(lines, alpha=0.75, color=color, width=2)
                 for k in view_bound:
                     vxk = self.stencil.unique_velocities[k].vx
                     vyk = self.stencil.unique_velocities[k].vy
                     vzk = self.stencil.unique_velocities[k].vz
-                    color = (1.-(vxkmax+vxk)*0.5/vxkmax, (vykmax+vyk)*0.25/vykmax, (vzkmax+vzk)*0.25/vzkmax)
+                    color = np.array([[
+                        1.-(vxkmax+vxk)*0.5/vxkmax,
+                        (vykmax+vyk)*0.25/vykmax,
+                        (vzkmax+vzk)*0.25/vzkmax
+                    ]])
                     if label is not None:
                         dummy = np.zeros(self.distance.shape[1:])
                         if isinstance(label, int):
-                            dummy = np.logical_or(dummy, self.flag[k, :] == label)
+                            dummy = np.logical_or(
+                                dummy, self.flag[k, :] == label
+                            )
                         elif isinstance(label, (tuple, list)):
                             for labelk in label:
-                                dummy = np.logical_or(dummy, self.flag[k, :] == labelk)
+                                dummy = np.logical_or(
+                                    dummy, self.flag[k, :] == labelk
+                                )
                         else:
-                            log.error("Error in visualize (domain): wrong type for optional argument label")
+                            err_msg = "Error in visualize (domain): "
+                            err_msg += "wrong type for optional argument label"
+                            log.error(err_msg)
                     else:
                         dummy = np.ones(self.distance.shape[1:])
                     dummy = np.logical_and(dummy, self.distance[k, :] <= 1)
@@ -757,8 +915,15 @@ class Domain:
                         xbound = x[indbordx]
                         ybound = y[indbordy]
                         zbound = z[indbordz]
-                        lines = np.asarray([xbound + dx*dist*vxk, ybound + dx*dist*vyk, zbound + dx*dist*vzk]).T
-                        view.markers(lines, 100*self.dx**2, symbol='o', color=color)
+                        lines = np.asarray([
+                            xbound + dx*dist*vxk,
+                            ybound + dx*dist*vyk,
+                            zbound + dx*dist*vzk
+                        ]).T
+                        view.markers(
+                            lines,
+                            100*self.dx**2, symbol='o', color=color
+                        )
 
             xpercent = 0.1*(xmax-xmin)
             ypercent = 0.1*(ymax-ymin)
@@ -773,7 +938,9 @@ class Domain:
                       aspect='equal')
 
         else:
-            log.error('Error in domain.visualize(): the dimension %d is not allowed', self.dim)
+            err_msg = "Error in domain.visualize(): "
+            err_msg += "the dimension {} is not allowed".format(self.dim)
+            log.error(err_msg)
 
         view.title = "Domain"
         fig.show()
