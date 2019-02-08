@@ -8,16 +8,17 @@
 Ellipsoid element
 """
 
-#pylint: disable=invalid-name
+# pylint: disable=invalid-name
 
 import logging
-from textwrap import dedent
+# from textwrap import dedent
 import numpy as np
 
 from .base import Element
 from .utils import distance_ellipsoid
 
-log = logging.getLogger(__name__) #pylint: disable=invalid-name
+log = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
 
 class Ellipsoid(Element):
     """
@@ -62,7 +63,8 @@ class Ellipsoid(Element):
     Examples
     --------
 
-    the ellipsoid centered in (0, 0, 0) with v1=[3,0,0], v2=[0,2,0], and v3=[0,0,1]
+    the ellipsoid centered in (0, 0, 0)
+    with v1=[3,0,0], v2=[0,2,0], and v3=[0,0,1]
 
     >>> center = [0., 0., 0.]
     >>> v1, v2, v3 = [3,0,0], [0,2,0], [0,0,1]
@@ -80,13 +82,13 @@ class Ellipsoid(Element):
 
     """
     def __init__(self, center, v1, v2, v3, label=0, isfluid=False):
-        self.number_of_bounds = 1 # number of edges
+        self.number_of_bounds = 1  # number of edges
         self.dim = 3
         self.center = np.asarray(center)
         p12 = abs(v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2])
         p23 = abs(v2[0]*v3[0] + v2[1]*v3[1] + v2[2]*v3[2])
         p31 = abs(v3[0]*v1[0] + v3[1]*v1[1] + v3[2]*v1[2])
-        if  max(p12, p23, p31) > 1.e-14:
+        if max(p12, p23, p31) > 1.e-14:
             log.error('The vectors of the ellipsoid are not orthogonal')
         else:
             self.v1 = np.asarray(v1)
@@ -104,7 +106,7 @@ class Ellipsoid(Element):
                 np.linalg.norm(self.v3))
         return self.center - r, self.center + r
 
-    #pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals
     def point_inside(self, grid):
         """
         return a boolean array which defines
@@ -146,7 +148,7 @@ class Ellipsoid(Element):
         cyz = 2 * (v12[1]*v12[2] + v23[1]*v23[2] + v31[1]*v31[2])
         czx = 2 * (v12[2]*v12[0] + v23[2]*v23[0] + v31[2]*v31[0])
         return cxx*X**2 + cyy*Y**2 + czz*Z**2 + \
-               cxy*X*Y + cyz*Y*Z + czx*Z*X <= d
+            cxy*X*Y + cyz*Y*Z + czx*Z*X <= d
 
     def distance(self, grid, v, dmax=None):
         """
@@ -171,16 +173,26 @@ class Ellipsoid(Element):
 
         """
         x, y, z = grid
-        return distance_ellipsoid(x, y, z, v, self.center, self.v1, self.v2, self.v3, dmax, self.label)
+        return distance_ellipsoid(
+            x, y, z, v,
+            self.center, self.v1, self.v2, self.v3,
+            dmax, self.label
+        )
 
     def __str__(self):
         from ..utils import header_string
         from ..jinja_env import env
         template = env.get_template('ellipsoid.tpl')
         elem_type = 'fluid' if self.isfluid else 'solid'
-        return template.render(header=header_string(self.__class__.__name__), elem=self, type=elem_type)
+        return template.render(
+            header=header_string(self.__class__.__name__),
+            elem=self, type=elem_type
+        )
 
-    def visualize(self, viewer, color, viewlabel=False, scale=np.ones(3), alpha=1.):
+    def visualize(self,
+                  viewer, color, viewlabel=False,
+                  scale=np.ones(3), alpha=1.
+                  ):
         v1 = scale*self.v1
         v2 = scale*self.v2
         v3 = scale*self.v3
