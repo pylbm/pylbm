@@ -8,9 +8,10 @@
 Useful functions to compute the distance
 between a point and an object
 """
-#pylint: disable=invalid-name
+# pylint: disable=invalid-name
 
 import numpy as np
+
 
 def intersection_two_lines(p1, v1, p2, v2):
     """
@@ -25,6 +26,7 @@ def intersection_two_lines(p1, v1, p2, v2):
         alpha = (-v2[1]*c1 + v2[0]*c2)*invdet
         beta = (-v1[1]*c1 + v1[0]*c2)*invdet
     return alpha, beta
+
 
 def distance_lines(x, y, v, p, vt, dmax, label):
     """
@@ -48,7 +50,8 @@ def distance_lines(x, y, v, p, vt, dmax, label):
     alpha[alpha == 1e16] = -1.
     return alpha, border
 
-#pylint: disable=too-many-locals
+
+# pylint: disable=too-many-locals
 def distance_ellipse(x, y, v, center, v1, v2, dmax, label):
     """
     return the distance according
@@ -91,7 +94,8 @@ def distance_ellipse(x, y, v, center, v1, v2, dmax, label):
     border[ind] = label[0]
     return alpha, border
 
-#pylint: disable=too-many-locals
+
+# pylint: disable=too-many-locals
 def distance_ellipsoid(x, y, z, v, center, v1, v2, v3, dmax, label):
     """
     return the distance according
@@ -125,7 +129,7 @@ def distance_ellipsoid(x, y, z, v, center, v1, v2, v3, dmax, label):
     c = cxx*X**2 + cyy*Y**2 + czz*Z**2 \
         + cxy*X*Y + cyz*Y*Z + czx*Z*X - d
     delta = b**2 - 4*a*c
-    ind = delta >= 0 # wird but ir works
+    ind = delta >= 0  # wird but it works
     delta[ind] = np.sqrt(delta[ind])
     d1 = 1e16*np.ones(delta.shape)
     d2 = 1e16*np.ones(delta.shape)

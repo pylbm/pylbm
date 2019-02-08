@@ -8,16 +8,17 @@
 Triangle element
 """
 
-#pylint: disable=invalid-name
+# pylint: disable=invalid-name
 
 import logging
-from textwrap import dedent
+# from textwrap import dedent
 import numpy as np
 
 from .base import Element
 from .utils import distance_lines
 
-log = logging.getLogger(__name__) #pylint: disable=invalid-name
+log = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
 
 class Triangle(Element):
     """
@@ -78,7 +79,7 @@ class Triangle(Element):
 
     """
     def __init__(self, point, vecta, vectb, label=0, isfluid=False):
-        self.number_of_bounds = 3 # number of edges
+        self.number_of_bounds = 3  # number of edges
         self.dim = 2
         self.point = np.asarray(point)
         self.v1 = np.asarray(vecta)
@@ -91,8 +92,14 @@ class Triangle(Element):
         return the smallest box where the triangle is.
 
         """
-        box = np.asarray([self.point, self.point + self.v1,
-                          self.point + self.v1 + self.v2, self.point + self.v2])
+        box = np.asarray(
+            [
+                self.point,
+                self.point + self.v1,
+                self.point + self.v1 + self.v2,
+                self.point + self.v2
+            ]
+        )
         return np.min(box, axis=0), np.max(box, axis=0)
 
     def point_inside(self, grid):
@@ -152,7 +159,8 @@ class Triangle(Element):
 
         """
         x, y = grid
-        # points and triangle edges which define the lines for the intersections
+        # points and triangle edges
+        # which define the lines for the intersections
         # with the lines defined by (x, y) and v
         p = [[0, 0], [0, 0], self.v1]
         vt = [self.v1, self.v2, self.v2 - self.v1]
@@ -165,9 +173,15 @@ class Triangle(Element):
         from ..jinja_env import env
         template = env.get_template('square.tpl')
         elem_type = 'fluid' if self.isfluid else 'solid'
-        return template.render(header=header_string(self.__class__.__name__), elem=self, type=elem_type)
+        return template.render(
+            header=header_string(self.__class__.__name__),
+            elem=self, type=elem_type
+        )
 
-    def visualize(self, viewer, color, viewlabel=False, scale=np.ones(3), alpha=1.):
+    def visualize(self,
+                  viewer, color, viewlabel=False,
+                  scale=np.ones(3), alpha=1.
+                  ):
         A = [self.point[k] for k in range(2)]
         B = [A[k] + self.v1[k] for k in range(2)]
         D = [A[k] + self.v2[k] for k in range(2)]
