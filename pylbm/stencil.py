@@ -435,6 +435,9 @@ class Stencil(list):
         the maximal velocity in norm for each spatial direction.
     vmin : int
         the minimal velocity in norm for each spatial direction.
+    vmax_full : int
+        the maximal velocity in norm for the 3 spatial direction
+        even in dim 1 or 2.
     nstencils : int
         the number of elementary stencils.
     nv : list of integers
@@ -660,6 +663,17 @@ class Stencil(list):
         """the minimal velocity in norm for each spatial direction."""
         tmp = np.asarray([self.uvx, self.uvy, self.uvz])
         return np.min(tmp[:self.dim], axis=1)
+
+    @property
+    def vmax_full(self):
+        """
+        the maximal velocity in norm for each spatial direction.
+        all the three dimensions are considered
+        even if dim = 1 or 2
+        """
+        tmp = np.array([0, 0, 0])
+        tmp[:self.dim] = self.vmax
+        return tmp
 
     @property
     def uvx(self):
