@@ -79,3 +79,51 @@ def header_string(title):
     barre = '+' + '-'*(len(title)+2) + '+'
     output = '\n| %s |\n' % title
     return Fore.BLUE + barre + output + barre + Fore.RESET
+
+
+def hsl_to_rgb(h, s, l):
+    """
+    Converts an HSL color value to RGB. Conversion formula
+    adapted from http://en.wikipedia.org/wiki/HSL_color_space.
+    Assumes h, s, and l are contained in the set [0, 1] and
+    the output r, g, and b are in the set [0, 1].
+
+    Parameters
+    ----------
+
+    h : double
+        the hue
+    s : double
+        the saturation
+    l : double
+        the lightness
+
+    Returns
+    -------
+
+    tuple
+        the color in RGB format
+    """
+
+    if s == 0:  # achromatic
+        r = l
+        g = l
+        b = l
+    else:
+        def hue2rgb(p, q, t):
+            t = t % 1
+            if t < 1/6:
+                return p + (q - p) * 6 * t
+            if t < 1/2:
+                return q
+            if t < 2/3:
+                return p + (q - p) * (2/3 - t) * 6
+            return p
+
+        q = l * (1 + s) if l < 0.5 else l + s - l * s
+        p = 2 * l - q
+        r = hue2rgb(p, q, h + 1/3)
+        g = hue2rgb(p, q, h)
+        b = hue2rgb(p, q, h - 1/3)
+
+    return r, g, b

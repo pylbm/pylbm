@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.patches import Ellipse, Polygon
 from matplotlib import animation
+from matplotlib.colors import hsv_to_rgb
 
 import numpy as np
 
@@ -120,7 +121,7 @@ class PlotWidget:
         self.ax.grid(visible=visible, which=which, alpha=alpha)
 
     def axis(self, xmin, xmax, ymin, ymax, zmin=0, zmax=0, dim=2, aspect=None):
-        if (zmin == 0 and zmax == 0) or dim == 2:
+        if (zmin == 0 and zmax == 0) or dim <= 2:
             self.ax.set_xlim(xmin, xmax)
             self.ax.set_ylim(ymin, ymax)
             if aspect is not None:
@@ -131,6 +132,8 @@ class PlotWidget:
             self.ax.set_zlim3d(zmin, zmax)
             if aspect is not None:
                 self.ax.set_aspect(aspect)
+        if dim == 1:
+            self.ax.get_yaxis().set_visible(False)
 
     def xaxis_set_visible(self, visible):
         self.ax.get_xaxis().set_visible(visible)
@@ -190,9 +193,11 @@ class PlotWidget:
         z = pos[2] + a[2]*CS + b[2]*SS + c[2]*C
         return self.ax.plot_surface(x, y, z, rstride=4, cstride=4, color=color[0], alpha=alpha)
 
-    def markers(self, pos, size, color='k', symbol='o', alpha=1.):
-        if pos.shape[1] == 2:
-            return self.ax.scatter(pos[:, 0], pos[:, 1], size, c=color, marker=symbol, alpha=alpha)
+    def markers(self, pos, size, color='k', symbol='o', alpha=1., dim=None):
+        if dim is None:
+            dim = pos.shape[1]
+        if pos.shape[1] == 2 or dim <= 2:
+            return self.ax.scatter(pos[:, 0], pos[:, 1], s=size, c=color, marker=symbol, alpha=alpha)
         else:
             posx, posy, posz = pos[:, 0], pos[:, 1], pos[:, 2]
             return self.ax.scatter(posx, posy, posz, s=size, c=color, marker=symbol, alpha=alpha)

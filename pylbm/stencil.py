@@ -18,13 +18,15 @@ from .geometry import get_box
 from . import viewer
 from .validator import validate
 
-log = logging.getLogger(__name__) #pylint: disable=invalid-name
+log = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
 
 def cmp(a, b):
     """
     cmp function like in python 2.
     """
     return (a > b) - (a < b)
+
 
 def permute_in_place(iterable):
     """
@@ -199,6 +201,15 @@ class Velocity:
         velocity
         """
         return [self.vx, self.vy, self.vz][:self.dim]
+
+    @property
+    def v_full(self):
+        """
+        velocity filled with 0 in 1d and 2d
+        """
+        v_filled = [0]*3
+        v_filled[:self.dim] = self.v
+        return v_filled
 
     def __str__(self):
         output = '(%d: %d'%(self.num, self.vx)
@@ -435,6 +446,9 @@ class Stencil(list):
         the maximal velocity in norm for each spatial direction.
     vmin : int
         the minimal velocity in norm for each spatial direction.
+    vmax_full : int
+        the maximal velocity in norm for the 3 spatial direction
+        even in dim 1 or 2.
     nstencils : int
         the number of elementary stencils.
     nv : list of integers
@@ -660,6 +674,17 @@ class Stencil(list):
         """the minimal velocity in norm for each spatial direction."""
         tmp = np.asarray([self.uvx, self.uvy, self.uvz])
         return np.min(tmp[:self.dim], axis=1)
+
+    @property
+    def vmax_full(self):
+        """
+        the maximal velocity in norm for each spatial direction.
+        all the three dimensions are considered
+        even if dim = 1 or 2
+        """
+        tmp = np.array([0, 0, 0])
+        tmp[:self.dim] = self.vmax
+        return tmp
 
     @property
     def uvx(self):
