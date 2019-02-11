@@ -7,14 +7,17 @@
 # License: BSD 3 clause
 
 """
-Example of a 19 velocities scheme in 3D
+Example of a 3 velocities scheme in 1D
 """
 from six.moves import range
 import pylbm
+
+# pylint: disable=invalid-name
+
 dsten = {
-    'dim':3,
-    'schemes':[{'velocities':list(range(19))},],
+    'dim': 1,
+    'schemes': [{'velocities': list(range(3))}],
 }
 s = pylbm.Stencil(dsten)
 print(s)
-s.visualize(pylbm.viewer.matplotlib_viewer)
+s.visualize()
