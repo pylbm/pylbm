@@ -9,44 +9,78 @@ Domain definitions for LBM
 import logging
 import sys
 import copy
-# from textwrap import dedent
-
 import numpy as np
-# import sympy as sp
 import mpi4py.MPI as mpi
-# from six import string_types
 
 from .geometry import Geometry
 from .stencil import Stencil
 from .mpi_topology import MpiTopology
 from .validator import validate
 from . import viewer
+from .utils import hsl_to_rgb
 
 log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
 def _create_view_something(something, unvtot):
-    bool_something = False
-    lst_something = []
+    """
+    The user can pass in parameters of the visualize function
+    a boolean or a list or a tuple of integers
+
+    This function returns
+    a list (eventually empty) of the considered velocities
+
+    Examples
+    --------
+
+    > _create_view_comething(True, 3)
+        [0, 1, 2]
+
+    > _create_view_comething(False, 3)
+        []
+
+    > _create_view_comething(1, 3)
+        [1]
+
+    > _create_view_comething([0, 2, 3], 3)
+        [0, 2]
+
+    """
     if isinstance(something, bool):
         if something:
-            bool_something = True
-            lst_something = list(range(unvtot))
+            return list(range(unvtot))
+        else:
+            return []
     elif isinstance(something, int):
+        # pylint: disable=chained-comparison
         if something >= 0 and something < unvtot:
-            bool_something = True
-            lst_something = [something, ]
+            return [something, ]
+        else:
+            return []
     elif isinstance(something, (list, tuple)):
+        lst_something = []
         for s_k in something:
+            # pylint: disable=chained-comparison
             if s_k >= 0 and s_k < unvtot:
-                bool_something = True
                 lst_something.append(s_k)
+        return lst_something
     else:
         s = "Error in visualize (domain): \n"
         s += "optional parameter view_distance and view_bound should be\n"
         s += "  boolean, integer, list or tuple\n"
         log.error(s)
-    return bool_something, lst_something
+        return []
+
+
+def _fix_color(vk):
+    """
+    fix the color of the plot
+    for a given velocity
+    """
+    return hsl_to_rgb(
+        np.sin(vk[0]+17)*np.cos(vk[1]+18)*np.cos(vk[2]+12),
+        1, 0.5
+    )
 
 
 class Domain:
@@ -573,15 +607,15 @@ class Domain:
         labels = np.unique(self.box_label)
         return np.union1d(labels, self.geom.list_of_elements_labels())
 
-    # pylint: disable=too-many-locals, too-many-branches,
-    # pylint: disable=too-many-nested-blocks, too-many-statements
+    # pylint: disable=too-complex
     def visualize(self,
                   viewer_app=viewer.matplotlib_viewer,
                   view_distance=False,
                   view_in=True,
                   view_out=True,
                   view_bound=False,
-                  label=None):
+                  label=None,
+                  scale=1):
         """
         Visualize the domain by creating a plot.
 
@@ -593,6 +627,8 @@ class Domain:
         view_distance : boolean or int or list, optional
             view the distance between the interior points and the border
             default is False
+            if True, then all velocities are considered
+            can specify some specific velocities in a list
         view_in : boolean, optional
             view the inner points
             default is True
@@ -604,6 +640,8 @@ class Domain:
             default is False
         label : int or list, optional
             view the distance only for the specified labels
+        scale : int or float, optional
+            scale used for the symbol (default 1)
 
         Returns
         -------
@@ -612,336 +650,103 @@ class Domain:
             views
 
         """
-        # TODO: rewrite this method (it's too long)
 
         fig = viewer_app.Fig(dim=self.dim)
         view = fig[0]
+        view.title = "Domain"
 
-        view_seg, view_distance = _create_view_something(
+        # fix the axis for all dimensions
+        delta_l = .25 * max(
+            np.diff(self.geom.bounds, axis=1).flatten()
+        )  # small length to fix the empty area around the figure
+        bornes = [*[-delta_l, delta_l]]*max(2, self.dim)
+        bornes[:2*self.dim] += self.geom.bounds.flatten()
+        view.axis(*bornes, dim=self.dim, aspect='equal')
+
+        # compute the size of the symbols for the plot
+        # in 1d and 2d: 100*dx
+        # in 3d: 10*dx*dx
+        coeff = 1 + 9 * (self.dim <= 2)
+        size = scale * 10 * coeff * self.dx**(1+(self.dim == 3))
+
+        # view_distance : list of the concerned velocities
+        view_distance = _create_view_something(
             view_distance, self.stencil.unvtot
         )
-        view_bnd, view_bound = _create_view_something(
+        # view_bound : list of the concerned velocities
+        view_bound = _create_view_something(
             view_bound, self.stencil.unvtot
         )
 
-        if self.dim == 1:
-            x = self.coords_halo[0]
-            y = np.zeros(x.shape)
-            if view_seg or view_bound:
-                vxkmax = self.stencil.vmax[0]
-                for k in range(self.stencil.unvtot):
-                    vxk = self.stencil.unique_velocities[k].vx
-                    color = (
-                        1.-(vxkmax+vxk)*0.5/vxkmax,
-                        0.,
-                        (vxkmax+vxk)*0.5/vxkmax
-                    )
-                    indbord = np.where(self.distance[k, :] <= 1)[0]
-                    if indbord.size != 0:
-                        xbound = x[indbord]
-                        ybound = y[indbord]
-                        dist = self.distance[k, indbord]
-                        dx = self.dx
-                        if view_seg:
-                            lines = np.empty((2*xbound.size, 2))
-                            lines[::2, :] = np.asarray([xbound, ybound]).T
-                            lines[1::2, :] = np.asarray([
-                                xbound + dx*dist*vxk, ybound
-                            ]).T
-                            view.segments(lines,
-                                          alpha=0.75,
-                                          width=2,
-                                          color=color
-                                          )
-                        if view_bound:
-                            lines = np.asarray([
-                                xbound + dx*dist*vxk, ybound
-                            ]).T
-                            view.markers(
-                                lines,
-                                200*self.dx,
-                                symbol='d',
-                                color=np.array([[*color]])
-                            )
-            if view_in:
-                indin = np.where(self.in_or_out == self.valin)
-                view.markers(
-                    np.asarray([x[indin], y[indin]]).T,
-                    200*self.dx,
-                    symbol='o',
-                    alpha=0.5,
-                    color='navy'
-                )
-            if view_out:
-                indout = np.where(self.in_or_out == self.valout)
-                view.markers(
-                    np.asarray([x[indout], y[indout]]).T,
-                    200*self.dx,
-                    symbol='s',
-                    color='orange'
-                )
+        # temporary boolean array for considering specific labels
+        if isinstance(label, int):
+            label = (label,)
 
-            xmin, xmax = self.geom.bounds[0][:]
-            length = xmax - xmin
-            height = length/20
-            view.axis(xmin - length/2, xmax + length/2, -10*height, 10*height)
-            view.grid(visible=True)
-            view.yaxis_set_visible(False)
+        def get_inorout_points(val):
+            # returns the coordinates where the value is equal to val
+            ind = np.where(self.in_or_out == val)
+            data = np.zeros((ind[0].size, 3))
+            for i in range(self.dim):
+                data[:, i] = self.coords_halo[i][ind[i]]
+            return data
 
-        elif self.dim == 2:
-            if not view_seg and not view_bnd:
-                xmax, ymax = self.in_or_out.shape
-                xmax -= 1
-                ymax -= 1
-                xpercent = 0.05*xmax
-                ypercent = 0.05*ymax
-                view.axis(
-                    -xpercent, xmax + xpercent,
-                    -ypercent, ymax + ypercent
-                )
-                view.image(self.in_or_out.transpose() >= 0)
-                view.grid(False)
-                view.xaxis_set_visible(False)
-                view.yaxis_set_visible(False)
+        # visualize the inner points
+        if view_in:
+            view.markers(
+                get_inorout_points(self.valin),
+                size, symbol='o', alpha=.25, color='navy',
+                dim=self.dim
+            )
+
+        # visualize the outer points
+        if view_out:
+            view.markers(
+                get_inorout_points(self.valout),
+                size, symbol='s', alpha=.5, color='orange',
+                dim=self.dim
+            )
+
+        def get_bounds(label, k):
+            # returns the indices of the bounds
+            # for the kth velocity and for the given labels
+            # and the corresponding distances
+            if label is not None:
+                dummy = np.zeros(self.distance.shape[1:])
+                for labelk in label:
+                    dummy += self.flag[k, :] == labelk
+                dummy *= self.distance[k, :] <= 1
+                indbord = np.where(dummy)
             else:
-                xmin, xmax = self.geom.bounds[0][:]
-                ymin, ymax = self.geom.bounds[1][:]
+                indbord = np.where(self.distance[k, :] <= 1)
+            if indbord:
+                data = np.zeros((indbord[0].size, max(2, self.dim)))
+                for i in range(self.dim):
+                    data[:, i] = self.coords_halo[i][indbord[i]]
+                dist = self.distance[k][indbord]
+                return data, dist
+            else:
+                return None, 0
 
-                xpercent = 2*self.dx
-                ypercent = 2*self.dx
-                view.axis(
-                    xmin - xpercent, xmax + xpercent,
-                    ymin - ypercent, ymax + ypercent,
-                    aspect='equal'
-                )
+        # visualize the distance as small lines
+        for k in view_distance:
+            bound, dist = get_bounds(label, k)
+            if bound.size != 0:
+                vk = self.stencil.unique_velocities[k].v_full
+                color = _fix_color(vk)
+                lines = np.empty((2*bound.shape[0], max(2, self.dim)))
+                lines[::2, :] = bound
+                lines[1::2, :] = bound \
+                    + self.dx*np.outer(dist, vk[:max(2, self.dim)])
+                view.segments(lines, alpha=0.5, width=2, color=color)
 
-                x, y = self.coords_halo
-                dx = self.dx
-                vxkmax, vykmax = self.stencil.vmax
+        # visualize the bounds as diamond
+        for k in view_bound:
+            bound, dist = get_bounds(label, k)
+            if bound.size != 0:
+                vk = self.stencil.unique_velocities[k].v_full
+                color = np.array([[*_fix_color(vk)]])
+                lines = bound + self.dx*np.outer(dist, vk[:max(2, self.dim)])
+                view.markers(lines, size, symbol='d', color=color)
 
-                for k in view_distance:
-                    vxk = self.stencil.unique_velocities[k].vx
-                    vyk = self.stencil.unique_velocities[k].vy
-                    color = (
-                        1.-(vxkmax+vxk)*0.5/vxkmax,
-                        (vykmax+vyk)*0.25/vykmax,
-                        (vxkmax+vxk)*0.25/vxkmax
-                    )
-                    if label is not None:
-                        dummy = np.zeros(self.distance.shape[1:])
-                        if isinstance(label, int):
-                            dummy = np.logical_or(
-                                dummy,
-                                self.flag[k, :] == label
-                            )
-                        elif isinstance(label, (tuple, list)):
-                            for labelk in label:
-                                dummy = np.logical_or(
-                                    dummy,
-                                    self.flag[k, :] == labelk
-                                )
-                        else:
-                            err_msg = "Error in visualize (domain): "
-                            err_msg += "wrong type for optional argument label"
-                            log.error(err_msg)
-                    else:
-                        dummy = np.ones(self.distance.shape[1:])
-                    dummy = np.logical_and(dummy, self.distance[k, :] <= 1)
-                    indbordx, indbordy = np.where(dummy)
-                    if indbordx.size != 0:
-                        dist = self.distance[k, indbordx, indbordy]
-                        xbound = x[indbordx]
-                        ybound = y[indbordy]
-                        lines = np.empty((2*xbound.size, 2))
-                        lines[::2, :] = np.asarray([xbound, ybound]).T
-                        lines[1::2, :] = np.asarray([
-                            xbound + dx*dist*vxk,
-                            ybound + dx*dist*vyk
-                        ]).T
-                        view.segments(lines, alpha=0.75, width=2, color=color)
-
-                for k in view_bound:
-                    vxk = self.stencil.unique_velocities[k].vx
-                    vyk = self.stencil.unique_velocities[k].vy
-                    color = np.array([[
-                        1.-(vxkmax+vxk)*0.5/vxkmax,
-                        (vykmax+vyk)*0.25/vykmax,
-                        (vxkmax+vxk)*0.25/vxkmax
-                    ]])
-                    if label is not None:
-                        dummy = np.zeros(self.distance.shape[1:])
-                        if isinstance(label, int):
-                            dummy = np.logical_or(
-                                dummy,
-                                self.flag[k, :] == label
-                            )
-                        elif isinstance(label, (tuple, list)):
-                            for labelk in label:
-                                dummy = np.logical_or(
-                                    dummy,
-                                    self.flag[k, :] == labelk
-                                )
-                        else:
-                            err_msg = "Error in visualize (domain): "
-                            err_msg += "wrong type for optional argument label"
-                            log.error(err_msg)
-                    else:
-                        dummy = np.ones(self.distance.shape[1:])
-                    dummy = np.logical_and(dummy, self.distance[k, :] <= 1)
-                    indbordx, indbordy = np.where(dummy)
-                    if indbordx.size != 0:
-                        dist = self.distance[k, indbordx, indbordy]
-                        xbound = x[indbordx]
-                        ybound = y[indbordy]
-                        lines = np.asarray([
-                            xbound + dx*dist*vxk,
-                            ybound + dx*dist*vyk
-                        ]).T
-                        view.markers(
-                            lines,
-                            200*self.dx,
-                            symbol='d',
-                            color=color
-                        )
-
-                if view_in:
-                    indinx, indiny = np.where(self.in_or_out == self.valin)
-                    view.markers(
-                        np.asarray([x[indinx], y[indiny]]).T,
-                        500*self.dx, symbol='o', alpha=0.5, color='navy'
-                    )
-                if view_out:
-                    indoutx, indouty = np.where(self.in_or_out == self.valout)
-                    view.markers(
-                        np.asarray([x[indoutx], y[indouty]]).T,
-                        500*self.dx, symbol='s', color='orange'
-                    )
-
-        elif self.dim == 3:
-            x, y, z = self.coords_halo
-            dx = self.dx
-            xmin, xmax = self.geom.bounds[0][:]
-            ymin, ymax = self.geom.bounds[1][:]
-            zmin, zmax = self.geom.bounds[2][:]
-
-            if view_in:
-                indinx, indiny, indinz = np.where(self.in_or_out == self.valin)
-                view.markers(
-                    np.asarray([x[indinx], y[indiny], z[indinz]]).T,
-                    50*self.dx**2, symbol='o', alpha=0.5, color='navy'
-                )
-            if view_out:
-                indoutx, indouty, indoutz = np.where(
-                    self.in_or_out == self.valout
-                )
-                view.markers(
-                    np.asarray([x[indoutx], y[indouty], z[indoutz]]).T,
-                    100*self.dx**2, symbol='s', color='orange'
-                )
-            view.set_label("X", "Y", "Z")
-            if view_seg or view_bnd:
-                vxkmax, vykmax, vzkmax = self.stencil.vmax
-                for k in view_distance:
-                    vxk = self.stencil.unique_velocities[k].vx
-                    vyk = self.stencil.unique_velocities[k].vy
-                    vzk = self.stencil.unique_velocities[k].vz
-                    color = (
-                        1.-(vxkmax+vxk)*0.5/vxkmax,
-                        (vykmax+vyk)*0.25/vykmax,
-                        (vzkmax+vzk)*0.25/vzkmax
-                    )
-                    if label is not None:
-                        dummy = np.zeros(self.distance.shape[1:])
-                        if isinstance(label, int):
-                            dummy = np.logical_or(
-                                dummy, self.flag[k, :] == label
-                            )
-                        elif isinstance(label, (tuple, list)):
-                            for labelk in label:
-                                dummy = np.logical_or(
-                                    dummy, self.flag[k, :] == labelk
-                                )
-                        else:
-                            err_msg = "Error in visualize (domain): "
-                            err_msg += "wrong type for optional argument label"
-                            log.error(err_msg)
-                    else:
-                        dummy = np.ones(self.distance.shape[1:])
-                    dummy = np.logical_and(dummy, self.distance[k, :] <= 1)
-                    indbordx, indbordy, indbordz = np.where(dummy)
-                    if indbordx.size != 0:
-                        dist = self.distance[k, indbordx, indbordy, indbordz]
-                        xbound = x[indbordx]
-                        ybound = y[indbordy]
-                        zbound = z[indbordz]
-                        lines = np.empty((2*xbound.size, 3))
-                        lines[::2, :] = np.asarray([xbound, ybound, zbound]).T
-                        lines[1::2, :] = np.asarray([
-                            xbound + dx*dist*vxk,
-                            ybound + dx*dist*vyk,
-                            zbound + dx*dist*vzk
-                        ]).T
-                        view.segments(lines, alpha=0.75, color=color, width=2)
-                for k in view_bound:
-                    vxk = self.stencil.unique_velocities[k].vx
-                    vyk = self.stencil.unique_velocities[k].vy
-                    vzk = self.stencil.unique_velocities[k].vz
-                    color = np.array([[
-                        1.-(vxkmax+vxk)*0.5/vxkmax,
-                        (vykmax+vyk)*0.25/vykmax,
-                        (vzkmax+vzk)*0.25/vzkmax
-                    ]])
-                    if label is not None:
-                        dummy = np.zeros(self.distance.shape[1:])
-                        if isinstance(label, int):
-                            dummy = np.logical_or(
-                                dummy, self.flag[k, :] == label
-                            )
-                        elif isinstance(label, (tuple, list)):
-                            for labelk in label:
-                                dummy = np.logical_or(
-                                    dummy, self.flag[k, :] == labelk
-                                )
-                        else:
-                            err_msg = "Error in visualize (domain): "
-                            err_msg += "wrong type for optional argument label"
-                            log.error(err_msg)
-                    else:
-                        dummy = np.ones(self.distance.shape[1:])
-                    dummy = np.logical_and(dummy, self.distance[k, :] <= 1)
-                    indbordx, indbordy, indbordz = np.where(dummy)
-                    if indbordx.size != 0:
-                        dist = self.distance[k, indbordx, indbordy, indbordz]
-                        xbound = x[indbordx]
-                        ybound = y[indbordy]
-                        zbound = z[indbordz]
-                        lines = np.asarray([
-                            xbound + dx*dist*vxk,
-                            ybound + dx*dist*vyk,
-                            zbound + dx*dist*vzk
-                        ]).T
-                        view.markers(
-                            lines,
-                            100*self.dx**2, symbol='o', color=color
-                        )
-
-            xpercent = 0.1*(xmax-xmin)
-            ypercent = 0.1*(ymax-ymin)
-            zpercent = 0.1*(zmax-zmin)
-            view.axis(xmin - xpercent,
-                      xmax + xpercent,
-                      ymin - ypercent,
-                      ymax + ypercent,
-                      zmin - zpercent,
-                      zmax+zpercent,
-                      dim=3,
-                      aspect='equal')
-
-        else:
-            err_msg = "Error in domain.visualize(): "
-            err_msg += "the dimension {} is not allowed".format(self.dim)
-            log.error(err_msg)
-
-        view.title = "Domain"
         fig.show()
         return fig
