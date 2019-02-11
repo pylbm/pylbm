@@ -166,6 +166,7 @@ class Geometry:
         self.list_elem.append(elem)
 
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+    # pylint: disable=too-complex
     def visualize(self,
                   viewer_app=viewer.matplotlib_viewer,
                   figsize=(6, 4),

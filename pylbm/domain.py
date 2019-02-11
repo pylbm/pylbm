@@ -9,12 +9,8 @@ Domain definitions for LBM
 import logging
 import sys
 import copy
-# from textwrap import dedent
-
 import numpy as np
-# import sympy as sp
 import mpi4py.MPI as mpi
-# from six import string_types
 
 from .geometry import Geometry
 from .stencil import Stencil
@@ -27,27 +23,64 @@ log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
 def _create_view_something(something, unvtot):
-    bool_something = False
-    lst_something = []
+    """
+    The user can pass in parameters of the visualize function
+    a boolean or a list or a tuple of integers
+
+    This function returns
+    a list (eventually empty) of the considered velocities
+
+    Examples
+    --------
+
+    > _create_view_comething(True, 3)
+        [0, 1, 2]
+
+    > _create_view_comething(False, 3)
+        []
+
+    > _create_view_comething(1, 3)
+        [1]
+
+    > _create_view_comething([0, 2, 3], 3)
+        [0, 2]
+
+    """
     if isinstance(something, bool):
         if something:
-            bool_something = True
-            lst_something = list(range(unvtot))
+            return list(range(unvtot))
+        else:
+            return []
     elif isinstance(something, int):
+        # pylint: disable=chained-comparison
         if something >= 0 and something < unvtot:
-            bool_something = True
-            lst_something = [something, ]
+            return [something, ]
+        else:
+            return []
     elif isinstance(something, (list, tuple)):
+        lst_something = []
         for s_k in something:
+            # pylint: disable=chained-comparison
             if s_k >= 0 and s_k < unvtot:
-                bool_something = True
                 lst_something.append(s_k)
+        return lst_something
     else:
         s = "Error in visualize (domain): \n"
         s += "optional parameter view_distance and view_bound should be\n"
         s += "  boolean, integer, list or tuple\n"
         log.error(s)
-    return bool_something, lst_something
+        return []
+
+
+def _fix_color(vk):
+    """
+    fix the color of the plot
+    for a given velocity
+    """
+    return hsl_to_rgb(
+        np.sin(vk[0]+17)*np.cos(vk[1]+18)*np.cos(vk[2]+12),
+        1, 0.5
+    )
 
 
 class Domain:
@@ -393,23 +426,14 @@ class Domain:
         halo_size = np.asarray(self.stencil.vmax)
         halo_beg = self.dx*(halo_size - 0.5)
 
-        # self.coords_halo = [
-        #     np.linspace(
-        #         phys_box[k][0] + self.dx*region[k][0] - halo_beg[k],
-        #         phys_box[k][0] + self.dx*region[k][1] + halo_beg[k],
-        #         region_size[k] + 2*halo_size[k]
-        #     )
-        #     for k in range(self.dim)
-        # ]
-
-        self.coords_halo_full = [np.array([0]) for k in range(3)]
-        for k in range(self.dim):
-            self.coords_halo_full[k] = np.linspace(
+        self.coords_halo = [
+            np.linspace(
                 phys_box[k][0] + self.dx*region[k][0] - halo_beg[k],
                 phys_box[k][0] + self.dx*region[k][1] + halo_beg[k],
                 region_size[k] + 2*halo_size[k]
             )
-        self.coords_halo = self.coords_halo_full[:self.dim]
+            for k in range(self.dim)
+        ]
 
         self.coords = [
             self.coords_halo[k][halo_size[k]:-halo_size[k]]
@@ -583,6 +607,7 @@ class Domain:
         labels = np.unique(self.box_label)
         return np.union1d(labels, self.geom.list_of_elements_labels())
 
+    # pylint: disable=too-complex
     def visualize(self,
                   viewer_app=viewer.matplotlib_viewer,
                   view_distance=False,
@@ -625,159 +650,103 @@ class Domain:
             views
 
         """
-        # TODO: rewrite this method (it's too long)
 
         fig = viewer_app.Fig(dim=self.dim)
         view = fig[0]
-
-        # compute the size of the symbols for the plot
-        coeff = 1 + 9 * (self.dim <= 2)
-        size = scale * 20 * coeff * self.dx**(1+(self.dim == 3))
-
-        # view_seg : bool if the segment has to be plotted
-        # view_distance : list of the concerned labels
-        view_seg, view_distance = _create_view_something(
-            view_distance, self.stencil.unvtot
-        )
-        # view_bnd : bool if the bound has to be plotted
-        # view_bound : list of the concerned labels
-        view_bnd, view_bound = _create_view_something(
-            view_bound, self.stencil.unvtot
-        )
-
-        x, y, z = self.coords_halo_full
+        view.title = "Domain"
 
         # fix the axis for all dimensions
         delta_l = .25 * max(
-            [xyz[1] - xyz[0] for xyz in self.geom.bounds]
-        )
-        bornes = [
-            -delta_l, delta_l,
-            -delta_l, delta_l,
-            -delta_l, delta_l
-        ]
-        for k, xyz in enumerate(self.geom.bounds):
-            bornes[2*k] += xyz[0]
-            bornes[2*k+1] += xyz[1]
+            np.diff(self.geom.bounds, axis=1).flatten()
+        )  # small length to fix the empty area around the figure
+        bornes = [*[-delta_l, delta_l]]*max(2, self.dim)
+        bornes[:2*self.dim] += self.geom.bounds.flatten()
         view.axis(*bornes, dim=self.dim, aspect='equal')
+
+        # compute the size of the symbols for the plot
+        # in 1d and 2d: 100*dx
+        # in 3d: 10*dx*dx
+        coeff = 1 + 9 * (self.dim <= 2)
+        size = scale * 10 * coeff * self.dx**(1+(self.dim == 3))
+
+        # view_distance : list of the concerned velocities
+        view_distance = _create_view_something(
+            view_distance, self.stencil.unvtot
+        )
+        # view_bound : list of the concerned velocities
+        view_bound = _create_view_something(
+            view_bound, self.stencil.unvtot
+        )
+
+        # temporary boolean array for considering specific labels
+        if isinstance(label, int):
+            label = (label,)
+
+        def get_inorout_points(val):
+            # returns the coordinates where the value is equal to val
+            ind = np.where(self.in_or_out == val)
+            data = np.zeros((ind[0].size, 3))
+            for i in range(self.dim):
+                data[:, i] = self.coords_halo[i][ind[i]]
+            return data
 
         # visualize the inner points
         if view_in:
-            indin = np.where(self.in_or_out == self.valin)
-            indx = indin[0]
-            indy = indin[1] if self.dim >= 2 else 0*indx
-            indz = indin[2] if self.dim >= 3 else 0*indx
             view.markers(
-                np.asarray([x[indx], y[indy], z[indz]]).T,
-                size/2, symbol='o', alpha=.25, color='navy',
+                get_inorout_points(self.valin),
+                size, symbol='o', alpha=.25, color='navy',
                 dim=self.dim
             )
 
         # visualize the outer points
         if view_out:
-            indout = np.where(self.in_or_out == self.valout)
-            indx = indout[0]
-            indy = indout[1] if self.dim >= 2 else 0*indx
-            indz = indout[2] if self.dim >= 3 else 0*indx
             view.markers(
-                np.asarray([x[indx], y[indy], z[indz]]).T,
+                get_inorout_points(self.valout),
                 size, symbol='s', alpha=.5, color='orange',
                 dim=self.dim
             )
 
-        # temporary boolean array for considering specific labels
-        if view_seg or view_bnd:
-            if label is not None:
-                if not isinstance(label, (int, tuple, list)):
-                    err_msg = "Error in visualize (domain): "
-                    err_msg += "wrong type for optional argument label"
-                    log.error(err_msg)
-                if isinstance(label, int):
-                    label = (label,)
-
-        def get_indices(label, k):
+        def get_bounds(label, k):
+            # returns the indices of the bounds
+            # for the kth velocity and for the given labels
+            # and the corresponding distances
             if label is not None:
                 dummy = np.zeros(self.distance.shape[1:])
                 for labelk in label:
-                    dummy = np.logical_or(
-                        dummy,
-                        self.flag[k, :] == labelk
-                    )
-                dummy = np.logical_and(dummy, self.distance[k, :] <= 1)
-                return np.where(dummy)
+                    dummy += self.flag[k, :] == labelk
+                dummy *= self.distance[k, :] <= 1
+                indbord = np.where(dummy)
             else:
-                return np.where(self.distance[k, :] <= 1)
+                indbord = np.where(self.distance[k, :] <= 1)
+            if indbord:
+                data = np.zeros((indbord[0].size, max(2, self.dim)))
+                for i in range(self.dim):
+                    data[:, i] = self.coords_halo[i][indbord[i]]
+                dist = self.distance[k][indbord]
+                return data, dist
+            else:
+                return None, 0
 
+        # visualize the distance as small lines
         for k in view_distance:
-            vxk = self.stencil.unique_velocities[k].vx
-            vyk = int(self.stencil.unique_velocities[k].vy or 0)
-            vzk = int(self.stencil.unique_velocities[k].vz or 0)
-            color = hsl_to_rgb(
-                np.sin(vxk+17)*np.cos(vyk+18)*np.cos(vzk+12),
-                1, 0.5
-            )
-            indbord = get_indices(label, k)
-            indbordx = indbord[0]
-            indbordy = indbord[1] if self.dim >= 2 else 0*indbordx
-            indbordz = indbord[2] if self.dim >= 3 else 0*indbordx
-            if indbordx.size != 0:
-                if self.dim == 1:  # TODO: eliminate this test
-                    dist = self.distance[k, indbordx]
-                elif self.dim == 2:
-                    dist = self.distance[k, indbordx, indbordy]
-                else:
-                    dist = self.distance[k, indbordx, indbordy, indbordz]
-                xbound = x[indbordx]
-                ybound = y[indbordy]
-                zbound = z[indbordz]
-                lines = np.empty((2*xbound.size, 3))
-                lines[::2, :] = np.asarray([xbound, ybound, zbound]).T
-                lines[1::2, :] = np.asarray([
-                    xbound + self.dx * dist * vxk,
-                    ybound + self.dx * dist * vyk,
-                    zbound + self.dx * dist * vzk
-                ]).T
-                view.segments(
-                    lines[:, :max(2, self.dim)],
-                    alpha=0.75, width=2, color=color
-                )
+            bound, dist = get_bounds(label, k)
+            if bound.size != 0:
+                vk = self.stencil.unique_velocities[k].v_full
+                color = _fix_color(vk)
+                lines = np.empty((2*bound.shape[0], max(2, self.dim)))
+                lines[::2, :] = bound
+                lines[1::2, :] = bound \
+                    + self.dx*np.outer(dist, vk[:max(2, self.dim)])
+                view.segments(lines, alpha=0.5, width=2, color=color)
 
+        # visualize the bounds as diamond
         for k in view_bound:
-            vxk = self.stencil.unique_velocities[k].vx
-            vyk = int(self.stencil.unique_velocities[k].vy or 0)
-            vzk = int(self.stencil.unique_velocities[k].vz or 0)
-            color = np.array([[
-                *hsl_to_rgb(
-                    np.sin(vxk+17)*np.cos(vyk+18)*np.cos(vzk+12),
-                    1, 0.5
-                )
-            ]])
-            indbord = get_indices(label, k)
-            indbordx = indbord[0]
-            indbordy = indbord[1] if self.dim >= 2 else 0*indbordx
-            indbordz = indbord[2] if self.dim >= 3 else 0*indbordx
-            if indbordx.size != 0:
-                if self.dim == 1:  # TODO: eliminate this test
-                    dist = self.distance[k, indbordx]
-                elif self.dim == 2:
-                    dist = self.distance[k, indbordx, indbordy]
-                else:
-                    dist = self.distance[k, indbordx, indbordy, indbordz]
-                xbound = x[indbordx]
-                ybound = y[indbordy]
-                zbound = z[indbordz]
-                lines = np.asarray([
-                    xbound + self.dx * dist * vxk,
-                    ybound + self.dx * dist * vyk,
-                    zbound + self.dx * dist * vzk
-                ]).T
-                view.markers(
-                    lines[:, :max(2, self.dim)],
-                    size/2,
-                    symbol='d',
-                    color=color
-                )
+            bound, dist = get_bounds(label, k)
+            if bound.size != 0:
+                vk = self.stencil.unique_velocities[k].v_full
+                color = np.array([[*_fix_color(vk)]])
+                lines = bound + self.dx*np.outer(dist, vk[:max(2, self.dim)])
+                view.markers(lines, size, symbol='d', color=color)
 
-        view.title = "Domain"
         fig.show()
         return fig

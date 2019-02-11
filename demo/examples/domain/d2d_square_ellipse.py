@@ -21,7 +21,7 @@ ddom = {
         'label': 0
     },
     'elements': [
-        pylbm.Ellipse((0.5, 0.5), (0.25, 0.25), (0.1, -0.1), label=1)
+        pylbm.Ellipse((0.5, 0.5), (0.25, 0.25), (0.1, -0.1), label=4)
     ],
     'space_step': 0.05,
     'schemes': [
@@ -33,4 +33,4 @@ ddom = {
 dom = pylbm.Domain(ddom)
 print(dom)
 dom.visualize()
-dom.visualize(view_distance=True)
+dom.visualize(view_distance=True, view_bound=True, label=4)
