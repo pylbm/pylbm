@@ -7,16 +7,16 @@
 # License: BSD 3 clause
 
 """
-Example of a vectorial 2 velocities scheme in 1D
+Example of a 9 velocities scheme in 2D
 """
 from six.moves import range
 import pylbm
+
+# pylint: disable=invalid-name
+
 dsten = {
-    'dim':1,
-    'schemes':[
-        {'velocities':list(range(1,3))},
-        {'velocities':list(range(1,3))},
-    ],
+    'dim': 2,
+    'schemes': [{'velocities': list(range(9))}],
 }
 s = pylbm.Stencil(dsten)
 print(s)

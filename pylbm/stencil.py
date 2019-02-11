@@ -9,7 +9,6 @@ lattice Boltzmann schemes.
 """
 
 from math import sqrt
-from textwrap import dedent
 import logging
 import numpy as np
 
@@ -91,7 +90,8 @@ def permute_in_place(iterable):
                 j = last - 1
                 while not iterable[i] < iterable[j]:
                     j = j - 1
-                iterable[i], iterable[j] = iterable[j], iterable[i] # swap the values
+                # swap the values
+                iterable[i], iterable[j] = iterable[j], iterable[i]
                 part = iterable[i + 1:last]
                 part.reverse()
                 iterable[i + 1:last] = part
@@ -101,16 +101,21 @@ def permute_in_place(iterable):
                 iterable.reverse()
                 return
 
+
 class Singleton(type):
     """
     Singleton metaclasss
     """
     _instances = {}
+
     def __call__(cls, *args, **kwargs):
         key = (cls, args, str(kwargs))
         if key not in cls._instances:
-            cls._instances[key] = super(Singleton, cls).__call__(*args, **kwargs)
+            cls._instances[key] = super(
+                Singleton, cls
+            ).__call__(*args, **kwargs)
         return cls._instances[key]
+
 
 class Velocity:
     """
@@ -122,7 +127,8 @@ class Velocity:
     dim : int, optional
          The dimension of the velocity.
     num : int, optional
-         The number of the velocity in the numbering convention of Lattice-Boltzmann scheme.
+         The number of the velocity in the numbering convention
+         of Lattice-Boltzmann scheme.
     vx : int, optional
          The x component of the velocity vector.
     vy : int, optional
@@ -136,7 +142,8 @@ class Velocity:
     dim : int
         The dimension of the velocity.
     num
-        The number of the velocity in the numbering convention of Lattice-Boltzmann scheme.
+        The number of the velocity in the numbering convention
+        of Lattice-Boltzmann scheme.
     vx : int
         The x component of the velocity vector.
     vy : int
@@ -188,7 +195,9 @@ class Velocity:
             elif vx is not None:
                 self.dim = 1
             else:
-                raise ValueError("The parameters could not be all None when creating a velocity")
+                err_msg = "The parameters could not be all None "
+                err_msg += "when creating a velocity"
+                log.error(err_msg)
 
         if num is None:
             self._set_num()
@@ -212,18 +221,18 @@ class Velocity:
         return v_filled
 
     def __str__(self):
-        output = '(%d: %d'%(self.num, self.vx)
+        output = '({:d}: {:d}'.format(self.num, self.vx)
         if self.vy is not None:
-            output += ', %d'%self.vy
+            output += ', {:d}'.format(self.vy)
         if self.vz is not None:
-            output += ', %d'%self.vz
+            output += ', {:d}'.format(self.vz)
         output += ')'
         return output
 
     def __repr__(self):
         return self.__str__()
 
-    #pylint: disable=invalid-unary-operand-type
+    # pylint: disable=invalid-unary-operand-type
     def get_symmetric(self, axis=None):
         """
         return the symmetric velocity.
@@ -249,7 +258,9 @@ class Velocity:
 
         """
         if axis is not None and (axis >= self.dim or axis < 0):
-            log.error("axis must be less than the dimension of the velocity (axis: %d, dim: %d)", axis, self.dim)
+            err_msg = "axis must be less than the dimension of the "
+            err_msg += "velocity (axis={:d}, dim={:d})".format(axis, self.dim)
+            log.error(err_msg)
             raise ValueError
 
         svx = -self.vx
@@ -264,8 +275,11 @@ class Velocity:
             return Velocity(vx=svx, vy=self.vy, vz=svz)
         return Velocity(vx=svx, vy=svy, vz=self.vz)
 
-    #pylint: disable=invalid-name, too-many-locals, too-many-nested-blocks, too-complex
+    # pylint: disable=invalid-name, too-many-locals
+    # pylint: disable=too-many-nested-blocks, too-complex
     def _set_num(self):
+        # computes the number of the velocity
+        # the coordinates being given
         if self.dim == 1:
             avx = abs(self.vx)
             self.num = (2*avx) - (1 if self.vx > 0 else 0)
@@ -295,15 +309,19 @@ class Velocity:
                                 for pmi in sign[0:ii + 1]:
                                     # loop over + and - if jj > 0
                                     for pmj in sign[0:jj + 1]:
-                                        if (self.vx == pmk*kk and self.vy == pmi*ii and self.vz == pmj*jj):
+                                        if self.vx == pmk*kk and \
+                                           self.vy == pmi*ii and \
+                                           self.vz == pmj*jj:
                                             self.num = count
                                             return
                                         else:
                                             count += 1
         log.error("The number of the velocity %s is not found", self.__str__())
 
-    #pylint: disable=too-many-locals, too-many-branches, too-complex
+    # pylint: disable=too-many-locals, too-many-branches, too-complex
     def _set_coord(self):
+        # computes the coordinates of the velocity
+        # the number being given
         if self.dim == 1:
             n = self.num + 1
             self.vx = int((1 - 2*(n % 2))*(n/2))
@@ -319,8 +337,9 @@ class Velocity:
                 vx, vy = Lx[p-4], Ly[p-4]
             else:
                 k, l = n, p/8
-                Lx, Ly = [k, l, -l, -k, -k, -l, l, k], [l, k, k, l, -l, -k, -k, -l]
-                vx, vy = Lx[p%8], Ly[p%8]
+                Lx = [k, l, -l, -k, -k, -l, l, k]
+                Ly = [l, k, k, l, -l, -k, -k, -l]
+                vx, vy = Lx[p % 8], Ly[p % 8]
             self.vx = int(vx)
             self.vy = int(vy)
             return
@@ -331,9 +350,12 @@ class Velocity:
                 for i in range(k + 1):
                     for j in range(i + 1):
                         for (kk, ii, jj) in permute_in_place([k, i, j]):
-                            for pmk in sign[0:kk + 1]: # loop over + and - if kk > 0
-                                for pmi in sign[0:ii + 1]: # loop over + and - if ii > 0
-                                    for pmj in sign[0:jj + 1]: # loop over + and - if jj > 0
+                            # loop over + and - if kk > 0
+                            for pmk in sign[0:kk + 1]:
+                                # loop over + and - if ii > 0
+                                for pmi in sign[0:ii + 1]:
+                                    # loop over + and - if jj > 0
+                                    for pmj in sign[0:jj + 1]:
                                         if self.num == count:
                                             self.vx = int(pmk*kk)
                                             self.vy = int(pmi*ii)
@@ -342,6 +364,7 @@ class Velocity:
                                         else:
                                             count += 1
         log.error("The velocity number %d cannot be computed", self.num)
+
 
 class OneStencil:
     """
@@ -422,9 +445,21 @@ class Stencil(list):
 
     dico : a dictionary that contains the following `key:value`
       - dim : the value of the spatial dimension (1, 2 or 3)
-      - schemes : a list of the dictionaries that contain the key:value velocities
+      - schemes : a list of dictionaries that contain
+        the key:value velocities
 
-          [{'velocities':[...]}, {'velocities':[...]}, {'velocities':[...]}, ...]
+        [
+            {
+                'velocities': [...]
+            },
+            {
+                'velocities': [...]
+            },
+            {
+                'velocities': [...]
+            },
+            ...
+        ]
 
     Attributes
     ----------
@@ -502,8 +537,9 @@ class Stencil(list):
                     (7: 4)
                     (8: -4)
     >>> s = Stencil({'dim': 2,
-    ...              'schemes':[{'velocities': list(range(9))},
-    ...                         {'velocities': list(range(49))},
+    ...              'schemes':[
+                                   {'velocities': list(range(9))},
+    ...                            {'velocities': list(range(49))},
     ...                        ],
     ...            })
     >>> s
@@ -600,8 +636,9 @@ class Stencil(list):
         if need_validation:
             validate(dico, __class__.__name__)
 
-        # get the dimension of the stencil (given in the dictionnary or computed
-        # through the geometrical box)
+        # get the dimension of the stencil
+        # (given in the dictionnary or computed
+        #  through the geometrical box)
         self.dim = self.extract_dim(dico)
 
         # get the schemes
@@ -615,7 +652,9 @@ class Stencil(list):
         unique_indices = np.empty(0, dtype=np.int32)
         for velocities in schemes_velocities:
             unique_indices = np.union1d(unique_indices, velocities)
-        self.unique_velocities = np.asarray([Velocity(dim=self.dim, num=i) for i in unique_indices])
+        self.unique_velocities = np.asarray(
+            [Velocity(dim=self.dim, num=i) for i in unique_indices]
+        )
 
         self.v = []
         self.nv = []
@@ -759,7 +798,9 @@ class Stencil(list):
                 vx = self.vx[vind]
                 vy = self.vy[vind]
                 vz = self.vz[vind]
-                all_velocities[self.nv_ptr[vind]:self.nv_ptr[vind+1], :] = np.asarray([vx, vy, vz][:self.dim]).T
+                all_velocities[
+                    self.nv_ptr[vind]:self.nv_ptr[vind+1], :
+                ] = np.asarray([vx, vy, vz][:self.dim]).T
         else:
             vx = self.vx[scheme_id]
             vy = self.vy[scheme_id]
@@ -778,7 +819,9 @@ class Stencil(list):
             for vk in v:
                 num = vk.get_symmetric(axis).num
                 n = np.searchsorted(self.nv_ptr, k, side='right') - 1
-                index = self.num2index[self.nv_ptr[n]:self.nv_ptr[n+1]].index(num) + self.nv_ptr[n]
+                index = self.num2index[
+                    self.nv_ptr[n]:self.nv_ptr[n+1]
+                ].index(num) + self.nv_ptr[n]
                 ksym[k] = index
                 k += 1
 
@@ -788,7 +831,10 @@ class Stencil(list):
         from .utils import header_string
         from .jinja_env import env
         template = env.get_template('stencil.tpl')
-        return template.render(header=header_string('Stencil information'), stencil=self)
+        return template.render(
+            header=header_string('Stencil information'),
+            stencil=self
+        )
 
     def __repr__(self):
         return self.__str__()
@@ -802,8 +848,14 @@ class Stencil(list):
             scheme_velocities = np.array(self.num[n])
             for k in range(self.nv[n]):
                 v = self.v[n][k]
-                if np.all(np.where(scheme_velocities == v.get_symmetric().num, False, True)):
-                    log.warning("The velocity {0} has no symmetric velocity in the stencil {1:d}".format(v, n))
+                contains_sym = np.all(np.where(
+                    scheme_velocities == v.get_symmetric().num, False, True
+                ))
+                if contains_sym:
+                    err_msg = "The velocity {0} ".format(v)
+                    err_msg += "has no symmetric velocity "
+                    err_msg += "in the stencil {0:d}".format(n)
+                    log.warning(err_msg)
                     is_sym = False
             if is_sym:
                 log.info("The stencil %d is symmetric", n)
@@ -811,8 +863,12 @@ class Stencil(list):
                 log.warning("The stencil %d is not symmetric", n)
         return is_sym
 
-    #pylint: disable=too-many-locals, too-many-branches, too-many-statements
-    def visualize(self, viewer_mod=viewer.matplotlib_viewer, k=None, unique_velocities=False):
+    # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+    # pylint: disable=too-complex
+    def visualize(self,
+                  viewer_mod=viewer.matplotlib_viewer,
+                  k=None,
+                  unique_velocities=False):
         """
         plot the velocities
 
@@ -857,15 +913,17 @@ class Stencil(list):
                 pos.append(populate(self.vx[i], self.vy[i], self.vz[i]))
                 title.append("Stencil {0:d}".format(i))
 
-        views = viewer_mod.Fig(len(pos), 1, dim=self.dim, figsize=(5, 5*len(pos)))
+        views = viewer_mod.Fig(
+            len(pos), 1, dim=self.dim, figsize=(5, 5*len(pos))
+        )
         views.fix_space(wspace=0.25, hspace=0.25)
 
-        for i, p in enumerate(pos):
+        for i, posi in enumerate(pos):
             view = views[i]
 
             pminmax = np.zeros(6 if self.dim == 3 else 4)
-            pminmax[::2] = np.min(p, axis=0) - 1
-            pminmax[1::2] = np.max(p, axis=0) + 1
+            pminmax[::2] = np.min(posi, axis=0) - 1
+            pminmax[1::2] = np.max(posi, axis=0) + 1
             view.axis(*pminmax, aspect='equal')
 
             view.title = title[i]
@@ -879,9 +937,12 @@ class Stencil(list):
                 view.plot([0, 0], pminmax[2:4], color='orange', alpha=0.25)
             if self.dim == 3:
                 view.zaxis(np.arange(pminmax[4], pminmax[5] + 1))
-                view.plot([0, 0], [0, 0], pminmax[4:], color='orange', alpha=0.25)
+                view.plot(
+                    [0, 0], [0, 0],
+                    pminmax[4:], color='orange', alpha=0.25
+                )
 
-            view.text(list(map(str, self.num[i])), p,
+            view.text(list(map(str, self.num[i])), posi,
                       fontsize=12, color='navy', fontweight='bold')
             view.grid(visible=True, which='major', alpha=0.25)
 
