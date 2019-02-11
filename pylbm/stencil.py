@@ -18,13 +18,15 @@ from .geometry import get_box
 from . import viewer
 from .validator import validate
 
-log = logging.getLogger(__name__) #pylint: disable=invalid-name
+log = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
 
 def cmp(a, b):
     """
     cmp function like in python 2.
     """
     return (a > b) - (a < b)
+
 
 def permute_in_place(iterable):
     """
@@ -199,6 +201,15 @@ class Velocity:
         velocity
         """
         return [self.vx, self.vy, self.vz][:self.dim]
+
+    @property
+    def v_full(self):
+        """
+        velocity filled with 0 in 1d and 2d
+        """
+        v_filled = [0]*3
+        v_filled[:self.dim] = self.v
+        return v_filled
 
     def __str__(self):
         output = '(%d: %d'%(self.num, self.vx)
