@@ -9,3 +9,4 @@ dependencies:
   - nbconvert
   - nbformat
   - nbsphinx
+  - numpydoc
