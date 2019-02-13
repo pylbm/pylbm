@@ -51,8 +51,7 @@ def test1D_riemann_case_dir():
 
 @pytest.mark.h5diff(single_reference=True)
 @pytest.mark.usefixtures("test1D_riemann_case_dir")
-#@pytest.mark.parametrize('generator', ['numpy', 'cython'])
-@pytest.mark.parametrize('generator', ['numpy'])
+@pytest.mark.parametrize('generator', ['numpy', 'cython'])
 class Test1DRiemann:
     def runtest(self, name, generator):
         module = importlib.import_module(name)
