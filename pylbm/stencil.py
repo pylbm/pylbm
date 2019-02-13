@@ -444,22 +444,24 @@ class Stencil(list):
     ----------
 
     dico : a dictionary that contains the following `key:value`
-      - dim : the value of the spatial dimension (1, 2 or 3)
-      - schemes : a list of dictionaries that contain
-        the key:value velocities
+        - dim : the value of the spatial dimension (1, 2 or 3)
+        - schemes : a list of dictionaries that contain
+                    the key:value velocities
 
-        [
-            {
-                'velocities': [...]
-            },
-            {
-                'velocities': [...]
-            },
-            {
-                'velocities': [...]
-            },
-            ...
-        ]
+        .. code-block:: python
+
+            [
+                {
+                    'velocities': [...]
+                },
+                {
+                    'velocities': [...]
+                },
+                {
+                    'velocities': [...]
+                },
+                ...
+            ]
 
     Attributes
     ----------
@@ -778,8 +780,8 @@ class Stencil(list):
         """
         get all the velocities for all the stencils in one array
 
-        Parameter
-        ---------
+        Parameters
+        ----------
         scheme_id: int
             specify for which scheme we want all velocities
             if None, return the velocities for all the schemes

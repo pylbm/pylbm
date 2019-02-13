@@ -12,7 +12,12 @@ The classes are
    :toctree: generated/
 
    Boundary
-   Boundary_method
-   bounce_back
-   anti_bounce_back
+   BoundaryMethod
+   BounceBack
+   AntiBounceBack
+   BouzidiBounceBack
+   BouzidiAntiBounceBack
    Neumann
+   NeumannX
+   NeumannY
+   NeumannZ
