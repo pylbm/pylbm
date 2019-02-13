@@ -10,6 +10,11 @@ environment:
       CONDA_PY: "3.6"
       CONDA_INSTALL_LOCN: "C:\\Miniconda36-x64"
       CONDA_BUILDS:  C:\\Miniconda36-x64\conda-bld\win-64
+    - TARGET_ARCH: "x64"
+      PYTHON_BUILD_RESTRICTIONS: "3.7*"
+      CONDA_PY: "3.7"
+      CONDA_INSTALL_LOCN: "C:\\Miniconda37-x64"
+      CONDA_BUILDS:  C:\\Miniconda37-x64\conda-bld\win-64
 
 platform:
   - x64
@@ -19,8 +24,11 @@ install:
   - "powershell conf\\ci\\appveyor\\install-msmpi.ps1"
   - "SetEnvMPI.cmd"
   - cmd: SET PATH=%CONDA_INSTALL_LOCN%;%CONDA_INSTALL_LOCN%\Scripts;%PATH%
+  - cmd: conda config --set always_yes yes --set changeps1 no
+  - cmd: conda update -q conda
   - cmd: conda create --yes -n pylbm_env python=%CONDA_PY%
   - cmd: activate pylbm_env
+  - cmd: conda install numpy
   - cmd: pip install -r requirements-dev.txt
   - cmd: python setup.py install
 
