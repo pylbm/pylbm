@@ -225,7 +225,13 @@ class BaseAlgorithm:
 
     def restore_conserved_moments(self, m, f):
         nconsm = len(self.consm)
-        return Eq(m[:nconsm], sp.Matrix((self.Mu*f)[:nconsm]))
+
+        if isinstance(m[nconsm:], list):
+            m_consm = sp.Matrix(m[:nconsm])
+        else:
+            m_consm = m[:nconsm]
+
+        return Eq(m_consm, sp.Matrix((self.Mu*f)[:nconsm]))
 
     def coords(self):
         coord = []
@@ -280,9 +286,17 @@ class BaseAlgorithm:
         """
         if with_rel_velocity:
             nconsm = len(self.consm)
-            return [Eq(m[:nconsm], sp.Matrix((self.M*f)[:nconsm])),
+
+            if isinstance(m[:nconsm], list):
+                m_consm = sp.Matrix(m[:nconsm])
+                m_notconsm = sp.Matrix(m[nconsm:])
+            else:
+                m_consm = m[:nconsm]
+                m_notconsm = m[nconsm:]
+
+            return [Eq(m_consm, sp.Matrix((self.M*f)[:nconsm])),
                     *self.relative_velocity(m),
-                    Eq(m[nconsm:], sp.Matrix((self.Mu*f)[nconsm:]))]
+                    Eq(m_notconsm, sp.Matrix((self.Mu*f)[nconsm:]))]
         else:
             return Eq(m, self.M*f)
 
