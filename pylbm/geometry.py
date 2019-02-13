@@ -77,18 +77,6 @@ class Geometry:
     need_validation : bool
         boolean to specify if the dictionary has to be validated (optional)
 
-    Notes
-    -----
-
-    The dictionary that defines the box should contains the following
-        `key:value`
-        - x : a list of the bounds in the first direction
-        - y : a list of the bounds in the second direction (optional)
-        - z : a list of the bounds in the third direction (optional)
-        - label : an integer or a list of integers
-            (length twice the number of dimensions)
-            used to label each edge (optional)
-
     Attributes
     ----------
 
@@ -101,6 +89,19 @@ class Geometry:
             left, right, bottom, top, front, and back edges
     list_elem : list
         a list that contains each element added or deleted in the box
+
+    Notes
+    -----
+
+    The dictionary that defines the box should contains the following
+    `key:value`
+
+        - x : a list of the bounds in the first direction
+        - y : a list of the bounds in the second direction (optional)
+        - z : a list of the bounds in the third direction (optional)
+        - label : an integer or a list of integers
+            (length twice the number of dimensions)
+            used to label each edge (optional)
 
     Examples
     --------
@@ -151,6 +152,9 @@ class Geometry:
             header=header_string('Geometry information'),
             geom=self
         )
+
+    def __repr__(self):
+        return self.__str__()
 
     def add_elem(self, elem):
         """

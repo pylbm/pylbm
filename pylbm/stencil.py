@@ -444,22 +444,24 @@ class Stencil(list):
     ----------
 
     dico : a dictionary that contains the following `key:value`
-      - dim : the value of the spatial dimension (1, 2 or 3)
-      - schemes : a list of dictionaries that contain
-        the key:value velocities
+        - dim : the value of the spatial dimension (1, 2 or 3)
+        - schemes : a list of dictionaries that contain
+                    the key:value velocities
 
-        [
-            {
-                'velocities': [...]
-            },
-            {
-                'velocities': [...]
-            },
-            {
-                'velocities': [...]
-            },
-            ...
-        ]
+        .. code-block:: python
+
+            [
+                {
+                    'velocities': [...]
+                },
+                {
+                    'velocities': [...]
+                },
+                {
+                    'velocities': [...]
+                },
+                ...
+            ]
 
     Attributes
     ----------
@@ -501,7 +503,7 @@ class Stencil(list):
     nv_ptr : list of integers
         used to obtain the list of the velocities involved in a stencil.
         For instance, the list for the kth stencil is
-            v[nv_ptr[k]:nv_ptr[k+1]]
+        v[nv_ptr[k]:nv_ptr[k+1]]
     unvtot : int
         the number of unique velocities involved in the stencils.
 
@@ -778,8 +780,8 @@ class Stencil(list):
         """
         get all the velocities for all the stencils in one array
 
-        Parameter
-        ---------
+        Parameters
+        ----------
         scheme_id: int
             specify for which scheme we want all velocities
             if None, return the velocities for all the schemes

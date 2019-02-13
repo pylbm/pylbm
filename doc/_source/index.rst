@@ -88,8 +88,9 @@ The modules
    elements <module/module_elements>
    geometry <module/module_geometry>
    domain <module/module_domain>
-   storage <module/module_storage>
    bounds <module/module_bounds>
+   algorithms <module/module_algorithm>
+   storage <module/module_storage>
 
 
 References

@@ -30,7 +30,8 @@ sys.path.insert(0, os.path.abspath('../_sphinxext'))
 extensions = ['sphinx.ext.autodoc',
               #'sphinx.ext.imgmath',
               'sphinx.ext.mathjax',
-              'sphinx.ext.napoleon',
+              'numpydoc',
+            #   'sphinx.ext.napoleon',
               'matplotlib.sphinxext.plot_directive',
               'lbm_ext',
               'nbsphinx',
@@ -155,7 +156,7 @@ pngmath_dvipng_args = ['-gamma', '1.5', '-D', '96', '-bg', 'Transparent']
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-html_favicon = "img/favicon.png"
+html_favicon = "../_static/img/favicon.png"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -357,7 +358,7 @@ plot_pre_code = """
 import numpy as np
 np.random.seed(0)
 """
-plot_include_source = True
+plot_include_source = False
 plot_formats = [('png', 100), 'pdf']
 
 import math
@@ -378,7 +379,6 @@ plot_rcparams = {
     'figure.subplot.wspace': 0.4,
     'text.usetex': False,
 }
-
 
 import glob
 autosummary_generate = glob.glob("module/*.rst") + glob.glob("*.rst")

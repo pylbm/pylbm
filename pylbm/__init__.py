@@ -8,6 +8,9 @@ import logging
 from colorlog import ColoredFormatter
 import mpi4py.MPI as mpi
 
+from colorama import init
+init()
+
 from .domain import Domain
 from .stencil import Stencil
 from .simulation import Simulation
