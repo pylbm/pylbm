@@ -81,7 +81,8 @@ class Geometry:
     -----
 
     The dictionary that defines the box should contains the following
-        `key:value`
+    `key:value`
+
         - x : a list of the bounds in the first direction
         - y : a list of the bounds in the second direction (optional)
         - z : a list of the bounds in the third direction (optional)

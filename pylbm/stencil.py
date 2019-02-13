@@ -501,7 +501,7 @@ class Stencil(list):
     nv_ptr : list of integers
         used to obtain the list of the velocities involved in a stencil.
         For instance, the list for the kth stencil is
-            v[nv_ptr[k]:nv_ptr[k+1]]
+        v[nv_ptr[k]:nv_ptr[k+1]]
     unvtot : int
         the number of unique velocities involved in the stencils.
 
