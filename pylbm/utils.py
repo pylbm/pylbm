@@ -72,10 +72,9 @@ class bound2itemproperty:
         fset(self.__instance, self.key, key, value)
 
 
+from colorama import Fore, Style, Back
 def header_string(title):
     # pylint: disable=unused-import
-    from colorama import init, Fore, Style, Back
-    init()
     barre = '+' + '-'*(len(title)+2) + '+'
     output = '\n| %s |\n' % title
     return Fore.BLUE + barre + output + barre + Fore.RESET
