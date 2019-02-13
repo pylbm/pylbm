@@ -30,7 +30,8 @@ sys.path.insert(0, os.path.abspath('../_sphinxext'))
 extensions = ['sphinx.ext.autodoc',
               #'sphinx.ext.imgmath',
               'sphinx.ext.mathjax',
-              'sphinx.ext.napoleon',
+              'numpydoc',
+            #   'sphinx.ext.napoleon',
               'matplotlib.sphinxext.plot_directive',
               'lbm_ext',
               'nbsphinx',
@@ -357,7 +358,7 @@ plot_pre_code = """
 import numpy as np
 np.random.seed(0)
 """
-plot_include_source = True
+plot_include_source = False
 plot_formats = [('png', 100), 'pdf']
 
 import math
@@ -378,7 +379,6 @@ plot_rcparams = {
     'figure.subplot.wspace': 0.4,
     'text.usetex': False,
 }
-
 
 import glob
 autosummary_generate = glob.glob("module/*.rst") + glob.glob("*.rst")
