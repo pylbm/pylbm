@@ -94,15 +94,16 @@ class Domain:
     dico : dictionary
         that contains the following `key:value`
 
-        - box : a dictionary that defines the computational box
-        - elements : the list of the elements
-          (available elements are given in the module
-           :py:mod:`elements <pylbm.elements>`)
-        - space_step : the spatial step
-        - schemes : a list of dictionaries,
-          each of them defining a elementary
-          :py:class:`Scheme <pylbm.scheme.Scheme>`
-          we only need the velocities to define a domain
+            - box : a dictionary that defines the computational box
+            - elements : the list of the elements
+                (available elements are given in the module
+                :py:mod:`elements <pylbm.elements>`)
+            - space_step : the spatial step
+            - schemes : a list of dictionaries,
+
+        each of them defining a elementary
+        :py:class:`Scheme <pylbm.scheme.Scheme>`
+        we only need the velocities to define a domain
 
     need_validation : bool
         boolean to specify if the dictionary has to be validated (optional)

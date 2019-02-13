@@ -92,11 +92,6 @@ class Circle(Element):
         return a boolean array which defines
         if a point is inside or outside of the circle.
 
-        Notes
-        -----
-
-        the edge of the circle is considered as inside.
-
         Parameters
         ----------
 
@@ -108,6 +103,11 @@ class Circle(Element):
 
         ndarray
             Array of boolean (True inside the circle, False otherwise)
+
+        Notes
+        -----
+
+        the edge of the circle is considered as inside.
 
         """
         x, y = grid

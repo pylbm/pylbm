@@ -210,6 +210,9 @@ class Simulation:
         return template.render(header=header_string("Simulation information"),
                                simu=self)
 
+    def __repr__(self):
+        return self.__str__()
+
     @monitor
     def initialization(self, dico):
         """

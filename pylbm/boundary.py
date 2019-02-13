@@ -48,7 +48,7 @@ class Boundary:
 
     Parameters
     ----------
-    domain : Domain
+    domain : pylbm.Domain
         the simulation domain
     dico : dictionary
         describes the boundaries
