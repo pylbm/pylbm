@@ -127,3 +127,6 @@ class EquivalentEquation:
                                order1=[sp.pretty(sp.Eq(F, coeff, evaluate=False)) for F, coeff in zip([Fx, Fy, Fz][:self.dim], self.coeff_order1)],
                                order2=order2
                               )
+
+    def __repr__(self):
+        return self.__str__()

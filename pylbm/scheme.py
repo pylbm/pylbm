@@ -278,6 +278,9 @@ class Scheme:
                                **addons
                               )
 
+    def __repr__(self):
+        return self.__str__()
+
     def _create_moments_matrices(self):
         """
         Create the moments matrices M and M^{-1} used to transform the repartition functions into the moments

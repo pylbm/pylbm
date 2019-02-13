@@ -152,6 +152,9 @@ class Geometry:
             geom=self
         )
 
+    def __repr__(self):
+        return self.__str__()
+
     def add_elem(self, elem):
         """
         add a solid or a fluid part in the domain
