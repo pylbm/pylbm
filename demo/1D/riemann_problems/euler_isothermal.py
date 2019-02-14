@@ -1,5 +1,11 @@
 
 
+# Authors:
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
+#     Benjamin Graille <benjamin.graille@math.u-psud.fr>
+#
+# License: BSD 3 clause
+
 """
  Solver D1Q(2,2) for the isothermal Euler system on [0, 1]
 
@@ -20,7 +26,7 @@
  test: True
 """
 
-from numpy import sqrt, array
+from numpy import sqrt
 import sympy as sp
 import pylbm
 from exact_solvers import EulerIsothermalSolver as exact_solver
@@ -154,44 +160,36 @@ def run(space_step,
         axe2.set_label(r"$x$", r"$u$")
 
         x = sol.domain.x
-        l1a = axe1.plot(x, sol.m[RHO],
-                       color='navy',
-                       alpha=0.5,
-                       label=r'$D_1Q_2$',
-                       )[0]
+        l1a = axe1.CurveScatter(
+            x, sol.m[RHO],
+            color='navy',
+            label=r'$D_1Q_2$',
+        )
         sole = exact_solution.evaluate(x, sol.t)
-        l1e = axe1.plot(x, sole[0], width=1,
-                       color='black',
-                       alpha=0.5,
-                       label='exact',
-                       )[0]
-        l2a = axe2.plot(x, sol.m[Q]/sol.m[RHO],
-                       color='orange',
-                       alpha=0.5,
-                       label=r'$D_1Q_2$',
-                       )[0]
-        l2e = axe2.plot(x, sole[1], width=1,
-                       color='black',
-                       alpha=0.5,
-                       label='exact',
-                       )[0]
-        axe1.legend(loc='upper right',
-                   shadow=False,
-                   frameon=False,
-                   )
-        axe2.legend(loc='upper left',
-                   shadow=False,
-                   frameon=False,
-                   )
+        l1e = axe1.CurveLine(
+            x, sole[0], width=1,
+            label='exact',
+        )
+        l2a = axe2.CurveScatter(
+            x, sol.m[Q]/sol.m[RHO],
+            color='orange',
+            label=r'$D_1Q_2$',
+        )
+        l2e = axe2.CurveLine(
+            x, sole[1], width=1,
+            label='exact',
+        )
+        axe1.legend(loc='lower right')
+        axe2.legend(loc='lower right')
 
         def update(iframe):  # pylint: disable=unused-argument
             if sol.t < final_time:
                 sol.one_time_step()
-                l1a.set_data(x, sol.m[RHO])
-                l2a.set_data(x, sol.m[Q]/sol.m[RHO])
+                l1a.update(sol.m[RHO])
+                l2a.update(sol.m[Q]/sol.m[RHO])
                 sole = exact_solution.evaluate(x, sol.t)
-                l1e.set_data(x, sole[0])
-                l2e.set_data(x, sole[1])
+                l1e.update(sole[0])
+                l2e.update(sole[1])
                 axe1.title = r'isothermal Euler at $t = {0:f}$'.format(sol.t)
 
         fig.animate(update)
