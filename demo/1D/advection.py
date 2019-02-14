@@ -7,11 +7,11 @@
 # License: BSD 3 clause
 
 """
- Solver D1Q2 and D1Q3 for the Burger's equation on [-1, 1]
+ Solvers D1Q2 and D1Q3 for the advection equation on the 1D-torus
 
- d_t(u) + d_x(u^2/2) = 0, t > 0, 0 < x < 1,
+ d_t(u) + c d_x(u) = 0, t > 0, 0 < x < 1, (c=1/4)
  u(t=0,x) = u0(x),
- d_t(u)(t,x=0) = d_t(u)(t,x=1) = 0
+ u(t,x=0) = u(t,x=1)
 """
 
 import sympy as sp
@@ -21,7 +21,7 @@ import pylbm
 # pylint: disable=redefined-outer-name
 
 U, X = sp.symbols('u, X')
-LA = sp.symbols('lambda', constants=True)
+C, LA = sp.symbols('c, lambda', constants=True)
 SIGMA_0, SIGMA_1, SIGMA_2 = sp.symbols(
     'sigma_0, sigma_1, sigma_2', constants=True
 )
@@ -103,10 +103,11 @@ def run(space_step,
 
     """
     # parameters
-    reg = 1                     # regularity of the initial condition
-    xmin, xmax = -1., 1.        # bounds of the domain
+    reg = 0                     # regularity of the initial condition
+    xmin, xmax = 0., 1.         # bounds of the domain
     la = 1.                     # lattice velocity (la = dx/dt)
-    s_0 = 1.8                   # relaxation parameter for the D1Q2
+    velocity = 0.25             # velocity of the advection
+    s_0 = 2.                    # relaxation parameter for the D1Q2
     s_1, s_2 = 1.4, 1.0         # relaxation parameter for the D1Q3
 
     symb_s0 = 1/(0.5+SIGMA_0)   # symbolic relaxation parameter
@@ -118,7 +119,7 @@ def run(space_step,
 
     # dictionary of the simulation for the D1Q2
     simu_cfg_d1q2 = {
-        'box': {'x': [xmin, xmax], 'label': 0},
+        'box': {'x': [xmin, xmax], 'label': -1},
         'space_step': space_step,
         'scheme_velocity': LA,
         'schemes': [
@@ -127,16 +128,14 @@ def run(space_step,
                 'conserved_moments': U,
                 'polynomials': [1, X],
                 'relaxation_parameters': [0., symb_s0],
-                'equilibrium': [U, U**2/2],
+                'equilibrium': [U, C*U],
                 'init': {U: (u_init, (xmin, xmax, reg))},
             },
         ],
-        'boundary_conditions': {
-            0: {'method': {0: pylbm.bc.Neumann}},
-        },
         'generator': generator,
         'parameters': {
             LA: la,
+            C: velocity,
             SIGMA_0: 1/s_0-.5
         },
         'show_code': False,
@@ -144,29 +143,27 @@ def run(space_step,
 
     # dictionary of the simulation for the D1Q3
     simu_cfg_d1q3 = {
-        'box': {'x': [xmin, xmax], 'label': 0},
+        'box': {'x': [xmin, xmax], 'label': -1},
         'space_step': space_step,
         'scheme_velocity': LA,
         'schemes': [
             {
                 'velocities': [0, 1, 2],
                 'conserved_moments': U,
-                'polynomials': [1, X, X**2],
+                'polynomials': [1, X, X**2/2],
                 'relaxation_parameters': [0., symb_s1, symb_s2],
-                'equilibrium': [U, U**2/2, LA**2*U/3+2*U**3/9],
+                'equilibrium': [U, C*U, C**2*U/2],
                 'init': {U: (u_init, (xmin, xmax, reg))},
             },
         ],
-        'boundary_conditions': {
-            0: {'method': {0: pylbm.bc.Neumann}},
-        },
         'generator': generator,
         'parameters': {
             LA: la,
+            C: velocity,
             SIGMA_1: 1/s_1-.5,
             SIGMA_2: 1/s_2-.5
         },
-        'relative_velocity': [U],
+        'relative_velocity': [C],
         'show_code': False,
     }
 
@@ -190,7 +187,7 @@ def run(space_step,
         x_d1q3 = sol_d1q3.domain.x
         l1b = axe.CurveScatter(
             x_d1q3, sol_d1q3.m[U],
-            color='orange', label=r'$D_1Q_3$',
+            color='orange', label=r'$D_1Q_3$'
         )
         axe.legend(loc='upper right',
                    shadow=False,
@@ -205,7 +202,7 @@ def run(space_step,
             if sol_d1q3.t < final_time:
                 sol_d1q3.one_time_step()
                 l1b.update(sol_d1q3.m[U])
-            axe.title = r'Burgers at $t = {0:f}$'.format(sol_d1q2.t)
+            axe.title = r'advection at $t = {0:f}$'.format(sol_d1q2.t)
 
         fig.animate(update)
         fig.show()
