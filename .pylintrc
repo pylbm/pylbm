@@ -302,6 +302,7 @@ good-names=i, j, k,
            P, EQ,
            la, s,
            bc,
+           mu, nu,
            _
 
 # Include a hint for the correct naming format with invalid-name.

@@ -1,5 +1,11 @@
 
 
+# Authors:
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
+#     Benjamin Graille <benjamin.graille@math.u-psud.fr>
+#
+# License: BSD 3 clause
+
 """
  Solver D1Q2 for the advection equation on the 1D-torus
 
@@ -127,17 +133,16 @@ def run(space_step,
         axe.set_label(r'$x$', r'$u$')
 
         x = sol.domain.x
-        l1a = axe.plot(x, sol.m[U],
-                       color='navy',
-                       alpha=0.5,
-                       label=r'$D_1Q_2$',
-                       )[0]
-        l1e = axe.plot(x, exact_solution.evaluate(x, sol.t)[0],
-                       width=1,
-                       color='black',
-                       label='exact',
-                       alpha=0.5,
-                       )[0]
+        l1a = axe.CurveScatter(
+            x, sol.m[U],
+            color='navy', label=r'$D_1Q_2$',
+        )
+        l1e = axe.CurveLine(
+            x, exact_solution.evaluate(x, sol.t)[0],
+            width=1,
+            color='black',
+            label='exact',
+        )
         axe.legend(loc='upper right',
                    shadow=False,
                    frameon=False,
@@ -146,8 +151,8 @@ def run(space_step,
         def update(iframe):  # pylint: disable=unused-argument
             if sol.t < final_time:  # time loop
                 sol.one_time_step()  # increment the solution of one time step
-                l1a.set_data(x, sol.m[U])
-                l1e.set_data(x, exact_solution.evaluate(x, sol.t)[0])
+                l1a.update(sol.m[U])
+                l1e.update(exact_solution.evaluate(x, sol.t)[0])
                 axe.title = r'advection at $t = {0:f}$'.format(sol.t)
 
         fig.animate(update)

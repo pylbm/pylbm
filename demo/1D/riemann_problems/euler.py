@@ -1,5 +1,11 @@
 
 
+# Authors:
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
+#     Benjamin Graille <benjamin.graille@math.u-psud.fr>
+#
+# License: BSD 3 clause
+
 """
  Solver D1Q(2,2,2) for the Euler system on [0, 1]
 
@@ -36,9 +42,9 @@ from exact_solvers import riemann_pb
 RHO, Q, E, X = sp.symbols('rho, q, E, X')
 LA = sp.symbols('lambda', constants=True)
 GAMMA = sp.Symbol('gamma', constants=True)
-SIGMA_RHO, SIGMA_U, SIGMA_P = sp.symbols('sigma_1, sigma_2, sigma_3',
-                                         constants=True
-                                         )
+SIGMA_RHO, SIGMA_U, SIGMA_P = sp.symbols(
+    'sigma_1, sigma_2, sigma_3', constants=True
+)
 
 
 def run(space_step,
@@ -174,24 +180,24 @@ def run(space_step,
         viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig(2, 3)
 
-        fig[0, 0].plot(x, rho_n, color='navy', alpha=0.5)
-        fig[0, 0].plot(x, sole[0], color='orange', alpha=0.5)
+        fig[0, 0].CurveScatter(x, rho_n, color='navy')
+        fig[0, 0].CurveLine(x, sole[0], color='orange')
         fig[0, 0].title = 'mass'
-        fig[0, 1].plot(x, u_n, color='navy', alpha=0.5)
-        fig[0, 1].plot(x, sole[1], color='orange', alpha=0.5)
+        fig[0, 1].CurveScatter(x, u_n, color='navy')
+        fig[0, 1].CurveLine(x, sole[1], color='orange')
         fig[0, 1].title = 'velocity'
-        fig[0, 2].plot(x, p_n, color='navy', alpha=0.5)
-        fig[0, 2].plot(x, sole[2], color='orange', alpha=0.5)
+        fig[0, 2].CurveScatter(x, p_n, color='navy')
+        fig[0, 2].CurveLine(x, sole[2], color='orange')
         fig[0, 2].title = 'pressure'
-        fig[1, 0].plot(x, rhoe_n, color='navy', alpha=0.5)
+        fig[1, 0].CurveScatter(x, rhoe_n, color='navy')
         rhoe_e = .5*sole[0]*sole[1]**2 + sole[2]/(gamma-1.)
-        fig[1, 0].plot(x, rhoe_e, color='orange', alpha=0.5)
+        fig[1, 0].CurveLine(x, rhoe_e, color='orange')
         fig[1, 0].title = 'energy'
-        fig[1, 1].plot(x, q_n, color='navy', alpha=0.5)
-        fig[1, 1].plot(x, sole[0]*sole[1], color='orange', alpha=0.5)
+        fig[1, 1].CurveScatter(x, q_n, color='navy')
+        fig[1, 1].CurveLine(x, sole[0]*sole[1], color='orange')
         fig[1, 1].title = 'momentum'
-        fig[1, 2].plot(x, e_n, color='navy', alpha=0.5)
-        fig[1, 2].plot(x, sole[2]/sole[0]/(gamma-1), color='orange', alpha=0.5)
+        fig[1, 2].CurveScatter(x, e_n, color='navy')
+        fig[1, 2].CurveLine(x, sole[2]/sole[0]/(gamma-1), color='orange')
         fig[1, 2].title = 'internal energy'
 
         fig.show()

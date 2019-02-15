@@ -1,5 +1,11 @@
 
 
+# Authors:
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
+#     Benjamin Graille <benjamin.graille@math.u-psud.fr>
+#
+# License: BSD 3 clause
+
 """
  Solver D1Q2 for the advection reaction equation on the 1D-torus
 
@@ -9,43 +15,69 @@
 
  test: True
 """
-from six.moves import range
-import numpy as np
 import sympy as sp
+import numpy as np
 import pylbm
 
-t, X, u = sp.symbols('t, X, u')
+# pylint: disable=redefined-outer-name
+
+X, U = sp.symbols('X, u')
 C, MU, LA = sp.symbols('c, mu, lambda', constants=True)
 
 
-def u0(x, xmin, xmax):
-    milieu = 0.5*(xmin+xmax)
-    largeur = 0.1*(xmax-xmin)
-    return 0.25 + .125/largeur**10 * (x%1-milieu-largeur)**5 * (milieu-x%1-largeur)**5 * (abs(x%1-milieu)<=largeur)
+def u_init(x, xmin, xmax):
+    """
+    initial condition
+    """
+    middle = 0.5*(xmin+xmax)
+    width = 0.1*(xmax-xmin)
+    x_centered = xmin + x % (xmax-xmin)
+    middle = 0.5*(xmin+xmax)
+    return 0.25 \
+        + .125/width**10 * (x_centered-middle-width)**5 \
+        * (middle-x_centered-width)**5 \
+        * (abs(x_centered-middle) <= width)
+
 
 def solution(t, x, xmin, xmax, c, mu):
+    """
+    exact solution
+    """
     dt = np.tanh(0.5*mu*t)
-    ui = u0(x - c*t, xmin, xmax)
-    return (dt+2*ui-(1-2*ui)*dt)/(2-2*(1-2*ui)*dt)
+    u_i = u_init(x - c*t, xmin, xmax)
+    return (dt+2*u_i-(1-2*u_i)*dt)/(2-2*(1-2*u_i)*dt)
 
-def run(dt, Tf, generator = 'numpy', sorder=None, withPlot=True):
+
+def run(space_step,
+        final_time,
+        generator="numpy",
+        sorder=None,
+        with_plot=True):
     """
     Parameters
     ----------
 
-    dx: double
+    space_step: double
         spatial step
 
-    Tf: double
+    final_time: double
         final time
 
-    generator: pylbm generator
+    generator: string
+        pylbm generator
 
-    store: list
+    sorder: list
         storage order
 
-    withPlot: boolean
+    with_plot: boolean
         if True plot the solution otherwise just compute the solution
+
+
+    Returns
+    -------
+
+    sol
+        <class 'pylbm.simulation.Simulation'>
 
     """
     # parameters
@@ -54,58 +86,67 @@ def run(dt, Tf, generator = 'numpy', sorder=None, withPlot=True):
     c = 0.25              # velocity of the advection
     mu = 1.               # parameter of the source term
     s = 2.                # relaxation parameter
-    dx = la*dt
+
     # dictionary of the simulation
-    dico = {
-        'box':{'x':[xmin, xmax], 'label':-1},
-        'space_step':dx,
-        'scheme_velocity':LA,
-        'schemes':[
-        {
-            'velocities':[1,2],
-            'conserved_moments':u,
-            'polynomials':[1,LA*X],
-            'relaxation_parameters':[0., s],
-            'equilibrium':[u, C*u],
-            'source_terms':{u:MU*u*(1-u)},
-            'init':{u:(u0,(xmin, xmax))},
-        },
+    simu_cfg = {
+        'box': {'x': [xmin, xmax], 'label': -1},
+        'space_step': space_step,
+        'scheme_velocity': LA,
+        'schemes': [
+            {
+                'velocities': [1, 2],
+                'conserved_moments': U,
+                'polynomials': [1, X],
+                'relaxation_parameters': [0., s],
+                'equilibrium': [U, C*U],
+                'source_terms': {U: MU*U*(1-U)},
+                'init': {U: (u_init, (xmin, xmax))},
+            },
         ],
         'generator': generator,
         'parameters': {LA: la, C: c, MU: mu},
     }
 
-    # simulation
-    sol = pylbm.Simulation(dico, sorder=sorder) # build the simulation
+    # build the simulation
+    sol = pylbm.Simulation(simu_cfg, sorder=sorder)
 
-    if withPlot:
+    if with_plot:
         # create the viewer to plot the solution
         viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig()
-        ax = fig[0]
+        axe = fig[0]
         ymin, ymax = -.2, 1.2
-        ax.axis(xmin, xmax, ymin, ymax)
+        axe.axis(xmin, xmax, ymin, ymax)
 
         x = sol.domain.x
-        l1 = ax.plot(x, sol.m[u], width=2, color='b', label='D1Q2')[0]
-        l2 = ax.plot(x, solution(sol.t, x, xmin, xmax, c, mu), width=2, color='k', label='exact')[0]
+        l1a = axe.CurveScatter(
+            x, sol.m[U],
+            color='navy', label='D1Q2'
+        )
+        l1e = axe.CurveLine(
+            x, solution(sol.t, x, xmin, xmax, c, mu),
+            label='exact'
+        )
+        axe.legend()
 
-        def update(iframe):
-            if sol.t < Tf:                 # time loop
-                sol.one_time_step()      # increment the solution of one time step
-                l1.set_data(x, sol.m[u])
-                l2.set_data(x, solution(sol.t, x, xmin, xmax, c, mu))
-                ax.title = 'solution at t = {0:f}'.format(sol.t)
-                ax.legend()
+        def update(iframe):  # pylint: disable=unused-argument
+            # increment the solution of one time step
+            if sol.t < final_time:
+                sol.one_time_step()
+                l1a.update(sol.m[U])
+                l1e.update(solution(sol.t, x, xmin, xmax, c, mu))
+                axe.title = 'solution at t = {0:f}'.format(sol.t)
 
         fig.animate(update)
         fig.show()
     else:
-        while sol.t < Tf:
+        while sol.t < final_time:
             sol.one_time_step()
 
     return sol
 
 if __name__ == '__main__':
-    Tf = 2.
-    run(1./128, 1.)
+    # pylint: disable=invalid-name
+    space_step = 1./128
+    final_time = 2.
+    solution = run(space_step, final_time)
