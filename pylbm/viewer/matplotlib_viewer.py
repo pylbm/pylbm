@@ -13,7 +13,7 @@ from six.moves import range
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse, Polygon
 from matplotlib import animation
-# from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d import Axes3D  # pylint: disable=unused-import
 
 import numpy as np
 
@@ -116,7 +116,7 @@ class Fig:
         plt.close(self.fig)
 
 
-class LineLine:
+class CLine:
     """
     matplotlib object: plot
     used to allowed update function instead of set_data
@@ -146,7 +146,7 @@ class LineLine:
         self.line.set_data(self.x, self.y)
 
 
-class LineScatter:
+class CScatter:
     """
     matplotlib object: scatter
     used to allowed update function instead of set_offsets
@@ -175,6 +175,62 @@ class LineScatter:
     def update(self, y):
         self.pos[:, 1] = y
         self.line.set_offsets(self.pos)
+
+
+class SImage:
+    """
+    matplotlib object: imshow
+    """
+    def __init__(self, data, cmap='gist_gray', clim=(None, None)):
+        self.data = data.T
+        self.cmap = cmap
+        self.clim = clim
+
+    # pylint: disable=attribute-defined-outside-init
+    def add(self, axe):
+        self.img = axe.image(
+            self.data, cmap=self.cmap, clim=self.clim
+        )
+
+    def update(self, data):
+        self.data = data.T
+        self.img.set_data(self.data)
+
+
+class SScatter:
+    """
+    matplotlib object: 3D scatter
+    """
+    def __init__(self, x, y, z, size,
+                 alpha=0.5, color='black', symbol='o',
+                 sampling=1):
+        self.size = size
+        self.sampling = sampling
+        self.alpha = alpha
+        self.color = color
+        self.symbol = symbol
+        mesh_y, mesh_x = np.meshgrid(y[::self.sampling], x[::self.sampling])
+        self.x = mesh_x.flatten()
+        self.y = mesh_y.flatten()
+        self.pos = np.zeros((self.x.size, 3))
+        self.pos[:, 0] = self.x
+        self.pos[:, 1] = self.y
+        self.pos[:, 2] = z[::self.sampling, ::self.sampling].flatten()
+
+    # pylint: disable=attribute-defined-outside-init
+    def add(self, axe):
+        self.layer = axe.markers(
+            self.pos, self.size,
+            alpha=self.alpha, color=self.color,
+            symbol=self.symbol
+        )
+
+    def update(self, z):
+        # pylint: disable=protected-access
+        self.layer._offsets3d = (
+            self.x, self.y,
+            z[::self.sampling, ::self.sampling].flatten()
+        )
 
 
 # pylint: disable=too-many-public-methods
@@ -496,7 +552,7 @@ class PlotWidget:
             posx, posy, posz = pos[:, 0], pos[:, 1], pos[:, 2]
             return self.ax.scatter(
                 posx, posy, posz,
-                s=size, c=color, marker=symbol,
+                c=color, marker=symbol, s=size,
                 alpha=alpha, label=label
             )
 
@@ -524,7 +580,7 @@ class PlotWidget:
                   width=2, color='black',
                   linestyle='solid', alpha=.5,
                   label=''):
-        line = LineLine(
+        line = CLine(
             x, y,
             width=width, color=color,
             linestyle=linestyle, alpha=alpha,
@@ -534,10 +590,10 @@ class PlotWidget:
         return line
 
     def CurveScatter(self, x, y, size=5, color='black',
-                     symbol='o', alpha=1.,
+                     symbol='o', alpha=.5,
                      dim=None, label=''
                      ):
-        line = LineScatter(
+        line = CScatter(
             x, y,
             size=size, color=color,
             symbol=symbol, alpha=alpha,
@@ -545,3 +601,18 @@ class PlotWidget:
         )
         line.add(self)
         return line
+
+    def SurfaceImage(self, data, cmap='gist_gray', clim=(None, None)):
+        layer = SImage(data, cmap=cmap, clim=clim)
+        layer.add(self)
+        return layer
+
+    def SurfaceScatter(self, x, y, z, size, sampling=1,
+                       alpha=0.5, color='black', symbol='o'
+                       ):
+        layer = SScatter(
+            x, y, z, size, sampling=sampling,
+            alpha=alpha, color=color, symbol=symbol
+        )
+        layer.add(self)
+        return layer
