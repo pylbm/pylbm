@@ -13,6 +13,7 @@
  d_t(q_x) + dx_(q_x^2/h + gh^2/2) + d_y(q_xq_y/h) = 0,
  d_t(q_y) + d_x(q_xq_y/h) + dy_(q_y^2/h + gh^2/2) = 0,
 """
+import numpy as np
 import sympy as sp
 import pylbm
 
@@ -30,13 +31,10 @@ def h_init(x, y, xmin, xmax, ymin, ymax):
     """
     initial condition
     """
-    center = (
-        .5*xmin + .5*xmax,
-        .5*ymin + .5*ymax
-    )
-    radius = 0.1
-    height = 0.5
-    return 1 + height * ((x-center[0])**2+(y-center[1])**2 < radius**2)
+    xmiddle = .5*(xmin + xmax)
+    var = .1*(ymin - ymax)
+    return 1. \
+        + .5*(x <= (xmiddle + var*np.sin(2*np.pi*(y-ymin)/(ymax-ymin))))
 
 
 def run(space_step,
@@ -72,9 +70,9 @@ def run(space_step,
 
     """
     # parameters
-    xmin, xmax, ymin, ymax = -1., 1., -1., 1.  # bounds of the domain
-    la = 4                                     # velocity of the scheme
-    gravity = 1.                               # gravity
+    xmin, xmax, ymin, ymax = 0., 5., 0, 1.  # bounds of the domain
+    la = 4                                  # velocity of the scheme
+    gravity = 1.                            # gravity
     sigma_hx = 1.e-3
     sigma_hxy = 0.5
     sigma_qx = 1.e-1
@@ -102,7 +100,7 @@ def run(space_step,
         'box': {
             'x': [xmin, xmax],
             'y': [ymin, ymax],
-            'label': -1
+            'label': [0, 0, -1, -1]
         },
         'space_step': space_step,
         'scheme_velocity': LA,
@@ -132,6 +130,13 @@ def run(space_step,
                 'init': {QY: 0.},
             },
         ],
+        'boundary_conditions': {
+            0: {'method': {
+                0: pylbm.bc.BounceBack,
+                1: pylbm.bc.AntiBounceBack,
+                2: pylbm.bc.AntiBounceBack,
+            }},
+        },
         'relative_velocity': [QX/H, QY/H],
         'generator': generator,
         }

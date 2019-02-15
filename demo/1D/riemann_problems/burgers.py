@@ -1,5 +1,11 @@
 
 
+# Authors:
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
+#     Benjamin Graille <benjamin.graille@math.u-psud.fr>
+#
+# License: BSD 3 clause
+
 """
  Solver D1Q2 and D1Q3 for the Burger's equation on [-1, 1]
 
@@ -79,7 +85,7 @@ def run(space_step,
     })
 
     # dictionary for the D1Q2
-    simu_cfg_q2 = {
+    simu_cfg = {
         'box': {'x': [xmin, xmax], 'label': 0},
         'space_step': space_step,
         'scheme_velocity': LA,
@@ -105,45 +111,12 @@ def run(space_step,
         },
         'show_code': False,
     }
-    # # dictionary for the D1Q3
-    # simu_cfg_q3 = {
-    #     'box': {'x': [xmin, xmax], 'label': 0},
-    #     'space_step': space_step,
-    #     'scheme_velocity': LA,
-    #     'schemes': [
-    #         {
-    #             'velocities': list(range(3)),
-    #             'conserved_moments': U,
-    #             'polynomials': [1, X, X**2],
-    #             'relaxation_parameters': [0., symb_s, symb_s],
-    #             'equilibrium': [U, U**2/2, LA**2*U/3 + 2*U**3/9],
-    #             'init': {U: (riemann_pb, (xmid, u_left, u_right))},
-    #         },
-    #     ],
-    #     'boundary_conditions': {
-    #         0: {'method': {
-    #             0: pylbm.bc.Neumann,
-    #         }, },
-    #     },
-    #     'generator': generator,
-    #     'parameters': {
-    #         LA: la,
-    #         SIGMA: 1/s-.5,
-    #     },
-    #     'show_code': False,
-    # }
+
     # build the simulation with D1Q2
-    sol_q2 = pylbm.Simulation(simu_cfg_q2, sorder=sorder)
-    title_q2 = r'$D_1Q_2$'
+    sol = pylbm.Simulation(simu_cfg, sorder=sorder)
     # build the equivalent PDE
-    eq_pde_q2 = pylbm.EquivalentEquation(sol_q2.scheme)
-    print(eq_pde_q2)
-    # # build the simulation with D1Q3
-    # sol_q3 = pylbm.Simulation(simu_cfg_q3, sorder=sorder)
-    # title_q3 = r'$D_1Q_3$'
-    # # build the equivalent PDE
-    # eq_pde_q3 = pylbm.EquivalentEquation(sol_q3.scheme)
-    # print(eq_pde_q3)
+    eq_pde = pylbm.EquivalentEquation(sol.scheme)
+    print(eq_pde)
 
     if with_plot:
         # create the viewer to plot the solution
@@ -152,47 +125,35 @@ def run(space_step,
         axe = fig[0]
         axe.axis(xmin, xmax, ymin, ymax)
 
-        x_q2 = sol_q2.domain.x
-        line_q2 = axe.plot(x_q2, sol_q2.m[U],
-                           color='navy',
-                           label=title_q2,
-                           alpha=0.5,
-                           )[0]
-        # x_q3 = sol_q3.domain.x
-        # line_q3 = axe.plot(x_q3, sol_q3.m[U],
-        #                    color='navy',
-        #                    label=title_q3,
-        #                    alpha=0.5,
-        #                    )[0]
-        line_e = axe.plot(x_q2, exact_solution.evaluate(x_q2, sol_q2.t)[0],
-                          width=1,
-                          color='black',
-                          label='exact',
-                          alpha=0.5,
-                          )[0]
+        x = sol.domain.x
+        l1a = axe.CurveScatter(
+            x, sol.m[U],
+            color='navy', label=r'$D_1Q_2$',
+        )
+        l1e = axe.CurveLine(
+            x, exact_solution.evaluate(x, sol.t)[0],
+            width=1, color='black',
+            label='exact',
+        )
         axe.legend(loc='best',
                    shadow=False,
                    frameon=False,
                    )
 
         def update(iframe):  # pylint: disable=unused-argument
-            if sol_q2.t < final_time:  # time loop
-                sol_q2.one_time_step()  # increment the solution
-                # sol_q3.one_time_step()  # increment the solution
-                line_q2.set_data(x_q2, sol_q2.m[U])
-                # line_q3.set_data(x_q3, sol_q3.m[U])
-                line_e.set_data(x_q2,
-                                exact_solution.evaluate(x_q2, sol_q2.t)[0])
-                axe.title = r'solution at $t = {0:f}$'.format(sol_q2.t)
+            if sol.t < final_time:  # time loop
+                sol.one_time_step()  # increment the solution
+                l1a.update(sol.m[U])
+                l1e.update(exact_solution.evaluate(x, sol.t)[0])
+                axe.title = r'Burgers at $t = {0:f}$'.format(sol.t)
 
         fig.animate(update)
         fig.show()
     else:
-        while sol_q2.t < final_time:
-            sol_q2.one_time_step()
-            # sol_q3.one_time_step()
+        while sol.t < final_time:
+            sol.one_time_step()
 
-    return sol_q2
+    return sol
 
 if __name__ == '__main__':
     # pylint: disable=invalid-name
