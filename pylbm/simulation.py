@@ -11,10 +11,10 @@ pylbm simulation
 import sys
 import logging
 import types
-from textwrap import dedent
-from six import string_types
+# from textwrap import dedent
+# from six import string_types
 import numpy as np
-import sympy as sp
+# import sympy as sp
 import mpi4py.MPI as mpi
 
 from .domain import Domain
@@ -28,7 +28,8 @@ from .container import NumpyContainer, CythonContainer, LoopyContainer
 from .algorithm import PullAlgorithm
 from .monitoring import Monitor, monitor
 
-log = logging.getLogger(__name__) #pylint: disable=invalid-name
+log = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
 
 class Simulation:
     """
@@ -56,11 +57,13 @@ class Simulation:
     m : numpy array
       a numpy array that contains the values of the moments in each point
     F : numpy array
-      a numpy array that contains the values of the distribution functions in each point
+      a numpy array that contains the values of the distribution functions
+      in each point
     m_halo : numpy array
       a numpy array that contains the values of the moments in each point
     F_halo : numpy array
-      a numpy array that contains the values of the distribution functions in each point
+      a numpy array that contains the values of the distribution functions
+      in each point
 
     Examples
     --------
@@ -82,8 +85,11 @@ class Simulation:
     are just call of the methods of the class
     :py:class:`Scheme<pylbm.scheme.Scheme>`.
     """
-    #pylint: disable=too-many-branches, too-many-statements, too-many-locals
-    def __init__(self, dico, sorder=None, dtype='float64', check_inverse=False):
+    # pylint: disable=too-many-branches, too-many-statements, too-many-locals
+    def __init__(self, dico,
+                 sorder=None, dtype='float64',
+                 check_inverse=False
+                 ):
         validate(dico, __class__.__name__)
 
         self.domain = Domain(dico, need_validation=False)

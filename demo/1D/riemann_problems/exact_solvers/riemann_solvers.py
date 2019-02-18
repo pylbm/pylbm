@@ -86,7 +86,7 @@ class GenericSolver(object):
         self.pos_disc = parameters.get("jump abscissa", 0)
         self.u_left = parameters.get('left state', None)
         self.u_right = parameters.get('right state', None)
-        self.epsilon = parameters.get('Newton precision', 1.e-15)
+        self.epsilon = parameters.get('Newton precision', 1.e-10)
         if self.u_left is None or self.u_right is None:
             print("*"*80)
             print("Error in the parameters of {}".format(type(self).__name__))
