@@ -1,4 +1,3 @@
-# pylint: disable=invalid-name
 
 # Authors:
 #     Loic Gouarin <loic.gouarin@polytechnique.edu>
@@ -7,7 +6,7 @@
 # License: BSD 3 clause
 
 """
-Simulate the Karman vortex street with a cylindrical obstacle
+Simulate a flow in a bend
 
 dt rho + dx qx + dy qy = 0
 dt qx + dx (qx^2/rho + c^2 rho) + dy (qx*qy/rho) = 0
@@ -26,12 +25,13 @@ LA = sp.symbols('lambda', constants=True)
 
 
 # pylint: disable=unused-argument
-def bc_in(f, m, x, y, rho_o, u_o):
+def bc_in(f, m, x, y, rho_o, u_o, ymin, ymax, radius):
     """
     boundary values on the left bound
     """
+    y_bound = ymax - radius
     m[RHO] = rho_o
-    m[QX] = rho_o*u_o
+    m[QX] = rho_o*u_o * 4*(ymax-y)*(y-y_bound)/(ymax-y_bound)**2
     m[QY] = 0.
 
 
@@ -46,6 +46,16 @@ def vorticity(sol):
         qy_n[2:, 1:-1] + qy_n[:-2, 1:-1]
     )
     return vort
+
+
+def norm_velocity(sol):
+    """
+    compute the norm of the velocity
+    """
+    qx_n = sol.m[QX]
+    qy_n = sol.m[QY]
+    nv = qx_n**2 + qy_n**2
+    return nv
 
 
 # pylint: disable=invalid-name
@@ -83,13 +93,13 @@ def run(space_step,
     """
     # parameters
     scheme_name = 'Geier'
-    xmin, xmax, ymin, ymax = 0., 2., 0., 1.  # bounds of the domain
-    radius = 1./32                           # radius of the obstacle
+    xmin, xmax, ymin, ymax = 0., 1., 0., 1.  # bounds of the domain
+    radius = 0.25                            # radius of the obstacle
     la = 1.                                  # velocity of the scheme
     rho_o = 1.                               # reference value of the mass
     u_o = 0.05                               # boundary value of the velocity
-    mu = 5.e-6                               # bulk viscosity
-    zeta = 10*mu                             # shear viscosity
+    mu = 2.5e-6                              # bulk viscosity
+    zeta = 100*mu                            # shear viscosity
 
     def moments_choice(scheme_name, mu, zeta):
         if scheme_name == 'dHumiere':
@@ -182,17 +192,21 @@ def run(space_step,
         return polynomials, equilibrium, s
 
     polynomials, equilibrium, s = moments_choice(scheme_name, mu, zeta)
+    xc = xmax - radius
+    yc = ymax - radius
 
     simu_cfg = {
         'box': {
             'x': [xmin, xmax],
             'y': [ymin, ymax],
-            'label': [0, 1, 0, 0]
+            'label': [2, 0, 1, 0]
         },
         'elements': [
-            pylbm.Circle(
-                [.3, 0.5*(ymin+ymax)+2*space_step],
-                radius, label=2
+            pylbm.Parallelogram(
+                (xmin, ymin),
+                (xc, ymin),
+                (xmin, yc),
+                label=0
             )
         ],
         'space_step': space_step,
@@ -213,14 +227,14 @@ def run(space_step,
         ],
         'parameters': {LA: la},
         'boundary_conditions': {
-            0: {
+            0: {'method': {0: pylbm.bc.BouzidiBounceBack}},
+            1: {'method': {0: pylbm.bc.NeumannY}},
+            2: {
                 'method': {
                     0: pylbm.bc.BouzidiBounceBack
                 },
-                'value': (bc_in, (rho_o, u_o))
+                'value': (bc_in, (rho_o, u_o, ymin, ymax, radius))
             },
-            1: {'method': {0: pylbm.bc.NeumannX}},
-            2: {'method': {0: pylbm.bc.BouzidiBounceBack}},
         },
         'generator': generator,
         'relative_velocity': [QX/RHO, QY/RHO],
@@ -241,10 +255,15 @@ def run(space_step,
         axe.grid(visible=False)
         axe.xaxis_set_visible(False)
         axe.yaxis_set_visible(False)
-        axe.ellipse(
-            [.3/space_step-1.5, 0.5*(ymin+ymax)/space_step+.5],
-            [radius/space_step, radius/space_step], 'black'
+        axe.polygon(
+            [
+                [0, 0],
+                [0, yc/space_step-1],
+                [xc/space_step-1, yc/space_step-1],
+                [xc/space_step-1, 0]
+            ], 'black'
         )
+
         surf = axe.SurfaceImage(
             vorticity(sol),
             cmap='jet', clim=[0, .1]
@@ -268,6 +287,6 @@ def run(space_step,
 
 if __name__ == '__main__':
     # pylint: disable=invalid-name
-    space_step = 1./256
+    space_step = 1./128
     final_time = 10
     run(space_step, final_time)
