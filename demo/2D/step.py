@@ -1,4 +1,3 @@
-# pylint: disable=invalid-name
 
 # Authors:
 #     Loic Gouarin <loic.gouarin@polytechnique.edu>
@@ -7,7 +6,7 @@
 # License: BSD 3 clause
 
 """
-Simulate the Karman vortex street with a cylindrical obstacle
+Simulate a flow on a step
 
 dt rho + dx qx + dy qy = 0
 dt qx + dx (qx^2/rho + c^2 rho) + dy (qx*qy/rho) = 0
@@ -26,12 +25,12 @@ LA = sp.symbols('lambda', constants=True)
 
 
 # pylint: disable=unused-argument
-def bc_in(f, m, x, y, rho_o, u_o):
+def bc_in(f, m, x, y, rho_o, u_o, ymin, ymax):
     """
     boundary values on the left bound
     """
     m[RHO] = rho_o
-    m[QX] = rho_o*u_o
+    m[QX] = rho_o*u_o * 4*(ymax-y)*(y-ymin)/(ymax-ymin)**2
     m[QY] = 0.
 
 
@@ -39,13 +38,23 @@ def vorticity(sol):
     """
     compute the vorticity of the solution
     """
-    qx_n = sol.m[QX]
-    qy_n = sol.m[QY]
+    qx_n = sol.m[QX] / sol.m[RHO]
+    qy_n = sol.m[QY] / sol.m[RHO]
     vort = np.abs(
         qx_n[1:-1, 2:] - qx_n[1:-1, :-2] -
         qy_n[2:, 1:-1] + qy_n[:-2, 1:-1]
     )
     return vort
+
+
+def norm_velocity(sol):
+    """
+    compute the norm of the velocity
+    """
+    qx_n = sol.m[QX] / sol.m[RHO]
+    qy_n = sol.m[QY] / sol.m[RHO]
+    nv = np.sqrt(qx_n**2 + qy_n**2)
+    return nv
 
 
 # pylint: disable=invalid-name
@@ -83,13 +92,13 @@ def run(space_step,
     """
     # parameters
     scheme_name = 'Geier'
-    xmin, xmax, ymin, ymax = 0., 2., 0., 1.  # bounds of the domain
-    radius = 1./32                           # radius of the obstacle
-    la = 1.                                  # velocity of the scheme
-    rho_o = 1.                               # reference value of the mass
-    u_o = 0.05                               # boundary value of the velocity
-    mu = 5.e-6                               # bulk viscosity
-    zeta = 10*mu                             # shear viscosity
+    xmin, xmax, ymin, ymax = 0., 4., 0., 0.5  # bounds of the domain
+    width = 0.25                              # radius of the obstacle
+    la = 1.                                   # velocity of the scheme
+    rho_o = 1.                                # reference value of the mass
+    u_o = 0.10                                # boundary value of the velocity
+    mu = 2.5e-5                               # bulk viscosity
+    zeta = 1.e-3                              # shear viscosity
 
     def moments_choice(scheme_name, mu, zeta):
         if scheme_name == 'dHumiere':
@@ -187,12 +196,14 @@ def run(space_step,
         'box': {
             'x': [xmin, xmax],
             'y': [ymin, ymax],
-            'label': [0, 1, 0, 0]
+            'label': [2, 1, 0, 0]
         },
         'elements': [
-            pylbm.Circle(
-                [.3, 0.5*(ymin+ymax)+2*space_step],
-                radius, label=2
+            pylbm.Parallelogram(
+                (xmin, ymin),
+                (width, ymin),
+                (xmin, width),
+                label=0
             )
         ],
         'space_step': space_step,
@@ -206,21 +217,21 @@ def run(space_step,
                 'conserved_moments': [RHO, QX, QY],
                 'init': {
                     RHO: rho_o,
-                    QX: rho_o * u_o,
+                    QX: 0.,
                     QY: 0.
                 },
             },
         ],
         'parameters': {LA: la},
         'boundary_conditions': {
-            0: {
+            0: {'method': {0: pylbm.bc.BouzidiBounceBack}},
+            1: {'method': {0: pylbm.bc.NeumannX}},
+            2: {
                 'method': {
                     0: pylbm.bc.BouzidiBounceBack
                 },
-                'value': (bc_in, (rho_o, u_o))
+                'value': (bc_in, (rho_o, u_o, width, ymax))
             },
-            1: {'method': {0: pylbm.bc.NeumannX}},
-            2: {'method': {0: pylbm.bc.BouzidiBounceBack}},
         },
         'generator': generator,
         'relative_velocity': [QX/RHO, QY/RHO],
@@ -230,32 +241,66 @@ def run(space_step,
     sol = pylbm.Simulation(simu_cfg, sorder=sorder)
 
     if with_plot:
-        Re = rho_o*u_o*2*radius/mu
+        Re = rho_o*u_o*2*width/mu
         print("Reynolds number {0:10.3e}".format(Re))
 
         # init viewer
         viewer = pylbm.viewer.matplotlib_viewer
-        fig = viewer.Fig()
+        fig = viewer.Fig(3, 1)
 
-        axe = fig[0]
-        axe.grid(visible=False)
-        axe.xaxis_set_visible(False)
-        axe.yaxis_set_visible(False)
-        axe.ellipse(
-            [.3/space_step-1.5, 0.5*(ymin+ymax)/space_step+.5],
-            [radius/space_step, radius/space_step], 'black'
+        ax_qx = fig[0]
+        ax_qx.grid(visible=False)
+        ax_qx.xaxis_set_visible(False)
+        ax_qx.yaxis_set_visible(False)
+        ax_qx.title = r"$u_x$ at $t={0:f}$".format(sol.t)
+        ax_qy = fig[1]
+        ax_qy.grid(visible=False)
+        ax_qy.xaxis_set_visible(False)
+        ax_qy.yaxis_set_visible(False)
+        ax_qy.title = r"$u_y$"
+        ax_v = fig[2]
+        ax_v.grid(visible=False)
+        ax_v.xaxis_set_visible(False)
+        ax_v.yaxis_set_visible(False)
+        ax_v.title = "vorticity"
+        length = width/space_step
+        ax_qx.polygon(
+            [
+                [0, 0], [0, length],
+                [length, length], [length, 0]
+            ], 'black'
         )
-        surf = axe.SurfaceImage(
-            vorticity(sol),
-            cmap='jet', clim=[0, .1]
+        ax_qy.polygon(
+            [
+                [0, 0], [0, length],
+                [length, length], [length, 0]
+            ], 'black'
+        )
+        ax_v.polygon(
+            [
+                [0, 0], [0, length-1],
+                [length-1, length-1], [length-1, 0]
+            ], 'black'
+        )
+
+        surf_qx = ax_qx.SurfaceImage(
+            sol.m[QX] / sol.m[RHO], cmap='jet', clim=[-u_o, u_o]
+        )
+        surf_qy = ax_qy.SurfaceImage(
+            sol.m[QY] / sol.m[RHO], cmap='jet', clim=[-u_o, u_o]
+        )
+        surf_v = ax_v.SurfaceImage(
+            vorticity(sol), cmap='jet', clim=[0, 0.025]
         )
 
         def update(iframe):  # pylint: disable=unused-argument
-            nrep = 32
+            nrep = 64
             for _ in range(nrep):
                 sol.one_time_step()
-            surf.update(vorticity(sol))
-            axe.title = "Solution t={0:f}".format(sol.t)
+            surf_qx.update(sol.m[QX] / sol.m[RHO])
+            surf_qy.update(sol.m[QY] / sol.m[RHO])
+            surf_v.update(vorticity(sol))
+            ax_qx.title = r"$u_x$ at $t={0:f}$".format(sol.t)
 
         # run the simulation
         fig.animate(update, interval=1)
@@ -268,6 +313,6 @@ def run(space_step,
 
 if __name__ == '__main__':
     # pylint: disable=invalid-name
-    space_step = 1./256
+    space_step = 1./128
     final_time = 10
     run(space_step, final_time)
