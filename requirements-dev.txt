@@ -12,6 +12,7 @@ jinja2
 pytest
 pylint
 pytest-pylint
+typed-ast
 pytest-cov
 pytest-mpl
 codecov
