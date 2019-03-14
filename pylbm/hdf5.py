@@ -257,7 +257,7 @@ class H5File:
                     <Topology TopologyType="3DRectMesh" NumberOfElements="{0}"/>
                     <Geometry GeometryType="VXVYVZ">
                 """.format(' '.join(map(str, self.global_size[::-1]))))
-            for i in range(self.dim):
+            for i in range(self.dim-1, -1, -1):
                 self.xdmf_file.write("""
                 <DataItem Format="HDF" Dimensions="{0}">
                     {1}:/x_{2} 
