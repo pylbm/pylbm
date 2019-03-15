@@ -14,6 +14,7 @@ dt qy + dx (qx*qy/rho) + dy (qy^2/rho + c^2 rho) = 0
 
 import numpy as np
 import sympy as sp
+import matplotlib.pyplot as plt
 import pylbm
 
 # pylint: disable=redefined-outer-name
@@ -46,14 +47,58 @@ def vorticity(sol):
     return vort
 
 
-def norm_velocity(sol):
+def flow_lines(sol, nlines, time_length, scale=0.5):
     """
-    compute the norm of the velocity
+    compute the flow lines of the solution
+
+    Parameters
+    ----------
+    sol : :py:class:`Simulation<pylbm.simulation.Simulation>`
+        the solution given by pylbm
+    nlines : int (number of flow lines)
+    time_length : double (time during which we follow the lines)
+    scale : double (velocity scale (default 0.5))
+
+    Returns
+    -------
+    list
+        lines
     """
-    qx_n = sol.m[QX] / sol.m[RHO]
-    qy_n = sol.m[QY] / sol.m[RHO]
-    nv = np.sqrt(qx_n**2 + qy_n**2)
-    return nv
+    u_x = sol.m[QX] / sol.m[RHO]
+    u_y = sol.m[QY] / sol.m[RHO]
+    # if scale is None:
+    #     scale = max(np.linalg.norm(u_x, np.inf), np.linalg.norm(u_y, np.inf))
+    lines = []
+    xmin, xmax = sol.domain.geom.bounds[0]
+    ymin, ymax = sol.domain.geom.bounds[1]
+    dx = sol.domain.dx
+    nx, ny = sol.domain.shape_in
+    for _ in range(nlines):
+        # begin a new line
+        cont = True  # boolean to continue the line
+        x = xmin + (xmax-xmin) * np.random.rand()
+        y = ymin + (ymax-ymin) * np.random.rand()
+        line_x, line_y = [x], [y]
+        t = 0
+        while cont:
+            i, j = int((x-xmin)/(xmax-xmin)*nx), int((y-ymin)/(ymax-ymin)*ny)
+            uxij, uyij = u_x[i, j], u_y[i, j]
+            if uxij == 0 and uyij == 0:
+                cont = False
+            else:
+                dt = dx*scale / np.sqrt(uxij**2+uyij**2)
+                x += uxij*dt
+                y += uyij*dt
+                t += dt
+                if x < xmin or x >= xmax or y < ymin or y >= ymax:
+                    cont = False
+                else:
+                    line_x.append(x)
+                    line_y.append(y)
+            if t >= time_length:
+                cont = False
+        lines.append([np.array(line_x), np.array(line_y)])
+    return lines
 
 
 # pylint: disable=invalid-name
@@ -222,42 +267,29 @@ def run(space_step,
     }
 
     sol = pylbm.Simulation(simu_cfg, sorder=sorder)
+    while sol.t < final_time:
+        sol.one_time_step()
 
-    if with_plot:
-        Re = rho_o*driven_velocity*2/mu
-        print("Reynolds number {0:10.3e}".format(Re))
+    viewer = pylbm.viewer.matplotlib_viewer
+    fig = viewer.Fig()
 
-        # init viewer
-        viewer = pylbm.viewer.matplotlib_viewer
-        fig = viewer.Fig()
-        axe = fig[0]
-        axe.grid(visible=False)
-        axe.xaxis_set_visible(False)
-        axe.yaxis_set_visible(False)
-        surf = axe.SurfaceImage(
-            vorticity(sol), cmap='jet', clim=[0, .025]
-            # norm_velocity(sol), cmap='jet', clim=[0, driven_velocity]
-        )
+    axe = fig[0]
+    axe.grid(visible=False)
+    axe.xaxis_set_visible(False)
+    axe.yaxis_set_visible(False)
+    axe.SurfaceImage(
+        vorticity(sol),
+        cmap='jet', clim=[0, .1], alpha=0.25,
+    )
+    lines = flow_lines(sol, 10, 2)
+    for linek in lines:
+        axe.CurveLine(linek[0], linek[1], alpha=1)
 
-        def update(iframe):
-            nrep = 128
-            for _ in range(nrep):
-                sol.one_time_step()
-            surf.update(vorticity(sol))
-            # surf.update(norm_velocity(sol))
-            axe.title = "Solution t={0:f}".format(sol.t)
-
-        # run the simulation
-        fig.animate(update, interval=1)
-        fig.show()
-    else:
-        while sol.t < final_time:
-            sol.one_time_step()
-
+    plt.show()
     return sol
 
 if __name__ == '__main__':
     # pylint: disable=invalid-name
     space_step = 1./128
-    final_time = 10
+    final_time = 100
     run(space_step, final_time)

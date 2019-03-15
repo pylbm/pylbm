@@ -39,8 +39,8 @@ def vorticity(sol):
     """
     compute the vorticity of the solution
     """
-    qx_n = sol.m[QX]
-    qy_n = sol.m[QY]
+    qx_n = sol.m[QX] / sol.m[RHO]
+    qy_n = sol.m[QY] / sol.m[RHO]
     vort = np.abs(
         qx_n[1:-1, 2:] - qx_n[1:-1, :-2] -
         qy_n[2:, 1:-1] + qy_n[:-2, 1:-1]
