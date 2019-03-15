@@ -15,9 +15,6 @@ from .. import viewer
 from ..utils import print_progress
 from ..symbolic import rel_ux, rel_uy, rel_uz, alltogether
 
-XI = sp.symbols('xi_1, xi_2, xi_3')
-
-
 class Stability:
     """
     generic class
@@ -46,16 +43,11 @@ class Stability:
                     )
                 ]
             )
-        alltogether(relax_mat_m)
         self.relax_mat_f = scheme.invM * relax_mat_m * scheme.M
-        alltogether(self.relax_mat_f)
+        # alltogether(self.relax_mat_f)
 
         velocities = sp.Matrix(scheme.stencil.get_all_velocities())
-        wave_vector = sp.Matrix(XI[:self.dim])
-        self.stream_mat_f = sp.exp(
-            sp.diag(*(velocities.dot(wave_vector)))
-        )
-        self.wave_vector = XI[:self.dim]
+        self.velocities = np.asarray(velocities).astype('float')
 
     def eigenvalues(self, consm0, n_wv):
         """
@@ -65,7 +57,6 @@ class Stability:
         to_subs = list((i, j) for i, j in zip(self.consm, consm0))
         to_subs += list(self.param)
         relax_mat_f_num = self.relax_mat_f.subs(to_subs)
-        amplification_matrix = self.stream_mat_f * relax_mat_f_num
 
         if self.dim == 1:
             v_xi = np.linspace(0, 2*np.pi, n_wv, endpoint=False)
@@ -81,22 +72,16 @@ class Stability:
         print("*"*80)
         print("Compute the eigenvalues")
         print_progress(0, n_wv, barLength=50)
-        # data_num = np.empty((self.nvtot, self.nvtot), dtype='complex')
+
+        relax_mat_f_num = np.asarray(relax_mat_f_num).astype('float')
+
+        def set_matrix(wave_vector):
+            return np.exp(self.velocities.dot(wave_vector))[np.newaxis, :] * relax_mat_f_num
+
         for k in range(n_wv):
-            data = amplification_matrix.subs(
-                list(
-                    (i, j) for i, j in zip(
-                        self.wave_vector, 1j*v_xi[:, k]
-                    )
-                )
-            )
-            data = np.array(data).astype('complex')
+            data = set_matrix(1j*v_xi[:, k])
             eigs[k] = np.linalg.eig(data)[0]
-            # data_num[:] = np.asarray(data)
-            # eigs[k] = np.linalg.eig(data_num)[0]
             print_progress(k+1, n_wv, barLength=50)
-        print('')
-        print("*"*80)
 
         ind_pb, = np.where(np.max(np.abs(eigs), axis=1) > 1 + 1.e-10)
         pb_stable_l2 = v_xi[:, ind_pb]
