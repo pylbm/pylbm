@@ -39,8 +39,8 @@ def vorticity(sol):
     """
     compute the vorticity of the solution
     """
-    qx_n = sol.m[QX]
-    qy_n = sol.m[QY]
+    qx_n = sol.m[QX] / sol.m[RHO]
+    qy_n = sol.m[QY] / sol.m[RHO]
     vort = np.abs(
         qx_n[1:-1, 2:] - qx_n[1:-1, :-2] -
         qy_n[2:, 1:-1] + qy_n[:-2, 1:-1]
@@ -52,9 +52,9 @@ def norm_velocity(sol):
     """
     compute the norm of the velocity
     """
-    qx_n = sol.m[QX]
-    qy_n = sol.m[QY]
-    nv = qx_n**2 + qy_n**2
+    qx_n = sol.m[QX] / sol.m[RHO]
+    qy_n = sol.m[QY] / sol.m[RHO]
+    nv = np.sqrt(qx_n**2 + qy_n**2)
     return nv
 
 

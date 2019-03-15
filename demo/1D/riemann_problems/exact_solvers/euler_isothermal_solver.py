@@ -4,7 +4,7 @@ isothermal Euler
 
 import numpy as np
 import matplotlib.pyplot as plt
-from .riemann_solvers import GenericSolver, newton
+from .riemann_solvers import GenericSolver, solve
 
 
 class EulerIsothermalSolver(GenericSolver):
@@ -28,12 +28,11 @@ class EulerIsothermalSolver(GenericSolver):
         """
         Compute the intermediate state
         """
-        x = max(self.u_left[0], self.u_right[0])
-
-        def phi(x):
-            return self._f1(x) - self._f2(x)
-
-        rho_star = newton(phi, x, self.epsilon)
+        rho_star = solve(
+            self._f1, self._f2,
+            self.u_left[0], self.u_right[0],
+            self.epsilon
+        )
         u_star = .5*(self._f1(rho_star)[0]+self._f2(rho_star)[0])
         self.u_star = np.array([rho_star, u_star])
 

@@ -97,7 +97,7 @@ def run(space_step,
     la = 1.                                   # velocity of the scheme
     rho_o = 1.                                # reference value of the mass
     u_o = 0.10                                # boundary value of the velocity
-    mu = 2.5e-5                               # bulk viscosity
+    mu = 2.5e-7                               # bulk viscosity
     zeta = 1.e-3                              # shear viscosity
 
     def moments_choice(scheme_name, mu, zeta):
@@ -201,8 +201,8 @@ def run(space_step,
         'elements': [
             pylbm.Parallelogram(
                 (xmin, ymin),
-                (width, ymin),
-                (xmin, width),
+                (width, 0),
+                (0, width),
                 label=0
             )
         ],

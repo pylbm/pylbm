@@ -4,7 +4,7 @@ compressible Euler (with temperature)
 
 import numpy as np
 import matplotlib.pyplot as plt
-from .riemann_solvers import GenericSolver, newton
+from .riemann_solvers import GenericSolver, solve
 
 
 class EulerSolver(GenericSolver):
@@ -31,13 +31,12 @@ class EulerSolver(GenericSolver):
         """
         Compute the intermediate state
         """
-        x = .5*(self.u_left[2] + self.u_right[2])  # parametrization with p
-
-        def phi(x):
-            return self._f1(x) - self._f2(x)
-
-        p_star = newton(phi, x, self.epsilon)
-        u_star = self._f1(p_star)[0]
+        p_star = solve(
+            self._f1, self._f2,
+            self.u_left[2], self.u_right[2],
+            self.epsilon
+        )
+        u_star = .5*(self._f1(p_star)[0]+self._f2(p_star)[0])
         # compute rho_star
         if p_star < self.u_left[2]:  # 1-rarefaction
             rho_star1 = self.u_left[0] * (
