@@ -10,7 +10,7 @@ Symbolic computation of equivalent equations
 
 #pylint: disable=invalid-name
 import sympy as sp
-from .symbolic import alltogether
+from ..symbolic import alltogether
 
 class EquivalentEquation:
     def __init__(self, scheme):
@@ -94,8 +94,8 @@ class EquivalentEquation:
                 self.coeff_order2[ic][jc] = cc.subs(sublist_inv)
 
     def __str__(self):
-        from .utils import header_string
-        from .jinja_env import env
+        from ..utils import header_string
+        from ..jinja_env import env
         template = env.get_template('equivalent_equation.tpl')
         t, x, y, z, U, Fx, Fy, Fz, Delta = sp.symbols('t, x, y, z, U, Fx, Fy, Fz, Delta_t')
         Bxx, Bxy, Bxz = sp.symbols('Bxx, Bxy, Bxz')

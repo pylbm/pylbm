@@ -129,7 +129,12 @@ class Scheme:
     see demo/examples/scheme/
 
     """
-    def __init__(self, dico, check_inverse=False, need_validation=True):
+    def __init__(self,
+                 dico,
+                 check_inverse=False,
+                 need_validation=True,
+                 formal=False):
+
         if need_validation:
             validate(dico, __class__.__name__)
 
@@ -173,7 +178,10 @@ class Scheme:
         if self.rel_vel is not None:
             self.Tu_no_swap = self.Tu.copy()
 
-        self.init = self.set_initialization(scheme)
+        if formal:
+            self.init = {}
+        else:
+            self.init = self.set_initialization(scheme)
 
         self._check_inverse(self.M, self.invM, 'M')
         self._check_inverse_of_Tu()

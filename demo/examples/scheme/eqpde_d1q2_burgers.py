@@ -35,7 +35,7 @@ scheme_cfg = {
     },
 }
 
-scheme = pylbm.Scheme(scheme_cfg)
+scheme = pylbm.Scheme(scheme_cfg, formal=True)
 eq_pde = pylbm.EquivalentEquation(scheme)
 
 print(eq_pde)
