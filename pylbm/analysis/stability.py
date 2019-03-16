@@ -23,7 +23,7 @@ class Stability:
         # pylint: disable=unsubscriptable-object
         self.nvtot = scheme.s.shape[0]
         self.consm = list(scheme.consm.keys())
-        self.param = scheme.param.items()
+        self.param = scheme.param
         self.dim = scheme.dim
         self.is_stable_l2 = True
 
@@ -55,7 +55,7 @@ class Stability:
         for n_wv wave vectors
         """
         to_subs = list((i, j) for i, j in zip(self.consm, consm0))
-        to_subs += list(self.param)
+        to_subs += list(self.param.items())
         relax_mat_f_num = self.relax_mat_f.subs(to_subs)
 
         if self.dim == 1:
@@ -113,13 +113,14 @@ class Stability:
 
         n_wv = dico.get('number_of_wave_vectors', 1024)
         v_xi, eigs = self.eigenvalues(consm0, n_wv)
+        nx = v_xi.shape[1]
 
         fig = viewer_app.Fig(1, 2, figsize=(12, 6))
         if self.dim == 1:
             color = 'orange'
         elif self.dim == 2:
             color = .5 + .5/np.pi*np.arctan2(v_xi[0, :], v_xi[1, :])
-        pos = np.empty((v_xi.shape[1], 2))
+            color = np.repeat(color[np.newaxis, :], self.nvtot, axis=0).flatten()
 
         # real and imaginary part
         view0 = fig[0]
@@ -137,10 +138,12 @@ class Stability:
             np.cos(theta), np.sin(theta),
             alpha=0.5, color='navy', width=0.5,
         )
+
+        pos0 = np.empty((nx*self.nvtot, 2))
         for k in range(self.nvtot):
-            pos[:, 0] = np.real(eigs[:, k])
-            pos[:, 1] = np.imag(eigs[:, k])
-            view0.markers(pos, 2, color=color, alpha=0.5)
+            pos0[nx*k:nx*(k+1), 0] = np.real(eigs[:, k])
+            pos0[nx*k:nx*(k+1), 1] = np.imag(eigs[:, k])
+        markers0 = view0.markers(pos0, 2, color=color, alpha=0.5)
 
         # modulus
         view1 = fig[1]
@@ -161,9 +164,53 @@ class Stability:
             [0, 2*np.pi], [1., 1.],
             alpha=0.5, color='navy', width=0.5,
         )
-        pos[:, 0] = np.sqrt(np.sum(v_xi**2, axis=0))
+
+        pos1 = np.empty((nx*self.nvtot, 2))
         for k in range(self.nvtot):
-            pos[:, 1] = np.abs(eigs[:, k])
-            view1.markers(pos, 2, color=color, alpha=0.5)
+            pos1[nx*k:nx*(k+1), 0] = np.sqrt(np.sum(v_xi**2, axis=0))
+            pos1[nx*k:nx*(k+1), 1] = np.abs(eigs[:, k])
+        markers1 = view1.markers(pos1, 2, color=color, alpha=0.5)
+
+        dicosliders = dico.get('parameters', None)
+        if dicosliders is not None:
+            import matplotlib.pyplot as plt
+            from matplotlib.widgets import Slider
+            
+            axcolor = 'lightgoldenrodyellow'
+
+            fig1 = viewer_app.Fig(figsize=(6, 2))
+            sliders = {}
+            item = 0
+            length = 0.8/len(dicosliders)
+            for k, v in dicosliders.items():
+                ax = plt.axes([0.2, 0.1+item*length, 0.65, 0.8*length], facecolor=axcolor)
+                sliders[k] = Slider(ax, sp.pretty(k), *v['range'], valinit=v['init'], valstep=v['step'])
+                item += 1
+
+            def update(val):
+                for k, v in sliders.items():
+                    if k in self.param.keys():
+                        self.param[k] = v.val
+                    for im, moment in enumerate(self.consm):
+                        if moment == k:
+                            consm0[im] = v.val
+
+                v_xi, eigs = self.eigenvalues(consm0, n_wv)
+
+                for k in range(self.nvtot):
+                    pos0[nx*k:nx*(k+1), 0] = np.real(eigs[:, k])
+                    pos0[nx*k:nx*(k+1), 1] = np.imag(eigs[:, k])
+
+                markers0.set_offsets(pos0)
+
+                for k in range(self.nvtot):
+                    pos1[nx*k:nx*(k+1), 0] = np.sqrt(np.sum(v_xi**2, axis=0))
+                    pos1[nx*k:nx*(k+1), 1] = np.abs(eigs[:, k])
+
+                markers1.set_offsets(pos1)
+                fig.fig.canvas.draw_idle()
+
+            for k in sliders.keys():
+                sliders[k].on_changed(update)
 
         fig.show()
