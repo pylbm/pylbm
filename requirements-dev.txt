@@ -1,6 +1,6 @@
 numpy
 matplotlib >=3.0,<3.1
-six
+freetype >=2.9,<2.10
 sympy >=1.1.1,<1.2
 cython
 h5py
