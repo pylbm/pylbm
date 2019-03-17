@@ -28,8 +28,8 @@ install:
   - cmd: conda update -q conda
   - cmd: conda create --yes -n pylbm_env python=%CONDA_PY%
   - cmd: activate pylbm_env
-  - cmd: conda install numpy
-  - cmd: pip install -r requirements-dev.txt
+  - cmd: conda install pyqt>=5
+  - cmd: conda install --file requirements-dev.txt -c conda-forge
   - cmd: python setup.py install
 
 # Skip .NET project specific build phase.
