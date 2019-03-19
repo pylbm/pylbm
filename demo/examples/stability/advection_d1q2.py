@@ -16,8 +16,7 @@ import pylbm
 U, X = sp.symbols('U, X')
 
 # symbolic parameters
-LA, C, SIGMA = sp.symbols('lambda, c, sigma', constants=True)
-symb_s = 1/(.5+SIGMA)  # symbolic relaxation parameter
+LA, C, S = sp.symbols('lambda, c, s', constants=True)
 
 # numerical parameters
 la = 1.  # velocity of the scheme
@@ -32,13 +31,13 @@ dico = {
             'velocities': [1, 2],
             'conserved_moments': U,
             'polynomials': [1, X],
-            'relaxation_parameters': [0, symb_s],
+            'relaxation_parameters': [0, S],
             'equilibrium': [U, C*U],
         },
     ],
     'parameters': {
         LA: la,
-        SIGMA: 1/s-.5,
+        S: s,
         C: c,
     },
 }
@@ -46,4 +45,17 @@ dico = {
 scheme = pylbm.Scheme(dico, formal=True)
 stab = pylbm.Stability(scheme)
 
-stab.visualize()
+stab.visualize({
+    'parameters': {
+        C: {
+            'range': [0, 1.5],
+            'init': c,
+            'step': 0.01,
+        },
+        S: {
+            'range': [0, 2],
+            'init': s,
+            'step': 0.01,
+        },
+    },
+})
