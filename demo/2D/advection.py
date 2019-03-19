@@ -9,7 +9,7 @@
 """
  Solver D2Q4 for the advection equation on the 2D-torus
 
- d_t(u) + cx d_x(u) + cy d_y(u) = 0, t > 0, 0 < x,y < 1,
+ dt u + cx dx u + cy dy u = 0, t > 0, 0 < x,y < 1,
  u(t=0,x,y) = u0(x,y),
  u(t,x=0,y) = u(t,x=1,y) 0 < y < 1,
  u(t,x,y=0) = u(t,x,y=1) 0 < x < 1,

@@ -4,7 +4,7 @@ compressible Euler (with temperature)
 
 import numpy as np
 import matplotlib.pyplot as plt
-from .riemann_solvers import GenericSolver, newton
+from .riemann_solvers import GenericSolver, solve
 
 
 class EulerSolver(GenericSolver):
@@ -31,19 +31,18 @@ class EulerSolver(GenericSolver):
         """
         Compute the intermediate state
         """
-        x = .5*(self.u_left[2] + self.u_right[2]) # parametrization with p
-
-        def phi(x):
-            return self._f1(x) - self._f2(x)
-
-        p_star = newton(phi, x, self.epsilon)
-        u_star = self._f1(p_star)[0]
+        p_star = solve(
+            self._f1, self._f2,
+            self.u_left[2], self.u_right[2],
+            self.epsilon
+        )
+        u_star = .5*(self._f1(p_star)[0]+self._f2(p_star)[0])
         # compute rho_star
         if p_star < self.u_left[2]:  # 1-rarefaction
             rho_star1 = self.u_left[0] * (
                 p_star / self.u_left[2]
             )**(1/self.gamma)
-        else: # 1-shock
+        else:  # 1-shock
             rho_star1 = self.u_left[0] * (
                 (p_star+self.mu2*self.u_left[2]) /
                 (self.mu2*p_star+self.u_left[2])
@@ -52,7 +51,7 @@ class EulerSolver(GenericSolver):
             rho_star2 = self.u_right[0] * (
                 p_star / self.u_right[2]
             )**(1/self.gamma)
-        else: # 3-shock
+        else:  # 3-shock
             rho_star2 = self.u_right[0] * (
                 (p_star+self.mu2*self.u_right[2]) /
                 (self.mu2*p_star+self.u_right[2])
@@ -201,8 +200,16 @@ class EulerSolver(GenericSolver):
         return np.array([u_star, du_star])
 
     def diagram(self):
-        pmin = min(self.u_left[2], self.u_right[2])/100
-        pmax = max(self.u_left[2], self.u_right[2])*2
+        pmin = min(
+            self.u_left[2],
+            self.u_right[2],
+            self.u_star[0][2],
+        )/100
+        pmax = max(
+            self.u_left[2],
+            self.u_right[2],
+            self.u_star[0][2],
+        )*2
         v_p = np.linspace(pmin, pmax, 1025)
         # 1-wave
         vu1 = np.zeros(v_p.shape)

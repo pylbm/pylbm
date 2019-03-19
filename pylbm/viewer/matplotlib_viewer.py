@@ -59,6 +59,7 @@ class Fig:
         self._grid = plt.GridSpec(nrows, ncols)
         self._plot_widgets = []
         self.dim = dim
+        self.shape = (nrows, ncols)
 
     def fix_space(self, wspace=0.025, hspace=0.05):
         self._grid.update(wspace=wspace, hspace=hspace)
@@ -181,20 +182,44 @@ class SImage:
     """
     matplotlib object: imshow
     """
-    def __init__(self, data, cmap='gist_gray', clim=(None, None)):
+    def __init__(self, data, cmap='gist_gray', clim=(None, None), alpha=1):
         self.data = data.T
         self.cmap = cmap
         self.clim = clim
+        self.alpha = alpha
 
     # pylint: disable=attribute-defined-outside-init
     def add(self, axe):
         self.img = axe.image(
-            self.data, cmap=self.cmap, clim=self.clim
+            self.data, cmap=self.cmap, clim=self.clim,
+            alpha=self.alpha,
         )
 
     def update(self, data):
         self.data = data.T
         self.img.set_data(self.data)
+
+
+class SContour:
+    """
+    matplotlib object: contour
+    """
+    def __init__(self, data, levels=6, colors='k'):
+        self.data = data.T
+        self.levels = levels
+        self.colors = colors
+
+    # pylint: disable=attribute-defined-outside-init
+    def add(self, axe):
+        self.contour = axe.contour(
+            self.data, levels=self.levels, colors=self.colors
+        )
+        axe.axis_equal()
+        axe.ax.clabel(self.contour, inline=1, fontsize=6)
+
+    def update(self, data):
+        # TODO
+        self.data = data.T
 
 
 class SScatter:
@@ -464,6 +489,9 @@ class PlotWidget:
         if dim == 1:
             self.ax.get_yaxis().set_visible(False)
 
+    def axis_equal(self):
+        self.ax.set_aspect('equal')
+
     def xaxis_set_visible(self, visible):
         self.ax.get_xaxis().set_visible(visible)
 
@@ -556,7 +584,7 @@ class PlotWidget:
                 alpha=alpha, label=label
             )
 
-    def image(self, f, fargs=(), cmap='gist_gray', clim=(None, None)):
+    def image(self, f, fargs=(), cmap='gist_gray', clim=(None, None), alpha=1):
         if isinstance(f, np.ndarray):
             data = f
         else:
@@ -564,9 +592,15 @@ class PlotWidget:
         image = self.ax.imshow(
             data, origin='lower',
             vmin=clim[0], vmax=clim[1],
-            cmap=cmap, interpolation='nearest'
+            cmap=cmap, interpolation='nearest',
+            alpha=alpha,
         )
         return image
+
+    def contour(self, Z, levels=10, colors='k'):
+        contour = self.ax.contour(Z, levels=levels, colors=colors)
+        return contour
+
 
     @staticmethod
     def draw():
@@ -602,8 +636,13 @@ class PlotWidget:
         line.add(self)
         return line
 
-    def SurfaceImage(self, data, cmap='gist_gray', clim=(None, None)):
-        layer = SImage(data, cmap=cmap, clim=clim)
+    def SurfaceImage(self, data, cmap='gist_gray', clim=(None, None), alpha=1):
+        layer = SImage(data, cmap=cmap, clim=clim, alpha=alpha)
+        layer.add(self)
+        return layer
+
+    def SurfaceContour(self, data, levels=6, colors='k'):
+        layer = SContour(data, levels=levels, colors=colors)
         layer.add(self)
         return layer
 
