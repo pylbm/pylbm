@@ -13,7 +13,8 @@ import numpy as np
 
 from .. import viewer
 from ..utils import print_progress
-from ..symbolic import rel_ux, rel_uy, rel_uz, alltogether
+from ..symbolic import rel_ux, rel_uy, rel_uz
+
 
 class Stability:
     """
@@ -76,7 +77,9 @@ class Stability:
         relax_mat_f_num = np.asarray(relax_mat_f_num).astype('float')
 
         def set_matrix(wave_vector):
-            return np.exp(self.velocities.dot(wave_vector))[np.newaxis, :] * relax_mat_f_num
+            return np.exp(
+                self.velocities.dot(wave_vector)
+            )[np.newaxis, :] * relax_mat_f_num
 
         for k in range(n_wv):
             data = set_matrix(1j*v_xi[:, k])
@@ -115,16 +118,18 @@ class Stability:
         v_xi, eigs = self.eigenvalues(consm0, n_wv)
         nx = v_xi.shape[1]
 
-        fig = viewer_app.Fig(1, 2, figsize=(12, 6))
+        fig = viewer_app.Fig(1, 2, figsize=(12.8, 6.4))  # , figsize=(12, 6))
         if self.dim == 1:
             color = 'orange'
         elif self.dim == 2:
             color = .5 + .5/np.pi*np.arctan2(v_xi[0, :], v_xi[1, :])
-            color = np.repeat(color[np.newaxis, :], self.nvtot, axis=0).flatten()
+            color = np.repeat(
+                color[np.newaxis, :], self.nvtot, axis=0
+            ).flatten()
 
         # real and imaginary part
         view0 = fig[0]
-        view0.title = "Stability"
+        view0.title = "Stability: {}".format(self.is_stable_l2)
         view0.axis(-1.1, 1.1, -1.1, 1.1, aspect='equal')
         view0.grid(visible=False)
         view0.set_label('real part', 'imaginary part')
@@ -143,11 +148,11 @@ class Stability:
         for k in range(self.nvtot):
             pos0[nx*k:nx*(k+1), 0] = np.real(eigs[:, k])
             pos0[nx*k:nx*(k+1), 1] = np.imag(eigs[:, k])
-        markers0 = view0.markers(pos0, 2, color=color, alpha=0.5)
+        markers0 = view0.markers(pos0, 5, color=color, alpha=0.5)
 
         # modulus
         view1 = fig[1]
-        view1.title = "Stability"
+        view1.title = "Stability: {}".format(self.is_stable_l2)
         view1.axis(0, 2*np.pi, -.1, 1.1)
         view1.grid(visible=True)
         view1.set_label('wave vector modulus', 'modulus')
@@ -167,33 +172,43 @@ class Stability:
 
         pos1 = np.empty((nx*self.nvtot, 2))
         for k in range(self.nvtot):
-            pos1[nx*k:nx*(k+1), 0] = np.sqrt(np.sum(v_xi**2, axis=0))
+            # pos1[nx*k:nx*(k+1), 0] = np.sqrt(np.sum(v_xi**2, axis=0))
+            pos1[nx*k:nx*(k+1), 0] = np.max(v_xi, axis=0)
             pos1[nx*k:nx*(k+1), 1] = np.abs(eigs[:, k])
-        markers1 = view1.markers(pos1, 2, color=color, alpha=0.5)
+        markers1 = view1.markers(pos1, 5, color=color, alpha=0.5)
 
         dicosliders = dico.get('parameters', None)
         if dicosliders is not None:
             import matplotlib.pyplot as plt
             from matplotlib.widgets import Slider
-            
+
             axcolor = 'lightgoldenrodyellow'
 
-            fig1 = viewer_app.Fig(figsize=(6, 2))
+            viewer_app.Fig(figsize=(6, 2))
             sliders = {}
             item = 0
             length = 0.8/len(dicosliders)
             for k, v in dicosliders.items():
-                ax = plt.axes([0.2, 0.1+item*length, 0.65, 0.8*length], facecolor=axcolor)
-                sliders[k] = Slider(ax, sp.pretty(k), *v['range'], valinit=v['init'], valstep=v['step'])
+                axe = plt.axes(
+                    [0.2, 0.1+item*length, 0.65, 0.8*length],
+                    facecolor=axcolor,
+                )
+                sliders[k] = Slider(
+                    axe,
+                    v.get('name', sp.pretty(k)),
+                    *v['range'],
+                    valinit=v['init'],
+                    valstep=v['step']
+                )
                 item += 1
 
-            def update(val):
+            def update(val):  # pylint: disable=unused-argument
                 for k, v in sliders.items():
                     if k in self.param.keys():
                         self.param[k] = v.val
-                    for im, moment in enumerate(self.consm):
+                    for i_m, moment in enumerate(self.consm):
                         if moment == k:
-                            consm0[im] = v.val
+                            consm0[i_m] = v.val
 
                 v_xi, eigs = self.eigenvalues(consm0, n_wv)
 
@@ -202,12 +217,15 @@ class Stability:
                     pos0[nx*k:nx*(k+1), 1] = np.imag(eigs[:, k])
 
                 markers0.set_offsets(pos0)
+                view0.title = "Stability: {}".format(self.is_stable_l2)
 
                 for k in range(self.nvtot):
-                    pos1[nx*k:nx*(k+1), 0] = np.sqrt(np.sum(v_xi**2, axis=0))
+                    # pos1[nx*k:nx*(k+1), 0] = np.sqrt(np.sum(v_xi**2, axis=0))
+                    pos1[nx*k:nx*(k+1), 0] = np.max(v_xi, axis=0)
                     pos1[nx*k:nx*(k+1), 1] = np.abs(eigs[:, k])
 
                 markers1.set_offsets(pos1)
+                view1.title = "Stability: {}".format(self.is_stable_l2)
                 fig.fig.canvas.draw_idle()
 
             for k in sliders.keys():
