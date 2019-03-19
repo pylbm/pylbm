@@ -7,11 +7,11 @@
 # License: BSD 3 clause
 
 """
- Solver D2Q4Q4Q4 for the shallow water equation on the 2D-torus
+ Solver D2Q4Q4Q4 for the shallow water
 
- d_t(h) + d_x(q_x) + d_y(q_y) = 0,
- d_t(q_x) + dx_(q_x^2/h + gh^2/2) + d_y(q_xq_y/h) = 0,
- d_t(q_y) + d_x(q_xq_y/h) + dy_(q_y^2/h + gh^2/2) = 0,
+ dt h + dx q_x + dy q_y = 0,
+ dt q_x + dx (q_x^2/h + gh^2/2) + dy (q_xq_y/h) = 0,
+ dt q_y + dx (q_xq_y/h) + dy (q_y^2/h + gh^2/2) = 0,
 """
 import numpy as np
 import sympy as sp
@@ -168,6 +168,7 @@ def run(space_step,
         fig.show()
     else:
         while sol.t < final_time:
+            print(sol.t)
             sol.one_time_step()
 
     return sol
@@ -175,5 +176,5 @@ def run(space_step,
 if __name__ == '__main__':
     # pylint: disable=invalid-name
     space_step = 1./128
-    final_time = 20
+    final_time = 5
     run(space_step, final_time)

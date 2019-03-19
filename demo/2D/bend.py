@@ -1,3 +1,4 @@
+
 # Authors:
 #     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -5,7 +6,7 @@
 # License: BSD 3 clause
 
 """
-Simulate the lid driven cavity
+Simulate a flow in a bend
 
 dt rho + dx qx + dy qy = 0
 dt qx + dx (qx^2/rho + c^2 rho) + dy (qx*qy/rho) = 0
@@ -24,12 +25,13 @@ LA = sp.symbols('lambda', constants=True)
 
 
 # pylint: disable=unused-argument
-def bc_up(f, m, x, y, rho_o, driven_velocity):
+def bc_in(f, m, x, y, rho_o, u_o, ymin, ymax, radius):
     """
-    boundary values on the top bound
+    boundary values on the left bound
     """
+    y_bound = ymax - radius
     m[RHO] = rho_o
-    m[QX] = rho_o * driven_velocity
+    m[QX] = rho_o*u_o * 4*(ymax-y)*(y-y_bound)/(ymax-y_bound)**2
     m[QY] = 0.
 
 
@@ -92,10 +94,11 @@ def run(space_step,
     # parameters
     scheme_name = 'Geier'
     xmin, xmax, ymin, ymax = 0., 1., 0., 1.  # bounds of the domain
+    radius = 0.25                            # radius of the obstacle
     la = 1.                                  # velocity of the scheme
     rho_o = 1.                               # reference value of the mass
-    driven_velocity = 0.05                   # boundary value of the velocity
-    mu = 5.e-6                               # bulk viscosity
+    u_o = 0.05                               # boundary value of the velocity
+    mu = 2.5e-6                              # bulk viscosity
     zeta = 100*mu                            # shear viscosity
 
     def moments_choice(scheme_name, mu, zeta):
@@ -189,16 +192,25 @@ def run(space_step,
         return polynomials, equilibrium, s
 
     polynomials, equilibrium, s = moments_choice(scheme_name, mu, zeta)
+    xc = xmax - radius
+    yc = ymax - radius
 
     simu_cfg = {
-        'parameters': {LA: la},
         'box': {
             'x': [xmin, xmax],
             'y': [ymin, ymax],
-            'label': [0, 0, 0, 1]
+            'label': [2, 0, 1, 0]
         },
+        'elements': [
+            pylbm.Parallelogram(
+                (xmin, ymin),
+                (xc, ymin),
+                (xmin, yc),
+                label=0
+            )
+        ],
         'space_step': space_step,
-        'scheme_velocity': LA,
+        'scheme_velocity': la,
         'schemes': [
             {
                 'velocities': list(range(9)),
@@ -206,45 +218,62 @@ def run(space_step,
                 'relaxation_parameters': s,
                 'equilibrium': equilibrium,
                 'conserved_moments': [RHO, QX, QY],
-                'init': {RHO: rho_o, QX: 0., QY: 0.},
+                'init': {
+                    RHO: rho_o,
+                    QX: rho_o * u_o,
+                    QY: 0.
+                },
             },
         ],
+        'parameters': {LA: la},
         'boundary_conditions': {
             0: {'method': {0: pylbm.bc.BouzidiBounceBack}},
-            1: {
-                'method': {0: pylbm.bc.BouzidiBounceBack},
-                'value': (bc_up, (rho_o, driven_velocity))
-            }
+            1: {'method': {0: pylbm.bc.NeumannY}},
+            2: {
+                'method': {
+                    0: pylbm.bc.BouzidiBounceBack
+                },
+                'value': (bc_in, (rho_o, u_o, ymin, ymax, radius))
+            },
         },
         'generator': generator,
         'relative_velocity': [QX/RHO, QY/RHO],
-        # 'show_code': True,
+        # 'show_code': True
     }
 
     sol = pylbm.Simulation(simu_cfg, sorder=sorder)
 
     if with_plot:
-        Re = rho_o*driven_velocity*2/mu
+        Re = rho_o*u_o*2*radius/mu
         print("Reynolds number {0:10.3e}".format(Re))
 
         # init viewer
         viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig()
+
         axe = fig[0]
         axe.grid(visible=False)
         axe.xaxis_set_visible(False)
         axe.yaxis_set_visible(False)
-        surf = axe.SurfaceImage(
-            vorticity(sol), cmap='jet', clim=[0, .025]
-            # norm_velocity(sol), cmap='jet', clim=[0, driven_velocity]
+        axe.polygon(
+            [
+                [0, 0],
+                [0, yc/space_step-1],
+                [xc/space_step-1, yc/space_step-1],
+                [xc/space_step-1, 0]
+            ], 'black'
         )
 
-        def update(iframe):
-            nrep = 128
+        surf = axe.SurfaceImage(
+            vorticity(sol),
+            cmap='jet', clim=[0, .1]
+        )
+
+        def update(iframe):  # pylint: disable=unused-argument
+            nrep = 32
             for _ in range(nrep):
                 sol.one_time_step()
             surf.update(vorticity(sol))
-            # surf.update(norm_velocity(sol))
             axe.title = "Solution t={0:f}".format(sol.t)
 
         # run the simulation

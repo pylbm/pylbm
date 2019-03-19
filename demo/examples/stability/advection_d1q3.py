@@ -19,9 +19,7 @@ U, X = sp.symbols('U, X')
 LA, C = sp.symbols('lambda, c', constants=True)
 # parameters for the energy equilibrium
 ALPHA = sp.symbols('alpha', constants=True)
-SIGMA_1, SIGMA_2 = sp.symbols('sigma_1, sigma_2', constants=True)
-symb_s1 = 1/(.5+SIGMA_1)  # symbolic relaxation parameter
-symb_s2 = 1/(.5+SIGMA_2)  # symbolic relaxation parameter
+S_1, S_2 = sp.symbols('s1, s2', constants=True)
 
 # numerical parameters
 la = 1.              # velocity of the scheme
@@ -37,21 +35,46 @@ dico = {
             'velocities': list(range(3)),
             'conserved_moments': U,
             'polynomials': [1, X, X**2],
-            'relaxation_parameters': [0, symb_s1, symb_s2],
+            'relaxation_parameters': [0, S_1, S_2],
             'equilibrium': [U, C*U, (ALPHA*LA**2+(1-ALPHA)*C**2)*U],
         },
     ],
     'parameters': {
         LA: la,
-        SIGMA_1: 1/s_1-.5,
-        SIGMA_2: 1/s_2-.5,
+        S_1: s_1,
+        S_2: s_2,
         C: c,
         ALPHA: alpha,
     },
-    # 'relative_velocity': [C],
+    'relative_velocity': [C],
 }
 
 scheme = pylbm.Scheme(dico, formal=True)
 stab = pylbm.Stability(scheme)
 
-stab.visualize()
+stab.visualize({
+    'parameters': {
+        C: {
+            'range': [0, 1.5],
+            'init': c,
+            'step': 0.01,
+        },
+        ALPHA: {
+            'range': [0, 1],
+            'init': alpha,
+            'step': 0.01,
+        },
+        S_1: {
+            'name': r"$s_1$",
+            'range': [0, 2],
+            'init': s_1,
+            'step': 0.01,
+        },
+        S_2: {
+            'name': r"$s_2$",
+            'range': [0, 2],
+            'init': s_2,
+            'step': 0.01,
+        },
+    },
+})

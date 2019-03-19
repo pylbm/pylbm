@@ -4,7 +4,7 @@ Shallow water
 
 import numpy as np
 import matplotlib.pyplot as plt
-from .riemann_solvers import GenericSolver, newton
+from .riemann_solvers import GenericSolver, solve
 
 
 class ShallowWaterSolver(GenericSolver):
@@ -20,12 +20,12 @@ class ShallowWaterSolver(GenericSolver):
         """
         Compute the intermediate state
         """
-        x = max(self.u_left[0], self.u_right[0])
-
-        def phi(x):
-            return self._f1(x) - self._f2(x)
-
-        h_star = newton(phi, x, self.epsilon)
+        h_star = solve(
+            self._f1, self._f2,
+            self.u_left[0], self.u_right[0],
+            self.epsilon
+        )
+        q_star = .5*(self._f1(h_star)[0]+self._f2(h_star)[0])
         q_star = self._f1(h_star)[0]
         self.u_star = np.array([h_star, q_star])
 
