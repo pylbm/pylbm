@@ -3,12 +3,73 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+pylbm is an all-in-one package for numerical simulations using Lattice Boltzmann solvers.
 
-pylbm is an all-in-one package for numerical simulations using
-Lattice Boltzmann solvers.
+This package gives all the tools to describe your lattice Boltzmann scheme in 1D, 2D and 3D problems.
 
-pylbm is licensed under the BSD license,
-enabling reuse with few restrictions.
+We choose the D'Humières formalism to describe the problem. You can have complex geometry with a set of simple shape like circle, sphere, ...
+
+pylbm performs the numerical scheme using Cython, NumPy or Loo.py from the scheme and the domain given by the user. Pythran and Numba wiil be available soon. pylbm has MPI support with mpi4py.
+
+Installation
+============
+
+You can install pylbm in several ways
+
+With conda
+----------
+
+.. code::
+
+   conda install pylbm -c pylbm -c conda-forge
+  
+With Pypi
+---------
+
+.. code::
+
+   pip install pylbm
+
+or
+  
+.. code::
+
+   pip install pylbm --user
+
+From source
+-----------
+
+You can also clone the project and install the latest version
+
+.. code::
+
+   git clone https://github.com/pylbm/pylbm
+
+To install pylbm from source, we encourage you to create a fresh environment using conda.
+
+.. code::
+
+    conda create -n pylbm_env python=3.6
+
+As mentioned at the end of the creation of this environment, you can activate it
+using the comamnd line
+
+.. code::
+
+    conda activate pylbm_env
+
+Now, you just have to go into the pylbm directory that you cloned and install
+the dependencies
+
+.. code::
+
+    conda install --file requirements-dev.txt -c conda-forge
+
+and then, install pylbm
+
+.. code::
+
+   python setup.py install
 
 Getting started
 ---------------------------
@@ -16,28 +77,8 @@ Getting started
 pylbm can be a simple way to make numerical simulations
 by using the Lattice Boltzmann method.
 
-To install pylbm, you have several ways. You can install it using conda ::
-
-    conda install pylbm -c pylbm -c conda-forge
-
-or using the last version on Pypi ::
-
-    pip install pylbm
-
-You can also clone the project ::
-
-    git clone https://github.com/pylbm/pylbm
-
-and then use the command ::
-
-    python setup.py install
-
-or if you don't have root privileges ::
-
-    python setup.py install --user
-
 Once the package is installed
-you just have to understand how build a dictionary that will be
+you just have to understand how to build a dictionary that will be
 understood by pylbm to perform the simulation.
 The dictionary should contain all the needed informations as
 
