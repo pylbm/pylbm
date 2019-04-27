@@ -52,6 +52,7 @@ class Stability:
 
         # check if we are inside a notebook
         try:
+            # pylint: disable=undefined-variable
             ip = get_ipython()
 
             if ip.has_trait('kernel'):
