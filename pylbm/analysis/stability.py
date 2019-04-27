@@ -50,6 +50,18 @@ class Stability:
         velocities = sp.Matrix(scheme.stencil.get_all_velocities())
         self.velocities = np.asarray(velocities).astype('float')
 
+        # check if we are inside a notebook
+        try:
+            # pylint: disable=undefined-variable
+            ip = get_ipython()
+
+            if ip.has_trait('kernel'):
+                self.is_notebook = True
+            else:
+                self.is_notebook = False
+        except:
+            self.is_notebook = False
+
     def eigenvalues(self, consm0, n_wv):
         """
         Compute the eigenvalues of the amplification matrix
@@ -70,9 +82,10 @@ class Stability:
             n_wv = v_xi.shape[1]
         eigs = np.empty((n_wv, self.nvtot), dtype='complex')
 
-        print("*"*80)
-        print("Compute the eigenvalues")
-        print_progress(0, n_wv, barLength=50)
+        if not self.is_notebook:
+            print("*"*80)
+            print("Compute the eigenvalues")
+            print_progress(0, n_wv, barLength=50)
 
         relax_mat_f_num = np.asarray(relax_mat_f_num).astype('float')
 
@@ -84,21 +97,23 @@ class Stability:
         for k in range(n_wv):
             data = set_matrix(1j*v_xi[:, k])
             eigs[k] = np.linalg.eig(data)[0]
-            print_progress(k+1, n_wv, barLength=50)
+            if not self.is_notebook:
+                print_progress(k+1, n_wv, barLength=50)
 
         ind_pb, = np.where(np.max(np.abs(eigs), axis=1) > 1 + 1.e-10)
         pb_stable_l2 = v_xi[:, ind_pb]
         self.is_stable_l2 = pb_stable_l2.shape[1] == 0
 
-        if self.is_stable_l2:
-            print("*"*80)
-            print("The scheme is stable")
-            print("*"*80)
-        else:
-            print("*"*80)
-            print("The scheme is not stable for these wave vectors:")
-            print(pb_stable_l2.T)
-            print("*"*80)
+        if not self.is_notebook:
+            if self.is_stable_l2:
+                print("*"*80)
+                print("The scheme is stable")
+                print("*"*80)
+            else:
+                print("*"*80)
+                print("The scheme is not stable for these wave vectors:")
+                print(pb_stable_l2.T)
+                print("*"*80)
 
         return v_xi, eigs
 
@@ -177,8 +192,65 @@ class Stability:
             pos1[nx*k:nx*(k+1), 1] = np.abs(eigs[:, k])
         markers1 = view1.markers(pos1, 5, color=color, alpha=0.5)
 
+        # create sliders to play with parameters
         dicosliders = dico.get('parameters', None)
-        if dicosliders is not None:
+
+        if self.is_notebook:
+            from ipywidgets import widgets
+            from IPython.display import display, clear_output
+
+            out = widgets.Output()
+
+            sliders = {}
+            for k, v in dicosliders.items():
+                sliders[k] = widgets.FloatSlider(value=v['init'],
+                                                 min=v['range'][0],
+                                                 max=v['range'][1],
+                                                 step=v['step'],
+                                                 continuous_update=False,
+                                                 description=v.get('name', sp.pretty(k)),
+                                                 layout=widgets.Layout(width='80%'))
+
+            with out:
+                fig.show()
+
+            def update(val):  # pylint: disable=unused-argument
+                for k, v in sliders.items():
+                    if k in self.param.keys():
+                        self.param[k] = v.value
+                    for i_m, moment in enumerate(self.consm):
+                        if moment == k:
+                            consm0[i_m] = v.value
+
+                v_xi, eigs = self.eigenvalues(consm0, n_wv)
+
+                for k in range(self.nvtot):
+                    pos0[nx*k:nx*(k+1), 0] = np.real(eigs[:, k])
+                    pos0[nx*k:nx*(k+1), 1] = np.imag(eigs[:, k])
+
+                markers0.set_offsets(pos0)
+                view0.title = "Stability: {}".format(self.is_stable_l2)
+
+                for k in range(self.nvtot):
+                    # pos1[nx*k:nx*(k+1), 0] = np.sqrt(np.sum(v_xi**2, axis=0))
+                    pos1[nx*k:nx*(k+1), 0] = np.max(v_xi, axis=0)
+                    pos1[nx*k:nx*(k+1), 1] = np.abs(eigs[:, k])
+
+                markers1.set_offsets(pos1)
+                view1.title = "Stability: {}".format(self.is_stable_l2)
+                fig.fig.canvas.draw_idle()
+                with out:
+                    clear_output(wait=True)
+                    display(fig.fig)
+
+            for k in sliders.keys():
+                sliders[k].observe(update)
+
+            display(out)
+            for k, v in dicosliders.items():
+                display(sliders[k])
+
+        else:
             import matplotlib.pyplot as plt
             from matplotlib.widgets import Slider
 
@@ -231,4 +303,4 @@ class Stability:
             for k in sliders.keys():
                 sliders[k].on_changed(update)
 
-        fig.show()
+            fig.show()
