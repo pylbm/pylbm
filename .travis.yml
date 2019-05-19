@@ -40,6 +40,7 @@ install:
 
 script:
   - pytest --pylint --pylint-rcfile=.pyrcfile --pylint-error-types=EF pylbm
+  - pytest --nbval notebooks
   - cd tests; pytest --mpl --h5diff -m "not slow" --cov=pylbm
 after_success:
 - codecov -e $PYVER
