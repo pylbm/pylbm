@@ -156,13 +156,23 @@ class Scheme:
         self.nschemes = self.stencil.nstencils
         scheme = dico['schemes']
 
-        self._check_entry_size(scheme, 'polynomials')
+        
         self._check_entry_size(scheme, 'relaxation_parameters')
-
-        self.P = sp.Matrix([p for s in scheme for p in s['polynomials']])
         self.s = sp.Matrix([r for s in scheme for r in s['relaxation_parameters']])
+
+        # TODO: add the possibility to have vectorial schemes when M matrix is defined
+        if len(scheme) == 1 and 'M' in scheme[0]:
+            self.M = scheme[0]['M']
+            self.invM = self.M.inv()
+            self.Tu = sp.eye(*self.M.shape)
+            self.Tmu = sp.eye(*self.M.shape)
+            self.P = []
+        else:
+            self._check_entry_size(scheme, 'polynomials')
+            self.P = sp.Matrix([p for s in scheme for p in s['polynomials']])
+            self.M, self.invM, self.Tu, self.Tmu = self._create_moments_matrices()
+        
         self._source_terms = [s.get('source_terms', None) for s in scheme]
-        self.M, self.invM, self.Tu, self.Tmu = self._create_moments_matrices()
         self.EQ = self._get_equilibrium(scheme)
 
         self.s_no_swap = self.s.copy()
