@@ -27,6 +27,9 @@ Validator.types_mapping['symbol'] = symbol_type
 expr_type = TypeDefinition('expr', (sympy.Expr,), ())
 Validator.types_mapping['expr'] = expr_type
 
+matrix_type = TypeDefinition('matrix', (sympy.Matrix,), ())
+Validator.types_mapping['matrix'] = matrix_type
+
 element_type = TypeDefinition('element', (Element,), ())
 Validator.types_mapping['element'] = element_type
 
@@ -182,9 +185,14 @@ def validate(dico, name):
                              'schema': {'type': 'integer', 'min': 0},
                              'required': name in ['Domain', 'Scheme', 'Simulation', 'Stencil']
                             },
+              'M': {'type': 'matrix',
+                    'required': name in ['Scheme', 'Simulation'],
+                    'excludes': 'polynomials',
+                    },
               'polynomials': {'type': 'list',
                               'schema': {'anyof_type': ['number', 'expr']},
-                              'required': name in ['Scheme', 'Simulation']
+                              'required': name in ['Scheme', 'Simulation'],
+                              'excludes': 'M',
                              },
               'relaxation_parameters': {'type': 'list',
                                         'schema': {'anyof_type': ['number', 'expr']},
