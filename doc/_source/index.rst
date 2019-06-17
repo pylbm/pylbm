@@ -16,63 +16,60 @@ Installation
 
 You can install pylbm in several ways
 
-With conda
-----------
+**With conda**
 
-.. code::
+.. code:: bash
 
    conda install pylbm -c pylbm -c conda-forge
   
-With Pypi
----------
+**With Pypi**
 
-.. code::
+.. code:: bash
 
    pip install pylbm
 
 or
   
-.. code::
+.. code:: bash
 
    pip install pylbm --user
 
-From source
------------
+**From source**
 
 You can also clone the project and install the latest version
 
-.. code::
+.. code:: bash
 
    git clone https://github.com/pylbm/pylbm
 
 To install pylbm from source, we encourage you to create a fresh environment using conda.
 
-.. code::
+.. code:: bash
 
     conda create -n pylbm_env python=3.6
 
 As mentioned at the end of the creation of this environment, you can activate it
 using the comamnd line
 
-.. code::
+.. code:: bash
 
     conda activate pylbm_env
 
 Now, you just have to go into the pylbm directory that you cloned and install
 the dependencies
 
-.. code::
+.. code:: bash
 
     conda install --file requirements-dev.txt -c conda-forge
 
 and then, install pylbm
 
-.. code::
+.. code:: bash
 
    python setup.py install
 
 Getting started
----------------------------
+---------------
 
 pylbm can be a simple way to make numerical simulations
 by using the Lattice Boltzmann method.
@@ -84,29 +81,33 @@ The dictionary should contain all the needed informations as
 
 - the geometry (see :doc:`here<learning_geometry>` for documentation)
 - the scheme (see :doc:`here<learning_scheme>` for documentation)
-- the boundary conditions (see :doc:`here<learning_bounds>` for documentation)
 - another informations like the space step, the scheme velocity, the generator
   of the functions...
+
+.. - the boundary conditions (see :doc:`here<learning_bounds>` for documentation)
 
 To understand how to use pylbm, you have a lot of Python notebooks
 in the `tutorial <tutorial.html>`_.
 
 Documentation for users
----------------------------
+-----------------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    The geometry of the simulation <learning_geometry>
    The domain of the simulation <learning_domain>
    The scheme <learning_scheme>
-   The boundary conditions <learning_bounds>
+   The scheme analysis  <learning_analysis>
    The storage of moments and distribution functions <storage>
    Learning by examples <tutorial>
-   Gallery <gallery>
+
+.. The boundary conditions <learning_bounds>
+
+You can also find other examples in the :doc:`gallery<gallery>`.
    
 Documentation of the code
----------------------------
+-------------------------
 
 .. currentmodule:: pylbm
 
@@ -123,7 +124,7 @@ The most important classes
 The modules
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    
    stencil <module/module_stencil>
    elements <module/module_elements>
@@ -135,7 +136,7 @@ The modules
 
 
 References
----------------------------
+----------
 
 .. [dH92] D. D'HUMIERES, *Generalized Lattice-Boltzmann Equations*,
           Rarefied Gas Dynamics: Theory and Simulations, **159**, pp. 450-458,
@@ -148,7 +149,7 @@ References
             *Lattice BGK Models for Navier-Stokes Equation*, Europhys. Lett., **17** (6), pp. 479-484 (1992).
 
 Indices and tables
----------------------------
+------------------
 
 * :ref:`genindex`
 * :ref:`search`
