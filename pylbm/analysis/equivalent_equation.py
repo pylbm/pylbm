@@ -87,11 +87,11 @@ class EquivalentEquation:
                         self.coeff_order2[dim][i][ic, jc] += sphi1[ic].expand().coeff(sp.Derivative(func[jc], space[i]))
 
         for ic, c in enumerate(self.coeff_order1):
-            self.coeff_order1[ic] = c.subs(sublist_inv)
+            self.coeff_order1[ic] = c.subs(sublist_inv).doit()
 
         for ic, c in enumerate(self.coeff_order2):
             for jc, cc in enumerate(c):
-                self.coeff_order2[ic][jc] = cc.subs(sublist_inv)
+                self.coeff_order2[ic][jc] = cc.subs(sublist_inv).doit()
 
     def __str__(self):
         from ..utils import header_string
