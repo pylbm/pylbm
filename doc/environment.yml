@@ -9,4 +9,6 @@ dependencies:
   - nbconvert
   - nbformat
   - nbsphinx
+  - ipywidgets
+  - jupyter_sphinx
   - numpydoc
