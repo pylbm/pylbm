@@ -54,8 +54,11 @@ class Monitoring:
     @staticmethod
     def information(f):
         mod_name = inspect.getmodule(f).__name__
-        f_name = f.__qualname__
-        return (mod_name, f_name)
+        try:
+            f_name = f.__qualname__
+            return (mod_name, f_name)
+        except:
+            pass
 
     def set_size(self, size):
         self.size = size

@@ -116,6 +116,8 @@ class Simulation:
         self.container = self._get_container(sorder)
         if self.container.gpu_support:
             self.domain.in_or_out = self.container.move2gpu(self.domain.in_or_out)
+            self.container.F.generate(self.generator)
+            self.container.Fnew.generate(self.generator)
         sorder = self.container.sorder
 
         # Generate the numerical code for the LBM and for the boundary conditions

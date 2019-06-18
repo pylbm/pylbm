@@ -551,7 +551,7 @@ class BaseAlgorithm:
             # code = loop([*self.coords(), *internal])
             code = loop([*internal])
 
-        return {'code': code, 'local_vars': local_vars + self.local_vars}
+        return {'code': code, 'local_vars': local_vars+self.local_vars, 'settings':{"prefetch":[f[0]]}}
 
     @monitor
     def generate(self):
@@ -575,7 +575,8 @@ class BaseAlgorithm:
             output = gen()
             code = output['code']
             local_vars = output.get('local_vars', [])
-            self.generator.add_routine((name, code), local_vars=local_vars)
+            settings = output.get('settings', {})
+            self.generator.add_routine((name, code), local_vars=local_vars, settings=settings)
 
     def _get_args(self, simulation, m_user=None, f_user=None):
         """
