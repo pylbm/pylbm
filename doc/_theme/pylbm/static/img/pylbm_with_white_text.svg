@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg width="996.02mm" height="380.97mm" version="1.1" viewBox="0 0 996.02 380.97" xmlns="http://www.w3.org/2000/svg" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+ <metadata>
+  <rdf:RDF>
+   <cc:Work rdf:about="">
+    <dc:format>image/svg+xml</dc:format>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:title/>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <g transform="translate(74.436 47.483)">
+  <g stroke="#000" stroke-opacity=".0050505">
+   <circle cx="89.631" cy="169.42" r="160" fill="#31aece" image-rendering="auto" stroke-width=".13343"/>
+   <path d="m59.565 16.529a156.42 156 0 0 0-74.934 37.742v143.65h74.934z" fill="#fff" stroke-width=".26613"/>
+   <circle cx="89.631" cy="199.61" r="105" fill="#fff" stroke-width=".265"/>
+   <rect x="59.575" y="91.873" width="9.7857" height="107.49" fill="#31aece" stroke-width=".21433"/>
+   <circle cx="89.567" cy="199.61" r="30" fill="#31aece" stroke-width=".265"/>
+   <path transform="matrix(1.047 -.59606 .6245 1.0969 633.29 -275.02)" d="m-425.22 73.616 4.8636-28.711-20.895-20.283 28.809-4.2467 12.834-26.14 12.941 26.087 28.826 4.1282-20.811 20.369 4.9817 28.691-25.803-13.498z" fill="#f8e05f" stroke-width=".265"/>
+  </g>
+  <g transform="translate(19.579 21.167)" fill="#ffffff" font-family="Orbitron" letter-spacing="0px" word-spacing="0px">
+   <text x="258.98245" y="211.1781" font-size="166.55px" stroke-width=".41636" style="line-height:104.09080505px" xml:space="preserve"><tspan x="258.98245" y="211.1781" fill="#ffffff" font-size="166.55px" stroke-width=".41636" style="line-height:104.09080505px">pyLBM</tspan></text>
+   <text x="492.41721" y="238.48351" font-size="26.759px" stroke-width=".31358" style="line-height:1.25" xml:space="preserve"><tspan x="492.41721" y="238.48351" fill="#ffffff" font-size="26.759px" stroke-width=".31358">Lattice Boltzmann Methods</tspan></text>
+  </g>
+ </g>
+</svg>
