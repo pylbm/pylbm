@@ -249,7 +249,7 @@ class BoundaryMethod:
         dist = IndexedBase('dist', [ncond])
         return rhs, dist
 
-    def update(self, ff):
+    def update(self, ff, **kwargs):
         """
         Update distribution functions with this boundary condition.
 
@@ -262,6 +262,7 @@ class BoundaryMethod:
         from .symbolic import call_genfunction
 
         args = self._get_args(ff)
+        args.update(kwargs)
         call_genfunction(self.function, args) #pylint: disable=no-member
 
     #pylint: disable=possibly-unused-variable
