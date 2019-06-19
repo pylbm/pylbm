@@ -578,7 +578,7 @@ class BaseAlgorithm:
             settings = output.get('settings', {})
             self.generator.add_routine((name, code), local_vars=local_vars, settings=settings)
 
-    def _get_args(self, simulation, m_user=None, f_user=None):
+    def _get_args(self, simulation, m_user=None, f_user=None, **kwargs):
         """
         Define all the arguments needed to call the generated code.
         """
@@ -612,7 +612,7 @@ class BaseAlgorithm:
         return locals()
 
     def call_function(self, function_name, simulation,
-                      m_user=None, f_user=None):
+                      m_user=None, f_user=None, **kwargs):
         """
         Call the generated function.
         """
@@ -620,4 +620,5 @@ class BaseAlgorithm:
         func = getattr(self.generator.module, function_name)
 
         args = self._get_args(simulation, m_user, f_user)
+        args.update(kwargs)
         call_genfunction(func, args)

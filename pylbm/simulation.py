@@ -279,45 +279,45 @@ class Simulation:
 
         self.container.Fnew.array[:] = self.container.F.array[:]
 
-    def transport(self):
+    def transport(self, **kwargs):
         """
         compute the transport phase on distribution functions
         (the array _F is modified)
         """
-        self.algo.call_function('transport', self)
+        self.algo.call_function('transport', self, **kwargs)
 
-    def relaxation(self):
+    def relaxation(self, **kwargs):
         """
         compute the relaxation phase on moments
         (the array _m is modified)
         """
-        self.algo.call_function('relaxation', self)
+        self.algo.call_function('relaxation', self, **kwargs)
 
-    def source_term(self, fraction_of_time_step=1.):
+    def source_term(self, fraction_of_time_step=1., **kwargs):
         """
         compute the source term phase on moments
         (the array _m is modified)
         """
-        self.algo.call_function('source_term', self)
+        self.algo.call_function('source_term', self, **kwargs)
 
     @monitor
-    def f2m(self):
+    def f2m(self, **kwargs):
         """
         compute the moments from the distribution functions
         (the array _m is modified)
         """
-        self.algo.call_function('f2m', self)
+        self.algo.call_function('f2m', self, **kwargs)
 
     @monitor
-    def m2f(self, m_user=None, f_user=None):
+    def m2f(self, m_user=None, f_user=None, **kwargs):
         """
         compute the distribution functions from the moments
         (the array _F is modified)
         """
-        self.algo.call_function('m2f', self, m_user, f_user)
+        self.algo.call_function('m2f', self, m_user, f_user, **kwargs)
 
     @monitor
-    def equilibrium(self, m_user=None):
+    def equilibrium(self, m_user=None, **kwargs):
         """
         set the moments to the equilibrium values
         (the array _m is modified)
@@ -328,7 +328,7 @@ class Simulation:
         Another moments vector can be set to equilibrium values:
         use directly the method of the class Scheme
         """
-        self.algo.call_function('equilibrium', self, m_user)
+        self.algo.call_function('equilibrium', self, m_user, **kwargs)
 
     @monitor
     def boundary_condition(self):
@@ -348,7 +348,7 @@ class Simulation:
             method.update(f)
 
     @monitor
-    def one_time_step(self):
+    def one_time_step(self, **kwargs):
         """
         compute one time step
 
@@ -366,9 +366,9 @@ class Simulation:
         """
         self._update_m = True # we recompute f so m will be not correct
 
-        self.boundary_condition()
+        self.boundary_condition(**kwargs)
 
-        self.algo.call_function('one_time_step', self)
+        self.algo.call_function('one_time_step', self, **kwargs)
         self.container.F, self.container.Fnew = self.container.Fnew, self.container.F
 
         self.t += self.dt
