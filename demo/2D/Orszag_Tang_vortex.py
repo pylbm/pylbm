@@ -107,7 +107,6 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
                 'polynomials':[1, LA*X, LA*Y, X**2-Y**2],
                 'relaxation_parameters':s_rho,
                 'equilibrium':[rho, qx, qy, 0.],
-                'init':{rho:(init_rho, (gamma,))},
             },
             {
                 'velocities':list(range(1,5)),
@@ -120,7 +119,6 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
                     qx*qy/rho - Bx*By,
                     0.
                 ],
-                'init':{qx:(init_qx, (gamma,))},
             },
             {
                 'velocities':list(range(1,5)),
@@ -133,7 +131,6 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
                     qy**2/rho + ps - By**2,
                     0.
                 ],
-                'init':{qy:(init_qy, (gamma,))},
             },
             {
                 'velocities':list(range(1,5)),
@@ -146,7 +143,6 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
                     (E+ps)*qy/rho - vB*By,
                     0.
                 ],
-                'init':{E:(init_E, (gamma,))},
             },
             {
                 'velocities':list(range(1,5)),
@@ -159,7 +155,6 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
                     (qy*Bx - qx*By)/rho,
                     0.
                 ],
-                'init':{Bx: init_Bx},
             },
             {
                 'velocities':list(range(1,5)),
@@ -172,9 +167,14 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
                     0,
                     0.
                 ],
-                'init':{By: init_By},
             },
         ],
+        'init':{rho: (init_rho, (gamma,)),
+                qx: (init_qx, (gamma,)),
+                qy: (init_qy, (gamma,)),
+                E: (init_E, (gamma,)),
+                Bx: init_Bx,
+                By: init_By},
         'parameters':{LA:la, GA:gamma},
         'generator': generator,
     }

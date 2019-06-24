@@ -204,14 +204,14 @@ def run(space_step,
                 'relaxation_parameters': s,
                 'equilibrium': equilibrium,
                 'conserved_moments': [RHO, QX, QY],
-                'init': {
-                    RHO: rho_o,
-                    QX: rho_o * u_o,
-                    QY: 0.
-                },
             },
         ],
         'parameters': {LA: la},
+        'init': {
+            RHO: rho_o,
+            QX: rho_o * u_o,
+            QY: 0.
+        },
         'boundary_conditions': {
             0: {
                 'method': {

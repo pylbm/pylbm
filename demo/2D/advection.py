@@ -100,11 +100,11 @@ def run(space_step,
                 'polynomials': [1, X, Y, X**2-Y**2],
                 'relaxation_parameters': s,
                 'equilibrium': [U, CX*U, CY*U, 0],
-                'init': {
-                    U: (u_init, (xmin, xmax, ymin, ymax))
-                },
             },
         ],
+        'init': {
+            U: (u_init, (xmin, xmax, ymin, ymax))
+        },
         'generator': generator,
         'parameters': {
             LA: la,

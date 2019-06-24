@@ -251,9 +251,11 @@ def run(space_step,
                 'relaxation_parameters': s,
                 'equilibrium': equilibrium,
                 'conserved_moments': [RHO, QX, QY],
-                'init': {RHO: rho_o, QX: 0., QY: 0.},
             },
         ],
+        'init': {RHO: rho_o,
+                 QX: 0.,
+                 QY: 0.},
         'boundary_conditions': {
             0: {'method': {0: pylbm.bc.BouzidiBounceBack}},
             1: {
