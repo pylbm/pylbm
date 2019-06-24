@@ -211,16 +211,6 @@ def validate(dico, name):
                                'valueschema': {'anyof': [{'type': 'expr'},
                                                          {'type': 'number'}]},
                               },
-              'init': {'type': 'dict',
-                       'keyschema': {'type': 'symbol'},
-                       'valueschema': {'anyof': [{'type': 'number'},
-                                                 {'type': 'function'},
-                                                 {'type': 'list',
-                                                  'items': [{'type': 'function'}, {'type': 'list'}]}
-                                                ]
-                                      },
-                       'required': name in ['Simulation']
-                      }
              }
 
     boundary = {'method': {'type': 'dict',
@@ -284,6 +274,16 @@ def validate(dico, name):
                                  'keyschema': {'type': 'symbol'},
                                  'valueschema': {'type': 'number'}
                                 },
+                  'init': {'type': 'dict',
+                           'keyschema': {'type': 'symbol'},
+                           'valueschema': {'anyof': [{'type': 'number'},
+                                                     {'type': 'function'},
+                                                     {'type': 'list',
+                                                      'items': [{'type': 'function'}, {'type': 'list'}]}
+                                                    ]
+                                          },
+                            'required': name in ['Simulation']
+                            },
                   'boundary_conditions': {'type': 'dict',
                                           'keyschema': {'type': 'integer'},
                                           'valueschema': {'schema': boundary},

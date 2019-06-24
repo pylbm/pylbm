@@ -25,7 +25,7 @@ def save(sol, im):
     h5.add_vector('velocity', [qx_n, qy_n, qz_n])
     h5.save()
 
-def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
     """
     Parameters
     ----------
@@ -41,7 +41,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     sorder: list
         storage order
 
-    withPlot: boolean
+    with_plot: boolean
         if True plot the solution otherwise just compute the solution
 
     """
@@ -60,13 +60,17 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     r = X**2+Y**2+Z**2
 
     dico = {
-        'box':{'x':[0., 1.], 'y':[0., 1.], 'z':[0., 1.], 'label':[0, 0, 0, 0, 0, 1]},
-        'space_step':dx,
-        'scheme_velocity':la,
-        'schemes':[{
-            'velocities':list(range(7)) + list(range(19,27)),
-            'conserved_moments':[mass, qx, qy, qz],
-            'polynomials':[
+        'box': {'x': [0., 1.],
+                'y': [0., 1.],
+                'z': [0., 1.],
+                'label': [0, 0, 0, 0, 0, 1]},
+        'space_step': dx,
+        'scheme_velocity': la,
+        'schemes': [
+            {
+            'velocities': list(range(7)) + list(range(19, 27)),
+            'conserved_moments': [mass, qx, qy, qz],
+            'polynomials': [
                 1,
                 r - 2, .5*(15*r**2-55*r+32),
                 X, .5*(5*r-13)*X,
@@ -76,8 +80,8 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
                 X*Y, Y*Z, Z*X,
                 X*Y*Z
             ],
-            'relaxation_parameters':[0, s1, s2, 0, s4, 0, s4, 0, s4, s9, s9, s11, s11, s11, s14],
-            'equilibrium':[
+            'relaxation_parameters': [0, s1, s2, 0, s4, 0, s4, 0, s4, s9, s9, s11, s11, s11, s14],
+            'equilibrium': [
                 mass,
                 -mass + qx**2 + qy**2 + qz**2,
                 -mass,
@@ -94,16 +98,16 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
                 qz*qx,
                 0
             ],
-            'init':{
-                mass:1.,
-                qx: 0.,
-                qy: 0.,
-                qz: 0.
-            },
         }],
-        'boundary_conditions':{
-            0:{'method':{0: pylbm.bc.BouzidiBounceBack}},
-            1:{'method':{0: pylbm.bc.BouzidiBounceBack}, 'value':bc_up},
+        'init': {
+            mass: 1.,
+            qx: 0.,
+            qy: 0.,
+            qz: 0.
+        },
+        'boundary_conditions': {
+            0 :{'method': {0: pylbm.bc.BouzidiBounceBack}},
+            1 :{'method': {0: pylbm.bc.BouzidiBounceBack}, 'value': bc_up},
         },
         'parameters': {LA: la},
         'generator': generator,
@@ -116,7 +120,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     while sol.t < Tf:
         sol.one_time_step()
         compt += 1
-        if compt == 16 and withPlot:
+        if compt == 16 and with_plot:
             im += 1
             save(sol, im)
             compt = 0
