@@ -25,7 +25,7 @@ def save(sol, im):
     h5.add_vector('velocity', [qx_n, qy_n, qz_n])
     h5.save()
 
-def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
     """
     Parameters
     ----------
@@ -41,7 +41,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     sorder: list
         storage order
 
-    withPlot: boolean
+    with_plot: boolean
         if True plot the solution otherwise just compute the solution
 
     """
@@ -120,7 +120,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     while sol.t < Tf:
         sol.one_time_step()
         compt += 1
-        if compt == 16 and withPlot:
+        if compt == 16 and with_plot:
             im += 1
             save(sol, im)
             compt = 0

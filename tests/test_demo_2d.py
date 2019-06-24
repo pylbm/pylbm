@@ -22,7 +22,7 @@ def test2D_case_dir():
 class Test2D:
     def runtest(self, dx, Tf, name, generator):
         module = importlib.import_module(name)
-        return module.run(dx, Tf, generator=generator, withPlot=False)
+        return module.run(dx, Tf, generator=generator, with_plot=False)
 
     def test2D_advection(self, generator):
         dx, Tf = 1./64, 0.5
@@ -34,7 +34,7 @@ class Test2D:
 
     def test2D_coude(self, generator):
         dx, Tf = 1./64, 0.5
-        return self.runtest(dx, Tf, 'coude', generator)
+        return self.runtest(dx, Tf, 'bend', generator)
 
     def test2D_karman_vortex_street(self, generator):
         dx, Tf = 1./64, 0.5

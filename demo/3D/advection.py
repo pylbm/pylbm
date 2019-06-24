@@ -28,7 +28,7 @@ def save(sol, im):
     h5.add_scalar('u', sol.m[u])
     h5.save()
 
-def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
     """
     Parameters
     ----------
@@ -44,7 +44,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     sorder: list
         storage order
 
-    withPlot: boolean
+    with_plot: boolean
         if True plot the solution otherwise just compute the solution
 
     """
@@ -88,7 +88,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     while sol.t < Tf:
         sol.one_time_step()
 
-        if withPlot:
+        if with_plot:
             im += 1
             save(sol, im)
 

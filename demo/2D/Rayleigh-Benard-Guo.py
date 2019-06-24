@@ -51,7 +51,7 @@ def feq_T(v, u):
     f = T/4*(1 + 2*u.dot(vsymb)/c0)
     return sp.Matrix([f.subs([(x, vv[0]), (y, vv[1])]) for iv, vv in enumerate(v)])
 
-def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
     """
     Parameters
     ----------
@@ -67,7 +67,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     sorder: list
         storage order
 
-    withPlot: boolean
+    with_plot: boolean
         if True plot the solution otherwise just compute the solution
 
     """
@@ -132,7 +132,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
 
     sol = pylbm.Simulation(dico)
 
-    if withPlot:
+    if with_plot:
         viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig()
         ax = fig[0]

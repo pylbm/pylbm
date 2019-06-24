@@ -20,7 +20,7 @@ def bc_out(f, m, x, y, width, grad_pressure):
     m[rho] = (x-0.5*width) * grad_pressure
 
 
-def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
     """
     Parameters
     ----------
@@ -36,7 +36,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     sorder: list
         storage order
 
-    withPlot: boolean
+    with_plot: boolean
         if True plot the solution otherwise just compute the solution
 
     """
@@ -96,7 +96,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
 
     sol = pylbm.Simulation(dico, sorder=sorder)
 
-    if withPlot:
+    if with_plot:
         # init viewer
         viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig()
