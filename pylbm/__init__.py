@@ -4,6 +4,9 @@
 #
 # License: BSD 3 clause
 
+"""
+A flexible Python package for lattice Boltzmann method.
+"""
 import logging
 from colorlog import ColoredFormatter
 import mpi4py.MPI as mpi
