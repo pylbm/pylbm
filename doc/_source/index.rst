@@ -20,7 +20,7 @@ You can install pylbm in several ways
 
 .. code:: bash
 
-   conda install pylbm -c pylbm -c conda-forge
+   conda install pylbm -c conda-forge
   
 **With Pypi**
 
