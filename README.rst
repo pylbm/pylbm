@@ -33,7 +33,7 @@ With conda
 
 .. code::
 
-   conda install pylbm -c pylbm -c conda-forge
+   conda install pylbm -c conda-forge
   
 With Pypi
 ---------
