@@ -119,7 +119,6 @@ def run(space_step,
                 'polynomials': [1, X],
                 'relaxation_parameters': [0, symb_s_rho],
                 'equilibrium': [RHO, Q],
-                'init': {RHO: (riemann_pb, (xmid, rho_left, rho_right))},
             },
             {
                 'velocities': [1, 2],
@@ -127,7 +126,6 @@ def run(space_step,
                 'polynomials': [1, X],
                 'relaxation_parameters': [0, symb_s_u],
                 'equilibrium': [Q, (GAMMA-1)*E+(3-GAMMA)/2*Q**2/RHO],
-                'init': {Q: (riemann_pb, (xmid, q_left, q_right))},
             },
             {
                 'velocities': [1, 2],
@@ -135,9 +133,11 @@ def run(space_step,
                 'polynomials': [1, X],
                 'relaxation_parameters': [0, symb_s_p],
                 'equilibrium': [E, GAMMA*E*Q/RHO-(GAMMA-1)/2*Q**3/RHO**2],
-                'init': {E: (riemann_pb, (xmid, rhoe_left, rhoe_right))},
             },
         ],
+        'init': {RHO: (riemann_pb, (xmid, rho_left, rho_right)),
+                 Q: (riemann_pb, (xmid, q_left, q_right)),
+                 E: (riemann_pb, (xmid, rhoe_left, rhoe_right))},
         'boundary_conditions': {
             0: {
                 'method': {

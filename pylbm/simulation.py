@@ -11,10 +11,8 @@ pylbm simulation
 import sys
 import logging
 import types
-# from textwrap import dedent
-# from six import string_types
 import numpy as np
-# import sympy as sp
+from sympy.parsing.sympy_parser import parse_expr
 import mpi4py.MPI as mpi
 
 from .domain import Domain
@@ -221,6 +219,59 @@ class Simulation:
     def __repr__(self):
         return self.__str__()
 
+    def set_initialization(self, dico):
+        """
+        set the initialization functions for the conserved moments.
+
+        Parameters
+        ----------
+
+        dico : dictionnary
+            description of the LBM schemes
+
+        Returns
+        -------
+
+        dictionary
+            the keys are the indices of the conserved moments and the values must be
+                - a constant (int or float)
+                - a tuple of size 2 that describes a function and its extra args
+
+        """
+        init = {}
+        for ns, s in enumerate(scheme):
+            init_scheme = s.get('init', None)
+            if init_scheme is None:
+                log.warning("You don't define initialization step for your conserved moments")
+                continue
+            for k, v in s['init'].items():
+
+                try:
+                    if isinstance(k, str):
+                        indices = self.consm[parse_expr(k)]
+                    elif isinstance(k, (sp.Symbol, sp.IndexedBase)):
+                        indices = self.consm[k]
+                    elif isinstance(k, int):
+                        indices = (ns, k)
+                    else:
+                        raise ValueError
+
+                    init[indices] = v
+
+                except ValueError:
+                    log.error(dedent("""\
+                              Error in the creation of the scheme: wrong dictionnary
+                              the key `init` should contain a dictionnary with
+                                  key: the moment to init
+                                      should be the name of the moment as a string or
+                                      a sympy Symbol or an integer
+                                  value: the initial value
+                                      should be a constant, a tuple with a function
+                                      and extra args or a lambda function
+                              """))
+                    sys.exit()
+        return init
+
     @monitor
     def initialization(self, dico):
         """
@@ -259,7 +310,13 @@ class Simulation:
             log.error(sss)
             sys.exit()
 
-        for k, v in self.scheme.init.items():
+        init = {}
+        init_data = dico.get('init', None)
+        if init_data is None:
+            log.warning("You don't define initialization step for your conserved moments")
+            return
+        
+        for k, v in init_data.items():
             if isinstance(v, tuple):
                 f = v[0]
                 extraargs = v[1] if len(v) == 2 else ()

@@ -49,7 +49,7 @@ dico = {
     'relative_velocity': [C],
 }
 
-scheme = pylbm.Scheme(dico, formal=True)
+scheme = pylbm.Scheme(dico)
 stab = pylbm.Stability(scheme)
 
 stab.visualize({

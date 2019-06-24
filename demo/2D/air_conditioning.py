@@ -107,8 +107,6 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
                     qx**2 - qy**2, qx*qy
                 ],
                 'source_terms':{qy: alpha*g*T},
-                'init':{rho: 1., qx: 0., qy: 0.},
-
             },
             {
                 'velocities': list(range(5)),
@@ -116,9 +114,12 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
                 'polynomials':[1, X, Y, 5*(X**2+Y**2) - 4, (X**2-Y**2)],
                 'equilibrium':[T, T*qx, T*qy, a*T, 0.],
                 'relaxation_parameters':sT,
-                'init':{T:(init_T, (T0,))},
             },
         ],
+        'init':{rho: 1.,
+                qx: 0.,
+                qy: 0.,
+                T: (init_T, (T0,))},
         'boundary_conditions':{
             0:{'method':{0: pylbm.bc.BouzidiBounceBack, 1: pylbm.bc.BouzidiAntiBounceBack}, 'value':(bc, (T0,))},
             1:{'method':{0: pylbm.bc.BouzidiBounceBack, 1: pylbm.bc.BouzidiAntiBounceBack}, 'value': (bc_in, (T0, Tin, ymax, rhoo, uo))},

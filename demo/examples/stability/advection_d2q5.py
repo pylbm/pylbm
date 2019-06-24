@@ -58,7 +58,7 @@ dico = {
     'relative_velocity': [CX, CY],
 }
 
-scheme = pylbm.Scheme(dico, formal=True)
+scheme = pylbm.Scheme(dico)
 stab = pylbm.Stability(scheme)
 stab.visualize({
     'number_of_wave_vectors': 4096,

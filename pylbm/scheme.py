@@ -132,8 +132,7 @@ class Scheme:
     def __init__(self,
                  dico,
                  check_inverse=False,
-                 need_validation=True,
-                 formal=False):
+                 need_validation=True):
 
         if need_validation:
             validate(dico, __class__.__name__)
@@ -177,11 +176,6 @@ class Scheme:
         self._permute_consm_in_front()
         if self.rel_vel is not None:
             self.Tu_no_swap = self.Tu.copy()
-
-        if formal:
-            self.init = {}
-        else:
-            self.init = self.set_initialization(scheme)
 
         self._check_inverse(self.M, self.invM, 'M')
         self._check_inverse_of_Tu()
@@ -447,59 +441,6 @@ class Scheme:
             l_cons[n].sort()
             l_noncons[n].sort()
         return l_cons, l_noncons
-
-    def set_initialization(self, scheme):
-        """
-        set the initialization functions for the conserved moments.
-
-        Parameters
-        ----------
-
-        scheme : dictionnary
-            description of the LBM schemes
-
-        Returns
-        -------
-
-        dictionary
-            the keys are the indices of the conserved moments and the values must be
-                - a constant (int or float)
-                - a tuple of size 2 that describes a function and its extra args
-
-        """
-        init = {}
-        for ns, s in enumerate(scheme):
-            init_scheme = s.get('init', None)
-            if init_scheme is None:
-                log.warning("You don't define initialization step for your conserved moments")
-                continue
-            for k, v in s['init'].items():
-
-                try:
-                    if isinstance(k, str):
-                        indices = self.consm[parse_expr(k)]
-                    elif isinstance(k, (sp.Symbol, sp.IndexedBase)):
-                        indices = self.consm[k]
-                    elif isinstance(k, int):
-                        indices = (ns, k)
-                    else:
-                        raise ValueError
-
-                    init[indices] = v
-
-                except ValueError:
-                    log.error(dedent("""\
-                              Error in the creation of the scheme: wrong dictionnary
-                              the key `init` should contain a dictionnary with
-                                  key: the moment to init
-                                      should be the name of the moment as a string or
-                                      a sympy Symbol or an integer
-                                  value: the initial value
-                                      should be a constant, a tuple with a function
-                                      and extra args or a lambda function
-                              """))
-                    sys.exit()
-        return init
 
     def set_source_terms(self, scheme):
         """

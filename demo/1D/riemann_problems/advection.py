@@ -101,9 +101,9 @@ def run(space_step,
                 'polynomials': [1, X],
                 'relaxation_parameters': [0., symb_s],
                 'equilibrium': [U, C*U],
-                'init': {U: (riemann_pb, (xmid, u_left, u_right))},
             },
         ],
+        'init': {U: (riemann_pb, (xmid, u_left, u_right))},
         'boundary_conditions': {
             0: {'method': {
                 0: pylbm.bc.Neumann,

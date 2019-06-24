@@ -79,12 +79,12 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
                               -qx/LA, -qy/LA,
                               qx2 - qy2, qxy],
                     'conserved_moments': [rho, qx, qy],
-                    'init':{rho: 1.,
-                            qx: 0.,
-                            qy: 0.
-                            },
                     }],
         'parameters':{LA:la},
+        'init':{rho: 1.,
+                qx: 0.,
+                qy: 0.
+                },
         'boundary_conditions':{
             0:{'method':{0: pylbm.bc.BouzidiBounceBack}},
             1:{'method':{0: pylbm.bc.NeumannX}},
