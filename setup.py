@@ -21,7 +21,7 @@ CLASSIFIERS = [
 
 MAJOR = "0"
 MINOR = "4"
-PATCH = "0"
+PATCH = "1"
 VERSION = "{0}.{1}.{2}".format(MAJOR, MINOR, PATCH)
 
 def write_version_py(filename='pylbm/version.py'):
@@ -49,7 +49,6 @@ setup(
     classifiers    = CLASSIFIERS,
     packages       = find_packages(exclude=['demo', 'doc', 'tests*']),
     package_data   = {'pylbm': ['templates/*']},
-    include_package_data=True,
     install_requires=[
                         "numpy",
                         "matplotlib",
