@@ -61,7 +61,7 @@ def save(mpi_topo, x, y, m, num):
     h5.add_vector('B', [m[Bx], m[By]])
     h5.save()
 
-def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
     """
     Parameters
     ----------
@@ -77,7 +77,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     sorder: list
         storage order
 
-    withPlot: boolean
+    with_plot: boolean
         if True plot the solution otherwise just compute the solution
 
     """
@@ -181,7 +181,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
 
     sol = pylbm.Simulation(dico)
 
-    if withPlot:
+    if with_plot:
         # init viewer
         viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig()

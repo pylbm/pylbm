@@ -60,7 +60,7 @@ def save(sol, im):
     h5.add_scalar('T', sol.m[T])
     h5.save()
 
-def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
     """
     Parameters
     ----------
@@ -76,7 +76,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     sorder: list
         storage order
 
-    withPlot: boolean
+    with_plot: boolean
         if True plot the solution otherwise just compute the solution
 
     """
@@ -154,7 +154,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
 
     x, y = sol.domain.x, sol.domain.y
 
-    if withPlot:
+    if with_plot:
         viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig()
         ax = fig[0]

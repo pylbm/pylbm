@@ -23,25 +23,19 @@ def test1D_case_dir():
 class Test1D:
     def runtest(self, name, generator):
         module = importlib.import_module(name)
-        return module.run(dx, Tf, generator=generator, withPlot=False)
+        return module.run(dx, Tf, generator=generator, with_plot=False)
 
-    # def test1D_advection(self, generator):
-    #     return self.runtest('advection', generator)
+    def test1D_advection(self, generator):
+        return self.runtest('advection', generator)
 
-    # def test1D_advection_reaction(self, generator):
-    #     return self.runtest('advection_reaction', generator)
+    def test1D_advection_reaction(self, generator):
+        return self.runtest('advection_reaction', generator)
 
-    # def test1D_burgers(self, generator):
-    #     return self.runtest('burgers', generator)
+    def test1D_burgers(self, generator):
+        return self.runtest('burgers', generator)
 
-    # def test1D_euler(self, generator):
-    #     return self.runtest('euler', generator)
-
-    # def test1D_p_system(self, generator):
-    #     return self.runtest('p_system', generator)
-
-    # def test1D_shallow_water(self, generator):
-    #     return self.runtest('shallow_water', generator)
+    def test1D_euler(self, generator):
+        return self.runtest('euler', generator)
 
 @pytest.fixture
 def test1D_riemann_case_dir():

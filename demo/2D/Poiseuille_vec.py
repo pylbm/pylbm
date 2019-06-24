@@ -44,7 +44,7 @@ def bc_in(f, m, x, y, width, height, max_velocity, grad_pressure, cte):
 def bc_out(f, m, x, y, width, grad_pressure, cte):
     m[p] = (x-0.5*width) * grad_pressure * cte
 
-def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
     """
     Parameters
     ----------
@@ -60,7 +60,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     sorder: list
         storage order
 
-    withPlot: boolean
+    with_plot: boolean
         if True plot the solution otherwise just compute the solution
 
     """
@@ -136,7 +136,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     while sol.t<Tf:
         sol.one_time_step()
 
-    if withPlot:
+    if with_plot:
         print("*"*50)
         p_n = sol.m[p]
         ux_n = sol.m[ux]
