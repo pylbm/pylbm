@@ -7,12 +7,10 @@ CLASSIFIERS = [
     "License :: OSI Approved :: BSD License",
     "Programming Language :: Cython",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 2",
-    "Programming Language :: Python :: 2.7",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.3",
-    "Programming Language :: Python :: 3.4",
     "Programming Language :: Python :: 3.5",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
     "Topic :: Software Development",
     "Topic :: Scientific/Engineering",
     "Operating System :: Microsoft :: Windows",
@@ -22,8 +20,8 @@ CLASSIFIERS = [
 
 
 MAJOR = "0"
-MINOR = "3"
-PATCH = "2"
+MINOR = "4"
+PATCH = "0"
 VERSION = "{0}.{1}.{2}".format(MAJOR, MINOR, PATCH)
 
 def write_version_py(filename='pylbm/version.py'):
@@ -52,15 +50,15 @@ setup(
     package_data   = {'pylbm': ['templates/*']},
     include_package_data=True,
     install_requires=[
-                      'numpy>=1.9.2',
-                      'sympy>=1.1.1<1.2',
-                      'colorlog>=2.4.0',
-                      'colorama',
-                      'cerberus',
-                      'jinja2',
-                      'Cython>=0.21.1',
-                      'mpi4py>=1.3.1',
-                      'matplotlib>=1.4.0',
-                      'h5py'
+                        "numpy",
+                        "matplotlib",
+                        "sympy >=1.1.1,<1.2",
+                        "cython",
+                        "h5py",
+                        "mpi4py",
+                        "colorlog",
+                        "colorama",
+                        "cerberus",
+                        "jinja2",
                       ],
 )
