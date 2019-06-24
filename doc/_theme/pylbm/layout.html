@@ -17,8 +17,6 @@
 {%- endif %}
 
 {%- macro script() %}
-<script src="http://code.jquery.com/jquery-latest.js"></script>
-<script src="{{ pathto('_static/', 1) }}js/bootstrap.min.js"></script>
 <script type="text/javascript">
   var DOCUMENTATION_OPTIONS = {
     URL_ROOT: '{{ url_root }}',
@@ -39,17 +37,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
 <!-- Bootstrap CSS -->
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+  integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+  integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
   integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
 <link rel="stylesheet" href="{{ pathto('_static/pygments.css', 1) }}" type="text/css" />
 <!-- <link href="{{ pathto('_static/', 1) }}css/bootstrap.min.css" rel="stylesheet" type="text/css"> -->
 <link href="{{ pathto('_static/', 1) }}css/custom.css" rel="stylesheet" type="text/css">
-<link href="http://fonts.googleapis.com/css?family=Raleway" rel="stylesheet" type="text/css">
-<link href="http://fonts.googleapis.com/css?family=Oswald" rel="stylesheet" type="text/css">
-<link href="http://fonts.googleapis.com/css?family=Lora" rel="stylesheet" type="text/css">
-<link href="http://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet" type="text/css">
-<link href="http://fonts.googleapis.com/css?Source+Code+Pro" rel="stylesheet" type="text/css">
+<link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet" type="text/css">
+<link href="https://fonts.googleapis.com/css?family=Oswald" rel="stylesheet" type="text/css">
+<link href="https://fonts.googleapis.com/css?family=Lora" rel="stylesheet" type="text/css">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet" type="text/css">
+<link href="https://fonts.googleapis.com/css?Source+Code+Pro" rel="stylesheet" type="text/css">
 {%- for cssfile in css_files %}
 <link rel="stylesheet" href="{{ pathto(cssfile, 1) }}" type="text/css" />
 {%- endfor %}
@@ -88,7 +91,7 @@
   <link rel="prev" title="{{ prev.title|striptags|e }}" href="{{ prev.link|e }}" />
   {%- endif %}
   <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
-  <link type="image/x-icon" rel="shortcut icon" href="{{ pathto('_static/', 1) }}favicon.ico">
+  <link type="image/x-icon" rel="shortcut icon" href="{{ pathto('_static/', 1) }}img/pylbm.ico">
   {%- block extrahead %}{% endblock %}
 </head>
 
@@ -124,13 +127,15 @@
     &copy; Copyright pylbm development team.
   </div>
   <!-- Optional JavaScript -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
-    integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+  <!-- <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+    integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
     crossorigin="anonymous"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
-    integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+    integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
     crossorigin="anonymous"></script>
-</body>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+    integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+    crossorigin="anonymous"></script> -->
 </body>
 
 </html>
