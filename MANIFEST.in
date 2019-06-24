@@ -1,12 +1,3 @@
 include LICENSE
 include README.rst
 include MANIFEST.in
-recursive-include demo *.py
-
-recursive-include notebooks *.meta *.ipynb
-prune notebooks/.ipynb_checkpoints
-
-recursive-include tests *.py *.npz *.npy
-
-recursive-include doc *
-prune doc/_build
