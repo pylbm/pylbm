@@ -22,7 +22,7 @@ def test3D_case_dir():
 class Test3D:
     def runtest(self, dx, Tf, name, generator):
         module = importlib.import_module(name)
-        return module.run(dx, Tf, generator=generator, withPlot=False)
+        return module.run(dx, Tf, generator=generator, with_plot=False)
 
     def test3D_advection(self, generator):
         dx, Tf = 1./64, 0.5

@@ -11,10 +11,8 @@ pylbm simulation
 import sys
 import logging
 import types
-# from textwrap import dedent
-# from six import string_types
 import numpy as np
-# import sympy as sp
+from sympy.parsing.sympy_parser import parse_expr
 import mpi4py.MPI as mpi
 
 from .domain import Domain
@@ -259,7 +257,12 @@ class Simulation:
             log.error(sss)
             sys.exit()
 
-        for k, v in self.scheme.init.items():
+        init_data = dico.get('init', None)
+        if init_data is None:
+            log.warning("You don't define initialization step for your conserved moments")
+            return
+        
+        for k, v in init_data.items():
             if isinstance(v, tuple):
                 f = v[0]
                 extraargs = v[1] if len(v) == 2 else ()

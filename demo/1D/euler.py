@@ -41,7 +41,7 @@ def Riemann_pb(x, xmin, xmax, uL, uR):
     u[x > xm] = uR
     return u
 
-def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
     """
     Parameters
     ----------
@@ -57,7 +57,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     sorder: list
         storage order
 
-    withPlot: boolean
+    with_plot: boolean
         if True plot the solution otherwise just compute the solution
 
     """
@@ -83,7 +83,6 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
                 'polynomials':[1, LA*X],
                 'relaxation_parameters':[0, s_rho],
                 'equilibrium':[rho, q],
-                'init':{rho:(Riemann_pb, (xmin, xmax, rho_L, rho_R))},
             },
             {
                 'velocities':[1,2],
@@ -91,7 +90,6 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
                 'polynomials':[1, LA*X],
                 'relaxation_parameters':[0, s_q],
                 'equilibrium':[q, (gamma-1.)*E+0.5*(3.-gamma)*q**2/rho],
-                'init':{q:(Riemann_pb, (xmin, xmax, q_L, q_R))},
             },
             {
                 'velocities':[1,2],
@@ -99,9 +97,11 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
                 'polynomials':[1, LA*X],
                 'relaxation_parameters':[0, s_E],
                 'equilibrium':[E, gamma*E*q/rho-0.5*(gamma-1.)*q**3/rho**2],
-                'init':{E:(Riemann_pb, (xmin, xmax, E_L, E_R))},
             },
         ],
+        'init':{rho: (Riemann_pb, (xmin, xmax, rho_L, rho_R)),
+                q: (Riemann_pb, (xmin, xmax, q_L, q_R)),
+                E: (Riemann_pb, (xmin, xmax, E_L, E_R))},
         'boundary_conditions':{
             0:{
                 'method':{
@@ -120,7 +120,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     while (sol.t<Tf):
         sol.one_time_step()
 
-    if withPlot:
+    if with_plot:
         x = sol.domain.x
         rho_n = sol.m[rho]
         q_n = sol.m[q]

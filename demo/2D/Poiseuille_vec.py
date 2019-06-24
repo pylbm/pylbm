@@ -44,7 +44,7 @@ def bc_in(f, m, x, y, width, height, max_velocity, grad_pressure, cte):
 def bc_out(f, m, x, y, width, grad_pressure, cte):
     m[p] = (x-0.5*width) * grad_pressure * cte
 
-def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
     """
     Parameters
     ----------
@@ -60,7 +60,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     sorder: list
         storage order
 
-    withPlot: boolean
+    with_plot: boolean
         if True plot the solution otherwise just compute the solution
 
     """
@@ -91,24 +91,24 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
                     'relaxation_parameters': [0., s1, s1, 1.],
                     'equilibrium': [p, ux, uy, 0.],
                     'conserved_moments': p,
-                    'init': {p: 0.},
                     },
                     {'velocities': velocities,
                     'polynomials': polynomes,
                     'relaxation_parameters': [0., s2, s2, 1.],
                     'equilibrium': [ux, ux**2 + p/cte, ux*uy, 0.],
                     'conserved_moments': ux,
-                    'init': {ux: 0.},
                     },
                     {'velocities': velocities,
                     'polynomials': polynomes,
                     'relaxation_parameters': [0., s2, s2, 1.],
                     'equilibrium': [uy, ux*uy, uy**2 + p/cte, 0.],
                     'conserved_moments': uy,
-                    'init': {uy: 0.},
                     },
         ],
         'parameters': {LA: la},
+        'init': {p: 0.,
+                 ux: 0.,
+                 uy: 0.},
         'boundary_conditions':{
             0:{'method':{0: pylbm.bc.BouzidiBounceBack,
                          1: pylbm.bc.BouzidiAntiBounceBack,
@@ -136,7 +136,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     while sol.t<Tf:
         sol.one_time_step()
 
-    if withPlot:
+    if with_plot:
         print("*"*50)
         p_n = sol.m[p]
         ux_n = sol.m[ux]

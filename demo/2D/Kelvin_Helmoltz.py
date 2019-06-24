@@ -209,13 +209,13 @@ def run(space_step,
                 'relaxation_parameters': s,
                 'equilibrium': equilibrium,
                 'conserved_moments': [RHO, QX, QY],
-                'init': {
-                    RHO: rho_o,
-                    QX: (qx_init, (u_o, k)),
-                    QY: (qy_init, (u_o, delta))
-                },
             },
         ],
+        'init': {
+            RHO: rho_o,
+            QX: (qx_init, (u_o, k)),
+            QY: (qy_init, (u_o, delta))
+        },
         'relative_velocity': [QX/RHO, QY/RHO],
         'generator': generator,
     }

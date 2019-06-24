@@ -28,7 +28,7 @@ def save(sol, im):
     h5.add_scalar('u', sol.m[u])
     h5.save()
 
-def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
     """
     Parameters
     ----------
@@ -44,7 +44,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     sorder: list
         storage order
 
-    withPlot: boolean
+    with_plot: boolean
         if True plot the solution otherwise just compute the solution
 
     """
@@ -62,17 +62,22 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     la = 1.
 
     d = {
-        'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'z':[zmin, zmax], 'label':-1},
-        'space_step':dx,
-        'scheme_velocity':la,
-        'schemes':[{
-            'velocities': list(range(1,7)),
-            'conserved_moments':[u],
-            'polynomials': [1, LA*X, LA*Y, LA*Z, X**2-Y**2, X**2-Z**2],
-            'equilibrium': [u, ux*u, uy*u, uz*u, 0., 0.],
-            'relaxation_parameters': [0., s, s, s, s, s],
-            'init':{u: u0},
-        },],
+        'box': {'x': [xmin, xmax],
+                'y': [ymin, ymax],
+                'z': [zmin, zmax],
+                'label':-1},
+        'space_step': dx,
+        'scheme_velocity': la,
+        'schemes': [
+            {
+                'velocities': list(range(1,7)),
+                'conserved_moments':[u],
+                'polynomials': [1, LA*X, LA*Y, LA*Z, X**2-Y**2, X**2-Z**2],
+                'equilibrium': [u, ux*u, uy*u, uz*u, 0., 0.],
+                'relaxation_parameters': [0., s, s, s, s, s],
+            },
+        ],
+        'init':{u: u0},
         'parameters': {LA: la},
         'generator': generator,
     }
@@ -83,7 +88,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     while sol.t < Tf:
         sol.one_time_step()
 
-        if withPlot:
+        if with_plot:
             im += 1
             save(sol, im)
 

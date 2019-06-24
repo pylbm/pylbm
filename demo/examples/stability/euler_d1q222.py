@@ -65,7 +65,7 @@ dico = {
     },
 }
 
-scheme = pylbm.Scheme(dico, formal=True)
+scheme = pylbm.Scheme(dico)
 stab = pylbm.Stability(scheme)
 
 # linearization around a state

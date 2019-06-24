@@ -52,7 +52,7 @@ def save(sol, num):
     h5.add_vector('velocity', [qx_n, qy_n, qz_n])
     h5.save()
 
-def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
+def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
     """
     Parameters
     ----------
@@ -68,7 +68,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     sorder: list
         storage order
 
-    withPlot: boolean
+    with_plot: boolean
         if True plot the solution otherwise just compute the solution
 
     """
@@ -103,59 +103,66 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
         m[p] = (x-0.5*width) * grad_pressure *cte
 
     dico = {
-        'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'z':[zmin, zmax], 'label':[1, 2, 0, 0, -1, -1]},
-        'space_step':dx,
-        'scheme_velocity':la,
-        'schemes':[{
-            'velocities':velocities,
-            'conserved_moments':p,
-            'polynomials':polynomes,
-            'relaxation_parameters':vs,
-            'equilibrium':[p, ux, uy, uz, 0., 0.],
-            'init':{p:0.},
-            },{
-            'velocities':velocities,
-            'conserved_moments':ux,
-            'polynomials':polynomes,
-            'relaxation_parameters':vs,
-            'equilibrium':[ux, ux**2 + p/cte, ux*uy, ux*uz, 0., 0.],
-            'init':{ux:0.},
-            },{
-            'velocities':velocities,
-            'conserved_moments':uy,
-            'polynomials':polynomes,
-            'relaxation_parameters':vs,
-            'equilibrium':[uy, uy*ux, uy**2 + p/cte, uy*uz, 0., 0.],
-            'init':{uy:0.},
-            },{
-            'velocities':velocities,
-            'conserved_moments':uz,
-            'polynomials':polynomes,
-            'relaxation_parameters':vs,
-            'equilibrium':[uz, uz*ux, uz*uy, uz**2 + p/cte, 0., 0.],
-            'init':{uz:0.},
+        'box': {'x': [xmin, xmax],
+                'y': [ymin, ymax],
+                'z': [zmin, zmax],
+                'label': [1, 2, 0, 0, -1, -1]},
+        'space_step': dx,
+        'scheme_velocity': la,
+        'schemes': [
+            {
+                'velocities': velocities,
+                'conserved_moments': p,
+                'polynomials': polynomes,
+                'relaxation_parameters': vs,
+                'equilibrium': [p, ux, uy, uz, 0., 0.],
+            },
+            {
+                'velocities': velocities,
+                'conserved_moments': ux,
+                'polynomials': polynomes,
+                'relaxation_parameters': vs,
+                'equilibrium': [ux, ux**2 + p/cte, ux*uy, ux*uz, 0., 0.],
+            },
+            {
+                'velocities': velocities,
+                'conserved_moments': uy,
+                'polynomials': polynomes,
+                'relaxation_parameters': vs,
+                'equilibrium': [uy, uy*ux, uy**2 + p/cte, uy*uz, 0., 0.],
+            },
+            {
+                'velocities': velocities,
+                'conserved_moments': uz,
+                'polynomials': polynomes,
+                'relaxation_parameters': vs,
+                'equilibrium': [uz, uz*ux, uz*uy, uz**2 + p/cte, 0., 0.],
             },
         ],
-        'boundary_conditions':{
-            0:{'method':{0: pylbm.bc.BouzidiBounceBack,
-                         1: pylbm.bc.BouzidiAntiBounceBack,
-                         2: pylbm.bc.BouzidiAntiBounceBack,
-                         3: pylbm.bc.BouzidiAntiBounceBack,
-                         },
+        'init': {p: 0.,
+                 ux: 0.,
+                 uy: 0.,
+                 uz: 0.},
+        'boundary_conditions': {
+            0: {'method': {0: pylbm.bc.BouzidiBounceBack,
+                           1: pylbm.bc.BouzidiAntiBounceBack,
+                           2: pylbm.bc.BouzidiAntiBounceBack,
+                           3: pylbm.bc.BouzidiAntiBounceBack,
+                          },
             },
-            1:{'method':{0: pylbm.bc.BouzidiAntiBounceBack,
-                         1: pylbm.bc.NeumannX,
-                         2: pylbm.bc.NeumannX,
-                         3: pylbm.bc.NeumannX,
-                         },
-                'value':bc_out,
+            1: {'method': {0: pylbm.bc.BouzidiAntiBounceBack,
+                           1: pylbm.bc.NeumannX,
+                           2: pylbm.bc.NeumannX,
+                           3: pylbm.bc.NeumannX,
+                          },
+                'value': bc_out,
             },
-            2:{'method':{0: pylbm.bc.BouzidiAntiBounceBack,
-                         1: pylbm.bc.BouzidiAntiBounceBack,
-                         2: pylbm.bc.BouzidiAntiBounceBack,
-                         3: pylbm.bc.BouzidiAntiBounceBack,
-                         },
-                'value':bc_in,
+            2: {'method': {0: pylbm.bc.BouzidiAntiBounceBack,
+                           1: pylbm.bc.BouzidiAntiBounceBack,
+                           2: pylbm.bc.BouzidiAntiBounceBack,
+                           3: pylbm.bc.BouzidiAntiBounceBack,
+                          },
+                'value': bc_in,
             },
         },
         'parameters': {LA: la},
@@ -169,7 +176,7 @@ def run(dx, Tf, generator="cython", sorder=None, withPlot=True):
     while sol.t < Tf:
         sol.one_time_step()
         compt += 1
-        if compt == 100 and withPlot:
+        if compt == 100 and with_plot:
             im += 1
             save(sol, im)
             compt = 0
