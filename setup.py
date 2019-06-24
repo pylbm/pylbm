@@ -31,15 +31,16 @@ def write_version_py(filename='pylbm/version.py'):
     finally:
         a.close()
 
-README = open("README.rst").readlines()
+with open("README.rst", "r") as fh:
+    long_description = fh.read()
 
 write_version_py()
 
 setup(
     name           = "pylbm",
     version        = VERSION,
-    description    = README[0],
-    long_description = "".join(README[1:]),
+    description    = "A flexible Python package for lattice Boltzmann method",
+    long_description = long_description,
     author         = "Benjamin Graille, Loic Gouarin",
     author_email   = "benjamin.graille@math.u-psud.fr, loic.gouarin@polytechnique.edu",
     url            = "https://github.com/pylbm/pylbm",
