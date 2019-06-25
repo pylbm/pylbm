@@ -4,10 +4,10 @@ pylbm
 |Binder| |Travis| |Appveyor| |Doc badge| |Gitter Badge|
 
 .. |Binder| image:: https://mybinder.org/badge.svg 
-   :target: https://mybinder.org/v2/gh/pylbm/pylbm/develop
-.. |Travis| image:: https://travis-ci.org/pylbm/pylbm.svg?branch=develop
+   :target: https://mybinder.org/v2/gh/pylbm/pylbm/master
+.. |Travis| image:: https://travis-ci.org/pylbm/pylbm.svg?branch=master
    :target: https://travis-ci.org/pylbm/pylbm
-.. |Appveyor| image:: https://ci.appveyor.com/api/projects/status/lm3gufe7njj29s0t/branch/develop?svg=true
+.. |Appveyor| image:: https://ci.appveyor.com/api/projects/status/lm3gufe7njj29s0t/branch/master?svg=true
    :target: https://ci.appveyor.com/project/pylbm/pylbm
 .. |Gitter Badge| image:: https://badges.gitter.im/pylbm/pylbm.svg
    :alt: Join the chat at https://gitter.im/pylbm/pylbm
