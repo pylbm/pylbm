@@ -135,7 +135,7 @@ class Scheme:
                  need_validation=True):
 
         if need_validation:
-            validate(dico, __class__.__name__)
+            validate(dico, __class__.__name__) #pylint: disable=undefined-variable
 
         self.stencil = Stencil(dico, need_validation=False)
         self.dim = self.stencil.dim

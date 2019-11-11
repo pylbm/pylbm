@@ -79,7 +79,7 @@ class Stability:
             v_xi_0 = np.linspace(0, 2*np.pi, n_wv_0, endpoint=False)
             v_xi_x, v_xi_y = np.meshgrid(v_xi_0, v_xi_0)
             v_xi = np.array([v_xi_x.flatten(), v_xi_y.flatten()])
-            n_wv = v_xi.shape[1]
+            n_wv = v_xi.shape[1] #pylint: disable=unsubscriptable-object
         eigs = np.empty((n_wv, self.nvtot), dtype='complex')
 
         if not self.is_notebook:

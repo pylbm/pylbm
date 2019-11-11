@@ -636,7 +636,7 @@ class Stencil(list):
         super(Stencil, self).__init__()
 
         if need_validation:
-            validate(dico, __class__.__name__)
+            validate(dico, __class__.__name__) #pylint: disable=undefined-variable
 
         # get the dimension of the stencil
         # (given in the dictionnary or computed
