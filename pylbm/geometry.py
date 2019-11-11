@@ -111,7 +111,7 @@ class Geometry:
 
     def __init__(self, dico, need_validation=True):
         if need_validation:
-            validate(dico, __class__.__name__)
+            validate(dico, __class__.__name__) #pylint: disable=undefined-variable
 
         self.dim, self.bounds = get_box(dico)
 
