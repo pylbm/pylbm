@@ -88,7 +88,7 @@ class Simulation:
                  sorder=None, dtype='float64',
                  check_inverse=False
                  ):
-        validate(dico, __class__.__name__)
+        validate(dico, __class__.__name__) #pylint: disable=undefined-variable
 
         self.domain = Domain(dico, need_validation=False)
         domain_size = mpi.COMM_WORLD.allreduce(sendobj=np.prod(self.domain.shape_in))

@@ -264,7 +264,7 @@ class Domain:
         self.valout = -1   # value in the solid domain
 
         if dico is not None and need_validation:
-            validate(dico, __class__.__name__)
+            validate(dico, __class__.__name__) #pylint: disable=undefined-variable
 
         self.geom = Geometry(dico, need_validation=False)
         self.stencil = Stencil(dico, need_validation=False)
@@ -734,7 +734,7 @@ class Domain:
             if bound.size != 0:
                 vk = self.stencil.unique_velocities[k].v_full
                 color = _fix_color(vk)
-                lines = np.empty((2*bound.shape[0], max(2, self.dim)))
+                lines = np.empty((2*bound.shape[0], max(2, self.dim))) #pylint: disable=unsubscriptable-object
                 lines[::2, :] = bound
                 lines[1::2, :] = bound \
                     + self.dx*np.outer(dist, vk[:max(2, self.dim)])
