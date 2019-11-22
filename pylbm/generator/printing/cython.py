@@ -78,6 +78,12 @@ class CythonCodePrinter(CodePrinter):
     printmethod = "_cythoncode"
     language = "Cython"
 
+    _operators = {
+        'and': 'and',
+        'or': 'or',
+        'not': 'not',
+    }
+
     _default_settings = {
         'order': None,
         'full_prec': 'auto',
@@ -285,9 +291,9 @@ class CythonCodePrinter(CodePrinter):
             # operators. This has the downside that inline operators will
             # not work for statements that span multiple lines (Matrix or
             # Indexed expressions).
-            ecpairs = ["((%s) ? (\n%s\n)\n" % (self._print(c), self._print(e))
-                    for e, c in expr.args[:-1]]
-            last_line = ": (\n%s\n)" % self._print(expr.args[-1].expr)
+            ecpairs = ["((%s) if (\n%s\n)\n" % (self._print(e), self._print(c))
+                       for e, c in expr.args[:-1]]
+            last_line = "else (\n%s\n)" % self._print(expr.args[-1].expr)
             return ": ".join(ecpairs) + last_line + " ".join([")"*len(ecpairs)])
 
     def _print_ITE(self, expr):
