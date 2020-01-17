@@ -280,7 +280,8 @@ def validate(dico, name):
                              },
                   'parameters': {'type': 'dict',
                                  'keyschema': {'type': 'symbol'},
-                                 'valueschema': {'type': 'number'}
+                                 'valueschema': {'anyof': [{'type': 'expr'},
+                                                           {'type': 'number'}]},
                                 },
                   'init': {'type': 'dict',
                            'keyschema': {'type': 'symbol'},

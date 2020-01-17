@@ -13,7 +13,7 @@ import numpy as np
 
 from .. import viewer
 from ..utils import print_progress
-from ..symbolic import rel_ux, rel_uy, rel_uz
+from ..symbolic import rel_ux, rel_uy, rel_uz, recursive_sub
 
 
 class Stability:
@@ -69,7 +69,7 @@ class Stability:
         """
         to_subs = list((i, j) for i, j in zip(self.consm, consm0))
         to_subs += list(self.param.items())
-        relax_mat_f_num = self.relax_mat_f.subs(to_subs)
+        relax_mat_f_num = recursive_sub(self.relax_mat_f, to_subs)
 
         if self.dim == 1:
             v_xi = np.linspace(0, 2*np.pi, n_wv, endpoint=False)
