@@ -210,6 +210,15 @@ def alltogether(M, nsimplify=False):
                 # M[i, j] = M[i, j].expand().together().factor()
                 M[i, j] = M[i, j].expand().together()
 
+def recursive_sub(expr, replace):
+    for _ in range(len(replace)):
+        new_expr = expr.subs(replace)
+        if new_expr == expr:
+            return new_expr
+        else:
+            expr = new_expr
+    return new_expr
+
 def getargspec_permissive(func):
     """
     find in https://github.com/neithere/argh/blob/master/argh/compat.py

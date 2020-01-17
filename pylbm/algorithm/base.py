@@ -67,7 +67,7 @@ import sympy as sp
 from sympy import Eq
 
 from ..generator import For, If
-from ..symbolic import ix, iy, iz, nx, ny, nz, nv, indexed, space_idx, alltogether
+from ..symbolic import ix, iy, iz, nx, ny, nz, nv, indexed, space_idx, alltogether, recursive_sub
 from ..symbolic import rel_ux, rel_uy, rel_uz
 from .transform import parse_expr
 from .ode import euler
@@ -112,24 +112,24 @@ class BaseAlgorithm:
         to_subs = subs_coords + list(scheme.param.items())
         to_subs_full = to_subs + subs_moments
 
-        self.eq = scheme.EQ.subs(to_subs_full)
-        self.s = scheme.s.subs(to_subs_full)
+        self.eq = recursive_sub(scheme.EQ, to_subs_full)
+        self.s = recursive_sub(scheme.s, to_subs_full)
         alltogether(self.eq, nsimplify=True)
         alltogether(self.s)
 
         if self.rel_vel_symb:
-            self.rel_vel = self.rel_vel.subs(to_subs_full)
+            self.rel_vel = recursive_sub(self.rel_vel, to_subs_full)
             alltogether(self.rel_vel)
 
         self.source_eq = []
         for source in scheme._source_terms:
             if source:
                 for k, v in source.items():
-                    lhs = k.subs(to_subs_full)
+                    lhs = recursive_sub(k, to_subs_full)
                     if isinstance(v, (float, int)):
                         rhs = v
                     else:
-                        rhs = v.subs(to_subs)
+                        rhs = recursive_sub(v, to_subs)
                     self.source_eq.append((lhs, rhs))
 
         self.vmax = [0]*3
