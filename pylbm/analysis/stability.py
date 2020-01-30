@@ -202,14 +202,15 @@ class Stability:
             out = widgets.Output()
 
             sliders = {}
-            for k, v in dicosliders.items():
-                sliders[k] = widgets.FloatSlider(value=v['init'],
-                                                 min=v['range'][0],
-                                                 max=v['range'][1],
-                                                 step=v['step'],
-                                                 continuous_update=False,
-                                                 description=v.get('name', sp.pretty(k)),
-                                                 layout=widgets.Layout(width='80%'))
+            if dicosliders:
+                for k, v in dicosliders.items():
+                    sliders[k] = widgets.FloatSlider(value=v['init'],
+                                                    min=v['range'][0],
+                                                    max=v['range'][1],
+                                                    step=v['step'],
+                                                    continuous_update=False,
+                                                    description=v.get('name', sp.pretty(k)),
+                                                    layout=widgets.Layout(width='80%'))
 
             with out:
                 fig.show()
@@ -247,8 +248,9 @@ class Stability:
                 sliders[k].observe(update)
 
             display(out)
-            for k, v in dicosliders.items():
-                display(sliders[k])
+            if dicosliders:
+                for k, v in dicosliders.items():
+                    display(sliders[k])
 
         else:
             import matplotlib.pyplot as plt
