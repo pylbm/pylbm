@@ -334,7 +334,7 @@ class Simulation:
         self.algo.call_function('equilibrium', self, m_user, **kwargs)
 
     @monitor
-    def boundary_condition(self):
+    def boundary_condition(self, **kwargs):
         """
         perform the boundary conditions
 
@@ -348,7 +348,7 @@ class Simulation:
         f.update()
 
         for method in self.bc.methods:
-            method.update(f)
+            method.update(f, **kwargs)
 
     @monitor
     def one_time_step(self, **kwargs):
