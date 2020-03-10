@@ -1,0 +1,6 @@
+mpi4py
+notebook
+nbsphinx
+ipywidgets
+jupyter_sphinx
+numpydoc
