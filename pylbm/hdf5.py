@@ -250,14 +250,14 @@ class H5File:
                 <Grid Name="Structured Grid" GridType="Uniform">
                     <Topology TopologyType="2DRectMesh" NumberOfElements="{0}"/>
                     <Geometry GeometryType="VXVY">
-                """.format(' '.join(map(str, self.global_size[::-1]))))
+                """.format(' '.join(map(str, self.global_size))))
             else:
                 self.xdmf_file.write("""
                 <Grid Name="Structured Grid" GridType="Uniform">
                     <Topology TopologyType="3DRectMesh" NumberOfElements="{0}"/>
                     <Geometry GeometryType="VXVYVZ">
-                """.format(' '.join(map(str, self.global_size[::-1]))))
-            for i in range(self.dim-1, -1, -1):
+                """.format(' '.join(map(str, self.global_size))))
+            for i in range(self.dim):
                 self.xdmf_file.write("""
                 <DataItem Format="HDF" Dimensions="{0}">
                     {1}:/x_{2} 
