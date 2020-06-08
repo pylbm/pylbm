@@ -405,7 +405,7 @@ class Domain:
                     message += "is not exactly a multiple of the space step\n"
                     message += "The error in the length of the domain "
                     message += "in the direction {0:d} ".format(k)
-                    message += "is {1:10.3e}".format(diff_n*self.dx)
+                    message += "is {0:10.3e}".format(diff_n*self.dx)
                     log.info(message)
                     self.global_size[-1] = dummy
                 else:
