@@ -163,7 +163,10 @@ class Scheme:
         # TODO: add the possibility to have vectorial schemes when M matrix is defined
         if len(scheme) == 1 and 'M' in scheme[0]:
             self.M = scheme[0]['M']
-            self.invM = self.M.inv()
+            # self.invM = self.M.inv()
+            self.invM = scheme[0].get('invM', self.M.inv())
+            self.invM = self.invM.expand()
+            self.invM.simplify()
             self.Tu = sp.eye(*self.M.shape)
             self.Tmu = sp.eye(*self.M.shape)
             self.P = []
