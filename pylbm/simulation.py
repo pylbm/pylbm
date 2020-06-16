@@ -86,15 +86,22 @@ class Simulation:
     # pylint: disable=too-many-branches, too-many-statements, too-many-locals
     def __init__(self, dico,
                  sorder=None, dtype='float64',
-                 check_inverse=False
+                 check_inverse=False,
+                 need_validation=True
                  ):
-        validate(dico, __class__.__name__) #pylint: disable=undefined-variable
+
+        if need_validation:
+            validate(dico, __class__.__name__)  # pylint: disable=undefined-variable
 
         self.domain = Domain(dico, need_validation=False)
         domain_size = mpi.COMM_WORLD.allreduce(sendobj=np.prod(self.domain.shape_in))
         Monitor.set_size(domain_size)
 
-        self.scheme = Scheme(dico, check_inverse=check_inverse, need_validation=False)
+        self.scheme = Scheme(
+            dico,
+            check_inverse=check_inverse,
+            need_validation=False
+        )
         if self.domain.dim != self.scheme.dim:
             log.error('Solution: the dimension of the domain and of the scheme are not the same\n')
             sys.exit()
