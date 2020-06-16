@@ -116,6 +116,9 @@ class Fig:
     def close(self):
         plt.close(self.fig)
 
+    def savefig(self, name='Figure.pdf'):
+        plt.savefig(name)
+
 
 class CLine:
     """
@@ -288,10 +291,14 @@ class PlotWidget:
         """
         self.ax.set_title(text)
 
+    def set_title(self, text, fontsize=12):
+        self.ax.set_title(text, fontsize=fontsize)
+
     def legend(self,
                loc='upper left',
                frameon=True,
-               shadow=False
+               shadow=False,
+               fontsize=12,
                ):
         """
         set the legend of the figure
@@ -309,7 +316,10 @@ class PlotWidget:
         shadow : bool
             activate or desactivate the shadow (default False)
         """
-        self.ax.legend(loc=loc, shadow=shadow, frameon=frameon)
+        self.ax.legend(
+            loc=loc, shadow=shadow, frameon=frameon,
+            fontsize=fontsize
+        )
 
     def text(self, text, pos,
              color='black',

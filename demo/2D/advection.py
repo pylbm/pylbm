@@ -147,6 +147,7 @@ def run(space_step,
 
     return sol
 
+
 if __name__ == '__main__':
     # pylint: disable=invalid-name
     space_step = 1./256
