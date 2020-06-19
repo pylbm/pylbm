@@ -6,7 +6,7 @@
 """
 This module validates the dictionary.
 """
-#pylint: disable=invalid-name
+# pylint: disable=invalid-name
 import sys
 import logging
 import types
@@ -18,7 +18,7 @@ from .elements.base import Element
 from .boundary import BoundaryMethod
 from .algorithm import BaseAlgorithm
 
-log = logging.getLogger(__name__) #pylint: disable=invalid-name
+log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 init(autoreset=True)
 
 symbol_type = TypeDefinition('symbol', (sympy.Symbol, sympy.IndexedBase), ())
@@ -36,32 +36,60 @@ Validator.types_mapping['element'] = element_type
 function_type = TypeDefinition('function', (types.FunctionType,), ())
 Validator.types_mapping['function'] = function_type
 
-valid_prompt = lambda indent: '   | ' + ' '*indent
-error_prompt = lambda indent: Fore.RED + '>>>| ' + ' '*indent + Fore.RESET
-bright_error = lambda error: Style.BRIGHT +  str(error) + Style.RESET_ALL
-missing_value = lambda value: '%s%s: ???%s\n'%(Fore.MAGENTA, value, Fore.RESET)
+
+def valid_prompt(indent):
+    """the prompt when the line is validated"""
+    return '   | ' + ' '*indent
+
+
+def error_prompt(indent):
+    """the prompt when the line is not validated"""
+    return Fore.RED + '>>>| ' + ' '*indent + Fore.RESET
+
+
+def bright_error(error):
+    """highlight the error"""
+    return f"| {Style.BRIGHT:s}{error:s}{Style.RESET_ALL:s}"
+
+
+def missing_value(value):
+    """error message for a missing value in the dictionary"""
+    msg = f"{Fore.MAGENTA:s}{value:s}: ??? | "
+    msg += f"{Style.BRIGHT:s}missing field {Style.RESET_ALL:s}"
+    msg += f"{Fore.RESET:s}\n"
+    return msg
+
 
 class MyValidator(Validator):
     """
     New Validator to check boundary methods.
     """
     def _validate_isboundary(self, isboundary, field, value):
-        """ Test if value is a subclass of BoundaryMethod.
+        """
+        Test if value is a subclass of BoundaryMethod.
         The rule's arguments are validated against this schema:
         {'type': 'boolean'}
         """
         if isboundary:
-            if not isinstance(value, type) or not issubclass(value, BoundaryMethod):
+            if (
+                    not isinstance(value, type)
+                    or not issubclass(value, BoundaryMethod)
+            ):
                 self._error(field, "Must be a BoundaryMethod")
 
     def _validate_isalgorithm(self, isalgorithm, field, value):
-        """ Test if value is a subclass of BaseAlgorithm.
+        """
+        Test if value is a subclass of BaseAlgorithm.
         The rule's arguments are validated against this schema:
         {'type': 'boolean'}
         """
         if isalgorithm:
-            if not isinstance(value, type) or not issubclass(value, BaseAlgorithm):
+            if (
+                    not isinstance(value, type)
+                    or not issubclass(value, BaseAlgorithm)
+            ):
                 self._error(field, "Must be a BaseAlgorithm")
+
 
 def rec_list(mylist, errors, indent=0):
     """
@@ -100,7 +128,7 @@ def rec_list(mylist, errors, indent=0):
             error_message = bright_error(errors[il][0])
 
         s += prompt(indent)
-        s += '%s:\n'%il
+        s += f'{il}:\n'
         indent += 4
         if isinstance(l, list):
             s += rec_list(l, new_errors, indent)
@@ -108,9 +136,10 @@ def rec_list(mylist, errors, indent=0):
             s += rec_dict(l, new_errors, indent)
         else:
             s += prompt(indent)
-            s += '%s %s\n'%(l, error_message)
+            s += f'{l:s} {error_message:s}\n'
         indent -= 4
     return s
+
 
 def rec_dict(dico, errors, indent=0):
     """
@@ -149,7 +178,7 @@ def rec_dict(dico, errors, indent=0):
             error_message = bright_error(errors[key][0])
 
         s += prompt(indent)
-        s += '%s: '%key
+        s += f'{key}: '
         indent += 4
         if isinstance(value, list) and isinstance(value[0], dict):
             s += '\n'
@@ -158,7 +187,7 @@ def rec_dict(dico, errors, indent=0):
             s += '\n'
             s += rec_dict(value, new_errors, indent)
         else:
-            s += '%s %s\n'%(value, error_message)
+            s += f"{value} {error_message}\n"
         indent -= 4
 
     for key, value in errors.items():
@@ -166,6 +195,7 @@ def rec_dict(dico, errors, indent=0):
             s += error_prompt(indent)
             s += missing_value(key)
     return s
+
 
 def validate(dico, name):
     """
@@ -181,135 +211,215 @@ def validate(dico, name):
         The class name to validate ('Stencil', 'Domain', ...)
 
     """
-    scheme = {'velocities': {'type': 'list',
-                             'schema': {'type': 'integer', 'min': 0},
-                             'required': name in ['Domain', 'Scheme', 'Simulation', 'Stencil']
-                            },
-              'M': {'type': 'matrix',
-                    'required': name in ['Scheme', 'Simulation'],
-                    'excludes': 'polynomials',
-                    },
-              'polynomials': {'type': 'list',
-                              'schema': {'anyof_type': ['number', 'expr']},
-                              'required': name in ['Scheme', 'Simulation'],
-                              'excludes': 'M',
-                             },
-              'relaxation_parameters': {'type': 'list',
-                                        'schema': {'anyof_type': ['number', 'expr']},
-                                        'required': name in ['Scheme', 'Simulation']
-                                       },
-              'equilibrium': {'type': 'list',
-                              'schema': {'anyof_type': ['number', 'expr']},
-                              'excludes': 'feq',
-                              'required': name in ['Scheme', 'Simulation']
-                             },
-              'feq': {'type': 'list',
-                      'items': [{'type': 'function'}, {'type': 'list'}],
-                      'excludes': 'equilibrium',
-                      'required': name in ['Scheme', 'Simulation']
-                     },
-              'conserved_moments': {'anyof': [{'type': 'symbol'},
-                                              {'type': 'list',
-                                               'schema': {'type': 'symbol'}}
-                                             ],
-                                    'required': name in ['Scheme', 'Simulation']
-                                   },
-              'source_terms': {'type': 'dict',
-                               'keyschema': {'type': 'symbol'},
-                               'valueschema': {'anyof': [{'type': 'expr'},
-                                                         {'type': 'number'}]},
-                              },
-             }
+    scheme = {
+        'velocities': {
+            'type': 'list',
+            'schema': {'type': 'integer', 'min': 0},
+            'required': name in [
+                'Domain', 'Scheme', 'Simulation', 'Stencil'
+                ]
+        },
+        'M': {
+            'type': 'matrix',
+            'required': name in ['Scheme', 'Simulation'],
+            'excludes': 'polynomials',
+        },
+        'polynomials': {
+            'type': 'list',
+            'schema': {'anyof_type': ['number', 'expr']},
+            'required': name in ['Scheme', 'Simulation'],
+            'excludes': 'M',
+        },
+        'relaxation_parameters': {
+            'type': 'list',
+            'schema': {'anyof_type': ['number', 'expr']},
+            'required': name in ['Scheme', 'Simulation']
+        },
+        'equilibrium': {
+            'type': 'list',
+            'schema': {'anyof_type': ['number', 'expr']},
+            'excludes': 'feq',
+            'required': name in ['Scheme', 'Simulation']
+        },
+        'feq': {
+            'type': 'list',
+            'items': [{'type': 'function'}, {'type': 'list'}],
+            'excludes': 'equilibrium',
+            'required': name in ['Scheme', 'Simulation']
+        },
+        'conserved_moments': {
+            'anyof': [
+                {'type': 'symbol'},
+                {
+                    'type': 'list',
+                    'schema': {'type': 'symbol'}
+                }
+            ],
+            'required': name in ['Scheme', 'Simulation']
+        },
+        'source_terms': {
+            'type': 'dict',
+            'keyschema': {'type': 'symbol'},
+            'valueschema': {
+                'anyof': [
+                    {'type': 'expr'},
+                    {'type': 'number'}
+                ]
+            },
+        },
+    }
 
-    boundary = {'method': {'type': 'dict',
-                           'keyschema': {'type': 'integer'},
-                           'valueschema': {'isboundary': True}
-                          },
-                'value': {'anyof': [{'type': 'function'},
-                                    {'type': 'list',
-                                     'items': [{'type': 'function'}, {'type': 'list', 'nullable': True}],
-                                    }]
-                         }
-               }
+    boundary = {
+        'method': {
+            'type': 'dict',
+            'keyschema': {'type': 'integer'},
+            'valueschema': {'isboundary': True}
+        },
+        'value': {
+            'anyof': [
+                {'type': 'function'},
+                {
+                    'type': 'list',
+                    'items': [
+                        {'type': 'function'},
+                        {'type': 'list', 'nullable': True}
+                    ],
+                }
+            ]
+        }
+    }
 
-    simulation = {'dim': {'type': 'integer',
-                          'allowed': [1, 2, 3],
-                          'excludes': 'box',
-                          'required': name in ['Stencil', 'Scheme']
-                         },
-                  'box': {'type': 'dict',
-                          'schema': {'x': {'type': 'list',
-                                           'items': [{'type': 'number'},
-                                                     {'type': 'number'}
-                                                    ]
-                                          },
-                                     'y': {'type': 'list',
-                                           'items': [{'type': 'number'},
-                                                     {'type': 'number'}
-                                                    ]
-                                          },
-                                     'z': {'type': 'list',
-                                           'items': [{'type': 'number'},
-                                                     {'type': 'number'}
-                                                    ]
-                                          },
-                                     'label': {'anyof': [{'type': 'integer'},
-                                                         {'type' : 'list',
-                                                          'schema': {'type': 'integer'}}
-                                                        ]
-                                              }
-                                    },
-                          'excludes': 'dim',
-                          'required': name in ['Domain', 'Geometry', 'Scheme', 'Simulation', 'Stencil']
-                         },
-                  'elements': {'type': 'list',
-                               'schema': {'type': 'element'}
-                              },
-                  'space_step': {'type': 'number',
-                                 'min': 0,
-                                 'required': name in ['Domain', 'Simulation']
-                                },
-                  'scheme_velocity': {'anyof_type': ['number', 'symbol'],
-                                      'required': name in ['Scheme', 'Simulation']
-                                     },
-                  'schemes': {'type': 'list',
-                              'schema': {'type': 'dict',
-                                         'schema': scheme
-                                        },
-                              'required': name in ['Domain', 'Scheme', 'Simulation', 'Stencil']
-                             },
-                  'parameters': {'type': 'dict',
-                                 'keyschema': {'type': 'symbol'},
-                                 'valueschema': {'anyof': [{'type': 'expr'},
-                                                           {'type': 'number'}]},
-                                },
-                  'init': {'type': 'dict',
-                           'keyschema': {'type': 'symbol'},
-                           'valueschema': {'anyof': [{'type': 'number'},
-                                                     {'type': 'function'},
-                                                     {'type': 'list',
-                                                      'items': [{'type': 'function'}, {'type': 'list'}]}
-                                                    ]
-                                          },
-                            'required': name in ['Simulation']
-                            },
-                  'boundary_conditions': {'type': 'dict',
-                                          'keyschema': {'type': 'integer'},
-                                          'valueschema': {'schema': boundary},
-                                         },
-                  'relative_velocity': {'type': 'list',
-                                        'schema': {'anyof_type': ['number', 'expr']}
-                                       },
-                  'generator': {'type': 'string',
-                                'allowed':['numpy', 'cython', 'loopy']
-                               },
-                  'lbm_algorithm': {'type': 'dict',
-                                    'schema': {'name': {'isalgorithm': True},
-                                               'settings': {'type': 'dict'}
-                                              }
-                                   },
-                  'show_code': {'type': 'boolean'}
-                 }
+    simulation = {
+        'dim': {
+            'type': 'integer',
+            'allowed': [1, 2, 3],
+            'excludes': 'box',
+            'required': name in ['Stencil', 'Scheme']
+        },
+        'box': {
+            'type': 'dict',
+            'schema': {
+                'x': {
+                    'type': 'list',
+                    'items': [
+                        {'type': 'number'},
+                        {'type': 'number'}
+                    ]
+                },
+                'y': {
+                    'type': 'list',
+                    'items': [
+                        {'type': 'number'},
+                        {'type': 'number'}
+                    ]
+                },
+                'z': {
+                    'type': 'list',
+                    'items': [
+                        {'type': 'number'},
+                        {'type': 'number'}
+                    ]
+                },
+                'label': {
+                    'anyof': [
+                        {'type': 'integer'},
+                        {
+                            'type': 'list',
+                            'schema': {'type': 'integer'}
+                        }
+                    ]
+                }
+            },
+            'excludes': 'dim',
+            'required': name in [
+                'Domain', 'Geometry',
+                'Scheme', 'Simulation',
+                'Stencil'
+            ]
+        },
+        'elements': {
+            'type': 'list',
+            'schema': {'type': 'element'}
+        },
+        'space_step': {
+            'type': ['number', 'symbol'],
+            'min': 0,
+            'required': name in ['Domain', 'Simulation']
+        },
+        # 'scheme_velocity': {
+        #     'anyof_type': ['number', 'symbol'],
+        #     'required': name in ['Scheme', 'Simulation']
+        # },
+        'lattice_velocity': {
+            'anyof_type': ['number', 'symbol'],
+            'excludes': 'lattice_diffusivity',
+            'required': name in ['Scheme', 'Simulation']
+        },
+        'lattice_diffusivity': {
+            'anyof_type': ['number', 'symbol'],
+            'excludes': 'lattice_velocity',
+            'required': name in ['Scheme', 'Simulation']
+        },
+        'schemes': {
+            'type': 'list',
+            'schema': {
+                'type': 'dict',
+                'schema': scheme
+            },
+            'required': name in [
+                'Domain', 'Scheme', 'Simulation', 'Stencil'
+            ]
+        },
+        'parameters': {
+            'type': 'dict',
+            'keyschema': {'type': 'symbol'},
+            'valueschema': {
+                'anyof': [
+                    {'type': 'expr'},
+                    {'type': 'number'}
+                ]
+            },
+        },
+        'init': {
+            'type': 'dict',
+            'keyschema': {'type': 'symbol'},
+            'valueschema': {
+                'anyof': [
+                    {'type': 'number'},
+                    {'type': 'function'},
+                    {
+                        'type': 'list',
+                        'items': [
+                            {'type': 'function'},
+                            {'type': 'list'}
+                        ]
+                    }
+                ]
+            },
+            'required': name in ['Simulation']
+        },
+        'boundary_conditions': {
+            'type': 'dict',
+            'keyschema': {'type': 'integer'},
+            'valueschema': {'schema': boundary},
+        },
+        'relative_velocity': {
+            'type': 'list',
+            'schema': {'anyof_type': ['number', 'expr']}
+        },
+        'generator': {
+            'type': 'string',
+            'allowed': ['numpy', 'cython', 'loopy']
+        },
+        'lbm_algorithm': {
+            'type': 'dict',
+            'schema': {
+                'name': {'isalgorithm': True},
+                'settings': {'type': 'dict'}
+            }
+        },
+        'show_code': {'type': 'boolean'}
+    }
 
     v = MyValidator(simulation)
     is_valid = v.validate(dico)
