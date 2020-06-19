@@ -121,7 +121,7 @@ def run(space_step,
     simu_cfg_d1q2 = {
         'box': {'x': [xmin, xmax], 'label': -1},
         'space_step': space_step,
-        'scheme_velocity': LA,
+        'lattice_velocity': LA,
         'schemes': [
             {
                 'velocities': [1, 2],
@@ -145,7 +145,7 @@ def run(space_step,
     simu_cfg_d1q3 = {
         'box': {'x': [xmin, xmax], 'label': -1},
         'space_step': space_step,
-        'scheme_velocity': LA,
+        'lattice_velocity': LA,
         'schemes': [
             {
                 'velocities': [0, 1, 2],

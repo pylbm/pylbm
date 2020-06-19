@@ -20,7 +20,7 @@ import pylbm
 
 # pylint: disable=redefined-outer-name
 
-U, X = sp.symbols('u, X')
+U, X, DX = sp.symbols('u, X, Delta_x')
 MU, LA = sp.symbols('mu, lambda', constants=True)
 SIGMA_0, SIGMA_1, SIGMA_2 = sp.symbols(
     'sigma_0, sigma_1, sigma_2', constants=True
@@ -71,10 +71,9 @@ def run(space_step,
 
     """
     # parameters
-    reg = 0                     # regularity of the initial condition
     xmin, xmax = 0., 1.         # bounds of the domain
-    la = 1.                     # lattice velocity (la = dx/dt)
-    sigma_0 = thermal_diffusivity
+    mu = .1                     # lattice diffusivity (mu = dx^2/dt)
+    sigma_0 = thermal_diffusivity / mu  # Henon parameter
     s_0 = 1./(.5+sigma_0)       # relaxation parameter for the D1Q2
     s_1, s_2 = s_0, 1.0         # relaxation parameter for the D1Q3
 
@@ -88,8 +87,8 @@ def run(space_step,
     # dictionary of the simulation for the D1Q2
     simu_cfg_d1q2 = {
         'box': {'x': [xmin, xmax], 'label': 0},
-        'space_step': space_step,
-        'scheme_velocity': LA,
+        'space_step': DX,
+        'lattice_diffusivity': MU,
         'schemes': [
             {
                 'velocities': [1, 2],
@@ -103,7 +102,8 @@ def run(space_step,
         'init': {U: (solution, (0, xmin, xmax))},
         'generator': generator,
         'parameters': {
-            LA: la/space_step,
+            DX: space_step,
+            MU: mu,
             SIGMA_0: 1/s_0-.5
         },
         'boundary_conditions': {
@@ -116,14 +116,14 @@ def run(space_step,
     simu_cfg_d1q3 = {
         'box': {'x': [xmin, xmax], 'label': 0},
         'space_step': space_step,
-        'scheme_velocity': LA,
+        'lattice_diffusivity': MU,
         'schemes': [
             {
                 'velocities': [0, 1, 2],
                 'conserved_moments': U,
                 'polynomials': [1, X, X**2/2],
                 'relaxation_parameters': [0., symb_s1, symb_s2],
-                'equilibrium': [U, 0, LA**2*U/2],
+                'equilibrium': [U, 0, U/2],
             },
         ],
         # 'init': {U: (u_init, (xmin, xmax, reg))},
@@ -133,7 +133,7 @@ def run(space_step,
         },
         'generator': generator,
         'parameters': {
-            LA: la/space_step,
+            MU: mu,
             SIGMA_1: 1/s_1-.5,
             SIGMA_2: 1/s_2-.5
         },
@@ -145,47 +145,94 @@ def run(space_step,
     sol_d1q3 = pylbm.Simulation(simu_cfg_d1q3, sorder=sorder)
 
     if with_plot:
+        x_d1q2 = sol_d1q2.domain.x
+        x_d1q3 = sol_d1q3.domain.x
+        x_exact = np.linspace(xmin, xmax, 1025)
+        u_exact = solution(x_exact, sol_d1q2.t, xmin, xmax)
+        u_exact_d1q2 = solution(x_d1q2, sol_d1q2.t, xmin, xmax)
+        u_exact_d1q3 = solution(x_d1q2, sol_d1q2.t, xmin, xmax)
+
         # create the viewer to plot the solution
         viewer = pylbm.viewer.matplotlib_viewer
-        fig = viewer.Fig()
-        axe = fig[0]
-        axe.axis(xmin, xmax, ymin, ymax)
-        axe.set_label(r'$x$', r'$u$')
+        fig = viewer.Fig(2, 2, figsize=(12, 12))
+        fig.title(r'heat at $t = {0:f}$'.format(sol_d1q2.t))
 
-        x_d1q2 = sol_d1q2.domain.x
-        l1a = axe.CurveScatter(
+        ax2 = fig[0, 0]
+        ax2.axis(xmin, xmax, ymin, ymax)
+        ax2.set_label(r'$x$', r'$u$')
+        ax2.set_title('Solution for $D_1Q_2$')
+        l2a = ax2.CurveScatter(
             x_d1q2, sol_d1q2.m[U],
             color='navy', size=25,
             label=r'$D_1Q_2$'
         )
-        x_d1q3 = sol_d1q3.domain.x
-        l1b = axe.CurveScatter(
+        l2e = ax2.CurveLine(
+            x_exact, u_exact,
+            color='black', alpha=0.5, width=2,
+            label='exact'
+        )
+        ax2.legend(
+            loc='upper right',
+            shadow=False,
+            frameon=False,
+        )
+
+        ax3 = fig[0, 1]
+        ax3.axis(xmin, xmax, ymin, ymax)
+        ax3.set_label(r'$x$', r'$u$')
+        ax3.set_title('Solution for $D_1Q_2$')
+        l3a = ax3.CurveScatter(
             x_d1q3, sol_d1q3.m[U],
             color='orange', size=25,
             label=r'$D_1Q_3$'
         )
-        x_exact = np.linspace(xmin, xmax, 1025)
-        l1e = axe.CurveLine(
-            x_exact, solution(x_exact, sol_d1q2.t, xmin, xmax),
+        l3e = ax3.CurveLine(
+            x_exact, u_exact,
             color='black', alpha=0.5, width=2,
             label='exact'
         )
-        axe.legend(loc='upper right',
-                   shadow=False,
-                   frameon=False,
-                   )
+        ax3.legend(
+            loc='upper right',
+            shadow=False,
+            frameon=False,
+        )
+
+        ax2e = fig[1, 0]
+        ax2e.axis(xmin, xmax, -1.e-3, 1.e-3)
+        ax2e.set_label(r'$x$', r'erreur')
+        ax2e.set_title('Error for $D_1Q_2$')
+        l2er = ax2e.CurveScatter(
+            x_d1q2, sol_d1q2.m[U] - u_exact_d1q2,
+            color='navy', size=25,
+            label=r'$D_1Q_2$'
+        )
+        ax3e = fig[1, 1]
+        ax3e.axis(xmin, xmax, -1.e-3, 1.e-3)
+        ax3e.set_label(r'$x$', r'erreur')
+        ax3e.set_title('Error for $D_1Q_3$')
+        l3er = ax3e.CurveScatter(
+            x_d1q3, sol_d1q3.m[U] - u_exact_d1q3,
+            color='orange', size=25,
+            label=r'$D_1Q_3$'
+        )
 
         def update(iframe):  # pylint: disable=unused-argument
             # increment the solution of one time step
             loc_tf = min(final_time, final_time*iframe/10)
             while sol_d1q2.t < loc_tf:
                 sol_d1q2.one_time_step()
-                l1a.update(sol_d1q2.m[U])
+            u_exact_d1q2[:] = solution(x_d1q2, sol_d1q2.t, xmin, xmax)
+            l2a.update(sol_d1q2.m[U])
+            l2er.update(sol_d1q2.m[U] - u_exact_d1q2)
             while sol_d1q3.t < loc_tf:
                 sol_d1q3.one_time_step()
-                l1b.update(sol_d1q3.m[U])
-            l1e.update(solution(x_exact, sol_d1q2.t, xmin, xmax))
-            axe.title = r'heat at $t = {0:f}$'.format(sol_d1q3.t)
+            u_exact_d1q3[:] = solution(x_d1q3, sol_d1q3.t, xmin, xmax)
+            l3a.update(sol_d1q3.m[U])
+            l3er.update(sol_d1q3.m[U] - u_exact_d1q3)
+            u_exact[:] = solution(x_exact, sol_d1q2.t, xmin, xmax)
+            l2e.update(u_exact)
+            l3e.update(u_exact)
+            fig.title(r'heat at $t = {0:f}$'.format(sol_d1q3.t))
 
         fig.animate(update)
         fig.show()
@@ -198,7 +245,7 @@ def run(space_step,
 
 if __name__ == '__main__':
     # pylint: disable=invalid-name
-    space_step = 1./32
+    space_step = 1./64
     thermal_diffusivity = 0.1
     final_time = 1.
     solution = run(space_step, final_time)
