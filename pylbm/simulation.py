@@ -13,7 +13,7 @@ import sys
 import logging
 import types
 import numpy as np
-from sympy.parsing.sympy_parser import parse_expr
+# from sympy.parsing.sympy_parser import parse_expr
 import mpi4py.MPI as mpi
 
 from .domain import Domain
@@ -37,7 +37,7 @@ class Simulation:
     Parameters
     ----------
 
-    dico : dictionary
+    dico : dict
     domain : object of class :py:class:`Domain<pylbm.domain.Domain>`, optional
     scheme : object of class :py:class:`Scheme<pylbm.scheme.Scheme>`, optional
     type :   optional argument (default value is 'float64')
@@ -47,7 +47,7 @@ class Simulation:
 
     dim : int
       spatial dimension
-    type : float64
+    dtype : float64
       the type of the values
     domain : :py:class:`Domain<pylbm.domain.Domain>`
       the domain given in argument
@@ -91,11 +91,19 @@ class Simulation:
                  need_validation=True
                  ):
 
+        if dtype != 'float64':
+            log.error(
+                "The type of the value has to be 'float64"
+            )
+
         if need_validation:
-            validate(dico, __class__.__name__)  # pylint: disable=undefined-variable
+            # pylint: disable=undefined-variable
+            validate(dico, __class__.__name__)
 
         self.domain = Domain(dico, need_validation=False)
-        domain_size = mpi.COMM_WORLD.allreduce(sendobj=np.prod(self.domain.shape_in))
+        domain_size = mpi.COMM_WORLD.allreduce(
+            sendobj=np.prod(self.domain.shape_in)
+        )
         Monitor.set_size(domain_size)
 
         self.scheme = Scheme(
@@ -104,13 +112,21 @@ class Simulation:
             need_validation=False
         )
         if self.domain.dim != self.scheme.dim:
-            log.error('Solution: the dimension of the domain and of the scheme are not the same\n')
+            log.error(
+                "solution: the dimension of the domain "
+                "and of the scheme are not the same\n"
+            )
             sys.exit()
 
         self._update_m = True
         self.t = 0.
         self.nt = 0
-        self.dt = self.domain.dx/self.scheme.la
+        if self.scheme.hyp_scaling:
+            self.dt = self.domain.dx/self.scheme.la
+        elif self.scheme.par_scaling:
+            self.dt = self.domain.dx**2/self.scheme.mu
+        else:
+            log.error("Unknown scaling !!!")
         self.dim = self.domain.dim
 
         codegen_dir = dico.get('codegen_dir', None)
@@ -126,12 +142,15 @@ class Simulation:
 
         self.container = self._get_container(sorder)
         if self.container.gpu_support:
-            self.domain.in_or_out = self.container.move2gpu(self.domain.in_or_out)
+            self.domain.in_or_out = self.container.move2gpu(
+                self.domain.in_or_out
+            )
             self.container.F.generate(self.generator)
             self.container.Fnew.generate(self.generator)
         sorder = self.container.sorder
 
-        # Generate the numerical code for the LBM and for the boundary conditions
+        # Generate the numerical code for the LBM
+        # and for the boundary conditions
         self.algo = self._get_algorithm(dico, sorder)
         self.algo.generate()
 
@@ -153,11 +172,14 @@ class Simulation:
         log.info(self.__str__())
 
     def _get_container(self, sorder):
-        container_type = {'NUMPY': NumpyContainer,
-                          'CYTHON': CythonContainer,
-                          'LOOPY': LoopyContainer
+        container_type = {
+            'NUMPY': NumpyContainer,
+            'CYTHON': CythonContainer,
+            'LOOPY': LoopyContainer
         }
-        return container_type[self.generator.backend](self.domain, self.scheme, sorder)
+        return container_type[self.generator.backend](
+            self.domain, self.scheme, sorder
+        )
 
     def _get_default_algo_settings(self):
         if self.generator.backend == 'NUMPY':
@@ -201,7 +223,7 @@ class Simulation:
             self._update_m = False
             self.f2m()
 
-        return self.container.m._in(i) #pylint: disable=protected-access
+        return self.container.m._in(i)  # pylint: disable=protected-access
 
     @utils.itemproperty
     def F_halo(self, i):
@@ -220,7 +242,7 @@ class Simulation:
         """
         get the distribution function i in the interior domain.
         """
-        return self.container.F._in(i) #pylint: disable=protected-access
+        return self.container.F._in(i)  # pylint: disable=protected-access
 
     def __str__(self):
         from .utils import header_string
@@ -258,7 +280,10 @@ class Simulation:
         # by default, the initialization is on the moments
         # else, it could be distributions
         inittype = dico.get('inittype', 'moments')
-        coords = np.meshgrid(*(c for c in self.domain.coords_halo), sparse=True, indexing='ij')
+        coords = np.meshgrid(
+            *(c for c in self.domain.coords_halo),
+            sparse=True, indexing='ij'
+        )
 
         if inittype == 'moments':
             array_to_init = self.container.m
@@ -272,7 +297,10 @@ class Simulation:
 
         init_data = dico.get('init', None)
         if init_data is None:
-            log.warning("You don't define initialization step for your conserved moments")
+            log.warning(
+                "You don't define initialization step "
+                "for your conserved moments"
+            )
             return
 
         for k, v in init_data.items():
@@ -382,12 +410,13 @@ class Simulation:
         - relaxation
         - m2f
         """
-        self._update_m = True # we recompute f so m will be not correct
+        self._update_m = True  # we recompute f so m will be not correct
 
         self.boundary_condition(**kwargs)
 
         self.algo.call_function('one_time_step', self, **kwargs)
-        self.container.F, self.container.Fnew = self.container.Fnew, self.container.F
+        self.container.F, self.container.Fnew = self.container.Fnew,\
+            self.container.F
 
         self.t += self.dt
         self.nt += 1

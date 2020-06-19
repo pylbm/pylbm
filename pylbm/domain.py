@@ -10,6 +10,7 @@ import logging
 import sys
 import copy
 import numpy as np
+import sympy as sp
 import mpi4py.MPI as mpi
 
 from .geometry import Geometry
@@ -248,11 +249,19 @@ class Domain:
         self.valout = -1   # value in the solid domain
 
         if dico is not None and need_validation:
-            validate(dico, __class__.__name__) #pylint: disable=undefined-variable
+            # pylint: disable=undefined-variable
+            validate(dico, __class__.__name__)
 
         self.geom = Geometry(dico, need_validation=False)
         self.stencil = Stencil(dico, need_validation=False)
-        self.dx = dico['space_step']
+
+        dx = dico['space_step']
+        if isinstance(dx, sp.Symbol):
+            param = dico.get('parameters', {})
+            self.dx = float(dx.subs(param.items()))
+        else:
+            self.dx = dx
+
         self.dim = self.geom.dim
 
         self.box_label = copy.copy(self.geom.box_label)
@@ -718,7 +727,8 @@ class Domain:
             if bound.size != 0:
                 vk = self.stencil.unique_velocities[k].v_full
                 color = _fix_color(vk)
-                lines = np.empty((2*bound.shape[0], max(2, self.dim))) #pylint: disable=unsubscriptable-object
+                # pylint: disable=unsubscriptable-object
+                lines = np.empty((2*bound.shape[0], max(2, self.dim)))
                 lines[::2, :] = bound
                 lines[1::2, :] = bound \
                     + self.dx*np.outer(dist, vk[:max(2, self.dim)])

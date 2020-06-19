@@ -1,5 +1,5 @@
 # FIXME: make pylint happy !
-# pylint: disable=all
+#pylint: disable=all
 
 import collections
 from .codegen import make_routine
@@ -16,10 +16,12 @@ class Generator:
 
     def add_routine(self, name_expr, argument_sequence=None,
                     local_vars=None, settings={}):
-        self.routines[name_expr[0]] = make_routine(name_expr,
-                                                   argument_sequence,
-                                                   local_vars,
-                                                   settings)[0]
+        self.routines[name_expr[0]] = make_routine(
+            name_expr,
+            argument_sequence,
+            local_vars,
+            settings
+        )[0]
 
     def compile(self):
         self.module = autowrap(self.routines.values(),
