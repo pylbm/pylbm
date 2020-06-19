@@ -119,6 +119,9 @@ class Fig:
     def savefig(self, name='Figure.pdf'):
         plt.savefig(name)
 
+    def title(self, mytitle, fontsize=15):
+        self.fig.suptitle(mytitle, fontsize=fontsize)
+
 
 class CLine:
     """
