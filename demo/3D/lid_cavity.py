@@ -65,7 +65,7 @@ def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
                 'z': [0., 1.],
                 'label': [0, 0, 0, 0, 0, 1]},
         'space_step': dx,
-        'scheme_velocity': la,
+        'lattice_velocity': la,
         'schemes': [
             {
             'velocities': list(range(7)) + list(range(19, 27)),
