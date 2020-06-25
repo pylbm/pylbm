@@ -14,4 +14,5 @@ generated
 *.xdmf
 version.py
 demo/**/*.h5
+doc/_source/notebooks/*
 .vscode

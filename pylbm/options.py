@@ -9,6 +9,7 @@ pylbm CLI options
 """
 from argparse import ArgumentParser
 
+
 def options():
     """
     pylbm command line options
