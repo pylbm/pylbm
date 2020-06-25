@@ -12,7 +12,8 @@ import sympy as sp
 import numpy as np
 
 from .. import viewer
-from ..utils import print_progress
+# from ..utils import print_progress
+from ..utils import progress_bar
 from ..symbolic import rel_ux, rel_uy, rel_uz, recursive_sub
 
 
@@ -79,13 +80,13 @@ class Stability:
             v_xi_0 = np.linspace(0, 2*np.pi, n_wv_0, endpoint=False)
             v_xi_x, v_xi_y = np.meshgrid(v_xi_0, v_xi_0)
             v_xi = np.array([v_xi_x.flatten(), v_xi_y.flatten()])
-            n_wv = v_xi.shape[1] #pylint: disable=unsubscriptable-object
+            n_wv = v_xi.shape[1]  # pylint: disable=unsubscriptable-object
         eigs = np.empty((n_wv, self.nvtot), dtype='complex')
 
         if not self.is_notebook:
             print("*"*80)
             print("Compute the eigenvalues")
-            print_progress(0, n_wv, barLength=50)
+            # print_progress(0, n_wv, barLength=50)
 
         relax_mat_f_num = np.asarray(relax_mat_f_num).astype('float')
 
@@ -94,11 +95,13 @@ class Stability:
                 self.velocities.dot(wave_vector)
             )[np.newaxis, :] * relax_mat_f_num
 
-        for k in range(n_wv):
-            data = set_matrix(1j*v_xi[:, k])
-            eigs[k] = np.linalg.eig(data)[0]
-            if not self.is_notebook:
-                print_progress(k+1, n_wv, barLength=50)
+        with progress_bar(n_wv, title='compute') as pbar:
+            for k in range(n_wv):
+                data = set_matrix(1j*v_xi[:, k])
+                eigs[k] = np.linalg.eig(data)[0]
+                if not self.is_notebook:
+                    # print_progress(k+1, n_wv, barLength=50)
+                    pbar()
 
         ind_pb, = np.where(np.max(np.abs(eigs), axis=1) > 1 + 1.e-10)
         pb_stable_l2 = v_xi[:, ind_pb]
