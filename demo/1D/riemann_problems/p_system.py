@@ -87,7 +87,7 @@ def run(space_step,
     simu_cfg = {
         'box': {'x': [xmin, xmax], 'label': 0},
         'space_step': space_step,
-        'scheme_velocity': LA,
+        'lattice_velocity': LA,
         'schemes': [
             {
                 'velocities': [1, 2],
@@ -177,6 +177,7 @@ def run(space_step,
             sol.one_time_step()
 
     return sol
+
 
 if __name__ == '__main__':
     # pylint: disable=invalid-name

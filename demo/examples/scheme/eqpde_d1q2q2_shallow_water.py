@@ -23,7 +23,7 @@ SIGMA_H, SIGMA_Q = sp.symbols('sigma_1, sigma_2', constants=True)
 
 scheme_cfg = {
     'dim': 1,
-    'scheme_velocity': LA,
+    'lattice_velocity': LA,
     'schemes': [
         {
             'velocities': [1, 2],

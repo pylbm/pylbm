@@ -11,7 +11,7 @@ class EulerIsothermalSolver(GenericSolver):
     """
         d_t(rho)   + d_x(rho u) = 0
         d_t(rho u) + d_x(rho u^2 + c_0^2 rho u) = 0
-    
+
     where c_0 is the speed of sound
 
     Assuming that p = c_0^2 rho, we have
@@ -81,10 +81,14 @@ class EulerIsothermalSolver(GenericSolver):
             self.waves.append('rarefaction')
         else:  # 2-shock
             self.velocities.append([
-                (self.u_right[0]*self.u_right[1]-self.u_star[0]*self.u_star[1]) /
-                (self.u_right[0]-self.u_star[0]),
-                (self.u_right[0]*self.u_right[1]-self.u_star[0]*self.u_star[1]) /
-                (self.u_right[0]-self.u_star[0])
+                (
+                    self.u_right[0]*self.u_right[1]
+                    - self.u_star[0]*self.u_star[1]
+                ) / (self.u_right[0]-self.u_star[0]),
+                (
+                    self.u_right[0]*self.u_right[1]
+                    - self.u_star[0]*self.u_star[1]
+                ) / (self.u_right[0]-self.u_star[0])
             ])
             self.values.append(None)
             self.waves.append('shock')
@@ -95,6 +99,8 @@ class EulerIsothermalSolver(GenericSolver):
         Compute the 1-wave that links the left state
         this wave is parametrized by the first component rho
         """
+        if rho_star <= 0:
+            return np.array([np.nan, np.nan])
         rho_left, u_left = self.u_left[0], self.u_left[1]
         if rho_star < rho_left:  # 1-rarefaction
             rapport = np.log(rho_star/rho_left)
@@ -119,6 +125,8 @@ class EulerIsothermalSolver(GenericSolver):
         Compute the 2-wave that links the right state
         this wave is parametrized by the first component rho
         """
+        if rho_star <= 0:
+            return np.array([np.nan, np.nan])
         rho_right, u_right = self.u_right[0], self.u_right[1]
         if rho_star < rho_right:  # 2-rarefaction
             rapport = np.log(rho_star/rho_right)

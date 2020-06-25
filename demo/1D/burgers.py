@@ -1,5 +1,4 @@
 
-
 # Authors:
 #     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -19,6 +18,7 @@ import numpy as np
 import pylbm
 
 # pylint: disable=redefined-outer-name
+# pylint: disable=invalid-name
 
 U, X = sp.symbols('u, X')
 LA = sp.symbols('lambda', constants=True)
@@ -85,13 +85,13 @@ def run(space_step,
     final_time: double
         final time
 
-    generator: string
+    generator: string, optional
         pylbm generator
 
-    sorder: list
+    sorder: list, optional
         storage order
 
-    with_plot: boolean
+    with_plot: boolean, optional
         if True plot the solution otherwise just compute the solution
 
 
@@ -120,7 +120,7 @@ def run(space_step,
     simu_cfg_d1q2 = {
         'box': {'x': [xmin, xmax], 'label': 0},
         'space_step': space_step,
-        'scheme_velocity': LA,
+        'lattice_velocity': LA,
         'schemes': [
             {
                 'velocities': [1, 2],
@@ -146,7 +146,7 @@ def run(space_step,
     simu_cfg_d1q3 = {
         'box': {'x': [xmin, xmax], 'label': 0},
         'space_step': space_step,
-        'scheme_velocity': LA,
+        'lattice_velocity': LA,
         'schemes': [
             {
                 'velocities': [0, 1, 2],
@@ -205,18 +205,21 @@ def run(space_step,
             if sol_d1q3.t < final_time:
                 sol_d1q3.one_time_step()
                 l1b.update(sol_d1q3.m[U])
-            axe.title = r'Burgers at $t = {0:f}$'.format(sol_d1q2.t)
+            axe.title = f'Burgers at $t = {sol_d1q2.t:f}$'
 
         fig.animate(update)
         fig.show()
     else:
-        while sol_d1q2.t < final_time:
-            sol_d1q2.one_time_step()
+        with pylbm.progress_bar(int(final_time/sol_d1q2.dt),
+                                title='run') as pbar:
+            while sol_d1q2.t < final_time:
+                sol_d1q2.one_time_step()
+                pbar()
 
     return sol_d1q2
 
+
 if __name__ == '__main__':
-    # pylint: disable=invalid-name
     space_step = 1./256
     final_time = 2.
     solution = run(space_step, final_time)

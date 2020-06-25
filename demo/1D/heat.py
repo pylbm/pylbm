@@ -19,6 +19,7 @@ import numpy as np
 import pylbm
 
 # pylint: disable=redefined-outer-name
+# pylint: disable=invalid-name
 
 U, X, DX = sp.symbols('u, X, Delta_x')
 MU, LA = sp.symbols('mu, lambda', constants=True)
@@ -53,13 +54,13 @@ def run(space_step,
     final_time: double
         final time
 
-    generator: string
+    generator: string, optional
         pylbm generator
 
-    sorder: list
+    sorder: list, optional
         storage order
 
-    with_plot: boolean
+    with_plot: boolean, optional
         if True plot the solution otherwise just compute the solution
 
 
@@ -72,7 +73,7 @@ def run(space_step,
     """
     # parameters
     xmin, xmax = 0., 1.         # bounds of the domain
-    mu = .1                     # lattice diffusivity (mu = dx^2/dt)
+    mu = 1                      # lattice diffusivity (mu = dx^2/dt)
     sigma_0 = thermal_diffusivity / mu  # Henon parameter
     s_0 = 1./(.5+sigma_0)       # relaxation parameter for the D1Q2
     s_1, s_2 = s_0, 1.0         # relaxation parameter for the D1Q3
@@ -155,7 +156,7 @@ def run(space_step,
         # create the viewer to plot the solution
         viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig(2, 2, figsize=(12, 12))
-        fig.title(r'heat at $t = {0:f}$'.format(sol_d1q2.t))
+        fig.title(f'heat at $t = {sol_d1q3.t:f}$')
 
         ax2 = fig[0, 0]
         ax2.axis(xmin, xmax, ymin, ymax)
@@ -232,19 +233,21 @@ def run(space_step,
             u_exact[:] = solution(x_exact, sol_d1q2.t, xmin, xmax)
             l2e.update(u_exact)
             l3e.update(u_exact)
-            fig.title(r'heat at $t = {0:f}$'.format(sol_d1q3.t))
+            fig.title(f'heat at $t = {sol_d1q3.t:f}$')
 
         fig.animate(update)
         fig.show()
     else:
-        while sol_d1q2.t < final_time:
-            sol_d1q2.one_time_step()
+        with pylbm.progress_bar(int(final_time/sol_d1q2.dt),
+                                title='run') as pbar:
+            while sol_d1q2.t < final_time:
+                sol_d1q2.one_time_step()
+                pbar()
 
     return sol_d1q2
 
 
 if __name__ == '__main__':
-    # pylint: disable=invalid-name
     space_step = 1./64
     thermal_diffusivity = 0.1
     final_time = 1.
