@@ -65,7 +65,7 @@ def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
                 'label': [1, 2, -1, -1, -1, -1]},
         'elements': [pylbm.Sphere((.3, .5, .5), 0.125, 0)],
         'space_step': dx,
-        'scheme_velocity': la,
+        'lattice_velocity': la,
         'schemes': [
             {
             'velocities':list(range(7)) + list(range(19, 27)),
