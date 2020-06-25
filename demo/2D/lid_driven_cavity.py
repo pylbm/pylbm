@@ -17,13 +17,14 @@ import sympy as sp
 import pylbm
 
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=invalid-name
 
 X, Y = sp.symbols('X, Y')
 RHO, QX, QY = sp.symbols('rho, qx, qy')
 LA = sp.symbols('lambda', constants=True)
 
 
-# pylint: disable=unused-argument
 def bc_up(f, m, x, y, rho_o, driven_velocity):
     """
     boundary values on the top bound
@@ -56,7 +57,6 @@ def norm_velocity(sol):
     return nv
 
 
-# pylint: disable=invalid-name
 def run(space_step,
         final_time,
         generator="cython",
@@ -198,7 +198,7 @@ def run(space_step,
             'label': [0, 0, 0, 1]
         },
         'space_step': space_step,
-        'scheme_velocity': LA,
+        'lattice_velocity': LA,
         'schemes': [
             {
                 'velocities': list(range(9)),
@@ -208,9 +208,11 @@ def run(space_step,
                 'conserved_moments': [RHO, QX, QY],
             },
         ],
-        'init': {RHO: rho_o,
-                 QX: 0.,
-                 QY: 0.},
+        'init': {
+            RHO: rho_o,
+            QX: 0,
+            QY: 0,
+        },
         'boundary_conditions': {
             0: {'method': {0: pylbm.bc.BouzidiBounceBack}},
             1: {
@@ -227,7 +229,7 @@ def run(space_step,
 
     if with_plot:
         Re = rho_o*driven_velocity*2/mu
-        print("Reynolds number {0:10.3e}".format(Re))
+        print(f"Reynolds number {Re:10.3e}")
 
         # init viewer
         viewer = pylbm.viewer.matplotlib_viewer
@@ -236,6 +238,7 @@ def run(space_step,
         axe.grid(visible=False)
         axe.xaxis_set_visible(False)
         axe.yaxis_set_visible(False)
+        axe.title = f"Solution $t={sol.t:3.0f}$"
         surf = axe.SurfaceImage(
             vorticity(sol), cmap='jet', clim=[0, .025]
             # norm_velocity(sol), cmap='jet', clim=[0, driven_velocity]
@@ -247,19 +250,22 @@ def run(space_step,
                 sol.one_time_step()
             surf.update(vorticity(sol))
             # surf.update(norm_velocity(sol))
-            axe.title = "Solution t={0:f}".format(sol.t)
+            axe.title = f"Solution $t={sol.t:3.0f}$"
 
         # run the simulation
         fig.animate(update, interval=1)
         fig.show()
     else:
-        while sol.t < final_time:
-            sol.one_time_step()
+        with pylbm.progress_bar(int(final_time/sol.dt),
+                                title='run') as pbar:
+            while sol.t < final_time:
+                sol.one_time_step()
+                pbar()
 
     return sol
 
+
 if __name__ == '__main__':
-    # pylint: disable=invalid-name
     space_step = 1./128
     final_time = 10
     run(space_step, final_time)

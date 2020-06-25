@@ -1,4 +1,10 @@
+# pylint: disable=invalid-name
 
+# Authors:
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
+#     Benjamin Graille <benjamin.graille@math.u-psud.fr>
+#
+# License: BSD 3 clause
 
 """
  Solver D2Q(4,4,4) for a Poiseuille flow
@@ -29,33 +35,46 @@
 
  test: True
 """
-from six.moves import range
 import numpy as np
 import sympy as sp
 import pylbm
 
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=invalid-name
+
 X, Y, LA = sp.symbols('X, Y, lambda')
-p, ux, uy = sp.symbols('p, ux, uy')
+P, UX, UY = sp.symbols('p, ux, uy')
+
 
 def bc_in(f, m, x, y, width, height, max_velocity, grad_pressure, cte):
-    m[p] = (x-0.5*width) * grad_pressure * cte
-    m[ux] = max_velocity * (1. - 4.*y**2/height**2)
+    """ inner boundary condition """
+    m[P] = (x-0.5*width) * grad_pressure * cte
+    m[UX] = max_velocity * (1. - 4.*y**2/height**2)
+
 
 def bc_out(f, m, x, y, width, grad_pressure, cte):
-    m[p] = (x-0.5*width) * grad_pressure * cte
+    """ outer boundary condition """
+    m[P] = (x-0.5*width) * grad_pressure * cte
 
-def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
+
+def run(space_step,
+        final_time,
+        generator="cython",
+        sorder=None,
+        with_plot=True):
     """
     Parameters
     ----------
 
-    dx: double
+    space_step: double
         spatial step
 
-    Tf: double
+    final_time: double
         final time
 
-    generator: pylbm generator
+    generator: string
+        pylbm generator
 
     sorder: list
         storage order
@@ -63,28 +82,41 @@ def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
     with_plot: boolean
         if True plot the solution otherwise just compute the solution
 
+
+    Returns
+    -------
+
+    sol
+        <class 'pylbm.simulation.Simulation'>
+
     """
     # parameters
-    width = 1.
-    height = .5
-    xmin, xmax, ymin, ymax = 0., width, -.5*height, .5*height
-    la = 1. # velocity of the scheme
-    max_velocity = 0.1
-    mu   = 0.00185
-    zeta = 1.e-5
-    grad_pressure = -mu * max_velocity * 8./height**2
+    la = 1                # lattice velocity
+    width = 1             # width of the domain
+    height = .5           # height of the domain
+    max_velocity = 0.1    # reference of the maximal velocity
+    rhoo = 1              # reference value of the density
+    mu = 0.00185          # bulk viscosity
+    zeta = 1.e-5          # shear viscosity
     cte = 3.
 
-    dummy = 3.0/(la*dx)
+    xmin, xmax, ymin, ymax = 0., width, -.5*height, .5*height
+    grad_pressure = -mu * max_velocity * 8./height**2
+
+    dummy = 3.0/(la*space_step)
     s1 = 1.0/(0.5+zeta*dummy)
     s2 = 1.0/(0.5+mu*dummy)
 
     velocities = list(range(1, 5))
-    polynomes = [1, LA*X, LA*Y, X**2-Y**2]
+    polynomes = [1, X, Y, X**2-Y**2]
 
-    dico = {
-        'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[2, 1, 0, 0]},
-        'space_step':dx,
+    simu_cfg = {
+        'box': {
+            'x': [xmin, xmax],
+            'y': [ymin, ymax],
+            'label': [2, 1, 0, 0]
+        },
+        'space_step':space_step,
         'scheme_velocity':la,
         'schemes':[{'velocities': velocities,
                     'polynomials': polynomes,
@@ -142,7 +174,7 @@ def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
         ux_n = sol.m[ux]
         uy_n = sol.m[uy]
         x, y = np.meshgrid(*sol.domain.coords, sparse=True, indexing='ij')
-        coeff = sol.domain.dx / np.sqrt(width*height)
+        coeff = sol.domain.space_step / np.sqrt(width*height)
         Err_p = coeff * np.linalg.norm(p_n - (x-0.5*width) * grad_pressure)
         Err_ux = coeff * np.linalg.norm(ux_n - max_velocity * (1 - 4 * y**2 / height**2))
         Err_uy = coeff * np.linalg.norm(uy_n)
@@ -162,6 +194,6 @@ def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
     return sol
 
 if __name__ == '__main__':
-    dx = 1./128
+    space_step = 1./128
     Tf = 200.
-    run(dx, Tf)
+    run(space_step, Tf)

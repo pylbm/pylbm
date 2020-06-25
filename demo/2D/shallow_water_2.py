@@ -103,7 +103,7 @@ def run(space_step,
             'label': [0, 0, -1, -1]
         },
         'space_step': space_step,
-        'scheme_velocity': LA,
+        'lattice_velocity': LA,
         'schemes': [
             {
                 'velocities': vitesse,
