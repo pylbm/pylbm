@@ -38,6 +38,7 @@ from exact_solvers import EulerSolver as exact_solver
 from exact_solvers import riemann_pb
 
 # pylint: disable=redefined-outer-name
+# pylint: disable=invalid-name
 
 RHO, Q, E, X = sp.symbols('rho, q, E, X')
 LA = sp.symbols('lambda', constants=True)
@@ -111,7 +112,7 @@ def run(space_step,
     simu_cfg = {
         'box': {'x': [xmin, xmax], 'label': 0},
         'space_step': space_step,
-        'scheme_velocity': LA,
+        'lattice_velocity': LA,
         'schemes': [
             {
                 'velocities': [1, 2],
@@ -178,34 +179,42 @@ def run(space_step,
         sole = exact_solution.evaluate(x, sol.t)
 
         viewer = pylbm.viewer.matplotlib_viewer
-        fig = viewer.Fig(2, 3)
+        fig = viewer.Fig(2, 3, figsize=(12, 9))
 
-        fig[0, 0].CurveScatter(x, rho_n, color='navy')
-        fig[0, 0].CurveLine(x, sole[0], color='orange')
-        fig[0, 0].title = 'mass'
-        fig[0, 1].CurveScatter(x, u_n, color='navy')
-        fig[0, 1].CurveLine(x, sole[1], color='orange')
-        fig[0, 1].title = 'velocity'
-        fig[0, 2].CurveScatter(x, p_n, color='navy')
-        fig[0, 2].CurveLine(x, sole[2], color='orange')
-        fig[0, 2].title = 'pressure'
-        fig[1, 0].CurveScatter(x, rhoe_n, color='navy')
+        ax_rho = fig[0, 0]
+        ax_u = fig[0, 1]
+        ax_p = fig[0, 2]
+        ax_rhoe = fig[1, 0]
+        ax_q = fig[1, 1]
+        ax_e = fig[1, 2]
+
+        ax_rho.CurveScatter(x, rho_n, color='navy')
+        ax_rho.CurveLine(x, sole[0], color='orange')
+        ax_u.CurveScatter(x, u_n, color='navy')
+        ax_u.CurveLine(x, sole[1], color='orange')
+        ax_p.CurveScatter(x, p_n, color='navy')
+        ax_p.CurveLine(x, sole[2], color='orange')
+        ax_rhoe.CurveScatter(x, rhoe_n, color='navy')
         rhoe_e = .5*sole[0]*sole[1]**2 + sole[2]/(gamma-1.)
-        fig[1, 0].CurveLine(x, rhoe_e, color='orange')
-        fig[1, 0].title = 'energy'
-        fig[1, 1].CurveScatter(x, q_n, color='navy')
-        fig[1, 1].CurveLine(x, sole[0]*sole[1], color='orange')
-        fig[1, 1].title = 'momentum'
-        fig[1, 2].CurveScatter(x, e_n, color='navy')
-        fig[1, 2].CurveLine(x, sole[2]/sole[0]/(gamma-1), color='orange')
-        fig[1, 2].title = 'internal energy'
+        ax_rhoe.CurveLine(x, rhoe_e, color='orange')
+        ax_q.CurveScatter(x, q_n, color='navy')
+        ax_q.CurveLine(x, sole[0]*sole[1], color='orange')
+        ax_e.CurveScatter(x, e_n, color='navy')
+        ax_e.CurveLine(x, sole[2]/sole[0]/(gamma-1), color='orange')
+
+        ax_rho.title = 'mass'
+        ax_u.title = 'velocity'
+        ax_p.title = 'pressure'
+        ax_rhoe.title = 'energy'
+        ax_q.title = 'momentum'
+        ax_e.title = 'internal energy'
 
         fig.show()
 
     return sol
 
+
 if __name__ == '__main__':
-    # pylint: disable=invalid-name
     space_step = 1./1024
     final_time = .14
     solution = run(space_step, final_time, generator="numpy")

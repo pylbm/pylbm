@@ -93,7 +93,7 @@ def run(space_step,
     simu_cfg = {
         'box': {'x': [xmin, xmax], 'label': 0},
         'space_step': space_step,
-        'scheme_velocity': LA,
+        'lattice_velocity': LA,
         'schemes': [
             {
                 'velocities': [1, 2],
@@ -131,6 +131,7 @@ def run(space_step,
         axe = fig[0]
         axe.axis(xmin, xmax, ymin, ymax)
         axe.set_label(r'$x$', r'$u$')
+        axe.title = f'advection at $t = {sol.t:f}$'
 
         x = sol.domain.x
         l1a = axe.CurveScatter(
@@ -153,7 +154,7 @@ def run(space_step,
                 sol.one_time_step()  # increment the solution of one time step
                 l1a.update(sol.m[U])
                 l1e.update(exact_solution.evaluate(x, sol.t)[0])
-                axe.title = r'advection at $t = {0:f}$'.format(sol.t)
+                axe.title = f'advection at $t = {sol.t:f}$'
 
         fig.animate(update)
         fig.show()
@@ -162,6 +163,7 @@ def run(space_step,
             sol.one_time_step()
 
     return sol
+
 
 if __name__ == '__main__':
     # pylint: disable=invalid-name

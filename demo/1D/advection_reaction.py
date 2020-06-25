@@ -20,6 +20,7 @@ import numpy as np
 import pylbm
 
 # pylint: disable=redefined-outer-name
+# pylint: disable=invalid-name
 
 X, U = sp.symbols('X, u')
 C, MU, LA = sp.symbols('c, mu, lambda', constants=True)
@@ -63,13 +64,13 @@ def run(space_step,
     final_time: double
         final time
 
-    generator: string
+    generator: string, optional
         pylbm generator
 
-    sorder: list
+    sorder: list, optional
         storage order
 
-    with_plot: boolean
+    with_plot: boolean, optional
         if True plot the solution otherwise just compute the solution
 
 
@@ -82,7 +83,7 @@ def run(space_step,
     """
     # parameters
     xmin, xmax = 0., 1.   # bounds of the domain
-    la = 1.               # scheme velocity (la = dx/dt)
+    la = 1.               # lattice velocity (la = dx/dt)
     c = 0.25              # velocity of the advection
     mu = 1.               # parameter of the source term
     s = 2.                # relaxation parameter
@@ -135,7 +136,7 @@ def run(space_step,
                 sol.one_time_step()
                 l1a.update(sol.m[U])
                 l1e.update(solution(sol.t, x, xmin, xmax, c, mu))
-                axe.title = 'solution at t = {0:f}'.format(sol.t)
+                axe.title = f'solution at $t = {sol.t:f}'
 
         fig.animate(update)
         fig.show()
@@ -147,7 +148,6 @@ def run(space_step,
 
 
 if __name__ == '__main__':
-    # pylint: disable=invalid-name
     space_step = 1./128
     final_time = 2.
     solution = run(space_step, final_time)

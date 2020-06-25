@@ -19,7 +19,7 @@ LA, C, SIGMA = sp.symbols('lambda, c, sigma', constants=True)
 
 scheme_cfg = {
     'dim': 1,
-    'scheme_velocity': LA,
+    'lattice_velocity': LA,
     'schemes': [
         {
             'velocities': list(range(3)),
