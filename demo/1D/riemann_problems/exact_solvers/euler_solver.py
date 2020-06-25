@@ -25,7 +25,10 @@ class EulerSolver(GenericSolver):
     def _read_particular_parameters(self, parameters):
         self.gamma = parameters.get('gamma', 1.4)
         self.mu2 = (self.gamma-1) / (self.gamma+1)
-        self.fields = parameters.get('fields name', [r'$\rho$', r'$u$', r'$p$'])
+        self.fields = parameters.get(
+            'fields name',
+            [r'$\rho$', r'$u$', r'$p$']
+        )
 
     def _compute_interstate(self):
         """
@@ -68,7 +71,7 @@ class EulerSolver(GenericSolver):
         dummy = (xik - lambda_l) / (self.gamma+1)
         rho_k = (
             np.sqrt(rho_l**(self.gamma-1)) -
-            np.sqrt(rho_l**self.gamma / (self.gamma*p_l)) * 
+            np.sqrt(rho_l**self.gamma / (self.gamma*p_l)) *
             (self.gamma-1) * dummy
         )**(2/(self.gamma-1))
         u_k = u_l + 2 * dummy
@@ -82,7 +85,7 @@ class EulerSolver(GenericSolver):
         dummy = (xik - lambda_r) / (self.gamma+1)
         rho_k = (
             np.sqrt(rho_r**(self.gamma-1)) +
-            np.sqrt(rho_r**self.gamma / (self.gamma*p_r)) * 
+            np.sqrt(rho_r**self.gamma / (self.gamma*p_r)) *
             (self.gamma-1) * dummy
         )**(2/(self.gamma-1))
         u_k = u_r + 2 * dummy
@@ -142,12 +145,15 @@ class EulerSolver(GenericSolver):
         Compute the 1-wave that links the left state
         this wave is parametrized by the pressure
         """
+        if p_star <= 0:
+            return np.array([np.nan, np.nan])
+
         rho_left, u_left, p_left = self.u_left
         facteur = np.sqrt(1-self.mu2**2)/self.mu2
         exposant1 = 1/(2*self.gamma)
         exposant2 = (self.gamma-1)*exposant1
         if p_star < p_left:  # 1-rarefaction
-            u_star = u_left -  facteur * p_left**exposant1/np.sqrt(rho_left) * (
+            u_star = u_left - facteur * p_left**exposant1/np.sqrt(rho_left) * (
                 p_star**exposant2 - p_left**exposant2
             )
             du_star = - facteur * p_left**exposant1/np.sqrt(rho_left) * (
@@ -159,7 +165,8 @@ class EulerSolver(GenericSolver):
             ) * (p_star - p_left)
             du_star = - np.sqrt(
                 (1-self.mu2) / rho_left / (p_star+self.mu2*p_left)
-            ) * (1 - .5 * (p_star - p_left) / (p_star+self.mu2*p_left)
+            ) * (
+                1 - .5 * (p_star - p_left) / (p_star+self.mu2*p_left)
             )
         else:
             u_star = u_left
@@ -173,12 +180,15 @@ class EulerSolver(GenericSolver):
         Compute the 3-wave that links the right state
         this wave is parametrized by the first component p
         """
+        if p_star <= 0:
+            return np.array([np.nan, np.nan])
+
         rho_right, u_right, p_right = self.u_right
         facteur = np.sqrt(1-self.mu2**2)/self.mu2
         exposant1 = 1/(2*self.gamma)
         exposant2 = (self.gamma-1)*exposant1
         if p_star < p_right:  # 3-rarefaction
-            u_star = u_right + facteur*p_right**exposant1/np.sqrt(rho_right)* (
+            u_star = u_right + facteur*p_right**exposant1/np.sqrt(rho_right)*(
                 p_star**exposant2 - p_right**exposant2
             )
             du_star = facteur * p_right**exposant1/np.sqrt(rho_right) * (
@@ -190,7 +200,8 @@ class EulerSolver(GenericSolver):
             ) * (p_star - p_right)
             du_star = np.sqrt(
                 (1-self.mu2) / rho_right / (p_star+self.mu2*p_right)
-            ) * (1 - .5 * (p_star - p_right) / (p_star+self.mu2*p_right)
+            ) * (
+                1 - .5 * (p_star - p_right) / (p_star+self.mu2*p_right)
             )
         else:
             u_star = u_right

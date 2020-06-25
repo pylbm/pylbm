@@ -32,7 +32,7 @@ s_rho, s_u, s_p = 1.9, 1.9, 1.9  # relaxation parameters
 
 dico = {
     'dim': 1,
-    'scheme_velocity': LA,
+    'lattice_velocity': LA,
     'schemes': [
         {
             'velocities': [1, 2],
