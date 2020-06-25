@@ -160,7 +160,7 @@ def print_progress(iteration, total,
         sys.stdout.flush()
 
 
-class my_progress_bar:
+class pylbm_progress_bar:
     def __init__(self, nb_total, title=None):
         log.warning(
             "module `alive_progress' not found\n"
@@ -187,11 +187,10 @@ class my_progress_bar:
 
 
 try:
-    from alive_progress import alive_bar  # , config_handler
-    # config_handler.set_global(
-    #     spinner='waves', bar='smooth'
-    # )
-    # progress_bar = alive_bar
-    progress_bar = my_progress_bar
+    from alive_progress import alive_bar, config_handler
+    config_handler.set_global(
+        spinner='waves', bar='smooth'
+    )
+    progress_bar = alive_bar
 except ImportError:
-    progress_bar = my_progress_bar
+    progress_bar = pylbm_progress_bar
