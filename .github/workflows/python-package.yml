@@ -62,5 +62,5 @@ jobs:
     - name: Test with pytest
       run: |
         pytest --pylint --pylint-rcfile=.pyrcfile --pylint-error-types=EF pylbm
-        pytest --nbval notebooks
+        pytest --nbval-lax notebooks
         cd tests; pytest --mpl --h5diff -m "not slow" --cov=pylbm
