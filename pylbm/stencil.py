@@ -870,7 +870,8 @@ class Stencil(list):
     def visualize(self,
                   viewer_mod=viewer.matplotlib_viewer,
                   k=None,
-                  unique_velocities=False):
+                  unique_velocities=False,
+                  view_label=True):
         """
         plot the velocities
 
@@ -882,6 +883,7 @@ class Stencil(list):
         k : list of stencil index to plot
             if None plot all stencils
         unique_velocities : if True plot the unique velocities
+        view_label: if True show the velocity numbering
 
         Returns
         -------
@@ -944,8 +946,9 @@ class Stencil(list):
                     pminmax[4:], color='orange', alpha=0.25
                 )
 
-            view.text(list(map(str, self.num[i])), posi,
-                      fontsize=12, color='navy', fontweight='bold')
+            if view_label:
+                view.text(list(map(str, self.num[i])), posi,
+                          fontsize=12, color='navy', fontweight='bold')
             view.grid(visible=True, which='major', alpha=0.25)
 
         views.show()

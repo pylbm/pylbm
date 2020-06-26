@@ -56,7 +56,7 @@ class TestGeometry:
         
         if dim_element == dim_box:
             geom = pylbm.Geometry(dico)
-            views = geom.visualize()
+            views = geom.visualize(viewlabel=False)
             return views.fig
         else:
             pytest.skip("incompatible dimension")
