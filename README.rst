@@ -1,14 +1,11 @@
 pylbm
 =====
 
-|Binder| |Travis| |Appveyor| |Doc badge| |Gitter Badge|
+|Binder| |GithubAction| |Doc badge| |Gitter Badge|
 
 .. |Binder| image:: https://mybinder.org/badge.svg 
    :target: https://mybinder.org/v2/gh/pylbm/pylbm/master
-.. |Travis| image:: https://travis-ci.org/pylbm/pylbm.svg?branch=master
-   :target: https://travis-ci.org/pylbm/pylbm
-.. |Appveyor| image:: https://ci.appveyor.com/api/projects/status/lm3gufe7njj29s0t/branch/master?svg=true
-   :target: https://ci.appveyor.com/project/pylbm/pylbm
+.. |GithubAction| image:: https://github.com/pylbm/pylbm/workflows/ci/badge.svg
 .. |Gitter Badge| image:: https://badges.gitter.im/pylbm/pylbm.svg
    :alt: Join the chat at https://gitter.im/pylbm/pylbm
    :target: https://gitter.im/pylbm/pylbm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
