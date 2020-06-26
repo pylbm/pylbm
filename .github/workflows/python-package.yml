@@ -10,22 +10,39 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
 
-    runs-on: ubuntu-latest
+  build:
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        py-version: [3.6, 3.7, 3.8]
+        mpi:
+          - openmpi
+          - msmpi
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+        exclude:
+          - os: ubuntu-latest
+            mpi: msmpi
+          - os: macos-latest
+            mpi: msmpi
+          - os: windows-latest
+            mpi: openmpi
 
     steps:
     - uses: actions/checkout@v2
+
+    - name: Install MPI (${{ matrix.mpi }})
+      run:  bash .github/worflows/mpi/install-${{ matrix.mpi }}.sh
+    
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        sudo apt install libopenmpi-dev
         python -m pip install --upgrade pip
         pip install flake8 pytest
         pip install -r requirements-dev.txt
