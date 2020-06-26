@@ -20,14 +20,6 @@ def bc_in(f, m, x, y, T0, Tin, ymax, rhoo, uo):
     m[qy] = 0.
     m[T] = T0 + (Tin - T0)*(ymax-y)*(y-.8)*100
 
-def save(mpi_topo, x, y, m, num):
-    h5 = pylbm.H5File(mpi_topo, filename, path, num)
-    h5.set_grid(x, y)
-    h5.add_vector('velocity', [sol.m[qx], sol.m[qy]])
-    h5.add_scalar('Vx', sol.m[qx])
-    h5.add_scalar('T', sol.m[T])
-    h5.save()
-
 def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
     """
     Parameters
