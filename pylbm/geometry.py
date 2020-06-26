@@ -297,7 +297,8 @@ class Geometry:
                         )
                     ct_lab += 1
             view.axis(xmin, xmax, ymin, ymax, zmin, zmax, dim=self.dim)
-            view.set_label("X", "Y", "Z")
+            if viewlabel:
+                view.set_label("X", "Y", "Z")
             for elem in self.list_elem:
                 if elem.isfluid:
                     color = fluid_color
