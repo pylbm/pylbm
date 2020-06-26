@@ -15,7 +15,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        py-version: [3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8]
         mpi:
           - openmpi
           - msmpi
