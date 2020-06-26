@@ -31,7 +31,7 @@ class TestStencil:
     @pytest.mark.mpl_image_compare(remove_text=True)
     def test_visualize(self, schemes, unique_velocities):
         stencil = pylbm.Stencil(schemes.dico)
-        views = stencil.visualize(unique_velocities=unique_velocities)
+        views = stencil.visualize(unique_velocities=unique_velocities, view_label=False)
         return views.fig
 
     def test_velocities(self, schemes):
