@@ -48,7 +48,7 @@ class TestGeometry:
             assert geom.list_of_labels() == pytest.approx([0, 3])
             assert geom.list_of_elements_labels() == pytest.approx([0])
 
-    @pytest.mark.mpl_image_compare
+    @pytest.mark.mpl_image_compare(remove_text=True)
     def test_visualize(self, get_box, get_element):
         dim_element, element = get_element
         dim_box, box = get_box

@@ -926,7 +926,7 @@ class Stencil(list):
             pminmax = np.zeros(6 if self.dim == 3 else 4)
             pminmax[::2] = np.min(posi, axis=0) - 1
             pminmax[1::2] = np.max(posi, axis=0) + 1
-            view.axis(*pminmax, aspect='equal')
+            view.axis(*pminmax, dim=self.dim, aspect='equal')
 
             view.title = title[i]
             view.xaxis(np.arange(pminmax[0], pminmax[1] + 1))
