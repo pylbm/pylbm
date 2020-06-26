@@ -1,5 +1,4 @@
 
-from six.moves import range
 """
 D2Q4 solver for the MHD system (in 2D)
 
@@ -26,8 +25,6 @@ import sympy as sp
 
 import pylbm
 
-hdf5_save = True
-
 GA, X, Y, LA = sp.symbols('GA, X, Y, lambda')
 rho, qx, qy, E, Bx, By = sp.symbols('rho, qx, qy, E, Bx, By')
 p, ps = sp.symbols('p, ps')
@@ -51,15 +48,6 @@ def init_E(x, y, gamma):
     Ec = 0.5 * (init_qx(x, y, gamma)**2 + init_qy(x, y, gamma)**2)/init_rho(x, y, gamma)
     EB = 0.5 * (init_Bx(x, y)**2 + init_By(x, y)**2)
     return Ec + EB + gamma/(gamma-1)
-
-def save(mpi_topo, x, y, m, num):
-    h5 = pylbm.H5File(mpi_topo, filename, path, num)
-    h5.set_grid(x, y)
-    h5.add_scalar('rho', m[rho])
-    h5.add_scalar('E', m[E])
-    h5.add_vector('velocity', [m[qx], m[qy]])
-    h5.add_vector('B', [m[Bx], m[By]])
-    h5.save()
 
 def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
     """
