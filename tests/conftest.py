@@ -8,6 +8,7 @@ import tempfile
 import pylbm
 import mpi4py.MPI as mpi
 import numpy as np
+import warnings
 
 def setup_function(function):
     if mpi.COMM_WORLD.Get_rank() > 0:
@@ -204,8 +205,6 @@ class H5Comparison:
             if filename is None:
                 if single_reference:
                     filename = original.__name__ + '.' + extension
-                elif class_reference:
-                    item.name
                 else:
                     filename = item.name + '.' + extension
                     filename = filename.replace('[', '_').replace(']', '_')
