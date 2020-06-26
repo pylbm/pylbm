@@ -53,7 +53,7 @@ class Stability:
         # check if we are inside a notebook
         try:
             # pylint: disable=undefined-variable
-            ip = get_ipython()
+            ip = get_ipython() # noqa
 
             if ip.has_trait('kernel'):
                 self.is_notebook = True

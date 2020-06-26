@@ -417,7 +417,3 @@ class LoopyCodePrinter(CodePrinter):
 
 def loopy_code(expr, assign_to=None, **settings):
     return LoopyCodePrinter(settings).doprint(expr, assign_to)
-
-def print_loopy_code(expr, **settings):
-    """Prints C representation of the given expression."""
-    print(numpy_code(expr, **settings))

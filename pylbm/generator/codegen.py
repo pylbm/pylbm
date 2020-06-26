@@ -1,7 +1,7 @@
 # FIXME: make pylint happy !
 #pylint: disable=all
 
-from sympy.utilities.codegen import CodeGen, CodeGenError, ResultBase, Result, InputArgument, InOutArgument, OutputArgument
+from sympy.utilities.codegen import CodeGen, CodeGenError, CodeGenArgumentListError, ResultBase, Result, InputArgument, InOutArgument, OutputArgument
 from sympy.core import Symbol, S, Expr, Tuple, Equality, Function, sympify
 from sympy.core.compatibility import is_sequence, StringIO, string_types
 from sympy.printing.codeprinter import AssignmentError
