@@ -296,7 +296,7 @@ class Geometry:
                             fontsize=18
                         )
                     ct_lab += 1
-            view.axis(xmin, xmax, ymin, ymax, zmin, zmax, aspect='equal')
+            view.axis(xmin, xmax, ymin, ymax, zmin, zmax, dim=self.dim)
             view.set_label("X", "Y", "Z")
             for elem in self.list_elem:
                 if elem.isfluid:

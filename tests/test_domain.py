@@ -105,7 +105,7 @@ def case(request):
     return request.param
 
 
-@pytest.mark.mpl_image_compare
+@pytest.mark.mpl_image_compare(remove_text=True)
 def test_domain_visualize(case):  # pylint: disable=redefined-outer-name
     """
     test the domain visualization
