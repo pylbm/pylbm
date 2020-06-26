@@ -36,8 +36,6 @@ demo/examples/geometry/
 Examples in 1D
 ******************************
 
-:download:`script<codes/geometry_1D_segment.py>`
-
 The segment :math:`[0, 1]`
 ==============================
 
@@ -55,8 +53,6 @@ If no labels are given in the dictionary, the default value is -1.
 
 Examples in 2D
 ******************************
-
-:download:`script<codes/geometry_2D_square_label.py>`
 
 The square :math:`[0,1]^2`
 ==============================
@@ -89,10 +85,6 @@ through a list of integers with the conventions:
 If all the labels have the same value, a shorter solution is to
 give only the integer value of the label instead of the list.
 If no labels are given in the dictionary, the default value is -1.
-
-:download:`script 3<codes/geometry_2D_square_parallelogram.py>`
-:download:`script 2<codes/geometry_2D_square_triangle.py>`
-:download:`script 1<codes/geometry_2D_square_hole.py>`
 
 A square with a hole
 ==============================
@@ -128,8 +120,6 @@ or a :py:class:`parallelogram <pylbm.elements.Parallelogram>`
 
 .. plot:: codes/geometry_2D_square_parallelogram.py
 
-:download:`script <codes/geometry_2D_cavity.py>`
-
 A complex cavity
 ==============================
 
@@ -155,8 +145,6 @@ in this way.
 
 Examples in 3D
 ******************************
-
-:download:`script<codes/geometry_3D_cube.py>`
 
 The cube :math:`[0,1]^3`
 ==============================

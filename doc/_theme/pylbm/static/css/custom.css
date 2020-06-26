@@ -117,7 +117,7 @@ p.rubric {
     color: #197395;
 }
 
-table.field-list th.field-name {
+dl.field-list dt.field-odd,dt.field-even {
 
     display: inline-block;
     padding: 1px 8px 1px 5px;
@@ -126,7 +126,7 @@ table.field-list th.field-name {
     color: white;
 }
 
-table.field-list {
+dl.field-list {
 
     border-collapse: collapse;
     border-spacing: 5px;
@@ -134,6 +134,22 @@ table.field-list {
     border-left: 5px solid #197395; !important;
 
 }
+
+dl dt span.classifier::before
+{
+  content: " : ";
+}
+
+dl dt strong {
+
+    padding-left: 5px;
+    color: #197395;
+}
+
+dl dd {
+    padding-left: 5px;
+}
+
 .highlight{
     display: block;
     padding: 9.5px;
@@ -151,7 +167,6 @@ pre{
     border-color: transparent;
 }
 
-/* general table settings */
 table.docutils {
     margin-bottom: 10px;
 }
@@ -161,6 +176,7 @@ table.docutils td, table.docutils th {
     border: 0px;
     border-color: #ccc;
     text-align: left;
+    overflow: visible;
 }
 
 .card-footer{
@@ -170,7 +186,7 @@ table.docutils td, table.docutils th {
 
 code {
     color: #CE5C00;
-    word-break: break-all;
+    word-break: keep-all;
 }
 
 .navbar{

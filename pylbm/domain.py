@@ -97,12 +97,12 @@ class Domain:
             - box : a dictionary that defines the computational box
             - elements : the list of the elements
                 (available elements are given in the module
-                :py:mod:`elements <pylbm.elements>`)
+                :ref:`elements <mod_elements>`)
             - space_step : the spatial step
             - schemes : a list of dictionaries,
 
         each of them defining a elementary
-        :py:class:`Scheme <pylbm.scheme.Scheme>`
+        :py:class:`Scheme <pylbm.Scheme>`
         we only need the velocities to define a domain
 
     need_validation : bool
@@ -170,12 +170,6 @@ class Domain:
       number of points to add on each side (max velocities)
     coords : ndarray
       coordinates of the domain
-    x : ndarray
-      first coordinate of the domain
-    y : ndarray
-      second coordinate of the domain (None if dim<2)
-    z : ndarray
-      third coordinate of the domain (None if dim<3)
     in_or_out : ndarray
       defines the fluid and the solid part
       (fluid: value=valin, solid: value=valout)
@@ -190,16 +184,6 @@ class Domain:
         value in the fluid domain
     valout : int
         value in the fluid domain
-    x_halo : ndarray
-        first coordinate of the domain with the overlap
-    y_halo : ndarray
-        second coordinate of the domain with the overlap
-    z_halo : ndarray
-        third coordinate of the domain with the overlap
-    shape_halo : list
-        the shape of the domain with overlap
-    shape_in
-        the shape of the domain without overlap
 
     Examples
     --------

@@ -1,3 +1,5 @@
+.. _mod_elements:
+
 The module elements
 ===================
 

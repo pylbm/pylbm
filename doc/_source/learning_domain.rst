@@ -29,8 +29,6 @@ demo/examples/domain/
 Examples in 1D
 ******************************
 
-:download:`script<codes/domain_D1Q3_segment.py>`
-
 The segment :math:`[0, 1]` with a :math:`D_1Q_3`
 ================================================
 
@@ -47,8 +45,6 @@ The space step :math:`dx` is taken to :math:`0.1` to allow the visualization.
 The result is then visualized with the distance of the boundary points
 by using the method
 :py:meth:`visualize<pylbm.domain.Domain.visualize>`.
-
-:download:`script<codes/domain_D1Q5_segment.py>`
 
 The segment :math:`[0, 1]` with a :math:`D_1Q_5`
 ================================================
@@ -71,8 +67,6 @@ by using the method
 
 Examples in 2D
 ******************************
-
-:download:`script<codes/domain_D2Q9_square.py>`
 
 The square :math:`[0,1]^2` with a :math:`D_2Q_9`
 ================================================
@@ -108,8 +102,6 @@ points (a black circle inside the domain and a square outside). Color lines are 
 to visualize the position of the border: for each point that can reach the border
 for a given velocity in one time step, the distance to the border is computed.
 
-:download:`script 1<codes/domain_D2Q13_square_hole.py>`
-
 A square with a hole with a :math:`D_2Q_{13}`
 =============================================
 
@@ -123,9 +115,6 @@ with a center of (0.5, 0.5) and a radius of 0.125
     :lines: 12-
 
 .. plot:: codes/domain_D2Q13_square_hole.py
-
-
-:download:`script <codes/domain_D2Q9_step.py>`
 
 A step with a :math:`D_2Q_9`
 ==============================
@@ -142,8 +131,6 @@ Note that the distance with the bound is visible only for the specified labels.
 
 Examples in 3D
 ******************************
-
-:download:`script<codes/domain_D3Q19_cube.py>`
 
 The cube :math:`[0,1]^3` with a :math:`D_3Q_{19}`
 =================================================

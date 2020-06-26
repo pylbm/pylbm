@@ -101,11 +101,10 @@ Documentation for users
    The scheme analysis  <learning_analysis>
    The storage of moments and distribution functions <storage>
    Learning by examples <tutorial>
+   Our Gallery <gallery>
 
 .. The boundary conditions <learning_bounds>
-
-You can also find other examples in the :doc:`gallery<gallery>`.
-   
+  
 Documentation of the code
 -------------------------
 
@@ -144,7 +143,7 @@ References
 .. [D08] F. DUBOIS, *Equivalent partial differential equations of a lattice Boltzmann scheme*,
          Computers and Mathematics with Applications, **55**, pp. 1441-1449 (2008).
 .. [G14] B. GRAILLE, *Approximation of mono-dimensional hyperbolic systems: a lattice Boltzmann scheme as a relaxation method*,
-         Journal of Comutational Physics, **266** (3179757), pp. 74-88 (2014).
+         Journal of Computational Physics, **266** (3179757), pp. 74-88 (2014).
 .. [QdHL92] Y.H. QIAN, D. D'HUMIERES, and P. LALLEMAND,
             *Lattice BGK Models for Navier-Stokes Equation*, Europhys. Lett., **17** (6), pp. 479-484 (1992).
 
