@@ -14,28 +14,17 @@ dt qy + dx (qx*qy/rho) + dy (qy^2/rho + c^2 rho) = 0
 
 import numpy as np
 import sympy as sp
-<<<<<<< HEAD
-import matplotlib.pyplot as plt
-import pylbm
-
-# pylint: disable=redefined-outer-name
-=======
 import pylbm
 
 # pylint: disable=redefined-outer-name
 # pylint: disable=invalid-name
 # pylint: disable=unused-argument
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
 
 X, Y = sp.symbols('X, Y')
 RHO, QX, QY = sp.symbols('rho, qx, qy')
 LA = sp.symbols('lambda', constants=True)
 
 
-<<<<<<< HEAD
-# pylint: disable=unused-argument
-=======
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
 def bc_up(f, m, x, y, rho_o, driven_velocity):
     """
     boundary values on the top bound
@@ -112,10 +101,6 @@ def flow_lines(sol, nlines, time_length, scale=0.5):
     return lines
 
 
-<<<<<<< HEAD
-# pylint: disable=invalid-name
-=======
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
 def run(space_step,
         final_time,
         generator="cython",
@@ -257,11 +242,7 @@ def run(space_step,
             'label': [0, 0, 0, 1]
         },
         'space_step': space_step,
-<<<<<<< HEAD
-        'scheme_velocity': LA,
-=======
         'lattice_velocity': LA,
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
         'schemes': [
             {
                 'velocities': list(range(9)),
@@ -271,17 +252,11 @@ def run(space_step,
                 'conserved_moments': [RHO, QX, QY],
             },
         ],
-<<<<<<< HEAD
-        'init': {RHO: rho_o,
-                 QX: 0.,
-                 QY: 0.},
-=======
         'init': {
             RHO: rho_o,
             QX: 0,
             QY: 0
         },
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
         'boundary_conditions': {
             0: {'method': {0: pylbm.bc.BouzidiBounceBack}},
             1: {
@@ -295,16 +270,11 @@ def run(space_step,
     }
 
     sol = pylbm.Simulation(simu_cfg, sorder=sorder)
-<<<<<<< HEAD
-    while sol.t < final_time:
-        sol.one_time_step()
-=======
 
     with pylbm.progress_bar(int(final_time/sol.dt), title='run') as p_bar:
         while sol.t < final_time:
             sol.one_time_step()
             p_bar()
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
 
     viewer = pylbm.viewer.matplotlib_viewer
     fig = viewer.Fig()
@@ -316,20 +286,6 @@ def run(space_step,
     axe.SurfaceImage(
         vorticity(sol),
         cmap='jet', clim=[0, .1], alpha=0.25,
-<<<<<<< HEAD
-    )
-    lines = flow_lines(sol, 10, 2)
-    for linek in lines:
-        axe.CurveLine(linek[0], linek[1], alpha=1)
-
-    plt.show()
-    return sol
-
-if __name__ == '__main__':
-    # pylint: disable=invalid-name
-    space_step = 1./128
-    final_time = 100
-=======
         extent=(xmin, xmax, ymin, ymax)
     )
     lines = flow_lines(sol, 100, 20)
@@ -343,5 +299,4 @@ if __name__ == '__main__':
 if __name__ == '__main__':
     space_step = 1./128
     final_time = 1000
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
     run(space_step, final_time)

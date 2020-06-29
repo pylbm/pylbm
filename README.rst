@@ -1,22 +1,11 @@
 pylbm
 =====
 
-<<<<<<< HEAD
 |Binder| |GithubAction| |Doc badge| |Gitter Badge|
 
 .. |Binder| image:: https://mybinder.org/badge.svg 
    :target: https://mybinder.org/v2/gh/pylbm/pylbm/master
 .. |GithubAction| image:: https://github.com/pylbm/pylbm/workflows/ci/badge.svg
-=======
-|Binder| |Travis| |Appveyor| |Doc badge| |Gitter Badge|
-
-.. |Binder| image:: https://mybinder.org/badge.svg 
-   :target: https://mybinder.org/v2/gh/pylbm/pylbm/master
-.. |Travis| image:: https://travis-ci.org/pylbm/pylbm.svg?branch=master
-   :target: https://travis-ci.org/pylbm/pylbm
-.. |Appveyor| image:: https://ci.appveyor.com/api/projects/status/lm3gufe7njj29s0t/branch/master?svg=true
-   :target: https://ci.appveyor.com/project/pylbm/pylbm
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
 .. |Gitter Badge| image:: https://badges.gitter.im/pylbm/pylbm.svg
    :alt: Join the chat at https://gitter.im/pylbm/pylbm
    :target: https://gitter.im/pylbm/pylbm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
@@ -53,7 +42,6 @@ With Pypi
 or
   
 .. code::
-<<<<<<< HEAD
 
    pip install pylbm --user
 
@@ -94,47 +82,5 @@ and then, install pylbm
 
 For more information about what you can achieve with pylbm, take a look at the documentation
 
-=======
-
-   pip install pylbm --user
-
-From source
------------
-
-You can also clone the project and install the latest version
-
-.. code::
-
-   git clone https://github.com/pylbm/pylbm
-
-To install pylbm from source, we encourage you to create a fresh environment using conda.
-
-.. code::
-
-    conda create -n pylbm_env python=3.6
-
-As mentioned at the end of the creation of this environment, you can activate it
-using the command line
-
-.. code::
-
-    conda activate pylbm_env
-
-Now, you just have to go into the pylbm directory that you cloned and install
-the dependencies
-
-.. code::
-
-    conda install --file requirements-dev.txt -c conda-forge
-
-and then, install pylbm
-
-.. code::
-
-   python setup.py install
-
-For more information about what you can achieve with pylbm, take a look at the documentation
-
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
 `<http://pylbm.readthedocs.io>`_
 

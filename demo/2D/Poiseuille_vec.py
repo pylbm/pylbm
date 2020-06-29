@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-
-=======
 # pylint: disable=invalid-name
 
 # Authors:
@@ -8,7 +5,6 @@
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
 
 """
  Solver D2Q(4,4,4) for a Poiseuille flow
@@ -42,11 +38,6 @@
 import numpy as np
 import sympy as sp
 import pylbm
-<<<<<<< HEAD
-
-X, Y, LA = sp.symbols('X, Y, lambda')
-p, ux, uy = sp.symbols('p, ux, uy')
-=======
 
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
@@ -55,7 +46,6 @@ p, ux, uy = sp.symbols('p, ux, uy')
 X, Y, LA = sp.symbols('X, Y, lambda')
 P, UX, UY = sp.symbols('p, ux, uy')
 
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
 
 def bc_in(f, m, x, y, width, height, max_velocity, grad_pressure, cte):
     """ inner boundary condition """
@@ -68,15 +58,11 @@ def bc_out(f, m, x, y, width, grad_pressure, cte):
     m[P] = (x-0.5*width) * grad_pressure * cte
 
 
-<<<<<<< HEAD
-def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
-=======
 def run(space_step,
         final_time,
         generator="cython",
         sorder=None,
         with_plot=True):
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
     """
     Parameters
     ----------
@@ -87,12 +73,8 @@ def run(space_step,
     final_time: double
         final time
 
-<<<<<<< HEAD
-    generator: pylbm generator
-=======
     generator: string
         pylbm generator
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
 
     sorder: list
         storage order
@@ -210,6 +192,7 @@ def run(space_step,
         fig.show()
 
     return sol
+
 
 if __name__ == '__main__':
     space_step = 1./128

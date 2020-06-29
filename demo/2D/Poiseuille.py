@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-
-=======
 # pylint: disable=invalid-name
 
 # Authors:
@@ -8,7 +5,6 @@
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
 #
 # License: BSD 3 clause
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
 
 """
 Simulate the Poiseuille flow
@@ -40,16 +36,9 @@ import pylbm
 # pylint: disable=unused-argument
 # pylint: disable=invalid-name
 
-<<<<<<< HEAD
-import pylbm
-
-X, Y, LA = sp.symbols('X, Y, lambda')
-rho, qx, qy = sp.symbols('rho, qx, qy')
-=======
 X, Y, LA = sp.symbols('X, Y, lambda')
 RHO, QX, QY = sp.symbols('rho, qx, qy')
 
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
 
 def bc_in(f, m, x, y, width, height, max_velocity, grad_pressure):
     """ inner boundary condition """
@@ -62,15 +51,11 @@ def bc_out(f, m, x, y, width, grad_pressure):
     m[RHO] = (x-0.5*width) * grad_pressure
 
 
-<<<<<<< HEAD
-def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
-=======
 def run(space_step,
         final_time,
         generator="cython",
         sorder=None,
         with_plot=True):
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
     """
     Parameters
     ----------
@@ -81,12 +66,8 @@ def run(space_step,
     final_time: double
         final time
 
-<<<<<<< HEAD
-    generator: pylbm generator
-=======
     generator: string
         pylbm generator
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
 
     sorder: list
         storage order
@@ -116,45 +97,6 @@ def run(space_step,
     dummy = 3.0/(la*rhoo*space_step)
     s1 = 1.0/(0.5+zeta*dummy)
     s2 = 1.0/(0.5+mu*dummy)
-<<<<<<< HEAD
-    s  = [0.,0.,0.,s1,s1,s1,s1,s2,s2]
-    dummy = 1./(LA**2*rhoo)
-    qx2 = dummy*qx**2
-    qy2 = dummy*qy**2
-    q2  = qx2+qy2
-    qxy = dummy*qx*qy
-
-    dico = {
-        'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[2, 1, 0, 0]},
-        'space_step':dx,
-        'scheme_velocity':la,
-        'schemes':[{'velocities':list(range(9)),
-                    'polynomials':[1,
-                             LA*X, LA*Y,
-                             3*(X**2+Y**2)-4,
-                             0.5*(9*(X**2+Y**2)**2-21*(X**2+Y**2)+8),
-                             3*X*(X**2+Y**2)-5*X, 3*Y*(X**2+Y**2)-5*Y,
-                             X**2-Y**2, X*Y],
-                    'relaxation_parameters':s,
-                    'equilibrium':[rho,
-                              qx, qy,
-                              -2*rho + 3*q2,
-                              rho - 3*q2,
-                              -qx/LA, -qy/LA,
-                              qx2 - qy2, qxy],
-                    'conserved_moments': [rho, qx, qy],
-                    }],
-        'parameters':{LA:la},
-        'init':{rho: 1.,
-                qx: 0.,
-                qy: 0.
-                },
-        'boundary_conditions':{
-            0:{'method':{0: pylbm.bc.BouzidiBounceBack}},
-            1:{'method':{0: pylbm.bc.NeumannX}},
-            2:{'method':{0: pylbm.bc.BouzidiBounceBack},
-               'value':(bc_in, (width, height, max_velocity, grad_pressure))}
-=======
     s = [0, 0, 0, s1, s1, s1, s1, s2, s2]
     dummy = 1/(LA**2*rhoo)
     QX2 = dummy*QX**2
@@ -206,16 +148,11 @@ def run(space_step,
                 'method': {0: pylbm.bc.BouzidiBounceBack},
                 'value': (bc_in, (width, height, max_velocity, grad_pressure))
             }
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
         },
         'generator': generator,
     }
 
-<<<<<<< HEAD
-    sol = pylbm.Simulation(dico, sorder=sorder)
-=======
     sol = pylbm.Simulation(simu_cfg, sorder=sorder)
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
 
     if with_plot:
         # init viewer

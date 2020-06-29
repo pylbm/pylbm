@@ -1,10 +1,5 @@
 numpy
-<<<<<<< HEAD
 matplotlib
-=======
-matplotlib >=3.0,<3.1
-freetype >=2.9,<2.10
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
 sympy >=1.1.1,<1.2
 cython
 h5py
@@ -21,8 +16,4 @@ pytest-cov
 pytest-mpl
 codecov
 ipywidgets
-<<<<<<< HEAD
 nbval
-=======
-nbval
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351

@@ -223,12 +223,7 @@ class SContour:
         self.contour = axe.contour(
             self.data, levels=self.levels, colors=self.colors
         )
-<<<<<<< HEAD
-        print("coucou")
-        # axe.axis_equal()
-=======
         axe.axis_equal()
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
         axe.ax.clabel(self.contour, inline=1, fontsize=6)
 
     def update(self, data):
@@ -507,11 +502,8 @@ class PlotWidget:
             self.ax.set_xlim3d(xmin, xmax)
             self.ax.set_ylim3d(ymin, ymax)
             self.ax.set_zlim3d(zmin, zmax)
-<<<<<<< HEAD
-=======
             if aspect is not None:
                 self.ax.set_aspect(aspect)
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
         if dim == 1:
             self.ax.get_yaxis().set_visible(False)
 

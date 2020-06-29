@@ -1,20 +1,7 @@
-<<<<<<< HEAD
-python:
-  version: 3.7
-  install:
-    - requirements: docs/requirements.txt
-    - method: pip
-      path: .
-      extra_requirements:
-        - docs    
-  setup_py_install: true
-  system_packages: true
-=======
 conda:
     file: doc/environment.yml
 python:
     version: 3.5
 python:
     setup_py_install: true
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
 

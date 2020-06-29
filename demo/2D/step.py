@@ -207,11 +207,7 @@ def run(space_step,
             )
         ],
         'space_step': space_step,
-<<<<<<< HEAD
-        'scheme_velocity': la,
-=======
         'lattice_velocity': la,
->>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
         'schemes': [
             {
                 'velocities': list(range(9)),
