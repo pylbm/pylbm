@@ -19,6 +19,7 @@ import sympy as sp
 import pylbm
 
 # pylint: disable=redefined-outer-name
+# pylint: disable=invalid-name
 
 X, Y = sp.symbols('X, Y')
 RHO, QX, QY = sp.symbols('rho, qx, qy')
@@ -82,7 +83,7 @@ def run(space_step,
 
     """
     # parameters
-    scheme_name = 'Geier'
+    scheme_name = 'Lallemand'
     xmin, xmax, ymin, ymax = 0., 2., 0., 1.  # bounds of the domain
     radius = 1./32                           # radius of the obstacle
     la = 1.                                  # velocity of the scheme
@@ -196,7 +197,7 @@ def run(space_step,
             )
         ],
         'space_step': space_step,
-        'scheme_velocity': la,
+        'lattice_velocity': la,
         'schemes': [
             {
                 'velocities': list(range(9)),
@@ -231,7 +232,7 @@ def run(space_step,
 
     if with_plot:
         Re = rho_o*u_o*2*radius/mu
-        print("Reynolds number {0:10.3e}".format(Re))
+        print(f"Reynolds number {Re:10.3e}")
 
         # init viewer
         viewer = pylbm.viewer.matplotlib_viewer
@@ -255,19 +256,22 @@ def run(space_step,
             for _ in range(nrep):
                 sol.one_time_step()
             surf.update(vorticity(sol))
-            axe.title = "Solution t={0:f}".format(sol.t)
+            axe.title = f"Solution $t={sol.t:05.2f}$"
 
         # run the simulation
         fig.animate(update, interval=1)
         fig.show()
     else:
-        while sol.t < final_time:
-            sol.one_time_step()
+        with pylbm.progress_bar(int(final_time/sol.dt),
+                                title='run') as pbar:
+            while sol.t < final_time:
+                sol.one_time_step()
+                pbar()
 
     return sol
 
+
 if __name__ == '__main__':
-    # pylint: disable=invalid-name
-    space_step = 1./256
+    space_step = 1./128
     final_time = 10
     run(space_step, final_time)

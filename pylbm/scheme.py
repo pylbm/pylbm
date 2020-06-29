@@ -125,8 +125,13 @@ class Scheme:
       time step
     la : double
       scheme velocity
+<<<<<<< HEAD
       ratio dx/dt if hyp_scaling
       ratio dx^2/dt if par_scaling
+=======
+      (ratio dx/dt if `hyp_scaling`,
+      ratio dx^2/dt if `par_scaling`)
+>>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
     nschemes : int
       number of elementary schemes
     stencil : object of class :py:class:`Stencil <pylbm.stencil.Stencil>`

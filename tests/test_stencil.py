@@ -28,10 +28,17 @@ class TestStencil:
             assert all_vel[:, 2] == pytest.approx(stencil.vz[0])
 
     @pytest.mark.parametrize('unique_velocities', [True, False])
+<<<<<<< HEAD
     @pytest.mark.mpl_image_compare(remove_text=True)
     def test_visualize(self, schemes, unique_velocities):
         stencil = pylbm.Stencil(schemes.dico)
         views = stencil.visualize(unique_velocities=unique_velocities, view_label=False)
+=======
+    @pytest.mark.mpl_image_compare
+    def test_visualize(self, schemes, unique_velocities):
+        stencil = pylbm.Stencil(schemes.dico)
+        views = stencil.visualize(unique_velocities=unique_velocities)
+>>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
         return views.fig
 
     def test_velocities(self, schemes):

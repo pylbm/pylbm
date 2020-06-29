@@ -29,7 +29,11 @@ scheme_cfg = {
         SIGMA: 1/s_num - .5,
     },
     'dim': 2,
+<<<<<<< HEAD
     'scheme_velocity': LA,
+=======
+    'lattice_velocity': LA,
+>>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
     'schemes': [
         {
             'velocities': [1, 2, 3, 4],

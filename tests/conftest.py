@@ -8,7 +8,10 @@ import tempfile
 import pylbm
 import mpi4py.MPI as mpi
 import numpy as np
+<<<<<<< HEAD
 import warnings
+=======
+>>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
 
 def setup_function(function):
     if mpi.COMM_WORLD.Get_rank() > 0:
@@ -205,6 +208,11 @@ class H5Comparison:
             if filename is None:
                 if single_reference:
                     filename = original.__name__ + '.' + extension
+<<<<<<< HEAD
+=======
+                elif class_reference:
+                    item.name
+>>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
                 else:
                     filename = item.name + '.' + extension
                     filename = filename.replace('[', '_').replace(']', '_')
@@ -221,7 +229,14 @@ class H5Comparison:
                 H5File.write(test_h5file, data)
 
                 # Find path to baseline array
+<<<<<<< HEAD
                 baseline_file_ref = os.path.abspath(os.path.join(os.path.dirname(item.fspath.strpath), reference_dir, filename))
+=======
+                if baseline_remote:
+                    baseline_file_ref = _download_file(reference_dir + filename)
+                else:
+                    baseline_file_ref = os.path.abspath(os.path.join(os.path.dirname(item.fspath.strpath), reference_dir, filename))
+>>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
 
                 if not os.path.exists(baseline_file_ref):
                     raise Exception("""File not found for comparison test

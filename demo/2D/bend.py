@@ -210,7 +210,7 @@ def run(space_step,
             )
         ],
         'space_step': space_step,
-        'scheme_velocity': la,
+        'lattice_velocity': la,
         'schemes': [
             {
                 'velocities': list(range(9)),
@@ -245,11 +245,11 @@ def run(space_step,
 
     if with_plot:
         Re = rho_o*u_o*2*radius/mu
-        print("Reynolds number {0:10.3e}".format(Re))
+        print(f"Reynolds number {Re:10.3e}")
 
         # init viewer
         viewer = pylbm.viewer.matplotlib_viewer
-        fig = viewer.Fig()
+        fig = viewer.Fig(figsize=(10, 10))
 
         axe = fig[0]
         axe.grid(visible=False)
@@ -274,16 +274,20 @@ def run(space_step,
             for _ in range(nrep):
                 sol.one_time_step()
             surf.update(vorticity(sol))
-            axe.title = "Solution t={0:f}".format(sol.t)
+            axe.title = f"Solution $t={sol.t:05.2f}$"
 
         # run the simulation
         fig.animate(update, interval=1)
         fig.show()
     else:
-        while sol.t < final_time:
-            sol.one_time_step()
+        with pylbm.progress_bar(int(final_time/sol.dt),
+                                title='run') as pbar:
+            while sol.t < final_time:
+                sol.one_time_step()
+                pbar()
 
     return sol
+
 
 if __name__ == '__main__':
     # pylint: disable=invalid-name

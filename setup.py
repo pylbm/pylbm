@@ -55,7 +55,11 @@ setup(
                         "sympy >=1.1.1,<1.2",
                         "cython",
                         "h5py",
+<<<<<<< HEAD
                         # "mpi4py",
+=======
+                        "mpi4py",
+>>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351
                         "colorlog",
                         "colorama",
                         "cerberus",

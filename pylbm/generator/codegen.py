@@ -1,7 +1,11 @@
 # FIXME: make pylint happy !
 #pylint: disable=all
 
+<<<<<<< HEAD:pylbm/generator/codegen.py
 from sympy.utilities.codegen import CodeGen, CodeGenError, CodeGenArgumentListError, ResultBase, Result, InputArgument, InOutArgument, OutputArgument
+=======
+from sympy.utilities.codegen import CodeGen, CodeGenError, ResultBase, Result, InputArgument, InOutArgument, OutputArgument
+>>>>>>> 1b60335a5d53c6e3e2de1bb1a140303f0bf8f351:pylbm/generator/codegen.py
 from sympy.core import Symbol, S, Expr, Tuple, Equality, Function, sympify
 from sympy.core.compatibility import is_sequence, StringIO, string_types
 from sympy.printing.codeprinter import AssignmentError
