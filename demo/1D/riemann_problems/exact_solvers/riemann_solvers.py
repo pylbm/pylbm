@@ -15,6 +15,7 @@ The hyperbolic systems can be
 """
 
 import numpy as np
+from scipy.optimize import fsolve
 import matplotlib.pyplot as plt
 
 
@@ -67,22 +68,51 @@ def newton(f, x, eps, nitermax=1000):
     return x
 
 
+# pylint: disable=invalid-name
 def solve(f1, f2, xa, xb, eps, nitermax=1000):
     """
     solve f1(x) = f2(x) with a Newton method
     the first step is the computation of the Newton initialization
     method proposed by Francois Dubois
-    
+
     # intersection of the two tangents
     #    (y-ya) - df1(xa)(x-xa) = 0
     #    (y-yb) - df2(xb)(x-xb) = 0
     #  with ya = f1(xa) and yb = f2(xb)
     #  =>    y = ya + df1(xa)(x-xa) = yb + df2(xb)(x-xb)
     #  =>    (df2(xb) - df1(xa)) x =  ya - xa df1(xa) - yb + xb df2(xb)
-    
+
     problem for two rarefactions waves: the intersection point is negative
     in this case switch xa and xb...
     """
+
+    def phi(x):
+        return f1(x)[0] - f2(x)[0]
+
+    pstar, _, ier, msg = fsolve(
+        phi, 5*(xa+xb),
+        full_output=True,
+        xtol=1.e-14
+    )
+    if ier == 1:
+        return pstar[0]
+
+    pstar, _, ier, msg = fsolve(
+        phi, .5*(xa+xb),
+        full_output=True, factor=0.1,
+        xtol=1.e-10
+    )
+    if ier == 1:
+        return pstar[0]
+
+    # This should not happen:
+    print('Warning: fsolve did not converge.')
+    print(msg)
+    print("Try to use a simple Newton method")
+
+    def phi(x):  # pylint: disable=function-redefined
+        return f1(x) - f2(x)
+
     ya, dya = f1(xa)
     yb, dyb = f2(xb)
     x = (ya - xa * dya - yb + xb * dyb) / (dyb - dya)
@@ -92,12 +122,7 @@ def solve(f1, f2, xa, xb, eps, nitermax=1000):
         x = (ya - xa * dya - yb + xb * dyb) / (dyb - dya)
     if x <= 0:
         print("Problem to compute interstate !!!")
-    
-    def phi(x):
-        return f1(x) - f2(x)
-
     return newton(phi, x, eps, nitermax)
-
 
 
 class GenericSolver(object):

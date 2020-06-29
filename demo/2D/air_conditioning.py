@@ -1,153 +1,232 @@
+
+# Authors:
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
+#     Benjamin Graille <benjamin.graille@math.u-psud.fr>
+#
+# License: BSD 3 clause
+
+"""
+Solver D2Q9-D2Q5 for the Bousinesq approximation
+
+Wang, J. and Wang, D. and Lallemand, P. and Luo, L.-S.
+Lattice Boltzmann simulations of thermal convective flows in two dimensions
+Computers & Mathematics with Applications. An International Journal
+Volume 65, number 2, 2013, pp. 262--286
+http://space_step.doi.org/10.1016/j.camwa.2012.07.001
+
+"""
+
 import numpy as np
 import sympy as sp
-import mpi4py.MPI as mpi
-
 import pylbm
 
+# pylint: disable=unused-argument, invalid-name, redefined-outer-name
+
 X, Y, LA = sp.symbols('X, Y, LA')
-rho, qx, qy, T = sp.symbols('rho, qx, qy, T')
+RHO, QX, QY, T = sp.symbols('rho, qx, qy, T')
 
-def init_T(x, y, T0):
-    return T0
 
-def bc(f, m, x, y, T0):
-    m[qx] = 0.
-    m[qy] = 0.
-    m[T] = T0
+def init_temperature(x, y, temp0):
+    """ initial condition for the temperature """
+    return temp0
 
-def bc_in(f, m, x, y, T0, Tin, ymax, rhoo, uo):
-    m[qx] = rhoo*uo
-    m[qy] = 0.
-    m[T] = T0 + (Tin - T0)*(ymax-y)*(y-.8)*100
 
-def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
+def bc(f, m, x, y, temp0):
+    """ boundary conditition (qx = qy = 0, T = temp0) """
+    m[QX] = 0.
+    m[QY] = 0.
+    m[T] = temp0
+
+
+def bc_in(f, m, x, y, temp0, tempin, ymax, rhoo, uo):
+    """ inner boundary condition (qx = qx0, qy = 0, T parabolic profile) """
+    m[QX] = rhoo*uo
+    m[QY] = 0.
+    m[T] = temp0 + (tempin - temp0) * (ymax-y) * (y-.8) * 100
+
+
+def run(space_step,
+        final_time,
+        generator="numpy",
+        sorder=None,
+        with_plot=True):
     """
     Parameters
     ----------
 
-    dx: double
+    space_step: double
         spatial step
 
-    Tf: double
+    final_time: double
         final time
 
-    generator: pylbm generator
+    generator: string, optional
+        pylbm generator
 
-    sorder: list
+    sorder: list, optional
         storage order
 
-    with_plot: boolean
+    with_plot: boolean, optional
         if True plot the solution otherwise just compute the solution
+
+
+    Returns
+    -------
+
+    sol
+        <class 'pylbm.simulation.Simulation'>
 
     """
     # parameters
-    T0 = .5
-    Tin =  -.5
-    xmin, xmax, ymin, ymax = 0., 1., 0., 1.
-    Ra = 2000
-    Pr = 0.71
-    Ma = 0.01
-    alpha = .005
-    la = 1. # velocity of the scheme
-    rhoo = 1.
-    g = 9.81
-    uo = 0.025
+    temp0 = .5                 # reference temperature
+    tempin = -.5               # cool temperature
+    xmin, xmax = 0., 1.        # bounds of the domain in x
+    ymin, ymax = 0., 1.        # bounds of the domain in y
+    Ra = 2000                  # Rayleigh number
+    Pr = 0.71                  # Prandt number
+    # Ma = 0.01                  # Mach number
+    alpha = .005               # thermal expansion coefficient
+    la = 1.                    # lattice velocity
+    rhoo = 1.                  # reference density
+    g = 9.81                   # gravity
+    uo = 0.025                 # reference velocity
 
-    nu = np.sqrt(Pr*alpha*9.81*(T0-Tin)*(ymax-ymin)/Ra)
-    kappa = nu/Pr
+    # shear viscosity
+    nu = np.sqrt(
+        Pr * alpha*g*(temp0-tempin)
+        * (ymax-ymin) / Ra
+    )
+    kappa = nu/Pr              # thermal diffusivity
     eta = nu
-    #print nu, kappa
+    # relaxation times
     snu = 1./(.5+3*nu)
     seta = 1./(.5+3*eta)
     sq = 8*(2-snu)/(8-snu)
     se = seta
     sf = [0., 0., 0., seta, se, sq, sq, snu, snu]
-    #print sf
     a = .5
     skappa = 1./(.5+10*kappa/(4+a))
-    #skappa = 1./(.5+np.sqrt(3)/6)
     se = 1./(.5+np.sqrt(3)/3)
     snu = se
     sT = [0., skappa, skappa, se, snu]
-    #print sT
 
-    dico = {
-        'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[1, 2, 0, 0]},
-        'elements':[
-            pylbm.Parallelogram([xmin, ymin], [ .1, 0], [0, .8], label=0),
+    simu_cfg = {
+        'box': {
+            'x': [xmin, xmax],
+            'y': [ymin, ymax],
+            'label': [1, 2, 0, 0]
+        },
+        'elements': [
+            pylbm.Parallelogram([xmin, ymin], [.1, 0], [0, .8], label=0),
             pylbm.Parallelogram([xmax, ymin], [-.1, 0], [0, .8], label=0),
         ],
-        'space_step':dx,
-        'scheme_velocity':la,
-        'schemes':[
+        'space_step': space_step,
+        'lattice_velocity': la,
+        'schemes': [
             {
                 'velocities': list(range(9)),
-                'conserved_moments': [rho, qx, qy],
+                'conserved_moments': [RHO, QX, QY],
                 'polynomials':[
                     1, X, Y,
                     3*(X**2+Y**2)-4,
-                    sp.Rational(1, 2)*(9*(X**2+Y**2)**2-21*(X**2+Y**2)+8),
+                    (9*(X**2+Y**2)**2-21*(X**2+Y**2)+8)/2,
                     3*X*(X**2+Y**2)-5*X, 3*Y*(X**2+Y**2)-5*Y,
                     X**2-Y**2, X*Y
                 ],
-                'relaxation_parameters':sf,
+                'relaxation_parameters': sf,
                 'equilibrium':[
-                    rho, qx, qy,
-                    -2*rho + 3*(qx**2+qy**2),
-                    rho - 3*(qx**2+qy**2),
-                    -qx, -qy,
-                    qx**2 - qy**2, qx*qy
+                    RHO, QX, QY,
+                    -2*RHO + 3*(QX**2+QY**2),
+                    RHO - 3*(QX**2+QY**2),
+                    -QX, -QY,
+                    QX**2 - QY**2, QX*QY
                 ],
-                'source_terms':{qy: alpha*g*T},
+                'source_terms': {QX: alpha*g*T},
             },
             {
                 'velocities': list(range(5)),
-                'conserved_moments':T,
-                'polynomials':[1, X, Y, 5*(X**2+Y**2) - 4, (X**2-Y**2)],
-                'equilibrium':[T, T*qx, T*qy, a*T, 0.],
-                'relaxation_parameters':sT,
+                'conserved_moments': T,
+                'polynomials': [1, X, Y, 5*(X**2+Y**2) - 4, (X**2-Y**2)],
+                'equilibrium': [T, T*QX, T*QY, a*T, 0.],
+                'relaxation_parameters': sT,
             },
         ],
-        'init':{rho: 1.,
-                qx: 0.,
-                qy: 0.,
-                T: (init_T, (T0,))},
-        'boundary_conditions':{
-            0:{'method':{0: pylbm.bc.BouzidiBounceBack, 1: pylbm.bc.BouzidiAntiBounceBack}, 'value':(bc, (T0,))},
-            1:{'method':{0: pylbm.bc.BouzidiBounceBack, 1: pylbm.bc.BouzidiAntiBounceBack}, 'value': (bc_in, (T0, Tin, ymax, rhoo, uo))},
-            2:{'method':{0: pylbm.bc.NeumannX, 1: pylbm.bc.NeumannX},},
+        'init': {
+            RHO: rhoo,
+            QX: 0.,
+            QY: 0.,
+            T: (init_temperature, (temp0,))},
+        'boundary_conditions': {
+            0: {
+                'method': {
+                    0: pylbm.bc.BouzidiBounceBack,
+                    1: pylbm.bc.BouzidiAntiBounceBack
+                },
+                'value': (bc, (temp0,))
+            },
+            1: {
+                'method': {
+                    0: pylbm.bc.BouzidiBounceBack,
+                    1: pylbm.bc.BouzidiAntiBounceBack
+                },
+                'value': (bc_in, (temp0, tempin, ymax, rhoo, uo))
+            },
+            2: {
+                'method': {
+                    0: pylbm.bc.NeumannX,
+                    1: pylbm.bc.NeumannX
+                },
+            },
         },
         'generator': generator,
     }
 
-    sol = pylbm.Simulation(dico)
+    sol = pylbm.Simulation(simu_cfg)
 
     if with_plot:
         # create the viewer to plot the solution
         viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig()
         ax = fig[0]
-        im = ax.image(sol.m[T].transpose(), cmap='jet', clim=[Tin, T0])
+        im = ax.image(sol.m[T].transpose(), cmap='jet', clim=[tempin, temp0])
         ax.title = 'solution at t = {0:f}'.format(sol.t)
-        ax.polygon([[xmin/dx, ymin/dx],[xmin/dx, (ymin+.8)/dx], [(xmin+.1)/dx, (ymin+.8)/dx], [(xmin+.1)/dx, ymin/dx]], 'k')
-        ax.polygon([[(xmax-.1)/dx, ymin/dx],[(xmax-.1)/dx, (ymin+.8)/dx], [xmax/dx, (ymin+.8)/dx], [xmax/dx, ymin/dx]], 'k')
+        ax.polygon(
+            [
+                [xmin/space_step, ymin/space_step],
+                [xmin/space_step, (ymin+.8)/space_step],
+                [(xmin+.1)/space_step, (ymin+.8)/space_step],
+                [(xmin+.1)/space_step, ymin/space_step]
+            ], 'k'
+        )
+        ax.polygon(
+            [
+                [(xmax-.1)/space_step, ymin/space_step],
+                [(xmax-.1)/space_step, (ymin+.8)/space_step],
+                [xmax/space_step, (ymin+.8)/space_step],
+                [xmax/space_step, ymin/space_step]
+            ], 'k'
+        )
 
         def update(iframe):
-            nrep = 64
-            for i in range(nrep):
+            nrep = 32
+            for _ in range(nrep):
                 sol.one_time_step()
             im.set_data(sol.m[T].transpose())
-            ax.title = 'temperature at t = {0:f}'.format(sol.t)
+            ax.title = f'temperature at $t = {sol.t:05.2f}$'
 
         fig.animate(update, interval=1)
         fig.show()
     else:
-        while sol.t < Tf:
-            sol.one_time_step()
+        with pylbm.progress_bar(int(final_time/sol.dt),
+                                title='run') as pbar:
+            while sol.t < final_time:
+                sol.one_time_step()
+                pbar()
 
     return sol
 
+
 if __name__ == '__main__':
-    dx = 1./256
-    Tf = 10.
-    run(dx, Tf)
+    space_step = 1./128
+    final_time = 10.
+    run(space_step, final_time)

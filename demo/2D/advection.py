@@ -22,6 +22,7 @@ import sympy as sp
 import pylbm
 
 # pylint: disable=redefined-outer-name
+# pylint: disable=invalid-name
 
 U, X, Y = sp.symbols('U, X, Y')
 CX, CY, LA = sp.symbols('c_0, c_1, lambda', constants=True)
@@ -92,7 +93,7 @@ def run(space_step,
             'label': -1
         },
         'space_step': space_step,
-        'scheme_velocity': LA,
+        'lattice_velocity': LA,
         'schemes': [
             {
                 'velocities': list(range(1, 5)),
@@ -142,13 +143,16 @@ def run(space_step,
         fig.animate(update, interval=1)
         fig.show()
     else:
-        while sol.t < final_time:
-            sol.one_time_step()
+        with pylbm.progress_bar(int(final_time/sol.dt),
+                                title='run') as pbar:
+            while sol.t < final_time:
+                sol.one_time_step()
+                pbar()
 
     return sol
 
+
 if __name__ == '__main__':
-    # pylint: disable=invalid-name
     space_step = 1./256
     final_time = 2.
     solution = run(space_step, final_time)

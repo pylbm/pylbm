@@ -24,7 +24,7 @@ polynomes = [1, LA*X, LA*Y, X**2-Y**2]
 
 d = {
     'dim': 2,
-    'scheme_velocity': la,
+    'lattice_velocity': la,
     'schemes':[
         {
             'velocities': vitesse,

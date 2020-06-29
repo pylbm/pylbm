@@ -32,7 +32,7 @@ alpha = .8                      # equilibrium parameter for energy
 
 dico = {
     'dim': 2,
-    'scheme_velocity': LA,
+    'lattice_velocity': LA,
     'schemes': [
         {
             'velocities': list(range(5)),

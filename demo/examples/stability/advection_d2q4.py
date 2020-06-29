@@ -26,7 +26,7 @@ c_x, c_y = 0.5, 0.25  # velocity of the advection equation
 
 dico = {
     'dim': 2,
-    'scheme_velocity': LA,
+    'lattice_velocity': LA,
     'schemes': [
         {
             'velocities': [1, 2, 3, 4],

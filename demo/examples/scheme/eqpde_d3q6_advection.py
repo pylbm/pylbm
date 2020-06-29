@@ -30,7 +30,7 @@ scheme_cfg = {
         SIGMA: 1/s_num - .5,
     },
     'dim': 3,
-    'scheme_velocity': LA,
+    'lattice_velocity': LA,
     'schemes': [
         {
             'velocities': [1, 2, 3, 4, 5, 6],

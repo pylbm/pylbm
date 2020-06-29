@@ -20,6 +20,7 @@ import pylbm
 
 
 # pylint: disable=redefined-outer-name
+# pylint: disable=invalid-name
 
 X, Y = sp.symbols('X, Y')
 RHO, QX, QY = sp.symbols('rho, qx, qy')
@@ -36,7 +37,8 @@ def vorticity(sol):
         qx_n[1:-1, 2:] - qx_n[1:-1, :-2] -
         qy_n[2:, 1:-1] + qy_n[:-2, 1:-1]
     )
-    return vort.T
+    _, p = vort.shape
+    return vort[:, :p//2]
 
 
 def qx_init(x, y, U, k):
@@ -53,10 +55,9 @@ def qy_init(x, y, U, delta):
     initialisation of the y-coordinate momentum
     """
     return np.zeros_like(y) + \
-        U * delta * np.sin(2 * np.pi * (x + .25))
+        U * delta * np.sin(6 * np.pi * (x + .25))
 
 
-# pylint: disable=invalid-name
 def run(space_step,
         final_time,
         generator="cython",
@@ -96,7 +97,7 @@ def run(space_step,
     la = np.sqrt(3)/mach                     # scheme velocity
     rho_o = 1.                               # reference value of the mass
     u_o = 0.5                                # reference value of the velocity
-    zeta = .0366                             # bulk viscosity
+    zeta = .000366                           # bulk viscosity
     mu = 1.e-6                               # shear viscosity
     k = 80
     delta = .05
@@ -201,7 +202,7 @@ def run(space_step,
             'label': -1
         },
         'space_step': space_step,
-        'scheme_velocity': LA,
+        'lattice_velocity': LA,
         'schemes': [
             {
                 'velocities': list(range(9)),
@@ -234,24 +235,27 @@ def run(space_step,
         )
 
         def update(iframe):  # pylint: disable=unused-argument
-            nrep = 128
+            nrep = 32
             for _ in range(nrep):
                 sol.one_time_step()
             surf.update(vorticity(sol))
-            axe.title = "Solution t={0:f}".format(sol.t)
+            axe.title = f"Solution $t={sol.t:05.2f}$"
 
         # run the simulation
         fig.animate(update, interval=1)
         fig.show()
 
     else:
-        while sol.t < final_time:
-            sol.one_time_step()
+        with pylbm.progress_bar(int(final_time/sol.dt),
+                                title='run') as pbar:
+            while sol.t < final_time:
+                sol.one_time_step()
+                pbar()
 
     return sol
 
+
 if __name__ == '__main__':
-    # pylint: disable=invalid-name
     space_step = 1./256
     final_time = 10
     run(space_step, final_time)

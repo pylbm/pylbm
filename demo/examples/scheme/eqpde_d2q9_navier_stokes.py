@@ -41,7 +41,7 @@ scheme_cfg = {
         SIGMA_ETA: 1.e-2,
     },
     'dim': 2,
-    'scheme_velocity': LA,
+    'lattice_velocity': LA,
     'schemes': [
         {
             'velocities': list(range(9)),
