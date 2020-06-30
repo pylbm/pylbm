@@ -11,7 +11,10 @@ utils module
 """
 
 import sys
+import logging
 from colorama import Fore, Style, Back  # pylint: disable=unused-import
+
+log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
 def header_string(title):
@@ -131,8 +134,7 @@ def hsl_to_rgb(h, s, l):
 
 def print_progress(iteration, total,
                    prefix='', suffix='',
-                   decimals=1, barLength=100
-                   ):
+                   decimals=1, barLength=100):
     """
     Call in a loop to create terminal progress bar
     @params:
@@ -141,7 +143,7 @@ def print_progress(iteration, total,
         prefix      - Optional  : prefix string (Str)
         suffix      - Optional  : suffix string (Str)
         decimals    - Optional  : positive number of decimals
-                                  in percent complete (Int)
+                                in percent complete (Int)
         barLength   - Optional  : character length of bar (Int)
     """
     formatStr = "{0:." + str(decimals) + "f}"
@@ -156,3 +158,39 @@ def print_progress(iteration, total,
     if iteration == total:
         sys.stdout.write('\n')
         sys.stdout.flush()
+
+
+class pylbm_progress_bar:
+    def __init__(self, nb_total, title=None):
+        log.warning(
+            "module `alive_progress' not found\n"
+            "replaced by my poor own\n"
+        )
+        self.nb_total = nb_total
+        if title is None:
+            self.title = ''
+        else:
+            self.title = title
+        self.compt = 0
+        print_progress(self.compt, self.nb_total, prefix=self.title)
+
+    def __enter__(self):
+        return self.pbar
+
+    def pbar(self):
+        self.compt += 1
+        print_progress(self.compt, self.nb_total, prefix=self.title)
+
+    # pylint: disable=redefined-builtin
+    def __exit__(self, type, value, traceback):
+        pass
+
+
+try:
+    from alive_progress import alive_bar, config_handler
+    config_handler.set_global(
+        spinner='waves', bar='smooth'
+    )
+    progress_bar = alive_bar
+except ImportError:
+    progress_bar = pylbm_progress_bar
