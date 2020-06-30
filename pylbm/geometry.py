@@ -69,7 +69,6 @@ class Geometry:
 
     Parameters
     ----------
-
     dico : dict
         dictionary that contains the following `key:value`
             - box : a dictionary for the definition of the computed box
@@ -79,7 +78,6 @@ class Geometry:
 
     Attributes
     ----------
-
     dim : int
         number of spatial dimensions (1, 2, or 3)
     bounds : ndarray

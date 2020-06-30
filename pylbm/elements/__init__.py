@@ -17,3 +17,6 @@ from .sphere import Sphere
 from .ellipsoid import Ellipsoid
 from .cylinder import CylinderCircle, CylinderEllipse, CylinderTriangle
 from .cylinder import Parallelepiped
+
+__all__ = ['Circle', 'Ellipse', 'Parallelogram', 'Triangle',
+           'Sphere', 'Ellipsoid', 'CylinderCircle', 'CylinderEllipse', 'CylinderTriangle', 'Parallelepiped']

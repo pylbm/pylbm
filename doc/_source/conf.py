@@ -28,21 +28,14 @@ import sys, os
 sys.path.insert(0, os.path.abspath('../_sphinxext'))
 
 extensions = ['sphinx.ext.autodoc',
-              #'sphinx.ext.imgmath',
               'sphinx.ext.mathjax',
               'numpydoc',
-            #   'sphinx.ext.napoleon',
               'matplotlib.sphinxext.plot_directive',
               'lbm_ext',
               'nbsphinx',
-              'jupyter_sphinx.embed_widgets',
+              'jupyter_sphinx',
               'IPython.sphinxext.ipython_console_highlighting',
-              #'sphinx.ext.intersphinx',
-              #'sphinx.ext.coverage',
-              #'sphinx.ext.doctest',
               'sphinx.ext.autosummary',
-              #'sphinxarg.ext',
-              #'sphinx.ext.viewcode',
               ]
 nbsphinx_execute = 'auto'              
 #mathjax_path="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
@@ -64,7 +57,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'pylbm'
-copyright = u'2015, Benjamin Graille, Loïc Gouarin'
+copyright = u'2020, Benjamin Graille, Loïc Gouarin'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -118,7 +111,7 @@ html_theme = 'pylbm'
 html_theme_path = ['../_theme']
 
 html_title = "%s v%s Manual" % (project, version)
-html_static_path = ['../_static']
+html_static_path = []
 html_last_updated_fmt = '%b %d, %Y'
 
 html_use_modindex = True
@@ -315,7 +308,7 @@ texinfo_documents = [
 epub_title = u'pylbm'
 epub_author = u'Benjamin Graille, Loïc Gouarin'
 epub_publisher = u'Benjamin Graille, Loïc Gouarin'
-epub_copyright = u'2017, Benjamin Graille, Loïc Gouarin'
+epub_copyright = u'2020, Benjamin Graille, Loïc Gouarin'
 
 # The language of the text. It defaults to the language option
 # or en if the language is not set.
@@ -381,5 +374,4 @@ plot_rcparams = {
     'text.usetex': False,
 }
 
-import glob
-autosummary_generate = glob.glob("module/*.rst") + glob.glob("*.rst")
+autosummary_generate = True
