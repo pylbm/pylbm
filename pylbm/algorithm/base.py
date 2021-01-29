@@ -159,7 +159,7 @@ class BaseAlgorithm:
             iy -> [vmax_y, ny-vmax_y[
             iz -> [vmax_z, nz-vmax_z[
 
-        where vmax_i is the maximum of the velocities modulus in direction i. 
+        where vmax_i is the maximum of the velocities modulus in direction i.
         The length of the list is the dimension of the problem.
         """
         return space_idx([(self.vmax[0], nx-self.vmax[0]),
@@ -302,7 +302,7 @@ class BaseAlgorithm:
 
     def f2m(self):
         """
-        Return the code expression which computes the moments from the 
+        Return the code expression which computes the moments from the
         distributed functions on the whole domain.
         """
         space_index = self._get_space_idx_full()
@@ -538,12 +538,12 @@ class BaseAlgorithm:
 
         if check_isfluid:
             valin = sp.Symbol('valin', real=True)
-            in_or_out = indexed('in_or_out', [nx, ny, nz],
+            in_or_out = indexed('in_or_out', [nx, ny, nz], space_index,
                                 priority=self.sorder[1:])
             loop = lambda x: For(space_index, If((Eq(in_or_out, valin), x)))
         else:
             loop = lambda x: For(space_index, x)
-        
+
         if split:
             # code = [loop([*self.coords(), i]) for i in internal]
             code = [loop([i]) for i in internal]
