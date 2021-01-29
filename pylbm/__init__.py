@@ -35,7 +35,6 @@ from .utils import progress_bar              # noqa: E402
 
 numeric_level = getattr(logging, options().loglevel, None)
 
-# pylint: disable=bad-continuation
 formatter = ColoredFormatter(
         f"%(log_color)s[{mpi.COMM_WORLD.Get_rank()}] "
         "%(levelname)-8s %(name)s in function %(funcName)s "
@@ -51,7 +50,6 @@ formatter = ColoredFormatter(
         },
         style='%'
 )
-# pylint: enable=bad-continuation
 
 logger = logging.getLogger(__name__)
 logger.setLevel(level=numeric_level)
