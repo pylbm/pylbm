@@ -230,9 +230,11 @@ class BoundaryMethod:
                 f = Array(nv, nspace, 0, sorder, gpu_support=gpu_support)
                 f.set_conserved_moments(simulation.scheme.consm)
 
-                func = value[0]
                 args = coords
-                if isinstance(value, tuple):
+                if isinstance(value, types.FunctionType):
+                    func = value
+                elif isinstance(value, tuple):
+                    func = value[0]
                     args += value[1]
 
                 if self.time_bc[key]:
