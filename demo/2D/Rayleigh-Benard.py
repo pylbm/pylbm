@@ -48,10 +48,17 @@ def bc_up(f, m, x, y, Tu):
     m[T] = Tu
 
 def bc_down(f, m, x, y, Td):
-    np.random.seed(1)
     m[qx] = 0.
     m[qy] = 0.
     m[T] = Td
+
+def bc_down_with_time(f, m, t, x, y, Td, Tu):
+    m[qx] = 0.
+    m[qy] = 0.
+    if 0 <= t%10. <= 5:
+        m[T] = Td
+    else:
+        m[T] = Tu
 
 def save(sol, im):
     x, y, z = sol.domain.x, sol.domain.y, sol.domain.z
@@ -60,7 +67,7 @@ def save(sol, im):
     h5.add_scalar('T', sol.m[T])
     h5.save()
 
-def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
+def run(dx, Tf, time_bc, generator="cython", sorder=None, with_plot=True):
     """
     Parameters
     ----------
@@ -70,6 +77,9 @@ def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
 
     Tf: double
         final time
+
+    time_bc: boolean
+        set the bottom boundary condition that evolves over time
 
     generator: pylbm generator
 
@@ -81,8 +91,7 @@ def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
 
     """
     # parameters
-    Tu = -0.5
-    Td =  0.5
+    Td, Tu = 0.5, -0.5
     xmin, xmax, ymin, ymax = 0., 2., 0., 1.
     Ra = 2000
     Pr = 0.71
@@ -105,6 +114,22 @@ def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
     se = 1./(.5+np.sqrt(3)/3)
     snu = se
     sT = [0., skappa, skappa, se, snu]
+
+    if time_bc:
+        bc = {
+            0:{'method':{0: pylbm.bc.BouzidiBounceBack, 1: pylbm.bc.BouzidiAntiBounceBack},
+               'value': (bc_down_with_time, (Td, Tu)),
+               'time_bc': True},
+            1:{'method':{0: pylbm.bc.BouzidiBounceBack, 1: pylbm.bc.BouzidiAntiBounceBack},
+               'value':(bc_up, (Tu,))},
+        }
+    else:
+        bc = {
+            0:{'method':{0: pylbm.bc.BouzidiBounceBack, 1: pylbm.bc.BouzidiAntiBounceBack},
+               'value': (bc_down, (Td,))},
+            1:{'method':{0: pylbm.bc.BouzidiBounceBack, 1: pylbm.bc.BouzidiAntiBounceBack},
+               'value':(bc_up, (Tu,))},
+        }
 
     dico = {
         'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[-1, -1, 0, 1]},
@@ -143,10 +168,7 @@ def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
                 qx: 0.,
                 qy: 0.,
                 T: (init_T, (Td, Tu, xmin, xmax, ymin, ymax))},
-        'boundary_conditions':{
-            0:{'method':{0: pylbm.bc.BouzidiBounceBack, 1: pylbm.bc.BouzidiAntiBounceBack}, 'value': (bc_down, (Tu,))},
-            1:{'method':{0: pylbm.bc.BouzidiBounceBack, 1: pylbm.bc.BouzidiAntiBounceBack}, 'value':(bc_up, (Td,))},
-        },
+        'boundary_conditions': bc,
         'generator': generator,
     }
 
@@ -179,4 +201,5 @@ def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
 if __name__ == '__main__':
     dx = 1./128
     Tf = 10.
-    run(dx, Tf)
+    time_bc = False
+    run(dx, Tf, time_bc)
