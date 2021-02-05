@@ -133,8 +133,8 @@ class Simulation:
         self.initialization(dico)
         for method in self.bc.methods:
             method.prepare_rhs(self)
-            method.set_rhs()
             method.fix_iload()
+            method.set_rhs()
             method.move2gpu()
 
         log.info(self.__str__())
@@ -261,7 +261,7 @@ class Simulation:
         if init_data is None:
             log.warning("You don't define initialization step for your conserved moments")
             return
-        
+
         for k, v in init_data.items():
             if isinstance(v, tuple):
                 f = v[0]
@@ -348,6 +348,8 @@ class Simulation:
         f.update()
 
         for method in self.bc.methods:
+            method.update_feq(self)
+            method.set_rhs()
             method.update(f, **kwargs)
 
     @monitor

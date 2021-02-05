@@ -24,14 +24,15 @@ class BoundaryVelocity:
     Indices and distances for the label and the velocity ksym
     """
     def __init__(self, domain, label, ksym):
+        # We are looking for the points on the outside that have a speed
+        # that goes in (index ksym) on a border labeled by label.
+        # We go through all the lattice velocities and determine the inner points
+        # that have the symmetric lattice velocity (index k) that comes out
+        # then we write in a list with the order of the lattice velocities
+        # involved in the schemes:
+        # - indices of the corresponding external points
+        # - associated distances
         self.label = label
-        # on cherche les points de l'exterieur qui ont une vitesse qui rentre (indice ksym)
-        # sur un bord labelise par label
-        # on parcourt toutes les vitesses et on determine les points interieurs qui ont la vitesse
-        # symmetrique (indice k) qui sort
-        # puis on ecrit dans une liste reprenant l'ordre des vitesses du schema
-        # - les indices des points exterieurs correspondants
-        # - les distances associees
         self.v = domain.stencil.unique_velocities[ksym]
         v = self.v.get_symmetric()
         num = domain.stencil.unum2index[v.num]
@@ -75,6 +76,8 @@ class Boundary:
         # build the list of indices for each unique velocity and for each label
         self.bv_per_label = {}
         for label in self.domain.list_of_labels():
+            if label in [-1, -2]: # periodic or interface conditions
+                continue
             dummy_bv = []
             for k in range(self.domain.stencil.unvtot):
                 dummy_bv.append(BoundaryVelocity(self.domain, label, k))
@@ -88,37 +91,40 @@ class Boundary:
         ilabel = {}
         distance = {}
         value_bc = {}
+        time_bc = {}
 
         #pylint: disable=too-many-nested-blocks
         for label in self.domain.list_of_labels():
             if label in [-1, -2]: # periodic or interface conditions
-                pass
-            else: # non periodic conditions
-                value_bc[label] = dico_bound[label].get('value', None)
-                methods = dico_bound[label]['method']
-                # for each method get the list of points, the labels and the distances
-                # where the distribution function must be updated on the boundary
-                for k, v in methods.items():
-                    for inumk, numk in enumerate(stencil.num[k]):
-                        if self.bv_per_label[label][stencil.unum2index[numk]].indices.size != 0:
-                            indices = self.bv_per_label[label][stencil.unum2index[numk]].indices
-                            distance_tmp = self.bv_per_label[label][stencil.unum2index[numk]].distance
-                            velocity = (inumk + stencil.nv_ptr[k])*np.ones(indices.shape[1], dtype=np.int32)[np.newaxis, :]
-                            ilabel_tmp = label*np.ones(indices.shape[1], dtype=np.int32)
-                            istore_tmp = np.concatenate([velocity, indices])
-                            if istore.get(v, None) is None:
-                                istore[v] = istore_tmp.copy()
-                                ilabel[v] = ilabel_tmp.copy()
-                                distance[v] = distance_tmp.copy()
-                            else:
-                                istore[v] = np.concatenate([istore[v], istore_tmp], axis=1)
-                                ilabel[v] = np.concatenate([ilabel[v], ilabel_tmp])
-                                distance[v] = np.concatenate([distance[v], distance_tmp])
+                continue
+
+            value_bc[label] = dico_bound[label].get('value', None)
+            time_bc[label] = dico_bound[label].get('time_bc', False)
+            methods = dico_bound[label]['method']
+            # for each method get the list of points, the labels and the distances
+            # where the distribution function must be updated on the boundary
+            for k, v in methods.items():
+                for inumk, numk in enumerate(stencil.num[k]):
+                    if self.bv_per_label[label][stencil.unum2index[numk]].indices.size != 0:
+                        indices = self.bv_per_label[label][stencil.unum2index[numk]].indices
+                        distance_tmp = self.bv_per_label[label][stencil.unum2index[numk]].distance
+                        velocity = (inumk + stencil.nv_ptr[k])*np.ones(indices.shape[1], dtype=np.int32)[np.newaxis, :]
+                        ilabel_tmp = label*np.ones(indices.shape[1], dtype=np.int32)
+                        istore_tmp = np.concatenate([velocity, indices])
+                        if istore.get(v, None) is None:
+                            istore[v] = istore_tmp.copy()
+                            ilabel[v] = ilabel_tmp.copy()
+                            distance[v] = distance_tmp.copy()
+                        else:
+                            istore[v] = np.concatenate([istore[v], istore_tmp], axis=1)
+                            ilabel[v] = np.concatenate([ilabel[v], ilabel_tmp])
+                            distance[v] = np.concatenate([distance[v], distance_tmp])
 
         # for each method create the instance associated
         self.methods = []
         for k in list(istore.keys()):
-            self.methods.append(k(istore[k], ilabel[k], distance[k], stencil, value_bc, domain.distance.shape, generator))
+            self.methods.append(k(istore[k], ilabel[k], distance[k], stencil,
+                                  value_bc, time_bc, domain.distance.shape, generator))
 
 
 #pylint: disable=protected-access
@@ -148,19 +154,28 @@ class BoundaryMethod:
        the prescribed values on the border
 
     """
-    def __init__(self, istore, ilabel, distance, stencil, value_bc, nspace, generator):
+    def __init__(self, istore, ilabel, distance, stencil, value_bc, time_bc, nspace, generator):
         self.istore = istore
         self.feq = np.zeros((stencil.nv_ptr[-1], istore.shape[1]))
         self.rhs = np.zeros(istore.shape[1])
         self.ilabel = ilabel
         self.distance = distance
         self.stencil = stencil
-        self.iload = []
+        self.time_bc = {}
         self.value_bc = {}
         for k in np.unique(self.ilabel):
             self.value_bc[k] = value_bc[k]
+            self.time_bc[k] = time_bc[k]
+        self.iload = []
         self.nspace = nspace
         self.generator = generator
+
+        # used if time boundary
+        self.func = []
+        self.args = []
+        self.f = []
+        self.m = []
+        self.indices = []
 
     def fix_iload(self):
         """
@@ -215,21 +230,44 @@ class BoundaryMethod:
                 f = Array(nv, nspace, 0, sorder, gpu_support=gpu_support)
                 f.set_conserved_moments(simulation.scheme.consm)
 
-                #TODO add error message and more tests
-                if isinstance(value, types.FunctionType):
-                    value(f, m, *coords)
-                elif isinstance(value, tuple):
-                    if len(value) != 2:
-                        log.error("""Function set in boundary must be the function name or a tuple
-                                       of size 2 with function name and extra args.""")
-                    args = coords + value[1]
-                    value[0](f, m, *args)
+                func = value[0]
+                args = coords
+                if isinstance(value, tuple):
+                    args += value[1]
+
+                if self.time_bc[key]:
+                    func(f, m, 0, *args)
+                else:
+                    func(f, m, *args)
+
                 simulation.equilibrium(m)
                 simulation.m2f(m, f)
 
                 if self.generator.backend.upper() == "LOOPY":
                     f.array_cpu[...] = f.array.get()
+
                 self.feq[:, indices[0]] = f.swaparray.reshape((nv, indices[0].size))
+
+                if self.time_bc[key]:
+                    self.func.append(func)
+                    self.args.append(args)
+                    self.f.append(f)
+                    self.m.append(m)
+                    self.indices.append(indices[0])
+
+    def update_feq(self, simulation):
+        t = simulation.t
+        nv = simulation.container.nv
+
+        for i in range(len(self.func)):
+            self.func[i](self.f[i], self.m[i], t, *self.args[i])
+            simulation.equilibrium(self.m[i])
+            simulation.m2f(self.m[i], self.f[i])
+
+            if self.generator.backend.upper() == "LOOPY":
+                self.f[i].array_cpu[...] = self.f[i].array.get()
+
+            self.feq[:, self.indices[i]] = self.f[i].swaparray.reshape((nv, self.indices[i].size))
 
     def _get_istore_iload_symb(self, dim):
         ncond = symbols('ncond', integer=True)
@@ -329,7 +367,7 @@ class BounceBack(BoundaryMethod):
         """
         Compute and set the additional terms to fix the boundary values.
         """
-        k = self.istore[0]
+        k = self.istore[:, 0]
         ksym = self.stencil.get_symmetric()[k]
         self.rhs[:] = self.feq[k, np.arange(k.size)] - self.feq[ksym, np.arange(k.size)]
 
@@ -373,8 +411,8 @@ class BouzidiBounceBack(BoundaryMethod):
     .. plot:: codes/Bouzidi.py
 
     """
-    def __init__(self, istore, ilabel, distance, stencil, value_bc, nspace, generator):
-        super(BouzidiBounceBack, self).__init__(istore, ilabel, distance, stencil, value_bc, nspace, generator)
+    def __init__(self, istore, ilabel, distance, stencil, value_bc, time_bc, nspace, generator):
+        super(BouzidiBounceBack, self).__init__(istore, ilabel, distance, stencil, value_bc, time_bc, nspace, generator)
         self.s = np.empty(self.istore.shape[1])
 
     def set_iload(self):
@@ -434,7 +472,7 @@ class BouzidiBounceBack(BoundaryMethod):
         """
         Compute and set the additional terms to fix the boundary values.
         """
-        k = self.istore[0]
+        k = self.istore[:, 0]
         ksym = self.stencil.get_symmetric()[k]
         self.rhs[:] = self.feq[k, np.arange(k.size)] - self.feq[ksym, np.arange(k.size)]
 
@@ -483,7 +521,7 @@ class AntiBounceBack(BounceBack):
         """
         Compute and set the additional terms to fix the boundary values.
         """
-        k = self.istore[0]
+        k = self.istore[:, 0]
         ksym = self.stencil.get_symmetric()[k]
         self.rhs[:] = self.feq[k, np.arange(k.size)] + self.feq[ksym, np.arange(k.size)]
 
@@ -530,7 +568,7 @@ class BouzidiAntiBounceBack(BouzidiBounceBack):
         """
         Compute and set the additional terms to fix the boundary values.
         """
-        k = self.istore[0]
+        k = self.istore[:, 0]
         ksym = self.stencil.get_symmetric()[k]
         self.rhs[:] = self.feq[k, np.arange(k.size)] + self.feq[ksym, np.arange(k.size)]
 

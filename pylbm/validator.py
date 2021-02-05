@@ -229,7 +229,10 @@ def validate(dico, name):
                                     {'type': 'list',
                                      'items': [{'type': 'function'}, {'type': 'list', 'nullable': True}],
                                     }]
-                         }
+                         },
+                'time_bc': {'type': 'boolean',
+                            'default': False
+                           }
                }
 
     simulation = {'dim': {'type': 'integer',
