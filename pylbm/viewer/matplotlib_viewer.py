@@ -214,7 +214,6 @@ class SContour:
         self.contour = axe.contour(
             self.data, levels=self.levels, colors=self.colors
         )
-        print("coucou")
         # axe.axis_equal()
         axe.ax.clabel(self.contour, inline=1, fontsize=6)
 
