@@ -433,7 +433,7 @@ class CythonCodeGen(LBMCodeGen):
 
     def _declare_globals(self, routine):
         args = []
-        for g in routine.local_vars:
+        for g in sorted(routine.local_vars, key=str):
             if isinstance(g, Symbol):
                 args.append("cdef double %s\n"%(self._get_symbol(g)))
             else:
@@ -446,7 +446,7 @@ class CythonCodeGen(LBMCodeGen):
 
     def _declare_locals(self, routine):
         s = []
-        for l in routine.idx_vars:
+        for l in sorted(routine.idx_vars, key=str):
             s.append("cdef int %s\n" % l.label)
         return s + ['\n']
 
@@ -608,7 +608,7 @@ class LoopyCodeGen(LBMCodeGen):
                     args.append('lp.ValueArg("{name}", dtype={dtype})'.format(name=name, dtype=arg.get_datatype('PYTHON')))
         for i, arg in enumerate(routine.local_vars):
             if isinstance(arg, Symbol):
-                args.append('lp.TemporaryVariable("{name}", dtype=float)'.format(name=self._get_symbol(arg)))    
+                args.append('lp.TemporaryVariable("{name}", dtype=float)'.format(name=self._get_symbol(arg)))
             else:
                 dims = [d for d in arg.shape if d!=1]
                 args.append('lp.TemporaryVariable("{name}", dtype=float, shape="{shape}")'.format(name=self._get_symbol(arg), shape=','.join("%s"%s for s in dims)))

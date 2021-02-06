@@ -306,6 +306,7 @@ def validate(dico, name):
                   'generator': {'type': 'string',
                                 'allowed':['numpy', 'cython', 'loopy']
                                },
+                  'codegen_dir':{'type': 'string'},
                   'lbm_algorithm': {'type': 'dict',
                                     'schema': {'name': {'isalgorithm': True},
                                                'settings': {'type': 'dict'}

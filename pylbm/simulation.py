@@ -8,6 +8,7 @@
 pylbm simulation
 """
 
+import os
 import sys
 import logging
 import types
@@ -105,7 +106,12 @@ class Simulation:
         self.dt = self.domain.dx/self.scheme.la
         self.dim = self.domain.dim
 
+        codegen_dir = dico.get('codegen_dir', None)
+        if codegen_dir:
+            codegen_dir = os.path.realpath(codegen_dir)
+
         self.generator = Generator(dico.get('generator', "CYTHON").upper(),
+                                   codegen_dir,
                                    dico.get('show_code', False))
 
         # FIXME remove that !!
