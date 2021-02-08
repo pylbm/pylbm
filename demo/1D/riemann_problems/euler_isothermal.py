@@ -72,7 +72,7 @@ def run(space_step,
     """
     # parameters
     xmin, xmax = -1, 1               # bounds of the domain
-    la = 1.                          # velocity of the scheme
+    la = 1                           # velocity of the scheme
     c_0 = la/sqrt(3)                 # velocity of the pressure waves
     s_rho, s_u = 2., 1.85            # relaxation parameters
 
@@ -105,7 +105,7 @@ def run(space_step,
     simu_cfg = {
         'box': {'x': [xmin, xmax], 'label': 0},
         'space_step': space_step,
-        'scheme_velocity': LA,
+        'lattice_velocity': LA,
         'schemes': [
             {
                 'velocities': [1, 2],
@@ -181,6 +181,7 @@ def run(space_step,
         )
         axe1.legend(loc='lower right')
         axe2.legend(loc='lower right')
+        axe1.title = f'isothermal Euler at $t = {sol.t:f}$'
 
         def update(iframe):  # pylint: disable=unused-argument
             if sol.t < final_time:
@@ -190,7 +191,7 @@ def run(space_step,
                 sole = exact_solution.evaluate(x, sol.t)
                 l1e.update(sole[0])
                 l2e.update(sole[1])
-                axe1.title = r'isothermal Euler at $t = {0:f}$'.format(sol.t)
+                axe1.title = f'isothermal Euler at $t = {sol.t:f}$'
 
         fig.animate(update)
         fig.show()
@@ -199,6 +200,7 @@ def run(space_step,
             sol.one_time_step()
 
     return sol
+
 
 if __name__ == '__main__':
     # pylint: disable=invalid-name

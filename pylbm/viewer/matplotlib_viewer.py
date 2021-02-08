@@ -116,6 +116,12 @@ class Fig:
     def close(self):
         plt.close(self.fig)
 
+    def savefig(self, name='Figure.pdf'):
+        plt.savefig(name)
+
+    def title(self, mytitle, fontsize=15):
+        self.fig.suptitle(mytitle, fontsize=fontsize)
+
 
 class CLine:
     """
@@ -182,17 +188,20 @@ class SImage:
     """
     matplotlib object: imshow
     """
-    def __init__(self, data, cmap='gist_gray', clim=(None, None), alpha=1):
+    def __init__(self, data,
+                 cmap='gist_gray', clim=(None, None), alpha=1,
+                 extent=None):
         self.data = data.T
         self.cmap = cmap
         self.clim = clim
         self.alpha = alpha
+        self.extent = extent
 
     # pylint: disable=attribute-defined-outside-init
     def add(self, axe):
         self.img = axe.image(
             self.data, cmap=self.cmap, clim=self.clim,
-            alpha=self.alpha,
+            alpha=self.alpha, extent=self.extent
         )
 
     def update(self, data):
@@ -288,10 +297,14 @@ class PlotWidget:
         """
         self.ax.set_title(text)
 
+    def set_title(self, text, fontsize=12):
+        self.ax.set_title(text, fontsize=fontsize)
+
     def legend(self,
                loc='upper left',
                frameon=True,
-               shadow=False
+               shadow=False,
+               fontsize=12,
                ):
         """
         set the legend of the figure
@@ -299,17 +312,22 @@ class PlotWidget:
         Parameters
         ----------
 
-        loc : string
+        loc: string, optional
             the location (default 'upper left')
             allowed values: 'best',
             'upper left', 'upper center', 'upper right',
             'lower left', 'lower center', 'lower right'
-        frameon : bool
+        frameon: bool, optional
             activate or desactivate the frame (default True)
-        shadow : bool
+        shadow: bool, optional
             activate or desactivate the shadow (default False)
+        fontsize: int, optional
+            the fontsize (default 12)
         """
-        self.ax.legend(loc=loc, shadow=shadow, frameon=frameon)
+        self.ax.legend(
+            loc=loc, shadow=shadow, frameon=frameon,
+            fontsize=fontsize
+        )
 
     def text(self, text, pos,
              color='black',
@@ -582,7 +600,9 @@ class PlotWidget:
                 alpha=alpha, label=label
             )
 
-    def image(self, f, fargs=(), cmap='gist_gray', clim=(None, None), alpha=1):
+    def image(self, f, fargs=(),
+              cmap='gist_gray', clim=(None, None), alpha=1,
+              extent=(0, 1, 0, 1)):
         if isinstance(f, np.ndarray):
             data = f
         else:
@@ -591,14 +611,13 @@ class PlotWidget:
             data, origin='lower',
             vmin=clim[0], vmax=clim[1],
             cmap=cmap, interpolation='nearest',
-            alpha=alpha,
+            alpha=alpha, extent=extent
         )
         return image
 
     def contour(self, Z, levels=10, colors='k'):
         contour = self.ax.contour(Z, levels=levels, colors=colors)
         return contour
-
 
     @staticmethod
     def draw():
@@ -634,8 +653,12 @@ class PlotWidget:
         line.add(self)
         return line
 
-    def SurfaceImage(self, data, cmap='gist_gray', clim=(None, None), alpha=1):
-        layer = SImage(data, cmap=cmap, clim=clim, alpha=alpha)
+    def SurfaceImage(self, data,
+                     cmap='gist_gray', clim=(None, None), alpha=1,
+                     extent=None):
+        layer = SImage(
+            data, cmap=cmap, clim=clim, alpha=alpha,
+            extent=extent)
         layer.add(self)
         return layer
 
