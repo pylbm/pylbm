@@ -49,7 +49,8 @@ def error_prompt(indent):
 
 def bright_error(error):
     """highlight the error"""
-    return f"| {Style.BRIGHT:s}{error:s}{Style.RESET_ALL:s}"
+    #return f"| {Style.BRIGHT:s}{error:s}{Style.RESET_ALL:s}"
+    return Style.BRIGHT + str(error) + Style.RESET_ALL
 
 
 def missing_value(value):
