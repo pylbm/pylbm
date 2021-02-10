@@ -32,6 +32,7 @@ from .options import options                 # noqa: E402
 from . import monitoring                     # noqa: E402
 from .analysis import EquivalentEquation, Stability  # noqa: E402
 from .utils import progress_bar              # noqa: E402
+from .tmp_dir import pylbm_tmp_dir
 
 numeric_level = getattr(logging, options().loglevel, None)
 
