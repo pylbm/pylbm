@@ -7,7 +7,9 @@
 """
 Description of a LBM scheme
 """
+import os
 import sys
+import tempfile
 import logging
 from textwrap import dedent
 
@@ -188,6 +190,7 @@ class Scheme:
         self._check_inverse(self.M, self.invM, 'M')
         self._check_inverse_of_Tu()
 
+        self.html_file = None
         log.info(self.__str__())
 
     def _get_space_and_time_symbolic(self):
@@ -280,6 +283,67 @@ class Scheme:
 
     def __repr__(self):
         return self.__str__()
+
+    def _repr_html_(self):
+        from IPython.display import IFrame
+        import numpy as np
+        import matplotlib.pyplot as plt
+        import matplotlib
+        import io
+        import base64
+
+        from .jinja_env import env
+        template = env.get_template('scheme.html.j2')
+
+        P = []
+        EQ = []
+        s = []
+        for k in range(self.nschemes):
+            myslice = slice(self.stencil.nv_ptr[k], self.stencil.nv_ptr[k+1])
+            P.append([sp.latex(p, mode='equation*') for p in self.P[myslice]])
+            EQ.append([sp.latex(eq, mode='equation*') for eq in self.EQ_no_swap[myslice]])
+            s.append([sp.latex(s, mode='equation*') for s in self.s_no_swap[myslice]])
+
+        if self.rel_vel:
+            addons = {'rel_vel': self.rel_vel,
+                      'Tu': sp.pretty(self.Tu_no_swap)
+                     }
+        else:
+            addons = {}
+
+        # save images of velocities
+        images = []
+        backend = matplotlib.get_backend()
+        matplotlib.use('Agg')
+        for k in range(self.nschemes):
+            self.stencil.visualize(k=k)
+            buf = io.BytesIO()
+            plt.savefig(buf, format="png", dpi=300)
+            images.append(base64.b64encode(buf.getvalue()).decode())
+        matplotlib.use(backend)
+
+        html_content = template.render(scheme=self,
+                                       consm= [sp.latex(c) for c in self.consm.keys()],
+                                       P=P,
+                                       EQ=EQ,
+                                       s=s,
+                                       M=f"{sp.latex(self.M_no_swap, mode='equation*')}",
+                                       invM=f"{sp.latex(self.invM_no_swap, mode='equation*')}",
+                                       fig=images,
+                                       **addons
+        )
+
+        # Save the html file of the scheme in a temporary directory
+        # and include the result in an Ipython iframe
+        if self.html_file:
+            self.html_file.close()
+
+        self.html_file = tempfile.NamedTemporaryFile("w", suffix='.html', dir=pylbm_tmp_dir.name)
+        self.html_file.write(html_content)
+
+        rel_path = f"{os.path.basename(os.path.dirname(self.html_file.name)) + '/' + os.path.basename(self.html_file.name)}"
+
+        return IFrame(rel_path, width="100%", height=450)._repr_html_()
 
     def _create_moments_matrices(self):
         """

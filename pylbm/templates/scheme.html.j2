@@ -1,0 +1,43 @@
+{% extends "base.html.j2" %}
+{%- from 'util.j2' import card, accordion -%}
+
+{%- macro scheme_info(figVel, P, EQ, S) %}
+    <span class="d-block p-2 border-bottom border-2">Velocities</span>
+
+    <img class="w-50 mx-auto d-block" src="data:image/png;base64,{{ figVel }}" />
+
+    <span class="d-block p-2 border-bottom border-2">Polynomials</span>
+    {% for p in P %}
+        {{ p }}
+    {% endfor %}
+
+    <span class="d-block p-2 border-bottom border-2">Equilibria</span>
+    {% for e in EQ %}
+        {{ e }}
+    {% endfor %}
+
+    <span class="d-block p-2 border-bottom border-2">Relaxation parameters</span>
+    {% for sk in S %}
+        {{ sk }}
+    {% endfor %}
+{%- endmacro -%}
+
+{% block body %}
+
+    <div class="row d-flex justify-content-center">
+
+        {{ card("Dimension", scheme.dim) }}
+        {{ card("Number of schemes", scheme.nschemes) }}
+        {{ card("Conserved moments", consm|join(", ")) }}
+
+    </div>
+
+    <div class="accordion" id="accordionScheme">
+        {%- for k in range(scheme.nschemes) %}
+            {{ accordion("accordionScheme", k|string, "Scheme " + k|string, scheme_info(fig[k], P[k], EQ[k], s[k])) }}
+        {%- endfor %}
+
+        {{ accordion("accordionScheme", "moment", "Moments matrix", M) }}
+        {{ accordion("accordionScheme", "invmoment", "Inverse of moments matrix", invM) }}
+    </div>
+{% endblock %}

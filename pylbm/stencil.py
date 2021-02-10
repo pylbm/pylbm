@@ -962,5 +962,4 @@ class Stencil(list):
                           fontsize=12, color='navy', fontweight='bold')
             view.grid(visible=True, which='major', alpha=0.25)
 
-        views.show()
         return views
