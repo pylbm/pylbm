@@ -14,12 +14,12 @@ class Generator:
         self.backend = backend
         self.verbose = verbose
 
-    def add_routine(self, name_expr, argument_sequence=None,
+    def add_routine(self, name_expr,
                     local_vars=None, settings={}):
-        self.routines[name_expr[0]] = make_routine(name_expr,
-                                                   argument_sequence,
-                                                   local_vars,
-                                                   settings)[0]
+        self.routines[name_expr[0]] = make_routine(name_expr[0], name_expr[1],
+                                                   user_local_vars=local_vars,
+                                                   language=self.backend,
+                                                   settings=settings)
 
     def compile(self):
         self.module = autowrap(self.routines.values(),

@@ -202,13 +202,9 @@ def alltogether(M, nsimplify=False):
     for i in range(M.shape[0]):
         for j in range(M.shape[1]):
             if nsimplify:
-                # FIXME bug with factor in sympy 1.1 (solved in 1.3)
-                # M[i, j] = M[i, j].expand().together().factor().nsimplify()
-                M[i, j] = M[i, j].expand().together().nsimplify()
+                M[i, j] = M[i, j].expand().together().factor().nsimplify()
             else:
-                # FIXME bug with factor in sympy 1.1 (solved in 1.3)
-                # M[i, j] = M[i, j].expand().together().factor()
-                M[i, j] = M[i, j].expand().together()
+                M[i, j] = M[i, j].expand().together().factor()
 
 def recursive_sub(expr, replace):
     for _ in range(len(replace)):

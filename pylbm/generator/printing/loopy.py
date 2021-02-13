@@ -1,7 +1,6 @@
 # FIXME: make pylint happy !
 #pylint: disable=all
 from sympy.core import S
-from sympy.core.compatibility import string_types, range
 from sympy.printing.codeprinter import CodePrinter
 
 from sympy.core import Add, Mul, Pow, S, Eq
@@ -93,7 +92,8 @@ class LoopyCodePrinter(CodePrinter):
         'reserved_word_suffix': '_',
     }
 
-    def __init__(self, settings={}):
+    def __init__(self, settings=None):
+        settings = settings or {}
         super(LoopyCodePrinter, self).__init__(settings)
         self.known_functions = dict(known_functions)
         userfuncs = settings.get('user_functions', {})
@@ -111,26 +111,31 @@ class LoopyCodePrinter(CodePrinter):
         expr : Expression
             The expression to be printed.
 
-        assign_to : Symbol, MatrixSymbol, or string (optional)
-            If provided, the printed code will set the expression to a
-            variable with name ``assign_to``.
+        assign_to : Symbol, string, MatrixSymbol, list of strings or Symbols (optional)
+            If provided, the printed code will set the expression to a variable or multiple variables
+            with the name or names given in ``assign_to``.
         """
         from sympy.matrices.expressions.matexpr import MatrixSymbol
+        from ..ast import CodeBlock, Assignment
 
-        if isinstance(assign_to, string_types):
-            if expr.is_Matrix:
-                assign_to = MatrixSymbol(assign_to, *expr.shape)
-            else:
-                assign_to = Symbol(assign_to)
-        elif not isinstance(assign_to, (Basic, type(None))):
-            raise TypeError("{0} cannot assign to object of type {1}".format(
-                    type(self).__name__, type(assign_to)))
+        def _handle_assign_to(expr, assign_to):
+            if assign_to is None:
+                return sympify(expr)
+            if isinstance(assign_to, (list, tuple)):
+                if len(expr) != len(assign_to):
+                    raise ValueError('Failed to assign an expression of length {} to {} variables'.format(len(expr), len(assign_to)))
+                return CodeBlock(*[_handle_assign_to(lhs, rhs) for lhs, rhs in zip(expr, assign_to)])
+            if isinstance(assign_to, str):
+                if expr.is_Matrix:
+                    assign_to = MatrixSymbol(assign_to, *expr.shape)
+                else:
+                    assign_to = Symbol(assign_to)
+            elif not isinstance(assign_to, Basic):
+                raise TypeError("{} cannot assign to object of type {}".format(
+                        type(self).__name__, type(assign_to)))
+            return Assignment(assign_to, expr)
 
-        if assign_to:
-            expr = Assignment(assign_to, expr)
-        else:
-            # _sympify is not enough b/c it errors on iterables
-            expr = sympify(expr)
+        expr = _handle_assign_to(expr, assign_to)
 
         # keep a set of expressions that are not strictly translatable to Code
         # and number constants that must be declared and initialized
@@ -139,28 +144,26 @@ class LoopyCodePrinter(CodePrinter):
 
         lines = []
         equality = False
-        
         if isinstance(expr, Eq):
             equality = True
             if self.instr == 0:
-                lines.append("with {id_prefix=inst_%d}"%self.instr)            
+                lines.append("with {id_prefix=inst_%d}"%self.instr)
             else:
                 lines.append("with {id_prefix=inst_%d, dep=inst_%d*}"%(self.instr, self.instr-1))
             self.instr += 1
             expr = Assignment(expr.lhs, expr.rhs)
 
-        #lines.append(self._print(expr).splitlines())
         lines += self._print(expr).splitlines()
-        
+
         if equality:
             lines.append("end")
 
         # format the output
         if self._settings["human"]:
             frontlines = []
-            if len(self._not_supported) > 0:
+            if self._not_supported:
                 frontlines.append(self._get_comment(
-                        "Not supported in {0}:".format(self.language)))
+                        "Not supported in {}:".format(self.language)))
                 for expr in sorted(self._not_supported, key=str):
                     frontlines.append(self._get_comment(type(expr).__name__))
             for name, value in sorted(self._number_symbols, key=str):
@@ -170,10 +173,10 @@ class LoopyCodePrinter(CodePrinter):
             result = "\n".join(lines)
         else:
             lines = self._format_code(lines)
-            result = (self._number_symbols, self._not_supported,
-                    "\n".join(lines))
-        #del self._not_supported
-        #del self._number_symbols
+            num_syms = {(k, self._print(v)) for k, v in self._number_symbols}
+            result = (num_syms, self._not_supported, "\n".join(lines))
+        self._not_supported = set()
+        self._number_symbols = set()
         return result
 
     def _get_expression_indices(self, expr, assign_to):
@@ -270,17 +273,17 @@ class LoopyCodePrinter(CodePrinter):
 
     def _print_For(self, expr):
         lines = []
-        index = expr.index
+        index = expr.target
 
         sfor = []
         for i in index:
             sfor.append("%s_"%i.label)
-        
+
         lines.append("for %s"%",".join(sfor))
         for i in index:
             lines.append("%s := %s_ + %d"%(i.label, i.label, i.lower))
 
-        for e in expr.expr:
+        for e in expr.body:
             temp1, temp2, addlines = self.doprint(e)
             if isinstance(addlines, str):
                 lines.append(addlines)
@@ -336,32 +339,32 @@ class LoopyCodePrinter(CodePrinter):
         self.instr += 1
         return output
 
-    def _print_AssignmentIf(self, expr):
-        from sympy.functions.elementary.piecewise import Piecewise
-        from sympy.matrices.expressions.matexpr import MatrixSymbol
-        from sympy.matrices import MatrixBase
-        from sympy.tensor.indexed import IndexedBase
-        lhs = expr.lhs
-        rhs = expr.rhs
+    # def _print_AssignmentIf(self, expr):
+    #     from sympy.functions.elementary.piecewise import Piecewise
+    #     from sympy.matrices.expressions.matexpr import MatrixSymbol
+    #     from sympy.matrices import MatrixBase
+    #     from sympy.tensor.indexed import IndexedBase
+    #     lhs = expr.lhs
+    #     rhs = expr.rhs
 
-        # We special case assignments that take multiple lines
-        if isinstance(lhs, (MatrixBase, MatrixSymbol)):
-            # Here we form an Assignment for each element in the array,
-            # printing each one.
-            lines = []
-            for (i, j) in self._traverse_matrix_indices(lhs):
-                if lhs[i, j] != rhs[i, j]:
-                    temp = AssignmentIf(lhs[i, j], rhs[i, j])
-                    code0 = self._print(temp)
-                    lines.append(code0)
-            return "\n".join(lines)
-        else:
-            lhs_code = self._print(lhs)
-            rhs_code = self._print(rhs)
-            # hack to avoid the printing of m[i] = m[i]
-            if lhs_code == rhs_code:
-                return ""
-            return self._get_statement("%s == %s" % (lhs_code, rhs_code))
+    #     # We special case assignments that take multiple lines
+    #     if isinstance(lhs, (MatrixBase, MatrixSymbol)):
+    #         # Here we form an Assignment for each element in the array,
+    #         # printing each one.
+    #         lines = []
+    #         for (i, j) in self._traverse_matrix_indices(lhs):
+    #             if lhs[i, j] != rhs[i, j]:
+    #                 temp = AssignmentIf(lhs[i, j], rhs[i, j])
+    #                 code0 = self._print(temp)
+    #                 lines.append(code0)
+    #         return "\n".join(lines)
+    #     else:
+    #         lhs_code = self._print(lhs)
+    #         rhs_code = self._print(rhs)
+    #         # hack to avoid the printing of m[i] = m[i]
+    #         if lhs_code == rhs_code:
+    #             return ""
+    #         return self._get_statement("%s == %s" % (lhs_code, rhs_code))
 
     def _print_sign(self, func):
         return '((({0}) > 0) - (({0}) < 0))'.format(self._print(func.args[0]))
@@ -369,7 +372,7 @@ class LoopyCodePrinter(CodePrinter):
     def indent_code(self, code):
         """Accepts a string of code or a list of code lines"""
 
-        if isinstance(code, string_types):
+        if isinstance(code, str):
             code_lines = self.indent_code(code.splitlines(True))
             return ''.join(code_lines)
 
@@ -382,7 +385,7 @@ class LoopyCodePrinter(CodePrinter):
         increase = [ int(any(map(line.startswith, inc_tokenb))) for line in code ]
         decrease = [ int(any(map(line.endswith, dec_token)))
                      for line in code ]
-        
+
         pretty = []
         level = 0
         for n, line in enumerate(code):
@@ -413,7 +416,7 @@ class LoopyCodePrinter(CodePrinter):
         _print_MutableDenseMatrix = \
         _print_ImmutableMatrix = \
         _print_ImmutableDenseMatrix = \
-        _print_MatrixBase 
+        _print_MatrixBase
 
 def loopy_code(expr, assign_to=None, **settings):
     return LoopyCodePrinter(settings).doprint(expr, assign_to)

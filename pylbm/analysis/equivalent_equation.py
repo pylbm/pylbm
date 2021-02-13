@@ -44,11 +44,15 @@ class EquivalentEquation:
 
         Lambda = []
         for i in range(all_vel.shape[1]):
-            vd = LA*sp.diag(*all_vel[:, i])
+            # FIXME: hack for a bug in sympy
+            l = [int(v) for v in all_vel[:, i]]
+            vd = LA*sp.diag(*l)
+            # vd = LA*sp.diag(*all_vel[:, i])
             Lambda.append(scheme.M*vd*scheme.invM)
 
         phi1 = sp.zeros(s.shape[0], 1) #pylint: disable=unsubscriptable-object
-        sigma = sp.diag(*s).inv() - sp.eye(len(s))/2
+        inv_s = [1/v for v in s]
+        sigma = sp.diag(*inv_s) - sp.eye(len(s))/2
         gamma_1 = sp.zeros(nconsm, 1)
 
         self.coeff_order1 = []
