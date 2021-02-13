@@ -9,8 +9,12 @@ Symbolic computation of equivalent equations
 """
 
 #pylint: disable=invalid-name
+import os
+import tempfile
+
 import sympy as sp
 from ..symbolic import alltogether
+from ..tmp_dir import pylbm_tmp_dir
 
 class EquivalentEquation:
     def __init__(self, scheme):
@@ -95,6 +99,8 @@ class EquivalentEquation:
             for jc, cc in enumerate(c):
                 self.coeff_order2[ic][jc] = cc.subs(sublist_inv).doit()
 
+        self.html_file = None
+
     def __str__(self):
         from ..utils import header_string
         from ..jinja_env import env
@@ -132,3 +138,64 @@ class EquivalentEquation:
 
     def __repr__(self):
         return self.__str__()
+
+    def _repr_html_(self):
+        from IPython.display import IFrame
+
+        from ..utils import header_string
+        from ..jinja_env import env
+        template = env.get_template('equivalent_equation.html.j2')
+        t, x, y, z, U, Fx, Fy, Fz, Delta = sp.symbols('t, x, y, z, U, F_x, F_y, F_z, Delta_t')
+        Bxx, Bxy, Bxz = sp.symbols('B_{xx}, B_{xy}, B_{xz}')
+        Byx, Byy, Byz = sp.symbols('B_{yx}, B_{yy}, B_{yz}')
+        Bzx, Bzy, Bzz = sp.symbols('B_{zx}, B_{zy}, B_{zz}')
+
+        phys_equation = sp.Derivative(U, t) + sp.Derivative(Fx, x)
+        if self.dim > 1:
+            phys_equation += sp.Derivative(Fy, y)
+        if self.dim == 3:
+            phys_equation += sp.Derivative(Fz, z)
+
+        order2 = []
+        space = [x, y, z]
+        B = [[Bxx, Bxy, Bxz],
+             [Byx, Byy, Byz],
+             [Bzx, Bzy, Bzz],
+            ]
+
+        phys_equation_rhs = 0
+        for i in range(self.dim):
+            for j in range(self.dim):
+                phys_equation_rhs += sp.Derivative(B[i][j]*sp.Derivative(U, space[j]), space[i])
+
+        order1_dict = {}
+        F = [Fx, Fy, Fz]
+        for d in range(self.dim):
+            order1_dict[sp.latex(F[d])] = [sp.latex(c) for c in self.coeff_order1[d]]
+
+        order2_dict = {}
+        for i in range(self.dim):
+            for j in range(self.dim):
+                order2_dict[sp.latex(B[i][j])] = [sp.latex(-Delta*c) for c in self.coeff_order2[i][j]]
+
+        html_content = template.render(header=header_string('Equivalent Equations'),
+                               dim=self.dim,
+                               phys_equation=sp.latex(sp.Eq(phys_equation, phys_equation_rhs), mode='equation*'),
+                               consm=[sp.latex(c) for c in self.consm],
+                               order1_dict=order1_dict,
+                               order2_dict=order2_dict,
+                              )
+
+        # Save the html file of the scheme in a temporary directory
+        # and include the result in an Ipython iframe
+        if self.html_file:
+            self.html_file.close()
+
+        self.html_file = tempfile.NamedTemporaryFile("w", suffix='.html', dir=pylbm_tmp_dir.name)
+        with open(self.html_file.name, "w") as f:
+            f.write(html_content)
+
+        rel_path = f"{os.path.basename(os.path.dirname(self.html_file.name)) + '/' + os.path.basename(self.html_file.name)}"
+
+        return IFrame(rel_path, width="100%", height=450)._repr_html_()
+
