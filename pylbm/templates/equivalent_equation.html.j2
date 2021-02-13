@@ -1,0 +1,51 @@
+{% extends "base.html.j2" %}
+{%- from 'util.j2' import accordion -%}
+
+{%- macro coeff(order) %}
+    {%- for o in order %}
+        $${{ o }}$$
+    {% endfor %}
+{%- endmacro %}
+
+
+{%- macro coeff_dict(consm, order) %}
+    $$
+    \begin{align*}
+    {%- for key, value in order.items() %}
+        {%- for i in range(consm|length) %}
+            {{ key }}^{{ consm[i] }} &= {{ value[i] }} \\ \\
+        {% endfor %}
+    {% endfor %}
+    \end{align*}
+    $$
+{%- endmacro %}
+
+{%- macro coeff_dict_2(consm, order) %}
+    $$
+    \begin{align*}
+    {%- for key, value in order.items() %}
+        {%- for i in range(consm|length) %}
+            {%- for j in range(consm|length) %}
+                {{ key }}^{ {{ consm[i] }}, {{ consm[j] }} } &= {{ value[i*(consm|length) + j] }} \\ \\
+            {% endfor %}
+        {% endfor %}
+    {% endfor %}
+    \end{align*}
+    $$
+{%- endmacro %}
+
+{% block body %}
+
+    <p>The equivalent equation is given by</p>
+
+    {{ phys_equation }}
+
+    with
+
+    <div class="accordion" id="accordionEqpde">
+        {{ accordion("accordionEqpde", "U", "$U$", coeff(consm)) }}
+        {{ accordion("accordionEqpde", "dx", "First order", coeff_dict(consm, order1_dict)) }}
+        {{ accordion("accordionEqpde", "dxx", "Second order", coeff_dict_2(consm, order2_dict)) }}
+    </div>
+
+{% endblock %}
