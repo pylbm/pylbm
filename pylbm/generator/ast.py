@@ -130,6 +130,7 @@ from collections import defaultdict
 
 from sympy import Lt, Le, Ge, Gt
 from sympy.core import Symbol, Tuple, Dummy
+from sympy.core.compatibility import is_sequence
 from sympy.core.basic import Basic
 from sympy.core.expr import Expr
 from sympy.core.numbers import Float, Integer, oo
@@ -803,6 +804,9 @@ class CodeBlock(Basic):
         new_assignments = [Assignment(var, expr) for var, expr in replacements]
         return self.topological_sort(new_assignments + new_block)
 
+class AssignmentIf(Assignment):
+    rel_op = '=='
+    __slots__ = []
 
 class For(Token, WithBody):
     """Represents a 'for-loop' in the code.

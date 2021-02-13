@@ -122,8 +122,7 @@ __all__ = [
     "Routine",
     "Argument", "InputArgument", "OutputArgument", "Result",
     # routines -> code
-    "CodeGen", "CCodeGen", "FCodeGen", "JuliaCodeGen", "OctaveCodeGen",
-    "RustCodeGen",
+    "CodeGen", "CythonCodeGen", "NumPyCodeGen", "LoopyCodeGen"
     # friendly functions
     "codegen", "make_routine",
 ]
@@ -1208,9 +1207,6 @@ class LoopyCodeGen(CodeGen):
             code_lines.append("%s\n" % (py_expr))
         return declarations + code_lines
 
-    def code_generator(self, expr, assign_to=None, **settings):
-        return loopy_code(expr, assign_to, **settings)
-
     def _preprocessor_statements(self, prefix):
         return []
 
@@ -1292,7 +1288,6 @@ class LoopyCodeGen(CodeGen):
         # for i, idx in enumerate(routine.idx_vars[-1::-1]):
         i = 0
         for idx in routine.idx_vars:
-            print(type(idx))
             code_list.append('{name} = lp.split_iname({name}, "{label}", {block}, outer_tag="g.{ilabel}", inner_tag="l.{ilabel}")'.format(name = routine.name, label = "%s_"%idx.label, ilabel=i, block=block_size[i]))
             i += 1
         code_list.append('{name} = lp.expand_subst({name})\n'.format(name=routine.name))

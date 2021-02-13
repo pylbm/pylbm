@@ -5,10 +5,11 @@ This module contains python code printers for plain python as well as NumPy & Sc
 """
 from collections import defaultdict
 from itertools import chain
-from sympy.core import S, Add, Eq
+from sympy.core import S, Add, Eq, Symbol
 from sympy.printing.precedence import precedence
 from sympy.printing.codeprinter import CodePrinter
 from sympy.core.sympify import _sympify, sympify
+from sympy.core.basic import Basic
 
 _kw_py2and3 = {
     'and', 'as', 'assert', 'break', 'class', 'continue', 'def', 'del', 'elif',
@@ -660,7 +661,7 @@ class NumPyPrinter(PythonCodePrinter):
         # keep a set of expressions that are not strictly translatable to Code
         # and number constants that must be declared and initialized
         self._not_supported = set()
-        self._number_symbols = set()  # type: Set[Tuple[Expr, Float]]
+        self._number_symbols = set()
 
         lines = self._print(expr).splitlines()
 

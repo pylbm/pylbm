@@ -13,7 +13,7 @@ from sympy.printing.str import StrPrinter
 from sympy.printing.precedence import precedence
 from sympy import Idx
 
-from ..ast import Assignment
+from ..ast import Assignment, AssignmentIf
 
 # dictionary mapping sympy function to (argument_conditions, C_function).
 # Used in CCodePrinter._print_Function(self)
