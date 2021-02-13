@@ -52,7 +52,7 @@ setup(
     install_requires=[
                         "numpy",
                         "matplotlib",
-                        "sympy >=1.2",
+                        "sympy >=1.3",
                         "cython",
                         "h5py",
                         # "mpi4py",
