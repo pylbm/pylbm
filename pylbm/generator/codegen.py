@@ -122,7 +122,7 @@ __all__ = [
     "Routine",
     "Argument", "InputArgument", "OutputArgument", "Result",
     # routines -> code
-    "CodeGen", "CythonCodeGen", "NumPyCodeGen", "LoopyCodeGen"
+    "CodeGen", "CythonCodeGen", "NumPyCodeGen", "LoopyCodeGen",
     # friendly functions
     "codegen", "make_routine",
 ]
