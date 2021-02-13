@@ -1,3 +1,5 @@
+# FIXME: make pylint happy !
+#pylint: disable=all
 """
 Python code printers
 
