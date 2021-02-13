@@ -1174,8 +1174,8 @@ class LoopyCodeGen(CodeGen):
     _default_settings = {"prefetch": None}
 
     default_datatypes = {'int': 'int',
-                         'float': 'double',
-                         'complex': 'double'}
+                         'float': 'float',
+                         'complex': 'complex'}
 
     def __init__(self, project='project', printer=None, settings={}):
         super(LoopyCodeGen, self).__init__(project)
@@ -1218,6 +1218,7 @@ class LoopyCodeGen(CodeGen):
 
     def _get_routine_opening(self, routine):
         """Returns the opening statements of the routine."""
+        self.printer.instr = 0
         code_list = []
         code_list.append("%s = lp.make_kernel("%routine.name)
         name = []
@@ -1294,29 +1295,13 @@ class LoopyCodeGen(CodeGen):
         code_list.append('{name} = lp.set_options({name}, no_numpy = True)\n'.format(name=routine.name))
 
         prefetch = routine.settings.get("prefetch", None)
-
         if prefetch:
             for var in prefetch:
                 indices = []
                 for idx in routine.idx_vars:
                     indices.append("%s__inner"%idx.label)
-                # for i in range(var.rank):
-                #     if isinstance(var.indices[i], Idx):
-                #         indices.append("%s__inner"%var.indices[i].label)
                 code_list.append('{name} = lp.add_prefetch({name}, "{var}", "{label}", fetch_bounding_box=True)\n'.format(name=routine.name, var=var.base.label, label=",".join(indices)))
-#            print("PREFETCH")
-        #     label = []
-        #     for var in self._settings["prefetch"]:
-        #         indices = []
-        #         for i in var.indices:
-        #             if isinstance(i, Idx):
-        #                 indices.append("%s__inner"%i.label)
-        #         code_list.append('{name} = lp.add_prefetch({name}, "{var}", "{label}", fetch_bounding_box=True)'.format(name=routine.name, var=var.label, label=",".join(indices)))
-        #print(LoopyCodePrinter()._sort_optimized(routine.local_vars, routine.instructions))
-# one_time_step = lp.split_iname(one_time_step, "ii", 16, outer_tag="g.1", inner_tag="l.1")
-# one_time_step = lp.split_iname(one_time_step, "jj", 16, outer_tag="g.0", inner_tag="l.0")
-# one_time_step = lp.expand_subst(one_time_step)
-# one_time_step = lp.add_prefetch(one_time_step, "f", "ii_inner,jj_inner", fetch_bounding_box=True)
+
         code_list = [ "\n".join(code_list) ]
         return code_list
 

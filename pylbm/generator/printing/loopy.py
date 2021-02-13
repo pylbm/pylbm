@@ -111,26 +111,31 @@ class LoopyCodePrinter(CodePrinter):
         expr : Expression
             The expression to be printed.
 
-        assign_to : Symbol, MatrixSymbol, or string (optional)
-            If provided, the printed code will set the expression to a
-            variable with name ``assign_to``.
+        assign_to : Symbol, string, MatrixSymbol, list of strings or Symbols (optional)
+            If provided, the printed code will set the expression to a variable or multiple variables
+            with the name or names given in ``assign_to``.
         """
         from sympy.matrices.expressions.matexpr import MatrixSymbol
+        from ..ast import CodeBlock, Assignment
 
-        if isinstance(assign_to, str):
-            if expr.is_Matrix:
-                assign_to = MatrixSymbol(assign_to, *expr.shape)
-            else:
-                assign_to = Symbol(assign_to)
-        elif not isinstance(assign_to, (Basic, type(None))):
-            raise TypeError("{0} cannot assign to object of type {1}".format(
-                    type(self).__name__, type(assign_to)))
+        def _handle_assign_to(expr, assign_to):
+            if assign_to is None:
+                return sympify(expr)
+            if isinstance(assign_to, (list, tuple)):
+                if len(expr) != len(assign_to):
+                    raise ValueError('Failed to assign an expression of length {} to {} variables'.format(len(expr), len(assign_to)))
+                return CodeBlock(*[_handle_assign_to(lhs, rhs) for lhs, rhs in zip(expr, assign_to)])
+            if isinstance(assign_to, str):
+                if expr.is_Matrix:
+                    assign_to = MatrixSymbol(assign_to, *expr.shape)
+                else:
+                    assign_to = Symbol(assign_to)
+            elif not isinstance(assign_to, Basic):
+                raise TypeError("{} cannot assign to object of type {}".format(
+                        type(self).__name__, type(assign_to)))
+            return Assignment(assign_to, expr)
 
-        if assign_to:
-            expr = Assignment(assign_to, expr)
-        else:
-            # _sympify is not enough b/c it errors on iterables
-            expr = sympify(expr)
+        expr = _handle_assign_to(expr, assign_to)
 
         # keep a set of expressions that are not strictly translatable to Code
         # and number constants that must be declared and initialized
@@ -139,7 +144,6 @@ class LoopyCodePrinter(CodePrinter):
 
         lines = []
         equality = False
-
         if isinstance(expr, Eq):
             equality = True
             if self.instr == 0:
@@ -149,7 +153,6 @@ class LoopyCodePrinter(CodePrinter):
             self.instr += 1
             expr = Assignment(expr.lhs, expr.rhs)
 
-        #lines.append(self._print(expr).splitlines())
         lines += self._print(expr).splitlines()
 
         if equality:
@@ -158,9 +161,9 @@ class LoopyCodePrinter(CodePrinter):
         # format the output
         if self._settings["human"]:
             frontlines = []
-            if len(self._not_supported) > 0:
+            if self._not_supported:
                 frontlines.append(self._get_comment(
-                        "Not supported in {0}:".format(self.language)))
+                        "Not supported in {}:".format(self.language)))
                 for expr in sorted(self._not_supported, key=str):
                     frontlines.append(self._get_comment(type(expr).__name__))
             for name, value in sorted(self._number_symbols, key=str):
@@ -170,10 +173,10 @@ class LoopyCodePrinter(CodePrinter):
             result = "\n".join(lines)
         else:
             lines = self._format_code(lines)
-            result = (self._number_symbols, self._not_supported,
-                    "\n".join(lines))
-        #del self._not_supported
-        #del self._number_symbols
+            num_syms = {(k, self._print(v)) for k, v in self._number_symbols}
+            result = (num_syms, self._not_supported, "\n".join(lines))
+        self._not_supported = set()
+        self._number_symbols = set()
         return result
 
     def _get_expression_indices(self, expr, assign_to):
