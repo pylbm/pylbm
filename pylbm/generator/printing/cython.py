@@ -1,18 +1,12 @@
-# FIXME: make pylint happy !
-#pylint: disable=all
-from sympy.core import S
-from sympy.core.compatibility import string_types, range
 from sympy.printing.codeprinter import CodePrinter
 
-from sympy.core import Add, Mul, Pow, S, Eq
+from sympy.core import sympify, Eq
 from sympy.core.basic import Basic
-from sympy.core.relational import Relational
-from sympy.core.sympify import _sympify, sympify
 from sympy.core.symbol import Symbol
-from sympy.printing.str import StrPrinter
+from ..ast import Assignment
 
 from sympy.printing.precedence import precedence
-from ..ast import Assignment, AssignmentIf
+from sympy.sets.fancysets import Range
 
 # dictionary mapping sympy function to (argument_conditions, C_function).
 # Used in CCodePrinter._print_Function(self)
@@ -78,12 +72,6 @@ class CythonCodePrinter(CodePrinter):
     printmethod = "_cythoncode"
     language = "Cython"
 
-    _operators = {
-        'and': 'and',
-        'or': 'or',
-        'not': 'not',
-    }
-
     _default_settings = {
         'order': None,
         'full_prec': 'auto',
@@ -97,7 +85,8 @@ class CythonCodePrinter(CodePrinter):
         'reserved_word_suffix': '_',
     }
 
-    def __init__(self, settings={}):
+    def __init__(self, settings=None):
+        settings = settings or {}
         super(CythonCodePrinter, self).__init__(settings)
         self.known_functions = dict(known_functions)
         userfuncs = settings.get('user_functions', {})
@@ -120,7 +109,7 @@ class CythonCodePrinter(CodePrinter):
         """
         from sympy.matrices.expressions.matexpr import MatrixSymbol
 
-        if isinstance(assign_to, string_types):
+        if isinstance(assign_to, str):
             if expr.is_Matrix:
                 assign_to = MatrixSymbol(assign_to, *expr.shape)
             else:
@@ -165,7 +154,6 @@ class CythonCodePrinter(CodePrinter):
         return result
 
     def _get_expression_indices(self, expr, assign_to):
-        from sympy.tensor import get_indices
         from sympy.tensor.indexed import Idx
 
         # need to remove not Idx indices !!!
@@ -195,21 +183,6 @@ class CythonCodePrinter(CodePrinter):
     def _traverse_matrix_indices(self, mat):
         rows, cols = mat.shape
         return ((i, j) for i in range(rows) for j in range(cols))
-
-    # def _get_loop_opening_ending(self, indices):
-    #     from sympy.tensor.indexed import Idx
-
-    #     open_lines = []
-    #     close_lines = []
-    #     for i in indices:
-    #         # Cython arrays start at 0 and end at dimension-1
-    #         if isinstance(i, Idx):
-    #             var, start, stop = map(self._print,
-    #                 [i.label, i.lower, i.upper + 1])
-    #             open_lines.append('for %s in range(%s, %s):' % (var, start, stop))
-    #             close_lines.append("#end\n")
-    #     return open_lines, close_lines
-        
 
     def _print_Pow(self, expr):
         if "Pow" in self.known_functions:
@@ -252,17 +225,18 @@ class CythonCodePrinter(CodePrinter):
     def _print_NegativeInfinity(self, expr):
         return '-HUGE_VAL'
 
-    def _print_If(self, expr):
-        lines = []
-        for c, e in expr.statement:
-            #temp1, temp2, cond = self.doprint(c)
-            c = c.replace(Eq, AssignmentIf)
-            lines.append("if %s:"%self._print(c))
-            for ee in e:
-                temp1, temp2, output = self.doprint(ee)
-                lines.append(output)
-        lines.append("#end")
-        return "\n".join(lines)
+    # TODO Loic: fix
+    # def _print_If(self, expr):
+    #     lines = []
+    #     for c, e in expr.statement:
+    #         #temp1, temp2, cond = self.doprint(c)
+    #         c = c.replace(Eq, AssignmentIf)
+    #         lines.append("if %s:"%self._print(c))
+    #         for ee in e:
+    #             temp1, temp2, output = self.doprint(ee)
+    #             lines.append(output)
+    #     lines.append("#end")
+    #     return "\n".join(lines)
 
     def _print_Piecewise(self, expr):
         if expr.args[-1].cond != True:
@@ -291,9 +265,9 @@ class CythonCodePrinter(CodePrinter):
             # operators. This has the downside that inline operators will
             # not work for statements that span multiple lines (Matrix or
             # Indexed expressions).
-            ecpairs = ["((%s) if (\n%s\n)\n" % (self._print(e), self._print(c))
-                       for e, c in expr.args[:-1]]
-            last_line = "else (\n%s\n)" % self._print(expr.args[-1].expr)
+            ecpairs = ["((%s) ? (\n%s\n)\n" % (self._print(c), self._print(e))
+                    for e, c in expr.args[:-1]]
+            last_line = ": (\n%s\n)" % self._print(expr.args[-1].expr)
             return ": ".join(ecpairs) + last_line + " ".join([")"*len(ecpairs)])
 
     def _print_ITE(self, expr):
@@ -306,7 +280,6 @@ class CythonCodePrinter(CodePrinter):
                 expr.i*expr.parent.shape[1])
 
     def _print_Symbol(self, expr):
-
         name = super(CythonCodePrinter, self)._print_Symbol(expr)
 
         if expr in self._dereference:
@@ -316,10 +289,10 @@ class CythonCodePrinter(CodePrinter):
 
     def _print_For(self, expr):
         lines = []
-        index = expr.index
+        index = expr.target
         for i in index:
             lines.append("for %s in range(%s, %s):"%(i.label, i.lower, i.upper))
-        for e in expr.expr:
+        for e in expr.body:
             temp1, temp2, addlines = self.doprint(e)
             if isinstance(addlines, str):
                 lines.append(addlines)
@@ -333,7 +306,6 @@ class CythonCodePrinter(CodePrinter):
         from sympy.functions.elementary.piecewise import Piecewise
         from sympy.matrices.expressions.matexpr import MatrixSymbol
         from sympy.matrices import MatrixBase, MatrixSlice
-        from sympy.tensor.indexed import IndexedBase
         lhs = expr.lhs
         rhs = expr.rhs
         # We special case assignments that take multiple lines
@@ -365,40 +337,40 @@ class CythonCodePrinter(CodePrinter):
                 return ""
             return self._get_statement("%s = %s" % (lhs_code, rhs_code))
 
-    def _print_AssignmentIf(self, expr):
-        from sympy.functions.elementary.piecewise import Piecewise
-        from sympy.matrices.expressions.matexpr import MatrixSymbol
-        from sympy.matrices import MatrixBase
-        from sympy.tensor.indexed import IndexedBase
-        lhs = expr.lhs
-        rhs = expr.rhs
-        # We special case assignments that take multiple lines
-        if isinstance(expr.rhs, Piecewise):
-            # Here we modify Piecewise so each expression is now
-            # an Assignment, and then continue on the print.
-            expressions = []
-            conditions = []
-            for (e, c) in rhs.args:
-                expressions.append(Assignment(lhs, e))
-                conditions.append(c)
-            temp = Piecewise(*zip(expressions, conditions))
-            return self._print(temp)
-        elif isinstance(lhs, (MatrixBase, MatrixSymbol)):
-            # Here we form an Assignment for each element in the array,
-            # printing each one.
-            lines = []
-            for (i, j) in self._traverse_matrix_indices(lhs):
-                temp = Assignment(lhs[i, j], rhs[i, j])
-                code0 = self._print(temp)
-                lines.append(code0)
-            return "\n".join(lines)
-        else:
-            lhs_code = self._print(lhs)
-            rhs_code = self._print(rhs)
-            # hack to avoid the printing of m[i] = m[i]
-            if lhs_code == rhs_code:
-                return ""
-            return self._get_statement("%s == %s" % (lhs_code, rhs_code))
+    # TODO Loic: fix
+    # def _print_AssignmentIf(self, expr):
+    #     from sympy.functions.elementary.piecewise import Piecewise
+    #     from sympy.matrices.expressions.matexpr import MatrixSymbol
+    #     from sympy.matrices import MatrixBase
+    #     lhs = expr.lhs
+    #     rhs = expr.rhs
+    #     # We special case assignments that take multiple lines
+    #     if isinstance(expr.rhs, Piecewise):
+    #         # Here we modify Piecewise so each expression is now
+    #         # an Assignment, and then continue on the print.
+    #         expressions = []
+    #         conditions = []
+    #         for (e, c) in rhs.args:
+    #             expressions.append(Assignment(lhs, e))
+    #             conditions.append(c)
+    #         temp = Piecewise(*zip(expressions, conditions))
+    #         return self._print(temp)
+    #     elif isinstance(lhs, (MatrixBase, MatrixSymbol)):
+    #         # Here we form an Assignment for each element in the array,
+    #         # printing each one.
+    #         lines = []
+    #         for (i, j) in self._traverse_matrix_indices(lhs):
+    #             temp = Assignment(lhs[i, j], rhs[i, j])
+    #             code0 = self._print(temp)
+    #             lines.append(code0)
+    #         return "\n".join(lines)
+    #     else:
+    #         lhs_code = self._print(lhs)
+    #         rhs_code = self._print(rhs)
+    #         # hack to avoid the printing of m[i] = m[i]
+    #         if lhs_code == rhs_code:
+    #             return ""
+    #         return self._get_statement("%s == %s" % (lhs_code, rhs_code))
 
     def _print_sign(self, func):
         return '((({0}) > 0) - (({0}) < 0))'.format(self._print(func.args[0]))
@@ -406,7 +378,7 @@ class CythonCodePrinter(CodePrinter):
     def indent_code(self, code):
         """Accepts a string of code or a list of code lines"""
 
-        if isinstance(code, string_types):
+        if isinstance(code, str):
             code_lines = self.indent_code(code.splitlines(True))
             return ''.join(code_lines)
 
@@ -420,7 +392,7 @@ class CythonCodePrinter(CodePrinter):
         increase = [ int(any(map(line.endswith, inc_token))) for line in code ]
         decrease = [ int(any(map(line.endswith, dec_token)))
                      for line in code ]
-        
+
         pretty = []
         level = 0
         for n, line in enumerate(code):
@@ -430,6 +402,7 @@ class CythonCodePrinter(CodePrinter):
             level -= decrease[n]
             pretty.append("%s%s" % (tab*level, line))
             level += increase[n]
+
         return pretty
 
     def _print_MatrixBase(self, A):
@@ -452,10 +425,3 @@ class CythonCodePrinter(CodePrinter):
         _print_ImmutableMatrix = \
         _print_ImmutableDenseMatrix = \
         _print_MatrixBase
-
-def cython_code(expr, assign_to=None, **settings):
-    return CythonCodePrinter(settings).doprint(expr, assign_to)
-
-def print_cython_code(expr, **settings):
-    """Prints C representation of the given expression."""
-    print(cython_code(expr, **settings))
