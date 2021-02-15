@@ -3,7 +3,7 @@ pylbm
 
 |Binder| |GithubAction| |Doc badge| |Gitter Badge|
 
-.. |Binder| image:: https://mybinder.org/badge.svg 
+.. |Binder| image:: https://mybinder.org/badge.svg
    :target: https://mybinder.org/v2/gh/pylbm/pylbm/master
 .. |GithubAction| image:: https://github.com/pylbm/pylbm/workflows/ci/badge.svg
 .. |Gitter Badge| image:: https://badges.gitter.im/pylbm/pylbm.svg
@@ -11,7 +11,7 @@ pylbm
    :target: https://gitter.im/pylbm/pylbm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 .. |Doc badge| image:: https://readthedocs.org/projects/pylbm/badge/?version=latest
    :target: http://pylbm.readthedocs.io/en/latest/
-   
+
 pylbm is an all-in-one package for numerical simulations using Lattice Boltzmann solvers.
 
 This package gives all the tools to describe your lattice Boltzmann scheme in 1D, 2D and 3D problems.
@@ -31,7 +31,7 @@ With conda
 .. code::
 
    conda install pylbm -c conda-forge
-  
+
 With Pypi
 ---------
 
@@ -40,7 +40,7 @@ With Pypi
    pip install pylbm
 
 or
-  
+
 .. code::
 
    pip install pylbm --user
@@ -58,7 +58,7 @@ To install pylbm from source, we encourage you to create a fresh environment usi
 
 .. code::
 
-    conda create -n pylbm_env python=3.6
+    conda create -n pylbm_env python
 
 As mentioned at the end of the creation of this environment, you can activate it
 using the comamnd line
