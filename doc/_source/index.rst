@@ -16,12 +16,16 @@ Installation
 
 You can install pylbm in several ways
 
-**With conda**
+**With mamba or conda**
+
+.. code:: bash
+
+   mamba install pylbm -c conda-forge
 
 .. code:: bash
 
    conda install pylbm -c conda-forge
-  
+
 **With Pypi**
 
 .. code:: bash
@@ -29,7 +33,7 @@ You can install pylbm in several ways
    pip install pylbm
 
 or
-  
+
 .. code:: bash
 
    pip install pylbm --user
@@ -46,7 +50,7 @@ To install pylbm from source, we encourage you to create a fresh environment usi
 
 .. code:: bash
 
-    conda create -n pylbm_env python=3.6
+    conda create -n pylbm_env python
 
 As mentioned at the end of the creation of this environment, you can activate it
 using the comamnd line
@@ -104,17 +108,17 @@ Documentation for users
    Our Gallery <gallery>
 
 .. The boundary conditions <learning_bounds>
-  
+
 Documentation of the code
 -------------------------
 
 .. currentmodule:: pylbm
 
-The most important classes 
+The most important classes
 
 .. autosummary::
   :toctree: generated/
-  
+
   Geometry
   Domain
   Scheme
@@ -124,7 +128,7 @@ The modules
 
 .. toctree::
    :maxdepth: 1
-   
+
    stencil <module/module_stencil>
    elements <module/module_elements>
    geometry <module/module_geometry>
