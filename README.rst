@@ -25,10 +25,13 @@ Installation
 
 You can install pylbm in several ways
 
-With conda
-----------
+**With mamba or conda**
 
-.. code::
+.. code:: bash
+
+   mamba install pylbm -c conda-forge
+
+.. code:: bash
 
    conda install pylbm -c conda-forge
 
