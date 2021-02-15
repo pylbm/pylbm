@@ -12,6 +12,7 @@ import sys
 import inspect
 import numpy as np
 import sympy as sp
+from sympy.matrices.common import ShapeError
 
 # List of symbols used in pylbm
 nx, ny, nz, nv = sp.symbols("nx, ny, nz, nv", integer=True) #pylint: disable=invalid-name
@@ -19,6 +20,66 @@ ix, iy, iz, iv = sp.symbols("ix, iy, iz, iv", integer=True) #pylint: disable=inv
 ix_, iy_, iz_, iv_ = sp.symbols("ix_, iy_, iz_, iv_", integer=True) #pylint: disable=invalid-name
 rel_ux, rel_uy, rel_uz = sp.symbols('rel_ux, rel_uy, rel_uz', real=True) #pylint: disable=invalid-name
 
+class SymbolicVector(sp.Matrix):
+    @classmethod
+    def _new(cls, *args, copy=True, **kwargs):
+        if copy is False:
+            # The input was rows, cols, [list].
+            # It should be used directly without creating a copy.
+            if len(args) != 3:
+                raise TypeError("'copy=False' requires a matrix be initialized as rows,cols,[list]")
+            rows, cols, flat_list = args
+        else:
+            rows, cols, flat_list = cls._handle_creation_inputs(*args, **kwargs)
+            flat_list = list(flat_list) # create a shallow copy
+        self = object.__new__(cls)
+        self.rows = rows
+        self.cols = cols
+        if cols != 1:
+            raise ShapeError("SymVector input must be a list")
+        self._mat = flat_list
+        return self
+
+    def __add__(self, other):
+        if np.isscalar(other):
+            mat = [a + other for a in self._mat]
+            return SymbolicVector._new(self.rows, self.cols, mat, copy=False)
+        elif isinstance(other, (np.ndarray, SymbolicVector)):
+            if self.shape[0] != other.shape[0]:
+                raise ShapeError("SymbolicVector size mismatch: %s + %s." % (self.shape, other.shape))
+            if len(other.shape) > 1:
+                for s in other.shape[1:]:
+                    if s != 1:
+                        raise ShapeError("SymbolicVector size mismatch: %s + %s." % (self.shape, other.shape))
+            mat = [a + b for a,b in zip(self._mat, other)]
+            return SymbolicVector._new(self.rows, self.cols, mat, copy=False)
+        else:
+            return super(SymbolicVector, self).__add__(other)
+
+    def __radd__(self, other):
+        return self + other
+
+    def _multiply(self, other, method):
+        if np.isscalar(other):
+            mat = [a*other for a in self._mat]
+            return SymbolicVector._new(self.rows, self.cols, mat, copy=False)
+        elif isinstance(other, (np.ndarray, SymbolicVector, sp.MatrixSymbol)):
+            if self.shape[0] != other.shape[0]:
+                raise ShapeError("SymbolicVector size mismatch: %s * %s." % (self.shape, other.shape))
+            if len(other.shape) > 1:
+                for s in other.shape[1:]:
+                    if s != 1:
+                        raise ShapeError("SymbolicVector size mismatch: %s * %s." % (self.shape, other.shape))
+            mat = [a*b for a,b in zip(self._mat, other)]
+            return SymbolicVector._new(self.rows, self.cols, mat, copy=False)
+        else:
+            return getattr(super(SymbolicVector, self), method)(other)
+
+    def __mul__(self, other):
+        return self._multiply(other, '__mul__')
+
+    def __rmul__(self, other):
+        return self._multiply(other, '__rmul__')
 
 def set_order(array, priority=None):
     """
@@ -127,7 +188,7 @@ def indexed(name, shape, index=[iv, ix, iy, iz], velocities=None,
 
     if velocities_index:
         ind = [set_order([k] + list(index[1:]), priority) for k in velocities_index]
-        return sp.Matrix([output[i] for i in ind])
+        return SymbolicVector([output[i] for i in ind])
     elif velocities is not None:
         ind = []
         indices = index[1:]
@@ -136,7 +197,7 @@ def indexed(name, shape, index=[iv, ix, iy, iz], velocities=None,
             for ik, k in enumerate(v): #pylint: disable=invalid-name
                 tmp_ind.append(indices[ik] + int(k))
             ind.append(set_order([iv] + tmp_ind, priority))
-        return sp.Matrix([output[i] for i in ind])
+        return SymbolicVector([output[i] for i in ind])
     else:
         return output[set_order(index, priority)]
 
