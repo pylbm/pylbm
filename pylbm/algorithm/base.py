@@ -387,7 +387,7 @@ class BaseAlgorithm:
             eq = (self.Tu*self.eq).subs(list(zip(self.mv, m)))
         else:
             eq = self.eq.subs(list(zip(self.mv, m)))
-        relax = (sp.ones(*self.s.shape) - self.s).multiply_elementwise(sp.Matrix(m)) + self.s.multiply_elementwise(eq)
+        relax = (1 - self.s)*m + self.s*eq
         alltogether(relax)
         return Eq(m, relax)
 

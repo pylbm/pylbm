@@ -17,7 +17,7 @@ from sympy import symbols, Eq
 
 from .stencil import Stencil
 from .validator import validate
-from .symbolic import rel_ux, rel_uy, rel_uz, alltogether
+from .symbolic import rel_ux, rel_uy, rel_uz, alltogether, SymbolicVector
 #pylint: disable=too-many-lines
 
 log = logging.getLogger(__name__) #pylint: disable=invalid-name
@@ -156,9 +156,9 @@ class Scheme:
         self.nschemes = self.stencil.nstencils
         scheme = dico['schemes']
 
-        
+
         self._check_entry_size(scheme, 'relaxation_parameters')
-        self.s = sp.Matrix([r for s in scheme for r in s['relaxation_parameters']])
+        self.s = SymbolicVector([r for s in scheme for r in s['relaxation_parameters']])
 
         # TODO: add the possibility to have vectorial schemes when M matrix is defined
         if len(scheme) == 1 and 'M' in scheme[0]:
@@ -171,7 +171,7 @@ class Scheme:
             self._check_entry_size(scheme, 'polynomials')
             self.P = sp.Matrix([p for s in scheme for p in s['polynomials']])
             self.M, self.invM, self.Tu, self.Tmu = self._create_moments_matrices()
-        
+
         self._source_terms = [s.get('source_terms', None) for s in scheme]
         self.EQ = self._get_equilibrium(scheme)
 
@@ -227,7 +227,7 @@ class Scheme:
                 meq_tmp = self.M[sli, sli]*feq[0](self.stencil.get_all_velocities(i), *feq[1])
                 meq_tmp.simplify()
                 eq.append([e for e in meq_tmp])
-        return sp.Matrix([e for sublist in eq for e in sublist])
+        return SymbolicVector([e for sublist in eq for e in sublist])
 
     def _permute_consm_in_front(self):
         self.permutations = []
