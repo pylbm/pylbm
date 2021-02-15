@@ -2,5 +2,5 @@ name: pylbm
 channels:
   - conda-forge
 dependencies:
-  - python=3.6
+  - python
   - pylbm
