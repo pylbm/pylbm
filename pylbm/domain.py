@@ -33,16 +33,16 @@ def _create_view_something(something, unvtot):
     Examples
     --------
 
-    > _create_view_comething(True, 3)
+    > _create_view_something(True, 3)
         [0, 1, 2]
 
-    > _create_view_comething(False, 3)
+    > _create_view_something(False, 3)
         []
 
-    > _create_view_comething(1, 3)
+    > _create_view_something(1, 3)
         [1]
 
-    > _create_view_comething([0, 2, 3], 3)
+    > _create_view_something([0, 2, 3], 3)
         [0, 2]
 
     """
@@ -177,13 +177,18 @@ class Domain:
       defines the distances to the borders.
       The distance is scaled by dx and is not equal to valin only for
       the points that reach the border with the specified velocity.
+      shape = (number_of_velocities, nx, ny, nz)
     flag : ndarray
       NumPy array that defines the flag of the border reached with the
       specified velocity
+    normal : ndarray
+      numpy array containing the normal vector at the boundary points
+      reached with the specified velocity.
+      shape = (number_of_velocities, nx, ny, nz, dim)
     valin : int
         value in the fluid domain
     valout : int
-        value in the fluid domain
+        value in the solid domain
 
     Examples
     --------
@@ -244,11 +249,13 @@ class Domain:
     """
 
     def __init__(self, dico, need_validation=True):
+        self.compute_normal = True
         self.valin = 999  # value in the fluid domain
         self.valout = -1   # value in the solid domain
 
         if dico is not None and need_validation:
-            validate(dico, __class__.__name__) #pylint: disable=undefined-variable
+            # pylint: disable=undefined-variable
+            validate(dico, __class__.__name__)
 
         self.geom = Geometry(dico, need_validation=False)
         self.stencil = Stencil(dico, need_validation=False)
@@ -275,9 +282,14 @@ class Domain:
 
         # distance to the borders
         total_size = [self.stencil.unvtot] + self.shape_halo
+        vect_total_size = [self.stencil.unvtot] + self.shape_halo + [self.dim]
         self.in_or_out = self.valin*np.ones(self.shape_halo)
         self.distance = self.valin*np.ones(total_size)
         self.flag = self.valin*np.ones(total_size, dtype='int')
+        if self.compute_normal:
+            self.normal = np.zeros(vect_total_size)
+        else:
+            self.normal = None
 
         # compute the distance and the flag for the primary box
         self.__add_init(self.box_label)
@@ -451,15 +463,35 @@ class Domain:
     def __add_init(self, label):
         halo_size = np.asarray(self.stencil.vmax)
         phys_domain = [slice(h, -h) for h in halo_size]
+        phys_domain_vect = [slice(h, -h) for h in halo_size]
 
         self.in_or_out[:] = self.valout
 
         in_view = self.in_or_out[tuple(phys_domain)]
         in_view[:] = self.valin
 
+        # first index: the velocity index
+        # following indices: the physical points
+        # last index (for vectors): the dimension
         phys_domain.insert(0, slice(None))
+        phys_domain_vect.insert(0, slice(None))
+        phys_domain_vect.insert(len(phys_domain_vect), slice(None))
         dist_view = self.distance[tuple(phys_domain)]
         flag_view = self.flag[tuple(phys_domain)]
+        if self.compute_normal:
+            norm_view = self.normal[tuple(phys_domain_vect)]
+
+        # def new_indices(dvik, iuv, indices, indices_vect, dist_view):
+        #     new_ind = copy.deepcopy(indices)
+        #     new_ind_vect = copy.deepcopy(indices_vect)
+        #     ind = np.where(dist_view[tuple(indices)] > dvik)
+        #     i = 1
+        #     for j in range(self.dim):
+        #         if j != iuv:
+        #             new_ind[j + 1] = ind[i]
+        #             new_ind_vect[j + 2] = ind[i]
+        #             i += 1
+        #     return new_ind, new_ind_vect
 
         def new_indices(dvik, iuv, indices, dist_view):
             new_ind = copy.deepcopy(indices)
@@ -473,24 +505,54 @@ class Domain:
 
         s = self.stencil
         uvels = [s.uvx, s.uvy, s.uvz]
-
+        # loop over the dimension
         for iuvel, uvel in enumerate(uvels[:self.dim]):
+            # uvel is the list of all the velocities
+            # in the x-direction, then y-direction and z-direction
+            # loop over the velocities
             for k, vk in np.ndenumerate(uvel):
                 indices = [k] + [slice(None)]*self.dim
+                # indices_vect = [k, iuvel] + [slice(None)]*self.dim
                 if vk < 0 and label[2*iuvel] != -2:
                     for i in range(-vk):
                         indices[iuvel + 1] = i
+                        # indices_vect[iuvel + 2] = i
                         dvik = -(i + .5)/vk
-                        nind = new_indices(dvik, iuvel, indices, dist_view)
+                        # nind, nind_vect = new_indices(
+                        #     dvik, iuvel,
+                        #     indices, indices_vect,
+                        #     dist_view
+                        # )
+                        nind = new_indices(
+                            dvik, iuvel,
+                            indices,
+                            dist_view
+                        )
                         dist_view[tuple(nind)] = dvik
                         flag_view[tuple(nind)] = label[2*iuvel]
+                        if self.compute_normal:
+                            norm_view[tuple(nind + [iuvel])] = -1
+                            # norm_view[tuple(nind_vect)] = 1
                 elif vk > 0 and label[2*iuvel + 1] != -2:
                     for i in range(vk):
                         indices[iuvel + 1] = -i - 1
+                        # indices_vect[iuvel + 2] = -i - 1
                         dvik = (i + .5)/vk
-                        nind = new_indices(dvik, iuvel, indices, dist_view)
+                        # nind, nind_vect = new_indices(
+                        #     dvik, iuvel,
+                        #     indices, indices_vect,
+                        #     dist_view
+                        # )
+                        nind = new_indices(
+                            dvik, iuvel,
+                            indices,
+                            dist_view
+                        )
                         dist_view[tuple(nind)] = dvik
                         flag_view[tuple(nind)] = label[2*iuvel+1]
+                        if self.compute_normal:
+                            norm_view[tuple(nind + [iuvel])] = 1
+                            # norm_view[tuple(nind_vect)] = 1
 
     # pylint: disable=too-many-locals
     def __add_elem(self, elem):
@@ -599,6 +661,7 @@ class Domain:
                   view_in=True,
                   view_out=True,
                   view_bound=False,
+                  view_normal=False,
                   label=None,
                   scale=1):
         """
@@ -622,6 +685,9 @@ class Domain:
             default is True
         view_bound : boolean or int or list, optional
             view the points on the bounds
+            default is False
+        view_normal : boolean or int or list, optional
+            view the normal vectors
             default is False
         label : int or list, optional
             view the distance only for the specified labels
@@ -662,6 +728,10 @@ class Domain:
         view_bound = _create_view_something(
             view_bound, self.stencil.unvtot
         )
+        # view_normal : list of the concerned velocities
+        view_normal = _create_view_something(
+            view_normal, self.stencil.unvtot
+        )
 
         # temporary boolean array for considering specific labels
         if isinstance(label, int):
@@ -691,10 +761,13 @@ class Domain:
                 dim=self.dim
             )
 
-        def get_bounds(label, k):
-            # returns the indices of the bounds
-            # for the kth velocity and for the given labels
-            # and the corresponding distances
+        def get_bounds(label, k, compute_normal=False):
+            # returns
+            # 1. the indices of the bounds
+            #    for the kth velocity and for the given labels
+            # 2. the corresponding distances
+            # 3. the corresponding normal vectors
+            #    if compute_normal is True
             if label is not None:
                 dummy = np.zeros(self.distance.shape[1:])
                 for labelk in label:
@@ -708,9 +781,16 @@ class Domain:
                 for i in range(self.dim):
                     data[:, i] = self.coords_halo[i][indbord[i]]
                 dist = self.distance[k][indbord]
-                return data, dist
+                normal = self.normal[k][indbord]
+                if compute_normal:
+                    return data, dist, normal
+                else:
+                    return data, dist
             else:
-                return None, 0
+                if compute_normal:
+                    return None, 0, None
+                else:
+                    return None, 0
 
         # visualize the distance as small lines
         for k in view_distance:
@@ -718,7 +798,8 @@ class Domain:
             if bound.size != 0:
                 vk = self.stencil.unique_velocities[k].v_full
                 color = _fix_color(vk)
-                lines = np.empty((2*bound.shape[0], max(2, self.dim))) #pylint: disable=unsubscriptable-object
+                # pylint: disable=unsubscriptable-object
+                lines = np.empty((2*bound.shape[0], max(2, self.dim)))
                 lines[::2, :] = bound
                 lines[1::2, :] = bound \
                     + self.dx*np.outer(dist, vk[:max(2, self.dim)])
@@ -732,6 +813,20 @@ class Domain:
                 color = np.array([[*_fix_color(vk)]])
                 lines = bound + self.dx*np.outer(dist, vk[:max(2, self.dim)])
                 view.markers(lines, size, symbol='d', color=color)
+
+        # visualize the normal vectors as small lines
+        for k in view_normal:
+            bound, dist, normal = get_bounds(label, k, compute_normal=True)
+            if bound.size != 0:
+                vk = self.stencil.unique_velocities[k].v_full
+                color = _fix_color(vk)
+                # pylint: disable=unsubscriptable-object
+                lines = np.empty((2*bound.shape[0], max(2, self.dim)))
+                lines[::2, :] = bound \
+                    + self.dx*np.outer(dist, vk[:max(2, self.dim)])
+                lines[1::2, :] = lines[::2, :] \
+                    + self.dx*normal
+                view.segments(lines, alpha=0.5, width=2, color=color)
 
         fig.show()
         return fig
