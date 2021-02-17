@@ -481,18 +481,6 @@ class Domain:
         if self.compute_normal:
             norm_view = self.normal[tuple(phys_domain_vect)]
 
-        # def new_indices(dvik, iuv, indices, indices_vect, dist_view):
-        #     new_ind = copy.deepcopy(indices)
-        #     new_ind_vect = copy.deepcopy(indices_vect)
-        #     ind = np.where(dist_view[tuple(indices)] > dvik)
-        #     i = 1
-        #     for j in range(self.dim):
-        #         if j != iuv:
-        #             new_ind[j + 1] = ind[i]
-        #             new_ind_vect[j + 2] = ind[i]
-        #             i += 1
-        #     return new_ind, new_ind_vect
-
         def new_indices(dvik, iuv, indices, dist_view):
             new_ind = copy.deepcopy(indices)
             ind = np.where(dist_view[tuple(indices)] > dvik)
@@ -512,17 +500,10 @@ class Domain:
             # loop over the velocities
             for k, vk in np.ndenumerate(uvel):
                 indices = [k] + [slice(None)]*self.dim
-                # indices_vect = [k, iuvel] + [slice(None)]*self.dim
                 if vk < 0 and label[2*iuvel] != -2:
                     for i in range(-vk):
                         indices[iuvel + 1] = i
-                        # indices_vect[iuvel + 2] = i
                         dvik = -(i + .5)/vk
-                        # nind, nind_vect = new_indices(
-                        #     dvik, iuvel,
-                        #     indices, indices_vect,
-                        #     dist_view
-                        # )
                         nind = new_indices(
                             dvik, iuvel,
                             indices,
@@ -531,18 +512,12 @@ class Domain:
                         dist_view[tuple(nind)] = dvik
                         flag_view[tuple(nind)] = label[2*iuvel]
                         if self.compute_normal:
+                            norm_view[tuple(nind + [slice(0, iuvel)])] = 0
                             norm_view[tuple(nind + [iuvel])] = -1
-                            # norm_view[tuple(nind_vect)] = 1
                 elif vk > 0 and label[2*iuvel + 1] != -2:
                     for i in range(vk):
                         indices[iuvel + 1] = -i - 1
-                        # indices_vect[iuvel + 2] = -i - 1
                         dvik = (i + .5)/vk
-                        # nind, nind_vect = new_indices(
-                        #     dvik, iuvel,
-                        #     indices, indices_vect,
-                        #     dist_view
-                        # )
                         nind = new_indices(
                             dvik, iuvel,
                             indices,
@@ -551,8 +526,8 @@ class Domain:
                         dist_view[tuple(nind)] = dvik
                         flag_view[tuple(nind)] = label[2*iuvel+1]
                         if self.compute_normal:
+                            norm_view[tuple(nind + [slice(0, iuvel)])] = 0
                             norm_view[tuple(nind + [iuvel])] = 1
-                            # norm_view[tuple(nind_vect)] = 1
 
     # pylint: disable=too-many-locals
     def __add_elem(self, elem):
@@ -578,10 +553,13 @@ class Domain:
         # set the grid
         space_slice = [slice(imin, imax) for imin, imax in zip(nmin, nmax)]
         total_slice = [slice(None)] + space_slice
+        total_slice_vect = [slice(None)] + space_slice + [slice(None)]
         # local view of the arrays
         ioo_view = self.in_or_out[tuple(space_slice)]
         dist_view = self.distance[tuple(total_slice)]
         flag_view = self.flag[tuple(total_slice)]
+        if self.compute_normal:
+            norm_view = self.normal[tuple(total_slice_vect)]
 
         tcoords = (self.coords_halo[d][s] for d, s in enumerate(space_slice))
         grid = np.meshgrid(*tcoords, sparse=True, indexing='ij')

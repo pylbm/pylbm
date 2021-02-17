@@ -20,10 +20,15 @@ ddom = {
     'schemes': [
         {
             'velocities': list(range(9))
+        },
+        {
+            'velocities': list(range(25))
         }
     ],
 }
 dom = pylbm.Domain(ddom)
 print(dom)
 dom.visualize()
-dom.visualize(view_distance=False, view_normal=5)
+dom.visualize(view_bound=True, scale=3)
+dom.visualize(view_distance=True)
+dom.visualize(view_distance=True, view_bound=True, view_normal=True, scale=3)
