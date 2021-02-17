@@ -109,7 +109,8 @@ class Geometry:
 
     def __init__(self, dico, need_validation=True):
         if need_validation:
-            validate(dico, __class__.__name__) #pylint: disable=undefined-variable
+            # pylint: disable=undefined-variable
+            validate(dico, __class__.__name__)
 
         self.dim, self.bounds = get_box(dico)
 
@@ -173,8 +174,8 @@ class Geometry:
                   viewer_app=viewer.matplotlib_viewer,
                   figsize=(6, 4),
                   viewlabel=False,
-                  fluid_color='navy',
                   viewgrid=False,
+                  fluid_color='navy',
                   alpha=1.):
         """
         plot a view of the geometry
@@ -186,12 +187,12 @@ class Geometry:
             a viewer (default matplotlib_viewer)
         viewlabel : boolean
             activate the labels mark (default False)
-        fluid_color : color
-            color for the fluid part (default blue)
         figsize : tuple
             the size of the figure (default (6, 4))
         viewgrid : bool
             view the grid (default False)
+        fluid_color : color
+            color for the fluid part (default blue)
         alpha : double
             transparency between 0 and 1 (default 1)
 
@@ -250,7 +251,11 @@ class Geometry:
                 else:
                     color = 'white'
                     alpha_ = 1
-                elem.visualize(view, color, viewlabel, alpha=alpha_)
+                elem.visualize(
+                    view, color,
+                    viewlabel=viewlabel,
+                    alpha=alpha_
+                )
             xpercent = 0.05*(xmax-xmin)
             ypercent = 0.05*(ymax-ymin)
             view.axis(
