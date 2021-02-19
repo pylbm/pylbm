@@ -7,7 +7,7 @@
 # License: BSD 3 clause
 
 """
-Example of a square in 2D with a circular hole
+Example of a square in 2D with a square hole
 """
 from six.moves import range
 import pylbm
@@ -17,8 +17,8 @@ import pylbm
 ddom = {
     'box': {'x': [0, 2], 'y': [0, 1], 'label': 0},
     'elements': [
-        pylbm.Circle((0.5, 0.5), 0.2, label=1),
-        pylbm.Circle((0.7, 0.5), 0.2, label=2, isfluid=True)
+        pylbm.Parallelogram((0.5, 0.5), (0, 0.2), (0.2, 0), label=1),
+        pylbm.Parallelogram((0.5, 0.5), (0, 0.1), (0.1, 0), label=2, isfluid=True),
     ],
     'space_step': 0.05,
     'schemes': [
