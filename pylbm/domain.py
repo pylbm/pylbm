@@ -544,7 +544,6 @@ class Domain:
         vmax = self.stencil.vmax
         elem_bl, elem_ur = elem.get_bounds()
         phys_bl, _ = self.get_bounds_halo()
-
         tmp = np.array((elem_bl - phys_bl)/self.dx, np.int) - vmax
         nmin = np.maximum(vmax, tmp)
         tmp = np.array((elem_ur - phys_bl)/self.dx, np.int) + vmax + 1
@@ -585,7 +584,10 @@ class Domain:
                 out_cells = self.in_or_out[tuple(space_slice)] == self.valout
                 # compute the distance and set the boundary label
                 # of each cell and the element with the vk velocity
-                alpha, border = elem.distance(grid, self.dx*vk, 1.)
+                alpha, border, normvect = elem.distance(
+                    grid, self.dx*vk, 1.,
+                    self.compute_normal
+                )
                 # take the indices where the distance is lower than 1
                 # between a fluid cell and the border of the element
                 # with the vk velocity
@@ -624,6 +626,16 @@ class Domain:
                 ind = [i[ind3] for i in ind4]
                 dist_view[k][tuple(ind)] = alpha[tuple(ind)]
                 flag_view[k][tuple(ind)] = border[tuple(ind)]
+                if elem.isfluid:
+                    for i in range(self.dim):
+                        norm_view[k][tuple(ind + [i])] = normvect[
+                            tuple(ind + [i])
+                        ]
+                else:
+                    for i in range(self.dim):
+                        norm_view[k][tuple(ind + [i])] = - normvect[
+                            tuple(ind + [i])
+                        ]
 
     def list_of_labels(self):
         """

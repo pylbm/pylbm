@@ -111,7 +111,7 @@ class Circle(Element):
 
         """
         x, y = grid
-        v2 = np.asarray([x - self.center[0], y - self.center[1]])
+        v2 = np.asarray([x - self.center[0], y - self.center[1]], dtype=object)
         return (v2[0]**2 + v2[1]**2) <= self.radius**2
 
     def distance(self, grid, v, dmax=None, normal=False):
@@ -146,15 +146,10 @@ class Circle(Element):
         x, y = grid
         v1 = self.radius*np.array([1, 0])
         v2 = self.radius*np.array([0, 1])
-        dist = distance_ellipse(x, y, v, self.center, v1, v2, dmax, self.label)
-        if not normal:
-            return dist
-        normal = np.where(
-            dist > 0,
-            grid - self.center + np.outer(v, dist),
-            np.zeros(grid.shape)
+        return distance_ellipse(
+            x, y, v, self.center, v1, v2,
+            dmax, self.label, normal
         )
-        return dist, normal
 
     def __str__(self):
         from ..utils import header_string

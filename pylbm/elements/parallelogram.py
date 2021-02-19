@@ -124,14 +124,22 @@ class Parallelogram(Element):
         """
         x, y = grid
         # Barycentric coordinates
-        v2 = np.asarray([x - self.point[0], y - self.point[1]])
+        v2 = np.asarray([x - self.point[0], y - self.point[1]], dtype=object)
         invdelta = 1./(self.v1[0]*self.v2[1] - self.v1[1]*self.v2[0])
         u = (v2[0]*self.v2[1] - v2[1]*self.v2[0])*invdelta
         v = (v2[1]*self.v1[0] - v2[0]*self.v1[1])*invdelta
-        return np.logical_and(np.logical_and(u >= 0, v >= 0),
-                              np.logical_and(u <= 1, v <= 1))
+        return np.logical_and(
+            np.logical_and(
+                u >= 0,
+                v >= 0
+            ),
+            np.logical_and(
+                u <= 1,
+                v <= 1
+            )
+        )
 
-    def distance(self, grid, v, dmax=None):
+    def distance(self, grid, v, dmax=None, normal=False):
         """
         Compute the distance in the v direction between the parallelogram
         and the points defined by (x, y).
@@ -148,13 +156,16 @@ class Parallelogram(Element):
             direction of interest
         dmax : float
             distance max
+        normal : bool
+            return the normal vector if True (default False)
 
         Returns
         -------
 
         ndarray
-            array of distances
-
+            array of distances if normal is False and
+            x and y coordinates of the normal vectors
+            if normal is True
         """
         x, y = grid
         # points and triangle edges defining the lines for the intersections
@@ -162,8 +173,12 @@ class Parallelogram(Element):
         p = [[0, 0], [0, 0], self.v2, self.v1]
         vt = [self.v1, self.v2, self.v1, self.v2]
 
-        return distance_lines(x - self.point[0], y - self.point[1],
-                              v, p, vt, dmax, self.label)
+        return distance_lines(
+            x - self.point[0],
+            y - self.point[1],
+            v, p, vt,
+            dmax, self.label, normal
+        )
 
     def __str__(self):
         from ..utils import header_string
