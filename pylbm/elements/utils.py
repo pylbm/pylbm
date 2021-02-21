@@ -149,6 +149,11 @@ def distance_ellipse(x, y, v, center, v1, v2, dmax, label, normal):
         Ye = Y + alpha * v[1]
         normal_x[ind] = Xe[ind] * vy2 - Ye[ind] * vxy
         normal_y[ind] = Ye[ind] * vx2 - Xe[ind] * vxy
+        chgt_sign = np.asarray(
+            normal_x*v[0] + normal_y*v[1] > 0
+        ).nonzero()
+        normal_x[chgt_sign] *= -1
+        normal_y[chgt_sign] *= -1
         norm_normal[ind] = np.sqrt(normal_x[ind]**2 + normal_y[ind]**2)
         normal_vect = np.zeros(tuple(list(shape) + [2]))
         normal_vect[:, :, 0] = normal_x / norm_normal

@@ -18,7 +18,11 @@ ddom = {
     'box': {'x': [0, 2], 'y': [0, 1], 'label': 0},
     'elements': [
         pylbm.Parallelogram((0.5, 0.5), (0, 0.2), (0.2, 0), label=1),
-        pylbm.Parallelogram((0.5, 0.5), (0, 0.1), (0.1, 0), label=2, isfluid=True),
+        pylbm.Parallelogram(
+            (0.5, 0.5), (0, 0.1), (0.1, 0),
+            label=2, isfluid=True
+        ),
+        pylbm.Triangle((0.7, 0.5), (0., 0.2), (0.2, 0.1), label=3)
     ],
     'space_step': 0.05,
     'schemes': [
@@ -28,20 +32,29 @@ ddom = {
     ],
 }
 dom = pylbm.Domain(ddom)
-print(dom)
-dom.visualize(scale=1.5)
-dom.visualize(
-    view_distance=True,
-    label=None,
-    view_in=True,
-    view_out=True,
-    view_bound=True
-)
-dom.visualize(
-    view_distance=True,
-    label=None,
-    view_in=True,
-    view_out=True,
-    view_bound=True,
-    view_normal=True,
-)
+# print(dom)
+# dom.visualize(scale=1.5)
+# dom.visualize(
+#     view_distance=True,
+#     label=None,
+#     view_in=True,
+#     view_out=True,
+#     view_bound=True
+# )
+# dom.visualize(
+#     view_distance=True,
+#     label=None,
+#     view_in=True,
+#     view_out=True,
+#     view_bound=True,
+#     view_normal=True,
+# )
+for k in [3]:  # range(4):
+    dom.visualize(
+        view_distance=True,
+        label=None,
+        view_in=True,
+        view_out=True,
+        view_bound=True,
+        view_normal=False,
+    )

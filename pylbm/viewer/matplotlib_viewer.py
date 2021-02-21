@@ -531,14 +531,16 @@ class PlotWidget:
                 xy=pos,
                 width=2*radius[0], height=2*radius[1],
                 angle=angle*180/np.pi,
-                fill=True, color=color, alpha=alpha
+                fill=True, color=color, alpha=alpha,
+                zorder=0
             )
         )
 
     def polygon(self, pos, color, alpha=1.):
         return self.ax.add_patch(
             Polygon(
-                pos, closed=True, fill=True, color=color, alpha=alpha
+                pos, closed=True, fill=True, color=color, alpha=alpha,
+                zorder=0
             )
         )
 

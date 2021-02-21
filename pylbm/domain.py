@@ -297,6 +297,7 @@ class Domain:
             # treat each element of the geometry
             self.__add_elem(elem)
 
+        self.clean()
         log.info(self.__str__())
 
     @property
@@ -626,16 +627,17 @@ class Domain:
                 ind = [i[ind3] for i in ind4]
                 dist_view[k][tuple(ind)] = alpha[tuple(ind)]
                 flag_view[k][tuple(ind)] = border[tuple(ind)]
-                if elem.isfluid:
-                    for i in range(self.dim):
-                        norm_view[k][tuple(ind + [i])] = normvect[
-                            tuple(ind + [i])
-                        ]
-                else:
-                    for i in range(self.dim):
-                        norm_view[k][tuple(ind + [i])] = - normvect[
-                            tuple(ind + [i])
-                        ]
+                for i in range(self.dim):
+                    norm_view[k][tuple(ind + [i])] = - normvect[
+                        tuple(ind + [i])
+                    ]
+
+    def clean(self):
+        """
+        clean the domain when multiple elements are added
+        some unused distances or normal vectors have been computed
+        """
+        pass
 
     def list_of_labels(self):
         """
@@ -647,6 +649,7 @@ class Domain:
     # pylint: disable=too-complex
     def visualize(self,
                   viewer_app=viewer.matplotlib_viewer,
+                  view_geom=True,
                   view_distance=False,
                   view_in=True,
                   view_out=True,
@@ -662,6 +665,9 @@ class Domain:
         viewer_app : Viewer, optional
             define the viewer to plot the domain
             default is viewer.matplotlib_viewer
+        view_geom : boolean
+            view the underlying geometry
+            default is True
         view_distance : boolean or int or list, optional
             view the distance between the interior points and the border
             default is False
@@ -703,6 +709,31 @@ class Domain:
         bornes = [*[-delta_l, delta_l]]*max(2, self.dim)
         bornes[:2*self.dim] += self.geom.bounds.flatten()
         view.axis(*bornes, dim=self.dim, aspect='equal')
+
+        if view_geom:
+            color_fluid = (0.9, 0.9, 0.9)
+            xmin, xmax = self.geom.bounds[0][:]
+            ymin, ymax = self.geom.bounds[1][:]
+            view.polygon(
+                np.array(
+                    [
+                        [xmin, ymin],
+                        [xmin, ymax],
+                        [xmax, ymax],
+                        [xmax, ymin]
+                    ]
+                ),
+                color_fluid, alpha=1
+            )
+            for elem in self.geom.list_elem:
+                if elem.isfluid:
+                    color = color_fluid
+                else:
+                    color = 'white'
+                elem.visualize(
+                    view, color,
+                    alpha=1
+                )
 
         # compute the size of the symbols for the plot
         # in 1d and 2d: 100*dx
