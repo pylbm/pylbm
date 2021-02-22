@@ -44,7 +44,6 @@ class Element(ABC):
     def get_bounds(self):
         """
         return the smallest box where the element is.
-
         """
 
     @abstractmethod
@@ -178,7 +177,7 @@ class BaseCircle:
         return (x**2 + y**2) <= 1.
 
     @staticmethod
-    def distance(grid, v, dmax, label):
+    def distance(grid, v, dmax, label, normal=False):
         """
         Compute the distance in the v direction between the element
         and the points defined by (x, y) for a given label.
@@ -206,7 +205,7 @@ class BaseCircle:
         c = np.zeros((2,))
         v1 = np.asarray([1, 0])
         v2 = np.asarray([0, 1])
-        return distance_ellipse(x, y, v, c, v1, v2, dmax, label)
+        return distance_ellipse(x, y, v, c, v1, v2, dmax, label, normal)
 
     @staticmethod
     def _visualize():
@@ -289,7 +288,7 @@ class BaseEllipse:
         return (x**2 + y**2) <= 1.
 
     @staticmethod
-    def distance(grid, v, dmax, label):
+    def distance(grid, v, dmax, label, normal=False):
         """
         Compute the distance in the v direction between the element
         and the points defined by (x, y) for a given label.
@@ -317,7 +316,7 @@ class BaseEllipse:
         c = np.zeros((2,))
         v1 = np.asarray([1, 0])
         v2 = np.asarray([0, 1])
-        return distance_ellipse(x, y, v, c, v1, v2, dmax, label)
+        return distance_ellipse(x, y, v, c, v1, v2, dmax, label, normal)
 
     @staticmethod
     def _visualize():
@@ -402,7 +401,7 @@ class BaseTriangle:
         return np.logical_and(np.logical_and(x >= 0, y >= 0), x + y <= 1)
 
     @staticmethod
-    def distance(grid, v, dmax, label):
+    def distance(grid, v, dmax, label, normal=False):
         """
         Compute the distance in the v direction between the element
         and the points defined by (x, y) for a given label.
@@ -429,7 +428,7 @@ class BaseTriangle:
         x, y = grid
         p = [[0, 0], [0, 0], [1, 0]]
         vt = [[1, 0], [0, 1], [-1, 1]]
-        return distance_lines(x, y, v, p, vt, dmax, label)
+        return distance_lines(x, y, v, p, vt, dmax, label, normal)
 
     @staticmethod
     def _visualize():
@@ -526,7 +525,7 @@ class BaseParallelogram:
                               np.logical_and(x <= 1, y <= 1))
 
     @staticmethod
-    def distance(grid, v, dmax, label):
+    def distance(grid, v, dmax, label, normal=False):
         """
         Compute the distance in the v direction between the element
         and the points defined by (x, y) for a given label.
@@ -553,7 +552,7 @@ class BaseParallelogram:
         x, y = grid
         p = [[0, 0], [0, 0], [1, 0], [0, 1]]
         vt = [[1, 0], [0, 1], [0, 1], [1, 0]]
-        return distance_lines(x, y, v, p, vt, dmax, label)
+        return distance_lines(x, y, v, p, vt, dmax, label, normal)
 
     @staticmethod
     def _visualize():
