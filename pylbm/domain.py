@@ -710,7 +710,7 @@ class Domain:
         bornes[:2*self.dim] += self.geom.bounds.flatten()
         view.axis(*bornes, dim=self.dim, aspect='equal')
 
-        if view_geom:
+        if view_geom and self.dim == 2:
             color_fluid = (0.9, 0.9, 0.9)
             xmin, xmax = self.geom.bounds[0][:]
             ymin, ymax = self.geom.bounds[1][:]
