@@ -98,7 +98,7 @@ class Cylinder(Element):
         )
 
     # pylint: disable=too-many-locals
-    def distance(self, grid, v, dmax=None):
+    def distance(self, grid, v, dmax=None, normal=False):
         """
         Compute the distance in the v direction between
         the cylinder and the points defined by (x, y, z).
@@ -138,10 +138,10 @@ class Cylinder(Element):
         z_cyl = self.iA[2, 0]*xx + self.iA[2, 1]*yy + self.iA[2, 2]*zz
 
         # considering the infinite cylinder
-        alpha, border = self.base.distance(
+        alpha, border, normal = self.base.distance(
             (x_cyl, y_cyl),
             v_cyl[:-1],
-            dmax, self.label[:-2]
+            dmax, self.label[:-2], False
         )
         # indices where the intersection is too high or to low
         alpha[alpha < 0] = 1.e16
@@ -178,7 +178,7 @@ class Cylinder(Element):
         border[alpha == alpha_bot] = self.label[-2]
         alpha[alpha == 1.e16] = -1.
 
-        return alpha, border
+        return alpha, border, None
 
     def __str__(self):
         from ..utils import header_string

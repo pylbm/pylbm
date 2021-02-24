@@ -164,7 +164,7 @@ def distance_ellipse(x, y, v, center, v1, v2, dmax, label, normal):
 
 
 # pylint: disable=too-many-locals
-def distance_ellipsoid(x, y, z, v, center, v1, v2, v3, dmax, label):
+def distance_ellipsoid(x, y, z, v, center, v1, v2, v3, dmax, label, normal):
     """
     return the distance according
     a line defined by a point x, y, z and a vector v
@@ -217,4 +217,4 @@ def distance_ellipsoid(x, y, z, v, center, v1, v2, v3, dmax, label):
         ind = np.logical_and(d > 0, d <= dmax)
     alpha[ind] = d[ind]
     border[ind] = label[0]
-    return alpha, border
+    return alpha, border, None

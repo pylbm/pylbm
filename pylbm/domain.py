@@ -249,7 +249,6 @@ class Domain:
     """
 
     def __init__(self, dico, need_validation=True):
-        self.compute_normal = True
         self.valin = 999  # value in the fluid domain
         self.valout = -1   # value in the solid domain
 
@@ -261,6 +260,10 @@ class Domain:
         self.stencil = Stencil(dico, need_validation=False)
         self.dx = dico['space_step']
         self.dim = self.geom.dim
+        if self.dim == 2:
+            self.compute_normal = True
+        else:
+            self.compute_normal = False
 
         self.box_label = copy.copy(self.geom.box_label)
 
@@ -627,10 +630,11 @@ class Domain:
                 ind = [i[ind3] for i in ind4]
                 dist_view[k][tuple(ind)] = alpha[tuple(ind)]
                 flag_view[k][tuple(ind)] = border[tuple(ind)]
-                for i in range(self.dim):
-                    norm_view[k][tuple(ind + [i])] = - normvect[
-                        tuple(ind + [i])
-                    ]
+                if self.compute_normal:
+                    for i in range(self.dim):
+                        norm_view[k][tuple(ind + [i])] = - normvect[
+                            tuple(ind + [i])
+                        ]
 
     def clean(self):
         """
@@ -802,8 +806,8 @@ class Domain:
                 for i in range(self.dim):
                     data[:, i] = self.coords_halo[i][indbord[i]]
                 dist = self.distance[k][indbord]
-                normal = self.normal[k][indbord]
                 if compute_normal:
+                    normal = self.normal[k][indbord]
                     return data, dist, normal
                 else:
                     return data, dist

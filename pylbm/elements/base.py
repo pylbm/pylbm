@@ -193,13 +193,16 @@ class BaseCircle:
             distance max
         label : int
             the label of interest
+        normal : bool
+            return the normal vector if True (default False)
 
         Returns
         -------
 
         ndarray
-            array of distances
-
+            array of distances if normal is False and
+            x and y coordinates of the normal vectors
+            if normal is True
         """
         x, y = grid
         c = np.zeros((2,))
@@ -304,13 +307,16 @@ class BaseEllipse:
             distance max
         label : int
             the label of interest
+        normal : bool
+            return the normal vector if True (default False)
 
         Returns
         -------
 
         ndarray
-            array of distances
-
+            array of distances if normal is False and
+            x and y coordinates of the normal vectors
+            if normal is True
         """
         x, y = grid
         c = np.zeros((2,))
@@ -417,13 +423,16 @@ class BaseTriangle:
             distance max
         label : int
             the label of interest
+        normal : bool
+            return the normal vector if True (default False)
 
         Returns
         -------
 
         ndarray
-            array of distances
-
+            array of distances if normal is False and
+            x and y coordinates of the normal vectors
+            if normal is True
         """
         x, y = grid
         p = [[0, 0], [0, 0], [1, 0]]
@@ -541,13 +550,16 @@ class BaseParallelogram:
             distance max
         label : int
             the label of interest
+        normal : bool
+            return the normal vector if True (default False)
 
         Returns
         -------
 
         ndarray
-            array of distances
-
+            array of distances if normal is False and
+            x and y coordinates of the normal vectors
+            if normal is True
         """
         x, y = grid
         p = [[0, 0], [0, 0], [1, 0], [0, 1]]
