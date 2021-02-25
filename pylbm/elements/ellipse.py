@@ -123,9 +123,9 @@ class Ellipse(Element):
         Y = y - self.center[1]
         vx2 = self.v1[0]**2 + self.v2[0]**2
         vy2 = self.v1[1]**2 + self.v2[1]**2
-        vxy = self.v1[0]*self.v1[1] + self.v2[0]*self.v2[1]
+        vxy = 2 * (self.v1[0]*self.v1[1] + self.v2[0]*self.v2[1])
         tv = self.v1[0]*self.v2[1]-self.v1[1]*self.v2[0]
-        return X**2*vy2 + Y**2*vx2 - 2*X*Y*vxy <= tv**2
+        return X**2*vy2 + Y**2*vx2 - X*Y*vxy <= tv**2
 
     def distance(self, grid, v, dmax=None, normal=False):
         """
@@ -149,7 +149,7 @@ class Ellipse(Element):
 
         ndarray
             array of distances if normal is False and
-            x and y coordinates of the normal vectors
+            the coordinates of the normal vectors
             if normal is True
         """
         x, y = grid

@@ -215,15 +215,15 @@ def validate(dico, name):
                                     'required': name in ['Scheme', 'Simulation']
                                    },
               'source_terms': {'type': 'dict',
-                               'keyschema': {'type': 'symbol'},
-                               'valueschema': {'anyof': [{'type': 'expr'},
+                               'keysrules': {'type': 'symbol'},
+                               'valuesrules': {'anyof': [{'type': 'expr'},
                                                          {'type': 'number'}]},
                               },
              }
 
     boundary = {'method': {'type': 'dict',
-                           'keyschema': {'type': 'integer'},
-                           'valueschema': {'isboundary': True}
+                           'keysrules': {'type': 'integer'},
+                           'valuesrules': {'isboundary': True}
                           },
                 'value': {'anyof': [{'type': 'function'},
                                     {'type': 'list',
@@ -282,13 +282,13 @@ def validate(dico, name):
                               'required': name in ['Domain', 'Scheme', 'Simulation', 'Stencil']
                              },
                   'parameters': {'type': 'dict',
-                                 'keyschema': {'type': 'symbol'},
-                                 'valueschema': {'anyof': [{'type': 'expr'},
+                                 'keysrules': {'type': 'symbol'},
+                                 'valuesrules': {'anyof': [{'type': 'expr'},
                                                            {'type': 'number'}]},
                                 },
                   'init': {'type': 'dict',
-                           'keyschema': {'type': 'symbol'},
-                           'valueschema': {'anyof': [{'type': 'number'},
+                           'keysrules': {'type': 'symbol'},
+                           'valuesrules': {'anyof': [{'type': 'number'},
                                                      {'type': 'function'},
                                                      {'type': 'list',
                                                       'items': [{'type': 'function'}, {'type': 'list'}]}
@@ -297,8 +297,8 @@ def validate(dico, name):
                             'required': name in ['Simulation']
                             },
                   'boundary_conditions': {'type': 'dict',
-                                          'keyschema': {'type': 'integer'},
-                                          'valueschema': {'schema': boundary},
+                                          'keysrules': {'type': 'integer'},
+                                          'valuesrules': {'schema': boundary},
                                          },
                   'relative_velocity': {'type': 'list',
                                         'schema': {'anyof_type': ['number', 'expr']}

@@ -145,7 +145,7 @@ class Sphere(Element):
 
         ndarray
             array of distances if normal is False and
-            x and y coordinates of the normal vectors
+            the coordinates of the normal vectors
             if normal is True
         """
         x, y, z = grid

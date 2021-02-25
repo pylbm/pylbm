@@ -35,4 +35,5 @@ dom.visualize(
     view_in=True,
     view_out=True,
     view_bound=True,
+    view_normal=True
 )

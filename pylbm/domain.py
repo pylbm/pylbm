@@ -260,10 +260,7 @@ class Domain:
         self.stencil = Stencil(dico, need_validation=False)
         self.dx = dico['space_step']
         self.dim = self.geom.dim
-        if self.dim == 2:
-            self.compute_normal = True
-        else:
-            self.compute_normal = False
+        self.compute_normal = True
 
         self.box_label = copy.copy(self.geom.box_label)
 
@@ -548,9 +545,9 @@ class Domain:
         vmax = self.stencil.vmax
         elem_bl, elem_ur = elem.get_bounds()
         phys_bl, _ = self.get_bounds_halo()
-        tmp = np.array((elem_bl - phys_bl)/self.dx, np.int) - vmax
+        tmp = np.array((elem_bl - phys_bl)/self.dx, int) - vmax
         nmin = np.maximum(vmax, tmp)
-        tmp = np.array((elem_ur - phys_bl)/self.dx, np.int) + vmax + 1
+        tmp = np.array((elem_ur - phys_bl)/self.dx, int) + vmax + 1
         nmax = np.minimum(vmax + self.shape_in, tmp)
 
         # set the grid
@@ -849,9 +846,9 @@ class Domain:
                 lines = np.empty((2*bound.shape[0], max(2, self.dim)))
                 lines[::2, :] = bound \
                     + self.dx*np.outer(dist, vk[:max(2, self.dim)])
-                lines[1::2, :] = lines[::2, :] \
+                lines[1::2, :self.dim] = lines[::2, :self.dim] \
                     + self.dx*normal
-                view.segments(lines, alpha=0.5, width=2, color=color)
+                view.segments(lines, alpha=0.5, width=1, color=color)
 
         fig.show()
         return fig

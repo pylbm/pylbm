@@ -110,17 +110,23 @@ def distance_ellipse(x, y, v, center, v1, v2, dmax, label, normal):
     # delta = b**2-4ac
     X = x - center[0]
     Y = y - center[1]
+    # equation of the ellipse
+    # vy2 XX + vx2 YY - vxy XY = d
     vx2 = v1[0]**2 + v2[0]**2
     vy2 = v1[1]**2 + v2[1]**2
-    vxy = v1[0]*v1[1] + v2[0]*v2[1]
-    a = v[0]**2*vy2 + v[1]**2*vx2 - 2*v[0]*v[1]*vxy
-    b = 2*X*v[0]*vy2 + 2*Y*v[1]*vx2 - 2*(X*v[1]+Y*v[0])*vxy
-    c = X**2*vy2 + Y**2*vx2 - 2*X*Y*vxy - (v1[0]*v2[1]-v1[1]*v2[0])**2
+    vxy = 2 * (v1[0]*v1[1] + v2[0]*v2[1])
+    d = (v1[0]*v2[1]-v1[1]*v2[0])**2
+    a = v[0]**2*vy2 + v[1]**2*vx2 - v[0]*v[1]*vxy
+    b = 2*X*v[0]*vy2 + 2*Y*v[1]*vx2 - (X*v[1]+Y*v[0])*vxy
+    c = X**2*vy2 + Y**2*vx2 - X*Y*vxy - d
     delta = b**2 - 4*a*c
     ind = delta >= 0
     delta[ind] = np.sqrt(delta[ind])
 
-    shape = delta.shape
+    # Warning: the shape can be
+    #   - (x.size, y.size) for the 2D geometries
+    #   - x.shape = y.shape for the 3D geometries
+    shape = ind.shape  # shape of the outputs
     d1 = tgv*np.ones(shape)
     d2 = tgv*np.ones(shape)
     if a != 0:
@@ -140,24 +146,29 @@ def distance_ellipse(x, y, v, center, v1, v2, dmax, label, normal):
         ind = np.logical_and(d > 0, d <= dmax)
     alpha[ind] = d[ind]
     border[ind] = label[0]
-    if normal:
-        # compute the normal vector
-        normal_x = np.zeros(shape)
-        normal_y = np.zeros(shape)
+    if normal:  # compute the normal vector
+        # initialization
+        normal_vect = np.zeros(tuple(list(shape) + [2]))
+        normal_x = normal_vect[..., 0]
+        normal_y = normal_vect[..., 1]
         norm_normal = np.ones(shape)
+        # coordinates of the point on the ellipse
         Xe = X + alpha * v[0]
         Ye = Y + alpha * v[1]
-        normal_x[ind] = Xe[ind] * vy2 - Ye[ind] * vxy
-        normal_y[ind] = Ye[ind] * vx2 - Xe[ind] * vxy
-        chgt_sign = np.asarray(
+        # compute the direction
+        normal_x[ind] = 2 * Xe[ind] * vy2 - Ye[ind] * vxy
+        normal_y[ind] = 2 * Ye[ind] * vx2 - Xe[ind] * vxy
+        # compute the sense (opposite to v)
+        sense = np.asarray(
             normal_x*v[0] + normal_y*v[1] > 0
         ).nonzero()
-        normal_x[chgt_sign] *= -1
-        normal_y[chgt_sign] *= -1
+        normal_x[sense] *= -1
+        normal_y[sense] *= -1
+        # normalization
         norm_normal[ind] = np.sqrt(normal_x[ind]**2 + normal_y[ind]**2)
-        normal_vect = np.zeros(tuple(list(shape) + [2]))
-        normal_vect[:, :, 0] = normal_x / norm_normal
-        normal_vect[:, :, 1] = normal_y / norm_normal
+        # copy in the output vector
+        normal_x /= norm_normal
+        normal_y /= norm_normal
     else:
         normal_vect = None
     return alpha, border, normal_vect
@@ -169,7 +180,11 @@ def distance_ellipsoid(x, y, z, v, center, v1, v2, v3, dmax, label, normal):
     return the distance according
     a line defined by a point x, y, z and a vector v
     to an ellipsoid defined by a point c and three vectors v1, v2, and v3
+
+    normal is a boolean
+    if normal is True, the normal vector is also returned
     """
+    shape = (x.size, y.size, z.size)  # shape of the outputs
     # build the equation of the ellipsoid
     # then write the second order equation in d
     # a d**2 + b d + c = 0
@@ -181,7 +196,7 @@ def distance_ellipsoid(x, y, z, v, center, v1, v2, v3, dmax, label, normal):
     v23 = np.cross(v2, v3)
     v31 = np.cross(v3, v1)
     d = np.inner(v1, v23)**2
-    # equation of the ellipsoid:
+    # equation of the ellipsoid
     # cxx XX + cyy YY + czz ZZ + cxy XY + cyz YZ + czx ZX = d
     cxx = v12[0]**2 + v23[0]**2 + v31[0]**2
     cyy = v12[1]**2 + v23[1]**2 + v31[1]**2
@@ -199,22 +214,56 @@ def distance_ellipsoid(x, y, z, v, center, v1, v2, v3, dmax, label, normal):
     delta = b**2 - 4*a*c
     ind = delta >= 0  # wird but it works
     delta[ind] = np.sqrt(delta[ind])
-    d1 = 1e16*np.ones(delta.shape)
-    d2 = 1e16*np.ones(delta.shape)
+
+    d1 = 1e16*np.ones(shape)
+    d2 = 1e16*np.ones(shape)
     d1[ind] = (-b[ind] - delta[ind])/(2*a)
     d2[ind] = (-b[ind] + delta[ind])/(2*a)
     d1[d1 < 0] = 1e16
     d2[d2 < 0] = 1e16
-    d = -np.ones(d1.shape)
+    d = -np.ones(shape)
     d[ind] = np.minimum(d1[ind], d2[ind])
     d[d == 1e16] = -1
 
-    alpha = -np.ones((x.size, y.size, z.size))
-    border = -np.ones((x.size, y.size, z.size))
+    alpha = -np.ones(shape)
+    border = -np.ones(shape)
     if dmax is None:
         ind = d > 0
     else:
         ind = np.logical_and(d > 0, d <= dmax)
     alpha[ind] = d[ind]
     border[ind] = label[0]
-    return alpha, border, None
+
+    if normal:  # compute the normal vector
+        # initialization
+        normal_vect = np.zeros(tuple(list(shape) + [3]))
+        normal_x = normal_vect[:, :, :, 0]
+        normal_y = normal_vect[:, :, :, 1]
+        normal_z = normal_vect[:, :, :, 2]
+        norm_normal = np.ones(shape)
+        # coordinates of the point on the ellipsoid
+        Xe = X + alpha * v[0]
+        Ye = Y + alpha * v[1]
+        Ze = Z + alpha * v[2]
+        # compute the direction
+        normal_x[ind] = 2*cxx*Xe[ind] + cxy*Ye[ind] + czx*Ze[ind]
+        normal_y[ind] = 2*cyy*Ye[ind] + cxy*Xe[ind] + cyz*Ze[ind]
+        normal_z[ind] = 2*czz*Ze[ind] + czx*Xe[ind] + cyz*Ye[ind]
+        # compute the sense (opposite to v)
+        sense = np.asarray(
+            normal_x*v[0] + normal_y*v[1] + normal_z*v[2] > 0
+        ).nonzero()
+        normal_x[sense] *= -1
+        normal_y[sense] *= -1
+        normal_z[sense] *= -1
+        # normalization
+        norm_normal[ind] = np.sqrt(
+            normal_x[ind]**2 + normal_y[ind]**2 + normal_z[ind]**2
+        )
+        # copy in the output vector
+        normal_x /= norm_normal
+        normal_y /= norm_normal
+        normal_z /= norm_normal
+    else:
+        normal_vect = None
+    return alpha, border, normal_vect
