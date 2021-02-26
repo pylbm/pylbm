@@ -36,6 +36,10 @@ class Cylinder(Element):
         """
         matrix for the change of variables
         used to write the coordinates in the basis of the cylinder
+
+        After the change of variables, 
+        the base of the cylinder is in the plane x, y
+        and the other direction is limited by -1 < z < 1
         """
         self.A = np.empty((3, 3))
         self.A[:, 0] = self.v1
@@ -56,7 +60,6 @@ class Cylinder(Element):
         """
         lw = [0.5*abs(self.w[k]) for k in range(len(self.w))]
         bounds_base = self.base.get_bounds()
-        print(bounds_base)
         return bounds_base[0] - lw, bounds_base[1] + lw
 
     def point_inside(self, grid):
@@ -115,13 +118,16 @@ class Cylinder(Element):
             direction of interest
         dmax : float
             distance max
+        normal : bool
+            return the normal vector if True (default False)
 
         Returns
         -------
 
         ndarray
-            array of distances
-
+            array of distances if normal is False and
+            the coordinates of the normal vectors
+            if normal is True
         """
         x, y, z = grid
 
@@ -137,17 +143,29 @@ class Cylinder(Element):
         # the new z coordinates
         z_cyl = self.iA[2, 0]*xx + self.iA[2, 1]*yy + self.iA[2, 2]*zz
 
+        # normal vector in the frame of the cylinder
+        normal_cyl = np.zeros(tuple(list(x_cyl.shape) + [3]))
+        normal_cyl_x = normal_cyl[..., 0]
+        normal_cyl_y = normal_cyl[..., 1]
+        normal_cyl_z = normal_cyl[..., 2]
         # considering the infinite cylinder
-        alpha, border, normal = self.base.distance(
+        alpha, border, normal_cyl[..., :2] = self.base.distance(
             (x_cyl, y_cyl),
             v_cyl[:-1],
-            dmax, self.label[:-2], False
+            dmax, self.label[:-2], normal
         )
         # indices where the intersection is too high or to low
         alpha[alpha < 0] = 1.e16
+        border[alpha < 0] = -1
+        normal_cyl_x[alpha < 0] = 0
+        normal_cyl_y[alpha < 0] = 0
+        normal_cyl_z[alpha < 0] = 0
         ind = np.logical_and(alpha > 0, np.abs(z_cyl + alpha*v_cyl[2]) > 1.)
         alpha[ind] = 1.e16
         border[ind] = -1.
+        normal_cyl_x[ind] = 0
+        normal_cyl_y[ind] = 0
+        normal_cyl_z[ind] = 0
 
         # considering the two planes
         dummyf = self.base.point_inside
@@ -174,11 +192,27 @@ class Cylinder(Element):
 
         # considering the first intersection point
         alpha = np.amin([alpha, alpha_top, alpha_bot], axis=0)
-        border[alpha == alpha_top] = self.label[-1]
-        border[alpha == alpha_bot] = self.label[-2]
+        # fix the top
+        ind = alpha == alpha_top
+        border[ind] = self.label[-1]
+        normal_cyl_x[ind] = 0.
+        normal_cyl_y[ind] = 0.
+        normal_cyl_z[ind] = 1.
+        # fix the bottom
+        ind = alpha == alpha_bot
+        border[ind] = self.label[-2]
+        normal_cyl_x[ind] = 0.
+        normal_cyl_y[ind] = 0.
+        normal_cyl_z[ind] = -1.
+        # fix the distance
         alpha[alpha == 1.e16] = -1.
+        # rewritte the normal vector in the initial frame
+        normal_vect = np.zeros(normal_cyl.shape)
+        for k in range(3):
+            normal_vect[..., k] = self.A[k, 0] * normal_cyl_x + \
+                self.A[k, 1] * normal_cyl_y + self.A[k, 2] * normal_cyl_z
 
-        return alpha, border, None
+        return alpha, border, normal_vect
 
     def __str__(self):
         from ..utils import header_string
