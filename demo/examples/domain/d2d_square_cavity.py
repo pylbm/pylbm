@@ -7,25 +7,30 @@
 # License: BSD 3 clause
 
 """
-Example of a square in 2D with a square hole
+Example of a square in 2D with a cavity
 """
 import pylbm
 
 D_DOM = {
-    'box': {'x': [0, 2], 'y': [0, 1], 'label': 0},
+    'box': {'x': [0, 1], 'y': [0, 1], 'label': 0},
     'elements': [
-        pylbm.Parallelogram((0.5, 0.3), (0, 0.4), (0.4, 0), label=1),
+        pylbm.Parallelogram((0.4, 0.3), (0, 0.4), (0.2, 0), label=1),
+        pylbm.Circle((0.4, 0.5), 0.2, label=3),
+        pylbm.Circle((0.6, 0.5), 0.2, label=3),
+        pylbm.Parallelogram(
+            (0.45, 0.3), (0, 0.4), (0.1, 0),
+            label=2, isfluid=True
+        ),
     ],
-    'space_step': 0.1,
+    'space_step': 0.025,
     'schemes': [
         {
-            'velocities': list(range(13))
+            'velocities': list(range(9))
         }
     ],
 }
 DOMAIN = pylbm.Domain(D_DOM)
 print(DOMAIN)
-DOMAIN.visualize(scale=1.5)
 DOMAIN.visualize(
     view_distance=True,
     label=None,
@@ -34,7 +39,7 @@ DOMAIN.visualize(
     view_bound=True
 )
 DOMAIN.visualize(
-    view_distance=True,
+    view_distance=False,
     label=None,
     view_in=True,
     view_out=True,

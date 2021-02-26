@@ -9,12 +9,9 @@
 """
 Example of a square in 2D with a circular hole
 """
-from six.moves import range
 import pylbm
 
-# pylint: disable=invalid-name
-
-ddom = {
+D_DOM = {
     'box': {
         'x': [0, 2],
         'y': [0, 1],
@@ -35,15 +32,15 @@ ddom = {
         }
     ],
 }
-dom = pylbm.Domain(ddom)
-print(dom)
-dom.visualize()
-dom.visualize(
+DOMAIN = pylbm.Domain(D_DOM)
+print(DOMAIN)
+DOMAIN.visualize()
+DOMAIN.visualize(
     view_distance=True,
     view_bound=True,
     label=4
 )
-dom.visualize(
+DOMAIN.visualize(
     view_distance=True,
     view_bound=True,
     view_normal=True,

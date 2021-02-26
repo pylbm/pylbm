@@ -432,9 +432,13 @@ class Domain:
             )
             for k in range(self.dim)
         ]
-
+        # modification to avoid the case
+        # with no velocity in one direction
+        ind_beg = [k for k in halo_size]
+        ind_end = [-k if k > 0 else 1 for k in halo_size]
         self.coords = [
-            self.coords_halo[k][halo_size[k]:-halo_size[k]]
+            # self.coords_halo[k][halo_size[k]:-halo_size[k]]
+            self.coords_halo[k][ind_beg[k]:ind_end[k]]
             for k in range(self.dim)
         ]
 
@@ -463,11 +467,15 @@ class Domain:
     # pylint: disable=too-many-locals
     def __add_init(self, label):
         halo_size = np.asarray(self.stencil.vmax)
-        phys_domain = [slice(h, -h) for h in halo_size]
-        phys_domain_vect = [slice(h, -h) for h in halo_size]
-
+        phys_domain = [
+            slice(h, -h) if h > 0 else slice(None)
+            for h in halo_size
+        ]
+        phys_domain_vect = [
+            slice(h, -h) if h > 0 else slice(None)
+            for h in halo_size
+        ]
         self.in_or_out[:] = self.valout
-
         in_view = self.in_or_out[tuple(phys_domain)]
         in_view[:] = self.valin
 
@@ -638,7 +646,18 @@ class Domain:
         clean the domain when multiple elements are added
         some unused distances or normal vectors have been computed
         """
-        pass
+        # loop of the unique velocity
+        # look for the outer points where the distance is computed
+        # fix these points to full outer points
+        for k in range(self.stencil.unvtot):
+            indk = np.logical_and(
+                self.distance[k] > 0,
+                self.in_or_out == self.valout
+            )
+            self.distance[k][indk] = self.valin
+            self.flag[k][indk] = self.valin
+            if self.compute_normal:
+                self.normal[k][indk] = 0
 
     def list_of_labels(self):
         """

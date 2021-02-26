@@ -9,12 +9,9 @@
 """
 Example of the cube in 3D with an ellipsoidal hole
 """
-from six.moves import range
 import pylbm
 
-# pylint: disable=invalid-name
-
-ddom = {
+D_DOM = {
     'box': {
         'x': [0, 3],
         'y': [0, 3],
@@ -37,9 +34,9 @@ ddom = {
         }
     ]
 }
-dom = pylbm.Domain(ddom)
-print(dom)
-dom.visualize(
+DOMAIN = pylbm.Domain(D_DOM)
+print(DOMAIN)
+DOMAIN.visualize(
     view_distance=False,
     label=0,
     view_in=False,

@@ -9,12 +9,9 @@
 """
 Example of a square in 2D
 """
-from six.moves import range
 import pylbm
 
-# pylint: disable=invalid-name
-
-ddom = {
+D_DOM = {
     'box': {'x': [0, 1], 'y': [0, 1], 'label': [0, 1, 2, 3]},
     'space_step': 0.1,
     'schemes': [
@@ -26,9 +23,14 @@ ddom = {
         }
     ],
 }
-dom = pylbm.Domain(ddom)
-print(dom)
-dom.visualize()
-dom.visualize(view_bound=True, scale=3)
-dom.visualize(view_distance=True)
-dom.visualize(view_distance=True, view_bound=True, view_normal=True, scale=3)
+DOMAIN = pylbm.Domain(D_DOM)
+print(DOMAIN)
+DOMAIN.visualize()
+DOMAIN.visualize(view_bound=True, scale=3)
+DOMAIN.visualize(view_distance=True)
+DOMAIN.visualize(
+    view_distance=True,
+    view_bound=True,
+    view_normal=True,
+    scale=3
+)

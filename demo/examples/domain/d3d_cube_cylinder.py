@@ -7,18 +7,15 @@
 # License: BSD 3 clause
 
 """
-Example of a 3D domain: 
+Example of a 3D domain:
 the cube [-3, 3] x [-3, 3] x [-3, 3] with a cylindrical hole
 """
-from six.moves import range
 import pylbm
 
-# pylint: disable=invalid-name
-
-v1 = [0, 1., 1.]
-v2 = [0, -1.5, 1.5]
-v3 = [1, 0, 0]
-ddom = {
+V1 = [0, 1., 1.]
+V2 = [0, -1.5, 1.5]
+V3 = [1, 0, 0]
+D_DOM = {
     'box': {
         'x': [-3, 3],
         'y': [-3, 3],
@@ -26,7 +23,7 @@ ddom = {
         'label': 0
     },
     'elements': [
-        pylbm.CylinderEllipse((0.5, 0, 0), v1, v2, v3, label=[1, 2, 3])
+        pylbm.CylinderEllipse((0.5, 0, 0), V1, V2, V3, label=[1, 2, 3])
     ],
     'space_step': 1,
     'schemes': [
@@ -35,16 +32,16 @@ ddom = {
         }
     ]
 }
-dom = pylbm.Domain(ddom)
-print(dom)
-dom.visualize(
+DOMAIN = pylbm.Domain(D_DOM)
+print(DOMAIN)
+DOMAIN.visualize(
     view_distance=False,
     view_in=False,
     view_out=False,
     view_bound=True,
     label=[1, 2, 3]
 )
-dom.visualize(
+DOMAIN.visualize(
     view_distance=False,
     view_in=False,
     view_out=False,

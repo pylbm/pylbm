@@ -9,12 +9,9 @@
 """
 Example of the backward facing step in 2D
 """
-from six.moves import range
 import pylbm
 
-# pylint: disable=invalid-name
-
-ddom = {
+D_DOM = {
     'box': {'x': [0, 3], 'y': [0, 1], 'label': [0, 1, 0, 2]},
     'elements': [
         pylbm.Parallelogram((0., 0.), (.5, 0.), (0., .5), label=0)
@@ -26,7 +23,7 @@ ddom = {
         }
     ],
 }
-dom = pylbm.Domain(ddom)
-print(dom)
-dom.visualize()
-dom.visualize(view_distance=True, view_normal=True)
+DOMAIN = pylbm.Domain(D_DOM)
+print(DOMAIN)
+DOMAIN.visualize()
+DOMAIN.visualize(view_distance=True, view_normal=True)
