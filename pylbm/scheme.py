@@ -285,13 +285,19 @@ class Scheme:
         return self.__str__()
 
     def vue(self):
-        import ipyvuetify as v
         import matplotlib.pyplot as plt
         import matplotlib
         import io
         import base64
         from traitlets import Unicode
+
+        try:
+            import ipyvuetify as v
+        except ImportError:
+            raise ImportError("Please install ipyvuetify")
+
         from pylbm.vuetify import mathjax
+
 
         images = []
         backend = matplotlib.get_backend()

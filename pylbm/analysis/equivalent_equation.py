@@ -140,9 +140,14 @@ class EquivalentEquation:
         return self.__str__()
 
     def vue(self):
-        import ipyvuetify as v
         from traitlets import Unicode
         import jinja2
+
+        try:
+            import ipyvuetify as v
+        except ImportError:
+            raise ImportError("Please install ipyvuetify")
+
         from pylbm.vuetify import mathjax
 
         t, x, y, z, U, Fx, Fy, Fz, Delta = sp.symbols('t, x, y, z, U, F_x, F_y, F_z, Delta_t')
