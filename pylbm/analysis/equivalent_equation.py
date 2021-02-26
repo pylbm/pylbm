@@ -139,12 +139,12 @@ class EquivalentEquation:
     def __repr__(self):
         return self.__str__()
 
-    def _repr_html_(self):
-        from IPython.display import IFrame
+    def vue(self):
+        import ipyvuetify as v
+        from traitlets import Unicode
+        import jinja2
+        from pylbm.vuetify import mathjax
 
-        from ..utils import header_string
-        from ..jinja_env import env
-        template = env.get_template('equivalent_equation.html.j2')
         t, x, y, z, U, Fx, Fy, Fz, Delta = sp.symbols('t, x, y, z, U, F_x, F_y, F_z, Delta_t')
         Bxx, Bxy, Bxz = sp.symbols('B_{xx}, B_{xy}, B_{xz}')
         Byx, Byy, Byz = sp.symbols('B_{yx}, B_{yy}, B_{yz}')
@@ -173,29 +173,124 @@ class EquivalentEquation:
         for d in range(self.dim):
             order1_dict[sp.latex(F[d])] = [sp.latex(c) for c in self.coeff_order1[d]]
 
+        print(order1_dict)
+        order0_template = jinja2.Template("""
+        {%- macro coeff(order) %}
+            {%- for o in order %}
+                $$ {{ o }} $$
+            {% endfor %}
+        {%- endmacro %}
+        {{ coeff(consm) }}
+        """)
+
+        order1_template = jinja2.Template("""
+        {%- macro coeff_dict(consm, order) %}
+            \\begin{align*}
+            {%- for key, value in order.items() %}
+                {%- for i in range(consm|length) %}
+                    {{ key }}^{{ consm[i] }} &= {{ value[i] }} \\\\ \\\\
+                {% endfor %}
+            {% endfor %}
+            \\end{align*}
+        {%- endmacro %}
+        {{ coeff_dict(consm, order1_dict) }}
+        """)
+
+        order2_template = jinja2.Template("""
+        {%- macro coeff_dict_2(consm, order) %}
+            \\begin{align*}
+            {%- for key, value in order.items() %}
+                {%- for i in range(consm|length) %}
+                    {%- for j in range(consm|length) %}
+                        {{ key }}^{ {{ consm[i] }}, {{ consm[j] }} } &= {{ value[i*(consm|length) + j] }} \\\\ \\\\
+                    {% endfor %}
+                {% endfor %}
+            {% endfor %}
+            \\end{align*}
+        {%- endmacro %}
+        {{ coeff_dict_2(consm, order2_dict) }}
+        """)
+
         order2_dict = {}
         for i in range(self.dim):
             for j in range(self.dim):
                 order2_dict[sp.latex(B[i][j])] = [sp.latex(-Delta*c) for c in self.coeff_order2[i][j]]
 
-        html_content = template.render(header=header_string('Equivalent Equations'),
-                               dim=self.dim,
-                               phys_equation=sp.latex(sp.Eq(phys_equation, phys_equation_rhs), mode='equation*'),
-                               consm=[sp.latex(c) for c in self.consm],
-                               order1_dict=order1_dict,
-                               order2_dict=order2_dict,
-                              )
+        consm = [sp.latex(c) for c in self.consm]
+        return v.Container(children=[
+            v.Row(children=['The equivalent equation is given by']),
+            v.Row(children=[mathjax(sp.latex(sp.Eq(phys_equation, phys_equation_rhs), mode='equation*'))]),
+            v.ExpansionPanels(children=[
+                v.ExpansionPanel(children=[
+                    v.ExpansionPanelHeader(children=['Conserved moments'], class_="title"),
+                    v.ExpansionPanelContent(children=[mathjax(order0_template.render(consm=consm))])
+                ], class_="ma-2"),
+                v.ExpansionPanel(children=[
+                    v.ExpansionPanelHeader(children=['Order 1'], class_="title"),
+                    v.ExpansionPanelContent(children=[mathjax(order1_template.render(consm=consm,
+                                                                                     order1_dict=order1_dict))])
+                ], class_="ma-2"),
+                v.ExpansionPanel(children=[
+                    v.ExpansionPanelHeader(children=['Order 2'], class_="title"),
+                    v.ExpansionPanelContent(children=[mathjax(order2_template.render(consm=consm,
+                                                                                     order2_dict=order2_dict))])
+                ], class_="ma-2"),
+            ])
+        ])
 
-        # Save the html file of the scheme in a temporary directory
-        # and include the result in an Ipython iframe
-        if self.html_file:
-            self.html_file.close()
 
-        self.html_file = tempfile.NamedTemporaryFile("w", suffix='.html', dir=pylbm_tmp_dir.name)
-        with open(self.html_file.name, "w") as f:
-            f.write(html_content)
+        # template = env.get_template('equivalent_equation.html.j2')
+        # t, x, y, z, U, Fx, Fy, Fz, Delta = sp.symbols('t, x, y, z, U, F_x, F_y, F_z, Delta_t')
+        # Bxx, Bxy, Bxz = sp.symbols('B_{xx}, B_{xy}, B_{xz}')
+        # Byx, Byy, Byz = sp.symbols('B_{yx}, B_{yy}, B_{yz}')
+        # Bzx, Bzy, Bzz = sp.symbols('B_{zx}, B_{zy}, B_{zz}')
 
-        rel_path = f"{os.path.basename(os.path.dirname(self.html_file.name)) + '/' + os.path.basename(self.html_file.name)}"
+        # phys_equation = sp.Derivative(U, t) + sp.Derivative(Fx, x)
+        # if self.dim > 1:
+        #     phys_equation += sp.Derivative(Fy, y)
+        # if self.dim == 3:
+        #     phys_equation += sp.Derivative(Fz, z)
 
-        return IFrame(rel_path, width="100%", height=450)._repr_html_()
+        # order2 = []
+        # space = [x, y, z]
+        # B = [[Bxx, Bxy, Bxz],
+        #      [Byx, Byy, Byz],
+        #      [Bzx, Bzy, Bzz],
+        #     ]
+
+        # phys_equation_rhs = 0
+        # for i in range(self.dim):
+        #     for j in range(self.dim):
+        #         phys_equation_rhs += sp.Derivative(B[i][j]*sp.Derivative(U, space[j]), space[i])
+
+        # order1_dict = {}
+        # F = [Fx, Fy, Fz]
+        # for d in range(self.dim):
+        #     order1_dict[sp.latex(F[d])] = [sp.latex(c) for c in self.coeff_order1[d]]
+
+        # order2_dict = {}
+        # for i in range(self.dim):
+        #     for j in range(self.dim):
+        #         order2_dict[sp.latex(B[i][j])] = [sp.latex(-Delta*c) for c in self.coeff_order2[i][j]]
+
+        # html_content = template.render(header=header_string('Equivalent Equations'),
+        #                        dim=self.dim,
+        #                        phys_equation=sp.latex(sp.Eq(phys_equation, phys_equation_rhs), mode='equation*'),
+        #                        consm=[sp.latex(c) for c in self.consm],
+        #                        order1_dict=order1_dict,
+        #                        order2_dict=order2_dict,
+        #                       )
+
+        # # Save the html file of the scheme in a temporary directory
+        # # and include the result in an Ipython iframe
+        # if self.html_file:
+        #     self.html_file.close()
+
+        # self.html_file = tempfile.NamedTemporaryFile("w", suffix='.html', dir=pylbm_tmp_dir.name)
+        # with open(self.html_file.name, "w") as f:
+        #     f.write(html_content)
+
+        # rel_path = f"{os.path.basename(os.path.dirname(self.html_file.name)) + '/' + os.path.basename(self.html_file.name)}"
+
+        # return IFrame(rel_path, width="100%", height=450)._repr_html_()
 
