@@ -1,31 +1,34 @@
-import ipyvuetify as v
-from traitlets import Unicode
+try:
+    import ipyvuetify as v
+    from traitlets import Unicode
 
-class mathjax(v.Layout):
+    class mathjax(v.Layout):
 
-    def __init__(self, content, **kwargs):
+        def __init__(self, content, **kwargs):
 
-        class myHtml(v.VuetifyTemplate):
-            template = Unicode(f'''
-            <template>
-            <div ref="mymathjax" >
-                {content}
-            </div>
-            </template>
+            class myHtml(v.VuetifyTemplate):
+                template = Unicode(f'''
+                <template>
+                <div ref="mymathjax" >
+                    {content}
+                </div>
+                </template>
 
-            <script>
-            modules.export = {{
-            mounted() {{
-                if (window['MathJax']) {{
-                MathJax.Callback.Queue(['Typeset', MathJax.Hub, this.$refs.mymathjax])
+                <script>
+                modules.export = {{
+                mounted() {{
+                    if (window['MathJax']) {{
+                    MathJax.Callback.Queue(['Typeset', MathJax.Hub, this.$refs.mymathjax])
+                    }}
                 }}
-            }}
-            }}
-            </script>
-            ''').tag(sync=True)
+                }}
+                </script>
+                ''').tag(sync=True)
 
-        super().__init__(
-            row=True,
-            align_center=True,
-            children=[v.Flex(xs12=True, children=[myHtml()])]
-        )
+            super().__init__(
+                row=True,
+                align_center=True,
+                children=[v.Flex(xs12=True, children=[myHtml()])]
+            )
+except ImportError:
+    raise ImportError("Please install ipyvuetify")
