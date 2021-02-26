@@ -20,13 +20,14 @@ class Stability:
     """
     generic class
     """
-    def __init__(self, scheme):
+    def __init__(self, scheme, output_txt=False):
         # pylint: disable=unsubscriptable-object
         self.nvtot = scheme.s.shape[0]
         self.consm = list(scheme.consm.keys())
         self.param = scheme.param
         self.dim = scheme.dim
         self.is_stable_l2 = True
+        self.output_txt = output_txt
 
         if scheme.rel_vel is None:
             jacobian = scheme.EQ.jacobian(self.consm)
@@ -50,19 +51,7 @@ class Stability:
         velocities = sp.Matrix(scheme.stencil.get_all_velocities())
         self.velocities = np.asarray(velocities).astype('float')
 
-        # check if we are inside a notebook
-        try:
-            # pylint: disable=undefined-variable
-            ip = get_ipython() # noqa
-
-            if ip.has_trait('kernel'):
-                self.is_notebook = True
-            else:
-                self.is_notebook = False
-        except:
-            self.is_notebook = False
-
-    def eigenvalues(self, consm0, n_wv, extra_parameters=None, verbose=False):
+    def eigenvalues(self, consm0, n_wv):
         """
         Compute the eigenvalues of the amplification matrix
         for n_wv wave vectors
@@ -85,7 +74,7 @@ class Stability:
             n_wv = v_xi.shape[1] #pylint: disable=unsubscriptable-object
         eigs = np.empty((n_wv, self.nvtot), dtype='complex')
 
-        if not self.is_notebook and verbose:
+        if self.output_txt:
             print("*"*80)
             print("Compute the eigenvalues")
             print_progress(0, n_wv, barLength=50)
@@ -97,17 +86,14 @@ class Stability:
                 self.velocities.dot(wave_vector)
             )[np.newaxis, :] * relax_mat_f_num
 
-        for k in range(n_wv):
-            data = set_matrix(1j*v_xi[:, k])
-            eigs[k] = np.linalg.eig(data)[0]
-            if not self.is_notebook and verbose:
+            if self.output_txt:
                 print_progress(k+1, n_wv, barLength=50)
 
         ind_pb, = np.where(np.max(np.abs(eigs), axis=1) > 1 + 1.e-10)
         pb_stable_l2 = v_xi[:, ind_pb]
         self.is_stable_l2 = pb_stable_l2.shape[1] == 0
 
-        if not self.is_notebook and verbose:
+        if self.output_txt:
             if self.is_stable_l2:
                 print("*"*80)
                 print("The scheme is stable")
@@ -120,7 +106,7 @@ class Stability:
 
         return v_xi, eigs
 
-    def visualize(self, dico=None, viewer_app=viewer.matplotlib_viewer):
+    def visualize(self, dico=None, viewer_app=viewer.matplotlib_viewer, with_widgets=False):
         """
         visualize the stability
         """
@@ -198,7 +184,7 @@ class Stability:
         # create sliders to play with parameters
         dicosliders = dico.get('parameters', None)
 
-        if self.is_notebook:
+        if with_widgets:
             from ipywidgets import widgets
             from IPython.display import display, clear_output
 
