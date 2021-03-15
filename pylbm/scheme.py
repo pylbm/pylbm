@@ -359,6 +359,17 @@ class Scheme:
 
         return v.ExpansionPanels(children=panels, multiple=True)
 
+    def _repr_mimebundle_(self, **kwargs):
+        data = {
+            'text/plain': repr(self),
+        }
+        data['application/vnd.jupyter.widget-view+json'] = {
+            'version_major': 2,
+            'version_minor': 0,
+            'model_id': self.vue()._model_id
+        }
+        return data
+
     def _create_moments_matrices(self):
         """
         Create the moments matrices M and M^{-1} used to transform the repartition functions into the moments
