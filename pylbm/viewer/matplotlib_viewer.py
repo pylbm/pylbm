@@ -472,7 +472,10 @@ class PlotWidget:
         self.ax.clf()
 
     def grid(self, visible=True, which='both', alpha=1.):
-        self.ax.grid(visible=visible, which=which, alpha=alpha)
+        # ISSUE with MATPLOTLIB
+        # https://github.com/matplotlib/matplotlib/issues/18758
+        # self.ax.grid(visible=visible, which=which, alpha=alpha)
+        self.ax.grid(visible, which=which, alpha=alpha)
 
     def axis(self, xmin, xmax, ymin, ymax, zmin=0, zmax=0, dim=2, aspect=None):
         if (zmin == 0 and zmax == 0) or dim <= 2:
@@ -528,14 +531,16 @@ class PlotWidget:
                 xy=pos,
                 width=2*radius[0], height=2*radius[1],
                 angle=angle*180/np.pi,
-                fill=True, color=color, alpha=alpha
+                fill=True, color=color, alpha=alpha,
+                zorder=0
             )
         )
 
     def polygon(self, pos, color, alpha=1.):
         return self.ax.add_patch(
             Polygon(
-                pos, closed=True, fill=True, color=color, alpha=alpha
+                pos, closed=True, fill=True, color=color, alpha=alpha,
+                zorder=0
             )
         )
 

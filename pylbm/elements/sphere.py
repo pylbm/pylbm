@@ -117,10 +117,10 @@ class Sphere(Element):
             x - self.center[0],
             y - self.center[1],
             z - self.center[2]
-        ])
+        ], dtype=object)
         return (v2[0]**2 + v2[1]**2 + v2[2]**2) <= self.radius**2
 
-    def distance(self, grid, v, dmax=None):
+    def distance(self, grid, v, dmax=None, normal=False):
         """
         Compute the distance in the v direction between
         the sphere and the points defined by (x, y, z).
@@ -137,13 +137,16 @@ class Sphere(Element):
             direction of interest
         dmax : float
             distance max
+        normal : bool
+            return the normal vector if True (default False)
 
         Returns
         -------
 
         ndarray
-            array of distances
-
+            array of distances if normal is False and
+            the coordinates of the normal vectors
+            if normal is True
         """
         x, y, z = grid
         v1 = self.radius*np.array([1, 0, 0])
@@ -151,7 +154,7 @@ class Sphere(Element):
         v3 = self.radius*np.array([0, 0, 1])
         return distance_ellipsoid(
             x, y, z, v, self.center,
-            v1, v2, v3, dmax, self.label
+            v1, v2, v3, dmax, self.label, normal
         )
 
     def __str__(self):

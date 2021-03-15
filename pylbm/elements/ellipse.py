@@ -123,11 +123,11 @@ class Ellipse(Element):
         Y = y - self.center[1]
         vx2 = self.v1[0]**2 + self.v2[0]**2
         vy2 = self.v1[1]**2 + self.v2[1]**2
-        vxy = self.v1[0]*self.v1[1] + self.v2[0]*self.v2[1]
+        vxy = 2 * (self.v1[0]*self.v1[1] + self.v2[0]*self.v2[1])
         tv = self.v1[0]*self.v2[1]-self.v1[1]*self.v2[0]
-        return X**2*vy2 + Y**2*vx2 - 2*X*Y*vxy <= tv**2
+        return X**2*vy2 + Y**2*vx2 - X*Y*vxy <= tv**2
 
-    def distance(self, grid, v, dmax=None):
+    def distance(self, grid, v, dmax=None, normal=False):
         """
         Compute the distance in the v direction between
         the ellipse and the points defined by (x, y).
@@ -141,19 +141,22 @@ class Ellipse(Element):
             direction of interest
         dmax : float
             distance max
+        normal : bool
+            return the normal vector if True (default False)
 
         Returns
         -------
 
         ndarray
-            array of distances
-
+            array of distances if normal is False and
+            the coordinates of the normal vectors
+            if normal is True
         """
         x, y = grid
         return distance_ellipse(
             x, y, v,
             self.center, self.v1, self.v2,
-            dmax, self.label
+            dmax, self.label, normal
         )
 
     def __str__(self):

@@ -9,12 +9,9 @@
 """
 Example of a segment in 1D
 """
-from six.moves import range
 import pylbm
 
-# pylint: disable=invalid-name
-
-ddom = {
+D_DOM = {
     'box': {
         'x': [0, 1],
         'label': 0
@@ -26,13 +23,14 @@ ddom = {
         }
     ],
 }
-dom = pylbm.Domain(ddom)
-print(dom)
-dom.visualize()
-dom.visualize(
+DOMAIN = pylbm.Domain(D_DOM)
+print(DOMAIN)
+DOMAIN.visualize()
+DOMAIN.visualize(
     view_distance=True,
     label=0,
     view_in=True,
     view_out=True,
     view_bound=True,
+    view_normal=True
 )
