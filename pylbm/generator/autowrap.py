@@ -106,7 +106,8 @@ def make_ext(modname, pyxfilename):
                     """
         bld.write(code)
         bld.close()
-        bld = open(self.workdir + '/build.py', 'w')
+        build_file = os.path.join(self.workdir, 'build.py')
+        bld = open(build_file, 'w')
         code = f"""
 import pyximport
 pyximport.install(build_dir='{self.workdir}', inplace=True)
@@ -118,7 +119,7 @@ import {self.filename}
         if self.verbose:
             print(open(self.full_path + '.pyx').read())
 
-        command = [sys.executable, self.workdir  + '/build.py']
+        command = [sys.executable, build_file]
 
         return command
 
