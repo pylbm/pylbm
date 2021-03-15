@@ -605,7 +605,13 @@ class BaseAlgorithm:
         fnew = simulation.container.Fnew.array
 
         t = simulation.t
-        dt = simulation.dt
+        if isinstance(simulation.dt, sp.Expr):
+            subs = list(simulation.scheme.param.items()) + list(simulation.extra_parameters.items())
+            dt = simulation.dt.subs(subs)
+        else:
+            dt = simulation.dt
+
+        # dt = simulation.dt
         in_or_out = simulation.domain.in_or_out
         valin = simulation.domain.valin
 

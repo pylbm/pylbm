@@ -88,7 +88,8 @@ class Simulation:
     # pylint: disable=too-many-branches, too-many-statements, too-many-locals
     def __init__(self, dico,
                  sorder=None, dtype='float64',
-                 check_inverse=False
+                 check_inverse=False,
+                 initialize=True
                  ):
         validate(dico, __class__.__name__) #pylint: disable=undefined-variable
 
@@ -107,7 +108,6 @@ class Simulation:
         self.dt = self.domain.dx/self.scheme.la
         self.dim = self.domain.dim
         self.extra_parameters = {}
-        self._need_init = True
 
         codegen_dir, generate = None, True
         codegen_opt = dico.get('codegen_option', None)
@@ -144,7 +144,21 @@ class Simulation:
         self.init_type = dico.get('inittype', 'moments')
         self.init_data = dico.get('init', None)
 
+        self._need_init = True
+        if initialize:
+            self._initialize()
+
         log.info(self.__str__())
+
+    def _initialize(self):
+        # Initialize the solution and the rhs of boundary conditions
+        self.initialization()
+        for method in self.bc.methods:
+            method.prepare_rhs(self)
+            method.fix_iload()
+            method.set_rhs()
+            method.move2gpu()
+        self._need_init = False
 
     def _get_container(self, sorder):
         container_type = {'NUMPY': NumpyContainer,
@@ -375,14 +389,7 @@ class Simulation:
         - m2f
         """
         if self._need_init:
-            # Initialize the solution and the rhs of boundary conditions
-            self.initialization()
-            for method in self.bc.methods:
-                method.prepare_rhs(self)
-                method.fix_iload()
-                method.set_rhs()
-                method.move2gpu()
-            self._need_init = False
+            self._initialize()
 
         self._update_m = True # we recompute f so m will be not correct
 
