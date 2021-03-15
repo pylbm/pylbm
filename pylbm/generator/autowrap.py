@@ -110,7 +110,7 @@ def make_ext(modname, pyxfilename):
         bld = open(build_file, 'w')
         code = f"""
 import pyximport
-pyximport.install(build_dir='{self.workdir}', inplace=True)
+pyximport.install(build_dir=r'{self.workdir}', inplace=True)
 import {self.filename}
         """
         bld.write(code)
