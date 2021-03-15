@@ -7,10 +7,11 @@ from .autowrap import autowrap
 
 
 class Generator:
-    def __init__(self, backend, directory=None, verbose=False):
+    def __init__(self, backend, directory=None, generate=True, verbose=False):
         self.routines = collections.OrderedDict()
         self.module = None
         self.directory = directory
+        self.generate = generate
         self.backend = backend
         self.verbose = verbose
 
@@ -25,4 +26,5 @@ class Generator:
         self.module = autowrap(self.routines.values(),
                                self.backend,
                                self.directory,
+                               generate=self.generate,
                                verbose=self.verbose)

@@ -6,6 +6,7 @@ import os
 import shutil
 import tempfile
 from subprocess import STDOUT, CalledProcessError, check_output
+import importlib
 
 from .codegen import get_code_generator
 
@@ -16,49 +17,56 @@ class CodeWrapError(Exception):
 class CodeWrapper(object):
     """Base Class for code wrappers"""
     _module_name = "wrapped_module"
-    _module_counter = 0
 
     @property
     def filename(self):
-        return "%s_%s" % (self._module_name, CodeWrapper._module_counter)
+        return "%s_%s" % (self._module_name, self._module_counter)
+
+    @property
+    def full_path(self):
+        return "%s/%s_%s" % (self.workdir, self._module_name, self._module_counter)
 
     @property
     def module_name(self):
-        return "%s_%s" % (self._module_name, CodeWrapper._module_counter)
+        return "%s_%s" % (self._module_name, self._module_counter)
 
-    def __init__(self, generator, filepath=None, flags=[], verbose=False):
+    def __init__(self, generator, filepath=None, flags=[], generate=True, verbose=False):
         """
         generator -- the code generator to use
         """
         self.generator = generator
         self.filepath = filepath
+        self.workdir = self.filepath or tempfile.mkdtemp("_sympy_compile")
         self.flags = flags
+        self.generate = generate
         self.verbose = verbose
+        self._module_counter = 0
+
 
     def _generate_code(self, routines):
         self.generator.write(
-            routines, self.filename, True, True, False)
+            routines, self.full_path, True, True, False)
 
     def wrap_code(self, routines):
-        workdir = self.filepath or tempfile.mkdtemp("_sympy_compile")
-        if not os.access(workdir, os.F_OK):
-            os.mkdir(workdir)
-        oldwork = os.getcwd()
-        os.chdir(workdir)
+        if not os.access(self.workdir, os.F_OK):
+            os.mkdir(self.workdir)
 
         try:
-            sys.path.append(workdir)
-            self._prepare_files(routines)
-            self._generate_code(routines)
-            self._process_files(routines)
-            mod = __import__(self.module_name)
+            sys.path.append(self.workdir)
+            if self.generate:
+                self._prepare_files(routines)
+                self._generate_code(routines)
+                self._process_files(routines)
+            if self.module_name in sys.modules:
+                sys.modules.pop(self.module_name)
+            importlib.invalidate_caches()
+            mod = importlib.import_module(self.module_name)
         finally:
-            sys.path.remove(workdir)
-            CodeWrapper._module_counter += 1
-            os.chdir(oldwork)
+            sys.path.remove(self.workdir)
+            self._module_counter += 1
             if not self.filepath:
                 try:
-                    shutil.rmtree(workdir)
+                    shutil.rmtree(self.workdir)
                 except OSError:
                     # Could be some issues on Windows
                     pass
@@ -82,7 +90,7 @@ class CodeWrapper(object):
 class CythonCodeWrapper(CodeWrapper):
     @property
     def command(self):
-        bld = open(self.filename + '.pyxbld', "w")
+        bld = open(self.full_path + '.pyxbld', "w")
         code = """
 def make_ext(modname, pyxfilename):
     from distutils.extension import Extension
@@ -98,19 +106,19 @@ def make_ext(modname, pyxfilename):
                     """
         bld.write(code)
         bld.close()
-        bld = open('build.py', 'w')
-        code = """
+        bld = open(self.workdir + '/build.py', 'w')
+        code = f"""
 import pyximport
-pyximport.install(build_dir=\'.\', inplace=True)
-import {module_name}
-        """.format(module_name=self.filename)
+pyximport.install(build_dir='{self.workdir}', inplace=True)
+import {self.filename}
+        """
         bld.write(code)
         bld.close()
 
         if self.verbose:
-            print(open(self.filename + '.pyx').read())
+            print(open(self.full_path + '.pyx').read())
 
-        command = [sys.executable, 'build.py']
+        command = [sys.executable, self.workdir  + '/build.py']
 
         return command
 
@@ -127,7 +135,7 @@ class PythonCodeWrapper(CodeWrapper):
 
     def _process_files(self, routines):
         if self.verbose:
-            print(open(self.filename + '.py').read())
+            print(open(self.full_path + '.py').read())
 
 def get_code_wrapper(backend):
     CodeWrapClass = {"NUMPY" : PythonCodeWrapper,
@@ -137,11 +145,11 @@ def get_code_wrapper(backend):
         raise ValueError("Language '%s' is not supported." % backend)
     return CodeWrapClass
 
-def autowrap(routines, backend='cython', tempdir=None, args=None, flags=[],
+def autowrap(routines, backend='cython', tempdir=None, generate=True, args=None, flags=[],
     verbose=False):
 
     code_generator = get_code_generator(backend, "project")
     CodeWrapperClass = get_code_wrapper(backend)
-    code_wrapper = CodeWrapperClass(code_generator, tempdir, flags, verbose)
+    code_wrapper = CodeWrapperClass(code_generator, tempdir, flags, generate, verbose)
 
     return code_wrapper.wrap_code(routines)

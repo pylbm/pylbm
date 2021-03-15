@@ -14,6 +14,7 @@ import logging
 import types
 import numpy as np
 from sympy.parsing.sympy_parser import parse_expr
+import sympy as sp
 import mpi4py.MPI as mpi
 
 from .domain import Domain
@@ -105,13 +106,18 @@ class Simulation:
         self.nt = 0
         self.dt = self.domain.dx/self.scheme.la
         self.dim = self.domain.dim
+        self.extra_parameters = {}
+        self._need_init = True
 
-        codegen_dir = dico.get('codegen_dir', None)
-        if codegen_dir:
-            codegen_dir = os.path.realpath(codegen_dir)
+        codegen_dir, generate = None, True
+        codegen_opt = dico.get('codegen_option', None)
+        if codegen_opt:
+            codegen_dir = os.path.realpath(codegen_opt['directory'])
+            generate = codegen_opt.get('generate', True)
 
         self.generator = Generator(dico.get('generator', "CYTHON").upper(),
                                    codegen_dir,
+                                   generate,
                                    dico.get('show_code', False))
 
         # FIXME remove that !!
@@ -135,13 +141,8 @@ class Simulation:
 
         self.generator.compile()
 
-        # Initialize the solution and the rhs of boundary conditions
-        self.initialization(dico)
-        for method in self.bc.methods:
-            method.prepare_rhs(self)
-            method.fix_iload()
-            method.set_rhs()
-            method.move2gpu()
+        self.init_type = dico.get('inittype', 'moments')
+        self.init_data = dico.get('init', None)
 
         log.info(self.__str__())
 
@@ -226,7 +227,7 @@ class Simulation:
         return self.__str__()
 
     @monitor
-    def initialization(self, dico):
+    def initialization(self):
         """
         initialize all the numy array with the initial conditions
         set the initial values to the numpy arrays _F and _m
@@ -250,12 +251,11 @@ class Simulation:
         # type of initialization
         # by default, the initialization is on the moments
         # else, it could be distributions
-        inittype = dico.get('inittype', 'moments')
         coords = np.meshgrid(*(c for c in self.domain.coords_halo), sparse=True, indexing='ij')
 
-        if inittype == 'moments':
+        if self.init_type == 'moments':
             array_to_init = self.container.m
-        elif inittype == 'distributions':
+        elif self.init_type == 'distributions':
             array_to_init = self.container.F
         else:
             sss = 'Error in the creation of the scheme: wrong dictionnary\n'
@@ -263,12 +263,11 @@ class Simulation:
             log.error(sss)
             sys.exit()
 
-        init_data = dico.get('init', None)
-        if init_data is None:
+        if self.init_data is None:
             log.warning("You don't define initialization step for your conserved moments")
             return
 
-        for k, v in init_data.items():
+        for k, v in self.init_data.items():
             if isinstance(v, tuple):
                 f = v[0]
                 extraargs = v[1] if len(v) == 2 else ()
@@ -280,10 +279,10 @@ class Simulation:
             else:
                 array_to_init[k] = v
 
-        if inittype == 'moments':
+        if self.init_type == 'moments':
             self.equilibrium()
             self.m2f()
-        elif inittype == 'distributions':
+        elif self.init_type == 'distributions':
             self.f2m()
 
         self.container.Fnew.array[:] = self.container.F.array[:]
@@ -293,21 +292,21 @@ class Simulation:
         compute the transport phase on distribution functions
         (the array _F is modified)
         """
-        self.algo.call_function('transport', self, **kwargs)
+        self.algo.call_function('transport', self, **kwargs, **self.extra_parameters)
 
     def relaxation(self, **kwargs):
         """
         compute the relaxation phase on moments
         (the array _m is modified)
         """
-        self.algo.call_function('relaxation', self, **kwargs)
+        self.algo.call_function('relaxation', self, **kwargs, **self.extra_parameters)
 
     def source_term(self, fraction_of_time_step=1., **kwargs):
         """
         compute the source term phase on moments
         (the array _m is modified)
         """
-        self.algo.call_function('source_term', self, **kwargs)
+        self.algo.call_function('source_term', self, **kwargs, **self.extra_parameters)
 
     @monitor
     def f2m(self, **kwargs):
@@ -315,7 +314,7 @@ class Simulation:
         compute the moments from the distribution functions
         (the array _m is modified)
         """
-        self.algo.call_function('f2m', self, **kwargs)
+        self.algo.call_function('f2m', self, **kwargs, **self.extra_parameters)
 
     @monitor
     def m2f(self, m_user=None, f_user=None, **kwargs):
@@ -323,7 +322,7 @@ class Simulation:
         compute the distribution functions from the moments
         (the array _F is modified)
         """
-        self.algo.call_function('m2f', self, m_user, f_user, **kwargs)
+        self.algo.call_function('m2f', self, m_user, f_user, **kwargs, **self.extra_parameters)
 
     @monitor
     def equilibrium(self, m_user=None, **kwargs):
@@ -337,7 +336,7 @@ class Simulation:
         Another moments vector can be set to equilibrium values:
         use directly the method of the class Scheme
         """
-        self.algo.call_function('equilibrium', self, m_user, **kwargs)
+        self.algo.call_function('equilibrium', self, m_user, **kwargs, **self.extra_parameters)
 
     @monitor
     def boundary_condition(self, **kwargs):
@@ -356,7 +355,7 @@ class Simulation:
         for method in self.bc.methods:
             method.update_feq(self)
             method.set_rhs()
-            method.update(f, **kwargs)
+            method.update(f, **kwargs, **self.extra_parameters)
 
     @monitor
     def one_time_step(self, **kwargs):
@@ -375,12 +374,26 @@ class Simulation:
         - relaxation
         - m2f
         """
+        if self._need_init:
+            # Initialize the solution and the rhs of boundary conditions
+            self.initialization()
+            for method in self.bc.methods:
+                method.prepare_rhs(self)
+                method.fix_iload()
+                method.set_rhs()
+                method.move2gpu()
+            self._need_init = False
+
         self._update_m = True # we recompute f so m will be not correct
 
         self.boundary_condition(**kwargs)
 
-        self.algo.call_function('one_time_step', self, **kwargs)
+        self.algo.call_function('one_time_step', self, **kwargs, **self.extra_parameters)
         self.container.F, self.container.Fnew = self.container.Fnew, self.container.F
 
-        self.t += self.dt
+        if isinstance(self.dt, sp.Expr):
+            subs = list(self.scheme.param.items()) + list(self.extra_parameters.items())
+            self.t += self.dt.subs(subs)
+        else:
+            self.t += self.dt
         self.nt += 1
