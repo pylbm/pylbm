@@ -19,4 +19,4 @@ dgeom = {
 }
 geom = pylbm.Geometry(dgeom)
 print(geom)
-geom.visualize(viewlabel=True)
+geom.visualize(viewlabel=True, alpha=0.5)

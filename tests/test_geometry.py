@@ -1,7 +1,17 @@
+# Authors:
+#     Loic Gouarin <loic.gouarin@polytechnique.edu>
+#     Benjamin Graille <benjamin.graille@math.u-psud.fr>
+#
+# License: BSD 3 clause
+
+"""
+pylbm: tests for the geometry
+"""
+
 import pytest
 import pylbm
 
-elements = [
+ELEMENTS = [
     [2, pylbm.Circle([0, 0], 1)],
     [2, pylbm.Ellipse([0, 0], [1, 0], [0, 1])],
     [2, pylbm.Triangle([-1, -1], [0, 2], [2, 0])],
@@ -14,21 +24,38 @@ elements = [
     [3, pylbm.Sphere([0, 0, 0], 1)],
 ]
 
-@pytest.fixture(params=elements, ids=[elem[1].__class__.__name__ for elem in elements])
+
+@pytest.fixture(
+    params=ELEMENTS, ids=[
+        elem[1].__class__.__name__ for elem in ELEMENTS
+    ]
+)
 def get_element(request):
+    """get one element of the geometry"""
     return request.param
 
-box = [(1, {'x': [-2, 2], 'label': 3}),
-       (2, {'x': [-2, 2], 'y': [-2, 2], 'label': 3}),
-       (3, {'x': [-2, 2], 'y': [-2, 2], 'z': [-2, 2], 'label': 3}),
+
+BOX = [
+    (1, {'x': [-2, 2], 'label': 3}),
+    (2, {'x': [-2, 2], 'y': [-2, 2], 'label': 3}),
+    (3, {'x': [-2, 2], 'y': [-2, 2], 'z': [-2, 2], 'label': 3}),
 ]
 
-@pytest.fixture(params=box, ids=['box1d', 'box2d', 'box3d'])
+
+@pytest.fixture(
+    params=BOX, ids=[
+        'box1d', 'box2d', 'box3d'
+    ]
+)
 def get_box(request):
+    """get one box"""
     return request.param
 
 
 class TestGeometry:
+    """
+    test the geometry with pytest
+    """
     def test_box_label(self, get_box):
         dim_box, box = get_box
         dico = {'box': box}
@@ -60,5 +87,3 @@ class TestGeometry:
             return views.fig
         else:
             pytest.skip("incompatible dimension")
-
-

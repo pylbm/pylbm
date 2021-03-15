@@ -9,12 +9,9 @@
 """
 Example of the cube in 3D
 """
-from six.moves import range
 import pylbm
 
-# pylint: disable=invalid-name
-
-ddom = {
+D_DOM = {
     'box': {
         'x': [0, 2],
         'y': [0, 2],
@@ -28,6 +25,7 @@ ddom = {
         }
     ]
 }
-dom = pylbm.Domain(ddom)
-print(dom)
-dom.visualize(view_distance=True)
+DOMAIN = pylbm.Domain(D_DOM)
+print(DOMAIN)
+DOMAIN.visualize(view_distance=True)
+DOMAIN.visualize(view_normal=True)

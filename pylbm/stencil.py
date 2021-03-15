@@ -175,9 +175,20 @@ class Velocity:
     """
     __metaclass__ = Singleton
     _d = 1e3
-    _R2 = np.array([[[5, 6, 4], [_d, _d, 2], [2, 5, 3]],
-                    [[3, _d, _d], [_d, -1, _d], [1, _d, _d]],
-                    [[6, 7, 7], [_d, _d, 0], [1, 4, 0]]], dtype=np.int)
+    _R2 = np.array(
+        [
+            [
+                [5, 6, 4], [_d, _d, 2], [2, 5, 3]
+            ],
+            [
+                [3, _d, _d], [_d, -1, _d], [1, _d, _d]
+            ],
+            [
+                [6, 7, 7], [_d, _d, 0], [1, 4, 0]
+            ]
+        ],
+        dtype=int
+    )
 
     def __init__(self, dim=None, num=None, vx=None, vy=None, vz=None):
         self.dim = dim

@@ -150,7 +150,7 @@ class Ellipsoid(Element):
         return cxx*X**2 + cyy*Y**2 + czz*Z**2 + \
             cxy*X*Y + cyz*Y*Z + czx*Z*X <= d
 
-    def distance(self, grid, v, dmax=None):
+    def distance(self, grid, v, dmax=None, normal=False):
         """
         Compute the distance in the v direction between
         the ellipsoid and the points defined by (x, y, z).
@@ -164,19 +164,22 @@ class Ellipsoid(Element):
             direction of interest
         dmax : float
             distance max
+        normal : bool
+            return the normal vector if True (default False)
 
         Returns
         -------
 
         ndarray
-            array of distances
-
+            array of distances if normal is False and
+            the coordinates of the normal vectors
+            if normal is True
         """
         x, y, z = grid
         return distance_ellipsoid(
             x, y, z, v,
             self.center, self.v1, self.v2, self.v3,
-            dmax, self.label
+            dmax, self.label, normal
         )
 
     def __str__(self):
