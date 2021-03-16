@@ -143,9 +143,7 @@ class Scheme:
         # symbolic parameters
         self.param = dico.get('parameters', {})
 
-        self.symb_la, self.la = self._get_var_symbolic(dico, 'scheme_velocity')
-        if not self.la:
-            log.error("The entry 'scheme_velocity' is wrong.")
+        self.la = dico['scheme_velocity']
 
         # set relative velocity
         self.rel_vel = dico.get('relative_velocity', None)
@@ -191,16 +189,6 @@ class Scheme:
         self._check_inverse_of_Tu()
 
         log.info(self.__str__())
-
-    def _get_var_symbolic(self, dico, entry):
-        value = dico.get(entry, None)
-        symb, num = None, None
-        if isinstance(value, (int, float)):
-            num = value
-        elif isinstance(value, sp.Symbol):
-            symb = value
-            num = float(value.subs(self.param.items()))
-        return symb, num
 
     def _get_space_and_time_symbolic(self):
         symb_t = self.param.get('time', sp.Symbol('t'))
@@ -306,10 +294,7 @@ class Scheme:
         M_, invM_, Mu_, Tu_ = [], [], [], []
         u_tild = sp.Matrix([rel_ux, rel_uy, rel_uz])
 
-        if self.symb_la is not None:
-            LA = self.symb_la
-        else:
-            LA = self.la
+        LA = self.la
 
         compt = 0
         for iv, v in enumerate(self.stencil.v):

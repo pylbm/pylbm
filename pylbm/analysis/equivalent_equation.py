@@ -25,9 +25,7 @@ class EquivalentEquation:
 
         space = [x, y, z]
 
-        LA = scheme.symb_la
-        if not LA:
-            LA = scheme.la
+        LA = scheme.la
 
         func = []
         for i in range(nconsm):
