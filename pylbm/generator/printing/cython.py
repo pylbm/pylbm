@@ -281,6 +281,8 @@ class CythonCodePrinter(CodePrinter):
 
     def _print_Symbol(self, expr):
         name = super(CythonCodePrinter, self)._print_Symbol(expr)
+        if name == 'lambda':
+            name = 'lambda_'
 
         if expr in self._dereference:
             return '(*{0})'.format(name)
