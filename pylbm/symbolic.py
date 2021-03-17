@@ -35,8 +35,8 @@ class SymbolicVector(sp.Matrix):
         self = object.__new__(cls)
         self.rows = rows
         self.cols = cols
-        if cols != 1:
-            raise ShapeError("SymVector input must be a list")
+        # if cols != 1:
+        #     raise ShapeError("SymVector input must be a list")
         self._mat = flat_list
         return self
 
