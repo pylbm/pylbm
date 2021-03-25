@@ -45,7 +45,7 @@ setup(
     description    = "A flexible Python package for lattice Boltzmann method",
     long_description = long_description,
     author         = "Benjamin Graille, Loic Gouarin",
-    author_email   = "benjamin.graille@math.u-psud.fr, loic.gouarin@polytechnique.edu",
+    author_email   = "benjamin.graille@universite-paris-saclay.fr, loic.gouarin@polytechnique.edu",
     url            = "https://github.com/pylbm/pylbm",
     license        = "BSD",
     keywords       = "Lattice Boltzmann Methods",
