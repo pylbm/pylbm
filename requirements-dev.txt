@@ -17,3 +17,4 @@ pytest-mpl
 codecov
 ipywidgets
 nbval
+numpy-stl
