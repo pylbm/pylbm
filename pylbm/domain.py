@@ -754,6 +754,17 @@ class Domain:
                     view, color,
                     alpha=1
                 )
+        if view_geom and self.dim == 3:
+            color_fluid = (0.9, 0.9, 0.9)
+            for elem in self.geom.list_elem:
+                if elem.isfluid:
+                    color = color_fluid
+                else:
+                    color = 'white'
+                elem.visualize(
+                    view, color,
+                    alpha=0.25
+                )
 
         # compute the size of the symbols for the plot
         # in 1d and 2d: 100*dx
