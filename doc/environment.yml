@@ -11,3 +11,4 @@ dependencies:
   - ipywidgets
   - jupyter_sphinx
   - numpydoc
+  - numpy-stl
