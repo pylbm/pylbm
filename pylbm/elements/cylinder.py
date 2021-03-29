@@ -227,7 +227,7 @@ class Cylinder(Element):
                   viewer, color, viewlabel=False,
                   scale=np.ones(3), alpha=1.
                   ):
-        if isinstance(color, int):
+        if not isinstance(color, list):
             color = [color]*self.number_of_bounds
         lx_b, ly_b = self.base._visualize()  # pylint: disable=protected-access
         c = self.center

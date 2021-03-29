@@ -565,7 +565,7 @@ class PlotWidget:
         return self.ax.plot_surface(
             x, y, z,
             rstride=4, cstride=4,
-            color=color[0], alpha=alpha
+            color=color, alpha=alpha
         )
 
     def markers(self, pos, size, color='k',

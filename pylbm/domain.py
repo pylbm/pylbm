@@ -749,7 +749,7 @@ class Domain:
                 if elem.isfluid:
                     color = color_fluid
                 else:
-                    color = 'white'
+                    color = (1., 1., 1.)
                 elem.visualize(
                     view, color,
                     alpha=1
@@ -760,7 +760,7 @@ class Domain:
                 if elem.isfluid:
                     color = color_fluid
                 else:
-                    color = 'white'
+                    color = (.5, .5, .5)
                 elem.visualize(
                     view, color,
                     alpha=0.25
