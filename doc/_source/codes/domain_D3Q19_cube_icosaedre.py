@@ -10,8 +10,8 @@ Example of the cube in 3D with a D3Q19
 from six.moves import range
 import pylbm
 dico = {
-    'box': {'x': [0, 2], 'y': [0, 2], 'z': [0, 2], 'label': 0},
-    'elements': [pylbm.Sphere((1, 1, 1), 0.5, label=1)],
+    'box': {'x': [-3, 3], 'y': [-3, 3], 'z': [-3, 3], 'label': 0},
+    'elements': [pylbm.STLElement("icosaedre.stl", label=1)],
     'space_step': .5,
     'schemes': [{'velocities': list(range(19))}]
 }

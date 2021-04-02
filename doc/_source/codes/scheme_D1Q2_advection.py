@@ -13,12 +13,12 @@ import pylbm
 u, X = sp.symbols('u, X')
 
 d = {
-    'dim':1,
-    'scheme_velocity':1.,
-    'schemes':[
+    'dim': 1,
+    'scheme_velocity': 1.,
+    'schemes': [
         {
             'velocities': [1, 2],
-            'conserved_moments':u,
+            'conserved_moments': u,
             'polynomials': [1, X],
             'equilibrium': [u, .5*u],
             'relaxation_parameters': [0., 1.9],

@@ -13,9 +13,9 @@ import pylbm
 
 # pylint: disable=invalid-name
 
-a, b = -3, 3
+a, b = -1.5, 1.5
 
-icosaedre = pylbm.STLElement('icosaedre.stl', label=1)
+sponge = pylbm.STLElement('Menger_sponge_sample.stl', label=1)
 dico = {
     'box': {
         'x': [a, b],
@@ -23,7 +23,7 @@ dico = {
         'z': [a, b],
         'label': 0
     },
-    'elements': [icosaedre],
+    'elements': [sponge],
 }
 geom = pylbm.Geometry(dico)
 print(geom)

@@ -55,7 +55,7 @@ def intersection(grid, v, tri):
     except np.linalg.LinAlgError as e:
         if 'Singular matrix' not in str(e):
             raise
-        return None, np.inf
+        return None
 
     # right member of the intersection problem
     # it depends on the grid and is a (xsize, ysize, zsize) vector
@@ -78,19 +78,23 @@ def intersection(grid, v, tri):
     )
     s = np.full((x.size, y.size, z.size), np.inf)
     s[indin] = sol[2][indin]
-    # compute the coordinates of the intersection point
-    p = np.full((3, x.size, y.size, z.size), np.inf)
-    for k in range(3):
-        p[k][indin] = tri[3*k] * sol[0][indin] + \
-            tri[3*k+1] * sol[1][indin] + \
-            tri[3*k+2] * (1-sol[0][indin]-sol[1][indin])
+    # # compute the coordinates of the intersection point
+    # p = np.full((3, x.size, y.size, z.size), np.inf)
+    # for k in range(3):
+    #     p[k][indin] = tri[3*k] * sol[0][indin] + \
+    #         tri[3*k+1] * sol[1][indin] + \
+    #         tri[3*k+2] * (1-sol[0][indin]-sol[1][indin])
 
-    return p, s
+    return s
 
 
 class STLElement(Element):
     """
     Class STLElement
+
+    Notes
+    --------
+    Add a STLElement requires the module numpy-stl!
 
     Parameters
     ----------
@@ -102,7 +106,7 @@ class STLElement(Element):
     isfluid: boolean
         - True if the element is added
         - False if the element is deleted
-    
+
     Examples
     --------
 
@@ -116,14 +120,7 @@ class STLElement(Element):
     """
     def __init__(self, filename, label=0, isfluid=False):
         self.filename = filename
-        if not isfile(filename):
-            sss = "Error in creating element: %s does not exist!" % filename
-            log.error(sss)
-        try:
-            self.mesh = mesh.Mesh.from_file(filename)
-        except:
-            sss = "Error in creating element with the file %s!" % filename
-            log.error(sss)
+        self.mesh = mesh.Mesh.from_file(filename)
         self.number_of_bounds = 1  # just one bound for the labels
         self.nb_tri = self.mesh.points.shape[0]  # nb of triangles
         self.dim = 3
@@ -132,6 +129,9 @@ class STLElement(Element):
 
     def get_bounds(self):
         return self.mesh.min_, self.mesh.max_
+
+    def _center(self):
+        return self.mesh.get_mass_properties()[1]
 
     def point_inside(self, grid):
         shape = tuple([gk.size for gk in grid])
@@ -148,8 +148,8 @@ class STLElement(Element):
             v[direction] = 1
             for ind_tri in range(self.nb_tri):
                 tri = self.mesh.points[ind_tri, :]
-                p, s = intersection(grid, v, tri)
-                if p is not None:
+                s = intersection(grid, v, tri)
+                if s is not None:
                     indices = np.asarray(s < smin).nonzero()
                     smin[indices] = s[indices]
                     if np.inner(v, self.mesh.normals[ind_tri]) >= 0:
@@ -169,8 +169,8 @@ class STLElement(Element):
         # loop over the triangles
         for ind_tri in range(self.nb_tri):
             tri = self.mesh.points[ind_tri, :]
-            p, s = intersection(grid, v, tri)
-            if p is not None:
+            s = intersection(grid, v, tri)
+            if s is not None:
                 if dmax is None:
                     indices = np.asarray(s < alpha).nonzero()
                 else:
@@ -203,7 +203,7 @@ class STLElement(Element):
 
     def visualize(self,
                   viewer, color, viewlabel=False,
-                  scale=np.ones(3), alpha=1.0,
+                  scale=np.ones(3), alpha=0.25,
                   ):
         # coordinates of the basis triangle
         p = np.asarray(
@@ -242,3 +242,7 @@ class STLElement(Element):
             Z = z[0] + A[2, 0]*Xb + A[2, 1]*Yb + A[2, 2]*Zb
             # plot
             viewer.surface(X, Y, Z, 'black', alpha=alpha)
+
+        if viewlabel:
+            x, y, z = self._center()
+            viewer.text(str(self.label[0]), [x, y, z])

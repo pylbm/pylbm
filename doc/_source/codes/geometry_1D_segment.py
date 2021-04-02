@@ -8,6 +8,6 @@
 Example of a 1D geometry: the segment [0,1]
 """
 import pylbm
-d = {'box':{'x': [0, 1], 'label': [0, 1]}}
+d = {'box': {'x': [0, 1], 'label': [0, 1]}}
 g = pylbm.Geometry(d)
-g.visualize(viewlabel = True)
+g.visualize(viewlabel=True)

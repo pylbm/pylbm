@@ -1,5 +1,3 @@
-
-
 # Authors:
 #     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -10,17 +8,12 @@
 Example of a 3D geometry with a STL file
 """
 import pylbm
-
-# pylint: disable=invalid-name
-
-a, b = -3, 3
-
 icosaedre = pylbm.STLElement('icosaedre.stl', label=1)
 dico = {
     'box': {
-        'x': [a, b],
-        'y': [a, b],
-        'z': [a, b],
+        'x': [-3, 3],
+        'y': [-3, 3],
+        'z': [-3, 3],
         'label': 0
     },
     'elements': [icosaedre],

@@ -19,20 +19,20 @@ kappa = 10*eta # bulk viscosity
 sb = 1./(.5+kappa*3./dx)
 ss = 1./(.5+eta*3./dx)
 d = {
-    'dim':2,
-    'scheme_velocity':1.,
-    'schemes':[{
-        'velocities':list(range(9)),
-        'conserved_moments':[rho, qx, qy],
-        'polynomials':[
+    'dim': 2,
+    'scheme_velocity': 1.,
+    'schemes': [{
+        'velocities': list(range(9)),
+        'conserved_moments': [rho, qx, qy],
+        'polynomials': [
             1, X, Y,
             3*(X**2+Y**2)-4,
             (9*(X**2+Y**2)**2-21*(X**2+Y**2)+8)/2,
             3*X*(X**2+Y**2)-5*X, 3*Y*(X**2+Y**2)-5*Y,
             X**2-Y**2, X*Y
         ],
-        'relaxation_parameters':[0., 0., 0., sb, sb, sb, sb, ss, ss],
-        'equilibrium':[
+        'relaxation_parameters': [0., 0., 0., sb, sb, sb, sb, ss, ss],
+        'equilibrium': [
             rho, qx, qy,
             -2*rho + 3*qx**2 + 3*qy**2,
             rho + 3/2*qx**2 + 3/2*qy**2,

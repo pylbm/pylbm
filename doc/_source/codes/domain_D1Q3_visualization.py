@@ -5,14 +5,16 @@
 # License: BSD 3 clause
 
 """
-Example of a segment in 1D with a D1Q3
+Visualization options for the domain
 """
 from six.moves import range
 import pylbm
 dico = {
-    'box': {'x': [0, 1], 'label': 0},
+    'box': {'x': [0, 1], 'label': [0, 1]},
     'space_step': 0.1,
     'schemes': [{'velocities': list(range(3))}],
 }
 dom = pylbm.Domain(dico)
-dom.visualize()
+dom.visualize(view_in=False, view_out=True, view_bound=True)
+dom.visualize(view_bound=True, view_distance=True)
+dom.visualize(view_bound=True, view_distance=True, view_normal=True)
