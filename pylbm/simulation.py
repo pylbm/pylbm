@@ -105,7 +105,7 @@ class Simulation:
         self._update_m = True
         self.t = 0.
         self.nt = 0
-        self.dt = self.domain.dx/self.scheme.la
+        self.dt_ = self.domain.dx/self.scheme.la
         self.dim = self.domain.dim
         self.extra_parameters = {}
 
@@ -184,6 +184,14 @@ class Simulation:
         algo_settings.update(user_settings)
 
         return algo_method(self.scheme, sorder, self.generator, algo_settings)
+
+    @property
+    def dt(self):
+        if isinstance(self.dt_, sp.Expr):
+            subs = list(self.scheme.param.items()) + list(self.extra_parameters.items())
+            return self.dt_.subs(subs)
+        else:
+            return self.dt_
 
     @utils.itemproperty
     def m_halo(self, i):
@@ -306,21 +314,21 @@ class Simulation:
         compute the transport phase on distribution functions
         (the array _F is modified)
         """
-        self.algo.call_function('transport', self, **kwargs, **self.extra_parameters)
+        self.algo.call_function('transport', self, **kwargs)
 
     def relaxation(self, **kwargs):
         """
         compute the relaxation phase on moments
         (the array _m is modified)
         """
-        self.algo.call_function('relaxation', self, **kwargs, **self.extra_parameters)
+        self.algo.call_function('relaxation', self, **kwargs)
 
     def source_term(self, fraction_of_time_step=1., **kwargs):
         """
         compute the source term phase on moments
         (the array _m is modified)
         """
-        self.algo.call_function('source_term', self, **kwargs, **self.extra_parameters)
+        self.algo.call_function('source_term', self, **kwargs)
 
     @monitor
     def f2m(self, **kwargs):
@@ -328,7 +336,7 @@ class Simulation:
         compute the moments from the distribution functions
         (the array _m is modified)
         """
-        self.algo.call_function('f2m', self, **kwargs, **self.extra_parameters)
+        self.algo.call_function('f2m', self, **kwargs)
 
     @monitor
     def m2f(self, m_user=None, f_user=None, **kwargs):
@@ -336,7 +344,7 @@ class Simulation:
         compute the distribution functions from the moments
         (the array _F is modified)
         """
-        self.algo.call_function('m2f', self, m_user, f_user, **kwargs, **self.extra_parameters)
+        self.algo.call_function('m2f', self, m_user, f_user, **kwargs)
 
     @monitor
     def equilibrium(self, m_user=None, **kwargs):
@@ -350,7 +358,7 @@ class Simulation:
         Another moments vector can be set to equilibrium values:
         use directly the method of the class Scheme
         """
-        self.algo.call_function('equilibrium', self, m_user, **kwargs, **self.extra_parameters)
+        self.algo.call_function('equilibrium', self, m_user, **kwargs)
 
     @monitor
     def boundary_condition(self, **kwargs):
@@ -369,7 +377,7 @@ class Simulation:
         for method in self.bc.methods:
             method.update_feq(self)
             method.set_rhs()
-            method.update(f, **kwargs, **self.extra_parameters)
+            method.update(f, **self.extra_parameters, **kwargs)
 
     @monitor
     def one_time_step(self, **kwargs):
@@ -395,12 +403,8 @@ class Simulation:
 
         self.boundary_condition(**kwargs)
 
-        self.algo.call_function('one_time_step', self, **kwargs, **self.extra_parameters)
+        self.algo.call_function('one_time_step', self, **kwargs)
         self.container.F, self.container.Fnew = self.container.Fnew, self.container.F
 
-        if isinstance(self.dt, sp.Expr):
-            subs = list(self.scheme.param.items()) + list(self.extra_parameters.items())
-            self.t += self.dt.subs(subs)
-        else:
-            self.t += self.dt
+        self.t += self.dt
         self.nt += 1
