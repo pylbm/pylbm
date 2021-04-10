@@ -377,7 +377,7 @@ class Simulation:
         for method in self.bc.methods:
             method.update_feq(self)
             method.set_rhs()
-            method.update(f, **self.extra_parameters, **kwargs)
+            method.update(f, **kwargs)
 
     @monitor
     def one_time_step(self, **kwargs):
