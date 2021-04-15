@@ -19,13 +19,13 @@ la = 4 # velocity of the scheme
 s_h  = [0., 2.,  2.,  1.5]
 s_q  = [0., 1.5, 1.5, 1.2]
 
-vitesse = [1,2,3,4]
+vitesse = [1, 2, 3, 4]
 polynomes = [1, LA*X, LA*Y, X**2-Y**2]
 
 d = {
     'dim': 2,
     'scheme_velocity': la,
-    'schemes':[
+    'schemes': [
         {
             'velocities': vitesse,
             'conserved_moments': h,

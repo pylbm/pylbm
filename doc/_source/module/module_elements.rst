@@ -32,4 +32,4 @@ The 3D elements are:
    CylinderCircle
    CylinderEllipse
    CylinderTriangle
-  
+   STLElement

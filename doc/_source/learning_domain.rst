@@ -64,6 +64,23 @@ The result is then visualized with the distance of the boundary points
 by using the method
 :py:meth:`visualize<pylbm.domain.Domain.visualize>`.
 
+Visualization of the domain
+================================================================
+
+The member function :py:meth:`visualize<pylbm.domain.Domain.visualize>` has several optional parameters:
+
+- `view_distance=False`,
+- `view_in=True`,
+- `view_out=True`,
+- `view_bound=False`,
+- `view_normal=False`,
+- `label=None`.
+
+.. literalinclude:: codes/domain_D1Q3_visualization.py
+    :lines: 12-
+
+.. plot:: codes/domain_D1Q3_visualization.py
+
 
 Examples in 2D
 ******************************
@@ -152,3 +169,16 @@ The cube with a hole with a :math:`D_3Q_{19}`
     :lines: 12-
 
 .. plot::  codes/domain_D3Q19_cube_hole.py
+
+The cube with a icosaedric hole
+================================================================
+
+The icosaedre is created from a STL file and added in the dictionary.
+The result is then visualized by using the method
+:py:meth:`visualize <pylbm.domain.Domain.visualize>`.
+
+
+.. literalinclude:: codes/domain_D3Q19_cube_icosaedre.py
+    :lines: 12-
+
+.. plot::  codes/domain_D3Q19_cube_icosaedre.py

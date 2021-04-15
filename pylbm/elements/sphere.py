@@ -171,10 +171,12 @@ class Sphere(Element):
                   viewer, color, viewlabel=False,
                   scale=np.ones(3), alpha=1.
                   ):
+        if not isinstance(color, list):
+            color = [color]
         v1 = self.radius*np.array([1, 0, 0])*scale
         v2 = self.radius*np.array([0, 1, 0])*scale
         v3 = self.radius*np.array([0, 0, 1])*scale
-        viewer.ellipse_3d(self.center*scale, v1, v2, v3, color, alpha=alpha)
+        viewer.ellipse_3d(self.center*scale, v1, v2, v3, color[0], alpha=alpha)
         if viewlabel:
             x, y, z = self.center[0], self.center[1], self.center[2]
             viewer.text(str(self.label[0]), [x, y, z])

@@ -1,0 +1,1 @@
+In this tutorial, we present the :math:`D_2Q_9` for Navier-Stokes equation to solve the Poiseuille flow in 2D by using pylbm.

@@ -19,7 +19,7 @@ s_h, s_q = 1.7, 1.5  # relaxation parameters
 d = {
     'dim': 1,
     'scheme_velocity': la,
-    'schemes':[
+    'schemes': [
         {
             'velocities': [1, 2],
             'conserved_moments': h,

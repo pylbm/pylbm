@@ -18,5 +18,7 @@ from .ellipsoid import Ellipsoid
 from .cylinder import CylinderCircle, CylinderEllipse, CylinderTriangle
 from .cylinder import Parallelepiped
 
+from .stl_element import STLElement
+
 __all__ = ['Circle', 'Ellipse', 'Parallelogram', 'Triangle',
-           'Sphere', 'Ellipsoid', 'CylinderCircle', 'CylinderEllipse', 'CylinderTriangle', 'Parallelepiped']
+           'Sphere', 'Ellipsoid', 'CylinderCircle', 'CylinderEllipse', 'CylinderTriangle', 'Parallelepiped', 'STLElement']

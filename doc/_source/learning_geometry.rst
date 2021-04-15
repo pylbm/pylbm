@@ -7,6 +7,8 @@ particular mesh but only with geometrical objects.
 All the geometrical informations are defined through a dictionary and
 put into an object of the class :py:class:`Geometry <pylbm.geometry.Geometry>`.
 
+**News**: it's now possible to add a 3D geometrical object from a STL file.
+
 First, the domain is put into a box: a segment in 1D, a rectangle in 2D, and
 a rectangular parallelepipoid in 3D.
 
@@ -18,7 +20,7 @@ In 2D, the elementary shapes are
 * a :py:class:`Parallelogram <pylbm.elements.Parallelogram>`
 * a :py:class:`Triangle <pylbm.elements.Triangle>`
 
-From version 0.2, the geometrical elements are implemented in 3D.
+From version 0.2, the geometrical elements are implemented in 3D, and from version 0.6, an element can be defined in a STL file.
 The elementary shapes are
 
 * a :py:class:`Sphere <pylbm.elements.Sphere>`
@@ -29,6 +31,8 @@ The elementary shapes are
   - :py:class:`Cylinder (Circle) <pylbm.elements.CylinderCircle>`
   - :py:class:`Cylinder (Ellipse) <pylbm.elements.CylinderEllipse>`
   - :py:class:`Cylinder (Triangle) <pylbm.elements.CylinderTriangle>`
+
+* a :py:class:`STLElement <pylbm.elements.STLElement>`
 
 Several examples of geometries can be found in
 demo/examples/geometry/
@@ -187,3 +191,16 @@ The cube :math:`[0,1]^3` and the spherical hole are created
 by the dictionary with the keys ``box`` and ``elements``.
 The result is then visualized by using the method
 :py:meth:`visualize <pylbm.geometry.Geometry.visualize>`.
+
+The cube :math:`[-3, 3]^3` with an icosaedric hole
+================================================================
+
+.. literalinclude:: codes/geometry_3D_cube_icosaedre.py
+    :lines: 11-
+
+.. plot:: codes/geometry_3D_cube_icosaedre.py
+
+The icosaedre is created from a STL file and added in the geometry.
+The result is then visualized by using the method
+:py:meth:`visualize <pylbm.geometry.Geometry.visualize>`.
+

@@ -547,9 +547,9 @@ class PlotWidget:
     def surface(self, x, y, z, color, alpha=0.5):
         return self.ax.plot_surface(
             x, y, z,
-            rstride=1, cstride=1, color=color,
+            rstride=4, cstride=4, color=color,
             shade=False, alpha=alpha,
-            antialiased=False, linewidth=.5
+            antialiased=False, linewidth=0., zorder=0
         )
 
     # pylint: disable=invalid-name, too-many-locals
@@ -565,7 +565,7 @@ class PlotWidget:
         return self.ax.plot_surface(
             x, y, z,
             rstride=4, cstride=4,
-            color=color[0], alpha=alpha
+            color=color, alpha=alpha, zorder=0
         )
 
     def markers(self, pos, size, color='k',

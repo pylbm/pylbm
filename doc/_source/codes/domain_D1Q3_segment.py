@@ -10,9 +10,9 @@ Example of a segment in 1D with a D1Q3
 from six.moves import range
 import pylbm
 dico = {
-    'box':{'x': [0, 1], 'label':0},
-    'space_step':0.1,
-    'schemes':[{'velocities':list(range(3))}],
+    'box': {'x': [0, 1], 'label': 0},
+    'space_step': 0.1,
+    'schemes': [{'velocities': list(range(3))}],
 }
 dom = pylbm.Domain(dico)
 dom.visualize()

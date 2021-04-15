@@ -62,13 +62,16 @@ class Stability:
         except:
             self.is_notebook = False
 
-    def eigenvalues(self, consm0, n_wv):
+    def eigenvalues(self, consm0, n_wv, extra_parameters=None, verbose=False):
         """
         Compute the eigenvalues of the amplification matrix
         for n_wv wave vectors
         """
+        extra_parameters = extra_parameters or {}
         to_subs = list((i, j) for i, j in zip(self.consm, consm0))
         to_subs += list(self.param.items())
+        to_subs += list(extra_parameters.items())
+
         relax_mat_f_num = recursive_sub(self.relax_mat_f, to_subs)
 
         if self.dim == 1:
@@ -82,7 +85,7 @@ class Stability:
             n_wv = v_xi.shape[1] #pylint: disable=unsubscriptable-object
         eigs = np.empty((n_wv, self.nvtot), dtype='complex')
 
-        if not self.is_notebook:
+        if not self.is_notebook and verbose:
             print("*"*80)
             print("Compute the eigenvalues")
             print_progress(0, n_wv, barLength=50)
@@ -97,14 +100,14 @@ class Stability:
         for k in range(n_wv):
             data = set_matrix(1j*v_xi[:, k])
             eigs[k] = np.linalg.eig(data)[0]
-            if not self.is_notebook:
+            if not self.is_notebook and verbose:
                 print_progress(k+1, n_wv, barLength=50)
 
         ind_pb, = np.where(np.max(np.abs(eigs), axis=1) > 1 + 1.e-10)
         pb_stable_l2 = v_xi[:, ind_pb]
         self.is_stable_l2 = pb_stable_l2.shape[1] == 0
 
-        if not self.is_notebook:
+        if not self.is_notebook and verbose:
             if self.is_stable_l2:
                 print("*"*80)
                 print("The scheme is stable")
@@ -260,21 +263,22 @@ class Stability:
 
             viewer_app.Fig(figsize=(6, 2))
             sliders = {}
-            item = 0
-            length = 0.8/len(dicosliders)
-            for k, v in dicosliders.items():
-                axe = plt.axes(
-                    [0.2, 0.1+item*length, 0.65, 0.8*length],
-                    facecolor=axcolor,
-                )
-                sliders[k] = Slider(
-                    axe,
-                    v.get('name', sp.pretty(k)),
-                    *v['range'],
-                    valinit=v['init'],
-                    valstep=v['step']
-                )
-                item += 1
+            if dicosliders:
+                item = 0
+                length = 0.8/len(dicosliders)
+                for k, v in dicosliders.items():
+                    axe = plt.axes(
+                        [0.2, 0.1+item*length, 0.65, 0.8*length],
+                        facecolor=axcolor,
+                    )
+                    sliders[k] = Slider(
+                        axe,
+                        v.get('name', sp.pretty(k)),
+                        *v['range'],
+                        valinit=v['init'],
+                        valstep=v['step']
+                    )
+                    item += 1
 
             def update(val):  # pylint: disable=unused-argument
                 for k, v in sliders.items():

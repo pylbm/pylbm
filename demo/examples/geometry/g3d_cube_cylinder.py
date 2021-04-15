@@ -36,3 +36,4 @@ dgeom = {
 geom = pylbm.Geometry(dgeom)
 print(geom)
 geom.visualize(viewlabel=True)
+

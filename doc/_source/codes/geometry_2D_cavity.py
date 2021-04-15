@@ -12,8 +12,8 @@ square = pylbm.Parallelogram((.1, .1), (.8, 0), (0, .8), isfluid=False)
 strip = pylbm.Parallelogram((0, .4), (1, 0), (0, .2), isfluid=True)
 circle = pylbm.Circle((.5, .5), .25, isfluid=True)
 inner_square = pylbm.Parallelogram((.4, .5), (.1, .1), (.1, -.1), isfluid=False)
-d = {'box':{'x': [0, 1], 'y': [0, 1], 'label':0},
-     'elements':[square, strip, circle, inner_square],
+d = {'box':{'x': [0, 1], 'y': [0, 1], 'label': 0},
+     'elements': [square, strip, circle, inner_square],
 }
 g = pylbm.Geometry(d)
 g.visualize()

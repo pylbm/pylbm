@@ -39,6 +39,7 @@ DOMAIN.visualize(
     view_in=False,
     view_out=False,
     view_bound=True,
+    view_geom=True,
     label=[1, 2, 3]
 )
 DOMAIN.visualize(

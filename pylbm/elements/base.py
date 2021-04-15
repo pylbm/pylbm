@@ -99,6 +99,33 @@ class Element(ABC):
 
         """
 
+    @abstractmethod
+    def distance(self, grid, v, dmax=None, normal=False):
+        """
+        Compute the distance in the v direction between the element
+        and the points defined in grid by (x, y) or (x, y, z).
+
+        Parameters
+        ----------
+
+        grid : ndarray
+            coordinates of the points
+        v : ndarray
+            direction of interest
+        dmax : float
+            distance max
+        normal : bool
+            return the normal vector if True (default False)
+
+        Returns
+        -------
+
+        ndarray
+            array of distances if normal is False and
+            the coordinates of the normal vectors
+            if normal is True
+        """
+
     def __repr__(self):
         return self.__str__()
 
