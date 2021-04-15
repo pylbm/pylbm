@@ -88,10 +88,6 @@ class Triangle(Element):
         log.info(self.__str__())
 
     def get_bounds(self):
-        """
-        return the smallest box where the triangle is.
-
-        """
         box = np.asarray(
             [
                 self.point,
@@ -103,28 +99,6 @@ class Triangle(Element):
         return np.min(box, axis=0), np.max(box, axis=0)
 
     def point_inside(self, grid):
-        """
-        return a boolean array which defines
-        if a point is inside or outside of the triangle.
-
-        Notes
-        -----
-
-        the edges of the triangle are considered as inside.
-
-        Parameters
-        ----------
-
-        grid : ndarray
-            coordinates of the points
-
-        Returns
-        -------
-
-        ndarray
-            Array of boolean (True inside the triangle, False otherwise)
-
-        """
         x, y = grid
         # Barycentric coordinates
         v2 = np.asarray([x - self.point[0], y - self.point[1]], dtype=object)

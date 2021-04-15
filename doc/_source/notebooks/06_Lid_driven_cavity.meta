@@ -1,0 +1,3 @@
+In this tutorial, we present the :math:`D_2Q_9` for Navier-Stokes equation
+to solve the lid driven cavity in 2D and the :math:`D3Q15` in 3D
+by using pylbm.

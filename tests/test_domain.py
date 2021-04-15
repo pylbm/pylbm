@@ -129,21 +129,24 @@ VISU_CASES = [
         'view_out': True,
         'view_bound': False,
         'view_distance': False,
-        'view_normal': False
+        'view_normal': False,
+        'view_geom': True,
     },
     {
         'view_in': False,
         'view_out': False,
         'view_bound': True,
         'view_distance': True,
-        'view_normal': False
+        'view_normal': False,
+        'view_geom': False,
     },
     {
         'view_in': False,
         'view_out': False,
         'view_bound': True,
         'view_distance': False,
-        'view_normal': True
+        'view_normal': True,
+        'view_geom': False,
     }
 ]
 

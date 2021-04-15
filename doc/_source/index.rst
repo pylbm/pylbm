@@ -7,9 +7,15 @@ pylbm is an all-in-one package for numerical simulations using Lattice Boltzmann
 
 This package gives all the tools to describe your lattice Boltzmann scheme in 1D, 2D and 3D problems.
 
-We choose the D'Humières formalism to describe the problem. You can have complex geometry with a set of simple shape like circle, sphere, ...
+We choose the D'Humières formalism (multiple relaxation times lattice Boltzmann method) to describe the problem. You can have complex geometry with a set of simple shape like circle, sphere, ... 
 
-pylbm performs the numerical scheme using Cython, NumPy or Loo.py from the scheme and the domain given by the user. Pythran and Numba wiil be available soon. pylbm has MPI support with mpi4py.
+pylbm performs the numerical scheme using Cython, NumPy or Loo.py from the scheme and the domain given by the user. Pythran and Numba will be available soon. pylbm has MPI support with mpi4py.
+
+News
+================================================================
+
+- You can now insert a 3D geometrical object from a STL file.
+- Your boundary conditions can now use the normal vector located on all the bounds
 
 Installation
 ============

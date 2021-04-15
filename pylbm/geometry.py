@@ -311,7 +311,7 @@ class Geometry:
                         couleurs[elem.label[k]]
                         for k in range(elem.number_of_bounds)
                     ]
-                    alpha_ = 1
+                    alpha_ = alpha
                 elem.visualize(view, color, viewlabel, alpha=alpha_)
         else:
             err_msg = "Error in geometry.visualize(): "

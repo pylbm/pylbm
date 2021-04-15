@@ -14,11 +14,11 @@ u, v, X = sp.symbols('u, v, X')
 
 c = 0.5
 d = {
-  'dim':1,
-  'scheme_velocity':1.,
-  'schemes':[{
+  'dim': 1,
+  'scheme_velocity': 1.,
+  'schemes': [{
     'velocities': [0, 1, 2],
-    'conserved_moments':[u, v],
+    'conserved_moments': [u, v],
     'polynomials': [1, X, 0.5*X**2],
     'equilibrium': [u, v, .5*c**2*u],
     'relaxation_parameters': [0., 0., 1.9],
