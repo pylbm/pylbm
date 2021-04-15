@@ -605,16 +605,16 @@ class BaseAlgorithm:
         fnew = simulation.container.Fnew.array
 
         t = simulation.t
-        if isinstance(simulation.dt, sp.Expr):
-            subs = list(simulation.scheme.param.items()) + list(simulation.extra_parameters.items())
-            dt = simulation.dt.subs(subs)
-        else:
-            dt = simulation.dt
+        dt = simulation.dt
 
-        # dt = simulation.dt
         in_or_out = simulation.domain.in_or_out
         valin = simulation.domain.valin
 
+        local = locals()
+        extra = {str(k): v for k, v in simulation.extra_parameters.items()}
+        if extra.get('lambda', None):
+            extra['lambda_'] = extra['lambda']
+        local.update(extra)
         return locals()
 
     def call_function(self, function_name, simulation,
