@@ -281,6 +281,83 @@ class Scheme:
     def __repr__(self):
         return self.__str__()
 
+    def vue(self):
+        import matplotlib.pyplot as plt
+        import matplotlib
+        import io
+        import base64
+        from traitlets import Unicode
+
+        try:
+            import ipyvuetify as v
+            import ipywidgets as widgets
+        except ImportError:
+            raise ImportError("Please install ipyvuetify")
+
+        panels = []
+        plt.ioff()
+        for k in range(self.nschemes):
+            myslice = slice(self.stencil.nv_ptr[k], self.stencil.nv_ptr[k+1])
+            P = [sp.latex(p, mode='equation*') for p in self.P[myslice]]
+            EQ = [sp.latex(eq, mode='equation*') for eq in self.EQ_no_swap[myslice]]
+            s = [sp.latex(s, mode='equation*') for s in self.s_no_swap[myslice]]
+
+            view = self.stencil.visualize(k=k)
+            view.fig.canvas.header_visible = False
+
+            panels.append(
+                v.ExpansionPanel(children=[
+                    v.ExpansionPanelHeader(children=[f'Scheme {k}'], class_='title'),
+                    v.ExpansionPanelContent(children=[
+                        v.Card(children=[
+                            v.CardTitle(style_='border-bottom: 1px solid black;', children=['Velocities']),
+                            v.CardText(children=[v.Row(children=[view.fig.canvas], justify='center')]),
+                        ], class_="ma-2", elevation=5),
+                        v.Card(children=[
+                            v.CardTitle(style_='border-bottom: 1px solid black;', children=['Polynomials']),
+                            v.CardText(children=[v.Row(children=[widgets.HTMLMath(p)], justify='center') for p in P])
+                        ], class_="ma-2", elevation=5),
+                        v.Card(children=[
+                            v.CardTitle(style_='border-bottom: 1px solid black;', children=['Equilibria']),
+                            v.CardText(children=[v.Row(children=[widgets.HTMLMath(eq)], justify='center') for eq in EQ])
+                        ], class_="ma-2", elevation=5),
+                        v.Card(children=[
+                            v.CardTitle(style_='border-bottom: 1px solid black;', children=['Relaxation parameters']),
+                            v.CardText(children=[v.Row(children=[widgets.HTMLMath(s_i)], justify='center') for s_i in s])
+                        ], class_="ma-2", elevation=5),
+                    ])
+                ], class_='ma-2 pa-2')
+            )
+
+        plt.ion()
+
+        panels.append(
+            v.ExpansionPanel(children=[
+                    v.ExpansionPanelHeader(children=['Moments matrix'], class_='title'),
+                    v.ExpansionPanelContent(children=[v.Row(children=[widgets.HTMLMath(f"{sp.latex(self.M_no_swap, mode='equation*')}")], justify='center')])
+            ], class_='ma-2 pa-2')
+        )
+
+        panels.append(
+            v.ExpansionPanel(children=[
+                    v.ExpansionPanelHeader(children=['Inverse of moments matrix'], class_='title'),
+                    v.ExpansionPanelContent(children=[v.Row(children=[widgets.HTMLMath(f"{sp.latex(self.invM_no_swap, mode='equation*')}")], justify='center')])
+            ], class_='ma-2 pa-2')
+        )
+
+        return v.ExpansionPanels(children=panels, multiple=True)
+
+    def _repr_mimebundle_(self, **kwargs):
+        data = {
+            'text/plain': repr(self),
+        }
+        data['application/vnd.jupyter.widget-view+json'] = {
+            'version_major': 2,
+            'version_minor': 0,
+            'model_id': self.vue()._model_id
+        }
+        return data
+
     def _create_moments_matrices(self):
         """
         Create the moments matrices M and M^{-1} used to transform the repartition functions into the moments
