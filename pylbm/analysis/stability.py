@@ -86,6 +86,9 @@ class Stability:
                 self.velocities.dot(wave_vector)
             )[np.newaxis, :] * relax_mat_f_num
 
+        for k in range(n_wv):
+            data = set_matrix(1j*v_xi[:, k])
+            eigs[k] = np.linalg.eig(data)[0]
             if self.output_txt:
                 print_progress(k+1, n_wv, barLength=50)
 
