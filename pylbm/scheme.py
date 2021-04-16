@@ -9,7 +9,6 @@ Description of a LBM scheme
 """
 import os
 import sys
-import tempfile
 import logging
 from textwrap import dedent
 
@@ -190,7 +189,6 @@ class Scheme:
         self._check_inverse(self.M, self.invM, 'M')
         self._check_inverse_of_Tu()
 
-        self.html_file = None
         log.info(self.__str__())
 
     def _get_space_and_time_symbolic(self):

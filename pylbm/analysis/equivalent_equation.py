@@ -10,7 +10,6 @@ Symbolic computation of equivalent equations
 
 #pylint: disable=invalid-name
 import os
-import tempfile
 
 import sympy as sp
 from ..symbolic import alltogether
@@ -97,8 +96,6 @@ class EquivalentEquation:
         for ic, c in enumerate(self.coeff_order2):
             for jc, cc in enumerate(c):
                 self.coeff_order2[ic][jc] = cc.subs(sublist_inv).doit()
-
-        self.html_file = None
 
     def __str__(self):
         from ..utils import header_string
