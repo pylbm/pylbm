@@ -40,21 +40,22 @@ with open("README.rst", "r") as fh:
 write_version_py()
 
 setup(
-    name           = "pylbm",
-    version        = VERSION,
-    description    = "A flexible Python package for lattice Boltzmann method",
+    name             = "pylbm",
+    version          = VERSION,
+    description      = "A flexible Python package for lattice Boltzmann method",
     long_description = long_description,
-    author         = "Benjamin Graille, Loic Gouarin",
-    author_email   = "benjamin.graille@universite-paris-saclay.fr, loic.gouarin@polytechnique.edu",
-    url            = "https://github.com/pylbm/pylbm",
-    license        = "BSD",
-    keywords       = "Lattice Boltzmann Methods",
-    classifiers    = CLASSIFIERS,
-    packages       = find_packages(exclude=['demo', 'doc', 'tests*']),
-    package_data   = {'pylbm': ['templates/*']},
-    python_requires='>=3.6',
-    install_requires=[
+    author           = "Benjamin Graille, Loic Gouarin",
+    author_email     = "benjamin.graille@universite-paris-saclay.fr, loic.gouarin@polytechnique.edu",
+    url              = "https://github.com/pylbm/pylbm",
+    license          = "BSD",
+    keywords         = "Lattice Boltzmann Methods",
+    classifiers      = CLASSIFIERS,
+    packages         = find_packages(exclude=['demo', 'doc', 'tests*']),
+    package_data     = {'pylbm': ['templates/*']},
+    python_requires  = '>=3.6',
+    install_requires = [
                         "numpy",
+                        "numpy-stl",
                         "matplotlib",
                         "sympy>=1.3",
                         "cython",
@@ -65,7 +66,7 @@ setup(
                         "cerberus",
                         "jinja2",
                       ],
-    extras_require={
+    extras_require  = {
         'gpu': ['pyopencl', 'loo.py==2017.2']
     }
 )
