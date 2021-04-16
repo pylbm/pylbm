@@ -7,7 +7,6 @@
 """
 Description of a LBM scheme
 """
-import os
 import sys
 import logging
 from textwrap import dedent

@@ -9,8 +9,6 @@ Symbolic computation of equivalent equations
 """
 
 #pylint: disable=invalid-name
-import os
-
 import sympy as sp
 from ..symbolic import alltogether
 
