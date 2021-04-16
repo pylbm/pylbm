@@ -56,8 +56,8 @@ class Fig:
     """
     def __init__(self, nrows=1, ncols=1, dim=0, figsize=(6, 4)):
         self.fig = plt.figure(figsize=figsize)
-        self._grid = plt.GridSpec(nrows, ncols)
-        self._plot_widgets = []
+        self._grid = plt.GridSpec(ncols=ncols, nrows=nrows, figure=self.fig)
+        self._plot_widgets = [[None]*ncols for i in range(nrows)]
         self.dim = dim
         self.shape = (nrows, ncols)
 
@@ -75,20 +75,25 @@ class Fig:
         """
         Get an axis
         """
-        widget = self._grid.__getitem__(idxs)
-        if self.dim < 3:
-            widget = PlotWidget(
-                self.fig.add_subplot(self._grid.__getitem__(idxs))
-            )
+        if isinstance(idxs, tuple):
+            coords = idxs
         else:
-            widget = PlotWidget(
-                self.fig.add_subplot(
-                    self._grid.__getitem__(idxs),
-                    projection='3d'
+            coords = (idxs, 0)
+
+        if self._plot_widgets[coords[0]][coords[1]] is None:
+            if self.dim < 3:
+                widget = PlotWidget(
+                    self.fig.add_subplot(self._grid[idxs])
                 )
-            )
-        self._plot_widgets += [widget]
-        return widget
+            else:
+                widget = PlotWidget(
+                    self.fig.add_subplot(
+                        self._grid[idxs],
+                        projection='3d'
+                    )
+                )
+            self._plot_widgets[coords[0]][coords[1]] = widget
+        return self._plot_widgets[coords[0]][coords[1]]
 
     # pylint: disable=attribute-defined-outside-init
     def animate(self, func, interval=50):
@@ -273,7 +278,7 @@ class PlotWidget:
         """
         get the title of the figure
         """
-        return self.ax.get_title()
+        return self.ax.title.get_text()
 
     @title.setter
     def title(self, text):
@@ -286,7 +291,7 @@ class PlotWidget:
         text : string
             the title
         """
-        self.ax.set_title(text)
+        self.ax.title.set_text(text)
 
     def legend(self,
                loc='upper left',
