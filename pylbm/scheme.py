@@ -293,26 +293,20 @@ class Scheme:
 
         try:
             import ipyvuetify as v
+            import ipywidgets as widgets
         except ImportError:
             raise ImportError("Please install ipyvuetify")
 
-        from pylbm.vuetify import mathjax
-
-
-        images = []
-        backend = matplotlib.get_backend()
-        matplotlib.use('Agg')
         panels = []
+        plt.ioff()
         for k in range(self.nschemes):
             myslice = slice(self.stencil.nv_ptr[k], self.stencil.nv_ptr[k+1])
             P = [sp.latex(p, mode='equation*') for p in self.P[myslice]]
             EQ = [sp.latex(eq, mode='equation*') for eq in self.EQ_no_swap[myslice]]
             s = [sp.latex(s, mode='equation*') for s in self.s_no_swap[myslice]]
 
-            self.stencil.visualize(k=k)
-            buf = io.BytesIO()
-            plt.savefig(buf, format="png", dpi=300)
-            image = base64.b64encode(buf.getvalue()).decode()
+            view = self.stencil.visualize(k=k)
+            view.fig.canvas.header_visible = False
 
             panels.append(
                 v.ExpansionPanel(children=[
@@ -320,40 +314,37 @@ class Scheme:
                     v.ExpansionPanelContent(children=[
                         v.Card(children=[
                             v.CardTitle(style_='border-bottom: 1px solid black;', children=['Velocities']),
-                            v.CardText(children=[
-                                v.Layout(children=[v.Flex(xs12=True, children=[
-                                    v.Img(style_='width: 300px', src=f'data:image/png;base64,{image}')
-                                ], align='center')], row=True, align_center=True)
-                            ]),
+                            v.CardText(children=[v.Row(children=[view.fig.canvas], justify='center')]),
                         ], class_="ma-2", elevation=5),
                         v.Card(children=[
                             v.CardTitle(style_='border-bottom: 1px solid black;', children=['Polynomials']),
-                            v.CardText(children=[mathjax(p) for p in P])
+                            v.CardText(children=[v.Row(children=[widgets.HTMLMath(p)], justify='center') for p in P])
                         ], class_="ma-2", elevation=5),
                         v.Card(children=[
                             v.CardTitle(style_='border-bottom: 1px solid black;', children=['Equilibria']),
-                            v.CardText(children=[mathjax(eq) for eq in EQ])
+                            v.CardText(children=[v.Row(children=[widgets.HTMLMath(eq)], justify='center') for eq in EQ])
                         ], class_="ma-2", elevation=5),
                         v.Card(children=[
                             v.CardTitle(style_='border-bottom: 1px solid black;', children=['Relaxation parameters']),
-                            v.CardText(children=[mathjax(s_i) for s_i in s])
+                            v.CardText(children=[v.Row(children=[widgets.HTMLMath(s_i)], justify='center') for s_i in s])
                         ], class_="ma-2", elevation=5),
                     ])
                 ], class_='ma-2 pa-2')
             )
-        matplotlib.use(backend)
+
+        plt.ion()
 
         panels.append(
             v.ExpansionPanel(children=[
                     v.ExpansionPanelHeader(children=['Moments matrix'], class_='title'),
-                    v.ExpansionPanelContent(children=[mathjax(f"{sp.latex(self.M_no_swap, mode='equation*')}")])
+                    v.ExpansionPanelContent(children=[v.Row(children=[widgets.HTMLMath(f"{sp.latex(self.M_no_swap, mode='equation*')}")], justify='center')])
             ], class_='ma-2 pa-2')
         )
 
         panels.append(
             v.ExpansionPanel(children=[
                     v.ExpansionPanelHeader(children=['Inverse of moments matrix'], class_='title'),
-                    v.ExpansionPanelContent(children=[mathjax(f"{sp.latex(self.invM_no_swap, mode='equation*')}")])
+                    v.ExpansionPanelContent(children=[v.Row(children=[widgets.HTMLMath(f"{sp.latex(self.invM_no_swap, mode='equation*')}")], justify='center')])
             ], class_='ma-2 pa-2')
         )
 

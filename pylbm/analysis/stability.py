@@ -51,7 +51,7 @@ class Stability:
         velocities = sp.Matrix(scheme.stencil.get_all_velocities())
         self.velocities = np.asarray(velocities).astype('float')
 
-    def eigenvalues(self, consm0, n_wv):
+    def eigenvalues(self, consm0, n_wv, extra_parameters=None):
         """
         Compute the eigenvalues of the amplification matrix
         for n_wv wave vectors

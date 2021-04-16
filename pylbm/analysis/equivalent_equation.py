@@ -143,10 +143,9 @@ class EquivalentEquation:
 
         try:
             import ipyvuetify as v
+            import ipywidgets as widgets
         except ImportError:
             raise ImportError("Please install ipyvuetify")
-
-        from pylbm.vuetify import mathjax
 
         t, x, y, z, U, Fx, Fy, Fz, Delta = sp.symbols('t, x, y, z, U, F_x, F_y, F_z, Delta_t')
         Bxx, Bxy, Bxz = sp.symbols('B_{xx}, B_{xy}, B_{xz}')
@@ -190,7 +189,7 @@ class EquivalentEquation:
             \\begin{align*}
             {%- for key, value in order.items() %}
                 {%- for i in range(consm|length) %}
-                    {{ key }}^{{ consm[i] }} &= {{ value[i] }} \\\\ \\\\
+                    {{ key }}^{ {{ consm[i] }} } &= {{ value[i] }} \\\\ \\\\
                 {% endfor %}
             {% endfor %}
             \\end{align*}
@@ -221,21 +220,41 @@ class EquivalentEquation:
         consm = [sp.latex(c) for c in self.consm]
         return v.Container(children=[
             v.Row(children=['The equivalent equation is given by']),
-            v.Row(children=[mathjax(sp.latex(sp.Eq(phys_equation, phys_equation_rhs), mode='equation*'))]),
+            v.Row(children=[
+                widgets.HTMLMath(sp.latex(sp.Eq(phys_equation, phys_equation_rhs), mode='equation*'))
+                ],
+                justify='center',
+            ),
             v.ExpansionPanels(children=[
                 v.ExpansionPanel(children=[
                     v.ExpansionPanelHeader(children=['Conserved moments'], class_="title"),
-                    v.ExpansionPanelContent(children=[mathjax(order0_template.render(consm=consm))])
+                    v.ExpansionPanelContent(children=[
+                        v.Row(children=[
+                            widgets.HTMLMath(order0_template.render(consm=consm))
+                            ],
+                            justify='center'
+                        )
+                    ])
                 ], class_="ma-2"),
                 v.ExpansionPanel(children=[
                     v.ExpansionPanelHeader(children=['Order 1'], class_="title"),
-                    v.ExpansionPanelContent(children=[mathjax(order1_template.render(consm=consm,
-                                                                                     order1_dict=order1_dict))])
+                    v.ExpansionPanelContent(children=[
+                        v.Row(children=[
+                            widgets.HTMLMath(order1_template.render(consm=consm, order1_dict=order1_dict))
+                            ],
+                            justify='center'
+                        )
+                    ])
                 ], class_="ma-2"),
                 v.ExpansionPanel(children=[
                     v.ExpansionPanelHeader(children=['Order 2'], class_="title"),
-                    v.ExpansionPanelContent(children=[mathjax(order2_template.render(consm=consm,
-                                                                                     order2_dict=order2_dict))])
+                    v.ExpansionPanelContent(children=[
+                        v.Row(children=[
+                            widgets.HTMLMath(order2_template.render(consm=consm, order2_dict=order2_dict))
+                            ],
+                            justify='center'
+                        )
+                    ])
                 ], class_="ma-2"),
             ])
         ])
