@@ -1,4 +1,5 @@
 numpy
+numpy-stl
 matplotlib
 sympy >=1.3
 cython
@@ -17,4 +18,3 @@ pytest-mpl
 codecov
 ipywidgets
 nbval
-numpy-stl
