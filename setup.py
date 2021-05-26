@@ -64,7 +64,7 @@ setup(
                         "colorlog",
                         "colorama",
                         "cerberus",
-                        "jinja2",
+                        "jinja2<3.0.0",
                       ],
     extras_require  = {
         'gpu': ['pyopencl', 'loo.py==2017.2']

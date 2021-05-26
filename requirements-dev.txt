@@ -8,7 +8,7 @@ mpi4py
 colorlog
 colorama
 cerberus
-jinja2
+jinja2<3.0.0
 pytest
 pylint
 pytest-pylint
