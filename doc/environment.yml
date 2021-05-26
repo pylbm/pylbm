@@ -1,7 +1,7 @@
 channels:
- - conda-forge  
+ - conda-forge
 dependencies:
-  - python=3.6
+  - python
   - mpi4py
   - jupyter
   - notebook

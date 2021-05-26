@@ -1,8 +1,7 @@
 version: 2
 conda:
-  environment: doc/environment.yml  
+  environment: doc/environment.yml
 python:
-  version: 3.6
   install:
     - method: pip
       path: .
