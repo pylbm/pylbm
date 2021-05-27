@@ -21,7 +21,7 @@ class H5File:
     class to manage hfd5 and xdmf file.
     """
     def __init__(self, mpi_topo, filename, path='', timestep=None, init_xdmf=False):
-        if timestep:
+        if timestep is not None:
             prefix = '_{}'.format(timestep)
         else:
             prefix = ''
