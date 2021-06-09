@@ -44,11 +44,18 @@ def distance_lines(x, y, v, p, vt, dmax, label, normal):
     normal is a boolean
     if normal is True, the normal vector is also returned
     """
+    # Warning: the shape can be
+    #   - (x.size, y.size) for the 2D geometries
+    #   - x.shape = y.shape for the 3D geometries
+    if len(x.shape) == 1:
+        shape = (x.size, y.size)
+    else:
+        shape = x.shape
     v2 = np.asarray([x, y], dtype=object)
-    alpha = tgv*np.ones((x.size, y.size))
-    border = -np.ones((x.size, y.size))
-    normal_x = np.zeros((x.size, y.size))
-    normal_y = np.zeros((x.size, y.size))
+    alpha = tgv*np.ones(shape)
+    border = -np.ones(shape)
+    normal_x = np.zeros(shape)
+    normal_y = np.zeros(shape)
     for i, vti in enumerate(vt):
         tmp1, tmp2 = intersection_two_lines(v2, v, p[i], vti)
         if tmp1 is not None:
@@ -86,9 +93,9 @@ def distance_lines(x, y, v, p, vt, dmax, label, normal):
                 normal_y[ind] = -sign*vti[0]/nv
     alpha[alpha == tgv] = -1.
     if normal:
-        normal_vect = np.zeros((x.size, y.size, 2))
-        normal_vect[:, :, 0] = normal_x
-        normal_vect[:, :, 1] = normal_y
+        normal_vect = np.zeros(tuple(list(shape) + [2]))
+        normal_vect[..., 0] = normal_x
+        normal_vect[..., 1] = normal_y
     else:
         normal_vect = None
     return alpha, border, normal_vect
