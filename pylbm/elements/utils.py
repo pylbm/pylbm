@@ -47,7 +47,7 @@ def distance_lines(x, y, v, p, vt, dmax, label, normal):
     # Warning: the shape can be
     #   - (x.size, y.size) for the 2D geometries
     #   - x.shape = y.shape for the 3D geometries
-    if len(x.shape) == 1:
+    if x.shape[1] == 1 and y.shape[0] == 1:
         shape = (x.size, y.size)
     else:
         shape = x.shape
