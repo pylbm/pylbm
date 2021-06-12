@@ -2,6 +2,7 @@
 set -e
 case `uname` in
 Linux) set -x;
+  sudo apt update
   sudo apt install -y mpich libmpich-dev
   ;;
 Darwin) set -x;

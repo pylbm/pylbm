@@ -189,7 +189,8 @@ class Simulation:
     def dt(self):
         if isinstance(self.dt_, sp.Expr):
             subs = list(self.scheme.param.items()) + list(self.extra_parameters.items())
-            return self.dt_.subs(subs)
+            self.dt_ = float(self.dt_.subs(subs))
+            return self.dt_
         else:
             return self.dt_
 

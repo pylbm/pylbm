@@ -841,6 +841,11 @@ class NumPyPrinter(PythonCodePrinter):
         from sympy.core.power import Pow
         if expr.exp.is_integer and expr.exp.is_negative:
             expr = Pow(expr.base, expr.exp.evalf(), evaluate=False)
+        if expr.exp.is_integer and not expr.exp.is_negative:
+            line = self._print(expr.base)
+            for i in range(1, expr.exp):
+                line += '*' + self._print(expr.base)
+            return f'({line})'
         return self._hprint_Pow(expr, rational=rational, sqrt='numpy.sqrt')
 
     def _print_Min(self, expr):
