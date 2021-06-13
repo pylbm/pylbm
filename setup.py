@@ -10,6 +10,7 @@ CLASSIFIERS = [
     "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
     'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3 :: Only',
     "Topic :: Software Development",
     'Topic :: Software Development :: Code Generators',
@@ -23,7 +24,7 @@ CLASSIFIERS = [
 
 
 MAJOR = "0"
-MINOR = "6"
+MINOR = "7"
 PATCH = "0"
 VERSION = "{0}.{1}.{2}".format(MAJOR, MINOR, PATCH)
 
