@@ -24,7 +24,7 @@ CLASSIFIERS = [
 
 
 MAJOR = "0"
-MINOR = "7"
+MINOR = "8"
 PATCH = "0"
 VERSION = "{0}.{1}.{2}".format(MAJOR, MINOR, PATCH)
 
