@@ -45,9 +45,9 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install sympy=${{ matrix.sympy-version }}
           pip install flake8 pytest
           pip install -r requirements-dev.txt
+          pip install sympy==${{ matrix.sympy-version }}
 
       - name: Install pylbm
         run: |
