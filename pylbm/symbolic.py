@@ -21,28 +21,10 @@ ix_, iy_, iz_, iv_ = sp.symbols("ix_, iy_, iz_, iv_", integer=True) #pylint: dis
 rel_ux, rel_uy, rel_uz = sp.symbols('rel_ux, rel_uy, rel_uz', real=True) #pylint: disable=invalid-name
 
 class SymbolicVector(sp.Matrix):
-    @classmethod
-    def _new(cls, *args, copy=True, **kwargs):
-        if copy is False:
-            # The input was rows, cols, [list].
-            # It should be used directly without creating a copy.
-            if len(args) != 3:
-                raise TypeError("'copy=False' requires a matrix be initialized as rows,cols,[list]")
-            rows, cols, flat_list = args
-        else:
-            rows, cols, flat_list = cls._handle_creation_inputs(*args, **kwargs)
-            flat_list = list(flat_list) # create a shallow copy
-        self = object.__new__(cls)
-        self.rows = rows
-        self.cols = cols
-        # if cols != 1:
-        #     raise ShapeError("SymVector input must be a list")
-        self._mat = flat_list
-        return self
 
     def __add__(self, other):
         if np.isscalar(other):
-            mat = [a + other for a in self._mat]
+            mat = [a + other for a in self]
             return SymbolicVector._new(self.rows, self.cols, mat, copy=False)
         elif isinstance(other, (np.ndarray, SymbolicVector)):
             if self.shape[0] != other.shape[0]:
@@ -51,7 +33,7 @@ class SymbolicVector(sp.Matrix):
                 for s in other.shape[1:]:
                     if s != 1:
                         raise ShapeError("SymbolicVector size mismatch: %s + %s." % (self.shape, other.shape))
-            mat = [a + b for a,b in zip(self._mat, other)]
+            mat = [a + b for a,b in zip(self, other)]
             return SymbolicVector._new(self.rows, self.cols, mat, copy=False)
         else:
             return super(SymbolicVector, self).__add__(other)
@@ -61,7 +43,7 @@ class SymbolicVector(sp.Matrix):
 
     def _multiply(self, other, method):
         if np.isscalar(other):
-            mat = [a*other for a in self._mat]
+            mat = [a*other for a in self]
             return SymbolicVector._new(self.rows, self.cols, mat, copy=False)
         elif isinstance(other, (np.ndarray, SymbolicVector, sp.MatrixSymbol)):
             if self.shape[0] != other.shape[0]:
@@ -70,7 +52,7 @@ class SymbolicVector(sp.Matrix):
                 for s in other.shape[1:]:
                     if s != 1:
                         raise ShapeError("SymbolicVector size mismatch: %s * %s." % (self.shape, other.shape))
-            mat = [a*b for a,b in zip(self._mat, other)]
+            mat = [a*b for a,b in zip(self, other)]
             return SymbolicVector._new(self.rows, self.cols, mat, copy=False)
         else:
             return getattr(super(SymbolicVector, self), method)(other)

@@ -83,7 +83,7 @@ class Monitoring:
             - self.tree.time
         self.tree = self.tree.del_node()
 
-    def __str__(self):
+    def print(self):
         if mpi.COMM_WORLD.rank == 0:
             titles = [
                 '%', 'module name', 'function name',
@@ -110,7 +110,7 @@ class Monitoring:
 Monitor = Monitoring()  # pylint: disable=invalid-name
 
 if options().monitoring:
-    atexit.register(Monitor.__str__)
+    atexit.register(Monitor.print)
 
 
 def monitor(f):
