@@ -1,5 +1,7 @@
 
 name: pylbm-env
+channels:
+  - conda-forge
 dependencies:
   - numpy
   - numpy-stl
