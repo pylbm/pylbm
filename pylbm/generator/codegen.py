@@ -108,7 +108,7 @@ from sympy import __version__ as sympy_version
 from .ast import Assignment, For, If, WithBody
 # from sympy.codegen import Assignment
 from sympy.core import Symbol, S, Tuple, Equality, Function, Basic
-from sympy.core.compatibility import is_sequence
+from sympy.utilities.iterables import is_sequence
 from sympy.tensor import Idx, Indexed, IndexedBase
 from sympy.matrices import (MatrixSymbol, ImmutableMatrix, MatrixBase,
                             MatrixExpr, MatrixSlice)

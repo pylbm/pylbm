@@ -133,12 +133,11 @@ from collections import defaultdict
 
 from sympy import Lt, Le, Ge, Gt
 from sympy.core import Symbol, Tuple, Dummy
-from sympy.core.compatibility import is_sequence
 from sympy.core.basic import Basic
 from sympy.core.expr import Expr
 from sympy.core.numbers import Float, Integer, oo
 from sympy.core.sympify import _sympify, sympify, SympifyError
-from sympy.utilities.iterables import iterable
+from sympy.utilities.iterables import iterable, is_sequence
 
 
 def _mk_Tuple(args):
@@ -859,8 +858,6 @@ class For(Token, WithBody):
 
     @classmethod
     def _construct_body(cls, itr):
-        from sympy.core.compatibility import is_sequence
-
         if isinstance(itr, CodeBlock):
             return itr
         elif is_sequence(itr):
@@ -871,7 +868,6 @@ class For(Token, WithBody):
     @classmethod
     def _construct_target(cls, itr):
         from sympy.tensor import Idx
-        from sympy.core.compatibility import is_sequence
         if isinstance(itr, Idx):
             return Tuple(itr)
         elif is_sequence(itr):
