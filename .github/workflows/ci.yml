@@ -44,7 +44,7 @@ jobs:
           environment-name: pylbm-env
           extra-specs: |
             python=${{ matrix.python-version }}
-            sympy==${{ matrix.sympy-version }}
+            sympy=${{ matrix.sympy-version }}
 
 
       # - name: Set up Python ${{ matrix.python-version }}
