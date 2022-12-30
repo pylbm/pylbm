@@ -59,10 +59,12 @@ jobs:
       #     pip install sympy==${{ matrix.sympy-version }}
 
       - name: Install pylbm
+        shell: bash -l {0}
         run: |
-          python setup.py install --user
+          python setup.py install
 
       - name: Lint with flake8
+        shell: bash -l {0}
         run: |
           # stop the build if there are Python syntax errors or undefined names
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
@@ -70,6 +72,7 @@ jobs:
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
       - name: Test with pytest
+        shell: bash -l {0}
         run: |
           pytest --pylint --pylint-rcfile=.pyrcfile --pylint-error-types=EF pylbm
           pytest --nbval-lax notebooks
