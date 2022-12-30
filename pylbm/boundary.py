@@ -425,8 +425,8 @@ class BouzidiBounceBack(BoundaryMethod):
         ksym = self.stencil.get_symmetric()[k]
         v = self.stencil.get_all_velocities()
 
-        iload1 = np.zeros(self.istore.shape, dtype=np.int)
-        iload2 = np.zeros(self.istore.shape, dtype=np.int)
+        iload1 = np.zeros(self.istore.shape, dtype=np.int32)
+        iload2 = np.zeros(self.istore.shape, dtype=np.int32)
 
         mask = self.distance < .5
         iload1[0, mask] = ksym[mask]

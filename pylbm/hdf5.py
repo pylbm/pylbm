@@ -110,8 +110,8 @@ class H5File:
                 self.region[i].insert(0, 0)
                 for j in range(1, len(self.region[i])):
                     self.region[i][j] += self.region[i][j-1]
-            #self.region = np.asarray(self.region, dtype=np.int)
-            #self.region = np.concatenate((np.zeros((self.dim, 1), dtype=np.int), np.cumsum(self.region, axis=1)), axis=1)
+            #self.region = np.asarray(self.region, dtype=np.int32)
+            #self.region = np.concatenate((np.zeros((self.dim, 1), dtype=np.int32), np.cumsum(self.region, axis=1)), axis=1)
             #print(self.region)
             for i in range(self.dim):
                 dset = self.h5file.create_dataset("x_{}".format(i), [self.global_size[i]], dtype=np.double)
@@ -243,7 +243,7 @@ class H5File:
             self.xdmf_file.write("""<?xml version="1.0" ?>
 <!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>
 <Xdmf>
- <Domain>           
+ <Domain>
             """)
             if self.dim == 2:
                 self.xdmf_file.write("""
@@ -260,7 +260,7 @@ class H5File:
             for i in range(self.dim):
                 self.xdmf_file.write("""
                 <DataItem Format="HDF" Dimensions="{0}">
-                    {1}:/x_{2} 
+                    {1}:/x_{2}
                 </DataItem>
                 """.format(self.global_size[i], self.filename + '.h5', i))
 
@@ -270,7 +270,7 @@ class H5File:
                 self.xdmf_file.write("""
                 <Attribute Name="{0}" AttributeType="Scalar" Center="Node">
                 <DataItem Format="HDF" Dimensions="{1}">
-                {2} 
+                {2}
                 </DataItem>
                 </Attribute>
                 """.format(k, ' '.join(map(str, self.global_size[::-1])), v))
@@ -279,7 +279,7 @@ class H5File:
                 self.xdmf_file.write("""
                 <Attribute Name="{0}" AttributeType="Vector" Center="Node">
                 <DataItem Format="HDF" Dimensions="{1} {2}">
-                {3} 
+                {3}
                 </DataItem>
                 </Attribute>
                 """.format(k, ' '.join(map(str, self.global_size[::-1])), self.dim, v))
