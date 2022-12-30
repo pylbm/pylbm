@@ -60,7 +60,7 @@ jobs:
 
       - name: Install pylbm
         run: |
-          python setup.py install
+          python setup.py install --user
 
       - name: Lint with flake8
         run: |
