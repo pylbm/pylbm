@@ -37,17 +37,27 @@ jobs:
       - name: Install MPI (${{ matrix.mpi }})
         run: bash .github/workflows/mpi/install-${{ matrix.mpi }}.sh
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+      - name: install mamba
+        uses: mamba-org/provision-with-micromamba@main
         with:
-          python-version: ${{ matrix.python-version }}
+          environment-file: conda/environment.yml
+          environment-name: pylbm-env
+          extra-specs: |
+            python=${{ matrix.python-version }}
+            sympy==${{ matrix.sympy-version }}
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install flake8 pytest
-          pip install -r requirements-dev.txt
-          pip install sympy==${{ matrix.sympy-version }}
+
+      # - name: Set up Python ${{ matrix.python-version }}
+      #   uses: actions/setup-python@v2
+      #   with:
+      #     python-version: ${{ matrix.python-version }}
+
+      # - name: Install dependencies
+      #   run: |
+      #     python -m pip install --upgrade pip
+      #     pip install flake8 pytest
+      #     pip install -r requirements-dev.txt
+      #     pip install sympy==${{ matrix.sympy-version }}
 
       - name: Install pylbm
         run: |

@@ -1,0 +1,25 @@
+
+name: pylbm-env
+dependencies:
+  - numpy
+  - numpy-stl
+  - matplotlib
+  - sympy
+  - cython
+  - h5py
+  - mpi4py
+  - colorlog
+  - colorama
+  - cerberus
+  - jinja2<3.0.0
+  - pytest
+  - pylint
+  - pytest-pylint
+  - typed-ast
+  - pytest
+  - pytest-cov
+  - pytest-mpl
+  - codecov
+  - ipywidgets
+  - nbval
+  - flake8
