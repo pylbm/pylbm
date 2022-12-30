@@ -3,7 +3,6 @@
 """
 test: True
 """
-from six.moves import range
 import numpy as np
 import sympy as sp
 import mpi4py.MPI as mpi
@@ -139,7 +138,7 @@ def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
         image = ax.image(sol.m[T].T, cmap='cubehelix', clim=[Tu, Td+.25])
 
         def update(iframe):
-            nrep = 1    
+            nrep = 1
             for i in range(nrep):
                 sol.one_time_step()
             image.set_data(sol.m[T].T)

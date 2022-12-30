@@ -12,7 +12,7 @@ Base element
 
 import logging
 from abc import ABC, abstractmethod
-from six.moves import range
+
 import numpy as np
 
 from .utils import distance_lines, distance_ellipse

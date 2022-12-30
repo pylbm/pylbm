@@ -7,7 +7,7 @@
 """
 Example of a square in 2D with a circular hole with a D2Q13
 """
-from six.moves import range
+
 import pylbm
 dico = {
     'box': {'x': [0, 1], 'y': [0, 1], 'label': 0},

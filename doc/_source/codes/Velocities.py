@@ -1,5 +1,5 @@
 
-from six.moves import range
+
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors

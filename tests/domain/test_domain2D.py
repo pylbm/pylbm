@@ -1,4 +1,4 @@
-from six.moves import range
+
 import numpy as np
 import copy
 import os

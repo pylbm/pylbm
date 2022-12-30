@@ -8,7 +8,7 @@
 # pylint: disable=missing-docstring
 
 import logging
-from six.moves import range
+
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse, Polygon

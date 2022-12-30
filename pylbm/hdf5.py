@@ -9,7 +9,6 @@ HDF5 module
 """
 import os
 import logging
-from six.moves import range
 import numpy as np
 import h5py
 import mpi4py.MPI as mpi

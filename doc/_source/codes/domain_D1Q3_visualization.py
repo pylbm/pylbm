@@ -7,7 +7,7 @@
 """
 Visualization options for the domain
 """
-from six.moves import range
+
 import pylbm
 dico = {
     'box': {'x': [0, 1], 'label': [0, 1]},

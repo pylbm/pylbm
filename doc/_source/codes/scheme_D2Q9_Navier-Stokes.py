@@ -8,7 +8,7 @@
 """
 Example of a D2Q9 for Navier-Stokes
 """
-from six.moves import range
+
 import sympy as sp
 import pylbm
 rho, qx, qy, X, Y = sp.symbols('rho, qx, qy, X, Y')

@@ -4,7 +4,6 @@
 test: True
 """
 import pylbm
-from six.moves import range
 import sympy as sp
 import math
 import mpi4py.MPI as mpi
