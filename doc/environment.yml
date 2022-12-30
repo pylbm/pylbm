@@ -12,3 +12,4 @@ dependencies:
   - jupyter_sphinx
   - numpydoc
   - numpy-stl
+  - markupsafe=2.0
