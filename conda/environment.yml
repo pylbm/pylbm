@@ -13,7 +13,7 @@ dependencies:
   - colorlog
   - colorama
   - cerberus
-  - jinja2<3.0.0
+  - jinja2
   - pytest
   - pylint
   - pytest-pylint
