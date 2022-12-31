@@ -12,4 +12,5 @@ dependencies:
   - jupyter_sphinx
   - numpydoc
   - numpy-stl
+  - jinja2<3.0.0
   - markupsafe=2.0
