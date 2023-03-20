@@ -258,40 +258,6 @@ def recursive_sub(expr, replace):
             expr = new_expr
     return new_expr
 
-def getargspec_permissive(func):
-    """
-    find in https://github.com/neithere/argh/blob/master/argh/compat.py
-
-    An `inspect.getargspec` with a relaxed sanity check to support Cython.
-    Motivation:
-        A Cython-compiled function is *not* an instance of Python's
-        types.FunctionType.  That is the sanity check the standard Py2
-        library uses in `inspect.getargspec()`.  So, an exception is raised
-        when calling `argh.dispatch_command(cythonCompiledFunc)`.  However,
-        the CyFunctions do have perfectly usable `.func_code` and
-        `.func_defaults` which is all `inspect.getargspec` needs.
-        This function just copies `inspect.getargspec()` from the standard
-        library but relaxes the test to a more duck-typing one of having
-        both `.func_code` and `.func_defaults` attributes.
-    """
-    if inspect.ismethod(func):
-        func = func.im_func
-
-    # Py2 Stdlib uses isfunction(func) which is too strict for Cython-compiled
-    # functions though such have perfectly usable func_code, func_defaults.
-    if not (hasattr(func, "func_code") and hasattr(func, "func_defaults")):
-        raise TypeError('{!r} missing func_code or func_defaults'.format(func))
-
-    args, varargs, varkw = inspect.getargs(func.func_code)
-    return inspect.ArgSpec(args, varargs, varkw, func.func_defaults)
-
-PY3 = sys.version_info >= (3,)
-
-if PY3:
-    from inspect import getfullargspec as getargspec
-else:
-    getargspec = getargspec_permissive #pylint: disable=invalid-name
-
 def call_genfunction(function, args):
     from .monitoring import monitor
     from .context import queue
@@ -300,6 +266,6 @@ def call_genfunction(function, args):
         d = {k:args[k] for k in func_args} #pylint: disable=invalid-name
         d['queue'] = queue
     except: #pylint: disable=bare-except
-        func_args = getargspec(function).args
+        func_args = inspect.getfullargspec(function).args
         d = {k:args[k] for k in func_args} #pylint: disable=invalid-name
     monitor(function)(**d)

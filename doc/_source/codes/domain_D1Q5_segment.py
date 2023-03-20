@@ -7,7 +7,7 @@
 """
 Example of a segment in 1D with a D1Q5
 """
-from six.moves import range
+
 import pylbm
 dico = {
     'box': {'x': [0, 1], 'label': 0},

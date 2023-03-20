@@ -7,7 +7,7 @@
 """
 Example of the backward facing step in 2D with a D2Q9
 """
-from six.moves import range
+
 import pylbm
 dico = {
     'box': {'x': [0, 3], 'y': [0, 1], 'label': 0},

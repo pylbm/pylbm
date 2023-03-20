@@ -3,7 +3,6 @@
 """
 test: True
 """
-from six.moves import range
 import pylbm
 import sympy as sp
 import math

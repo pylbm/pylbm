@@ -8,7 +8,7 @@
 """
 Example of a D3Q6 for advection
 """
-from six.moves import range
+
 import sympy as sp
 import pylbm
 u, X, Y, Z = sp.symbols('u, X, Y, Z')

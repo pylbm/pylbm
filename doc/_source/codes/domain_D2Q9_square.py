@@ -7,7 +7,7 @@
 """
 Example of a square in 2D with a D2Q9
 """
-from six.moves import range
+
 import pylbm
 dico = {
     'box': {'x': [0, 1], 'y': [0, 1], 'label': 0},

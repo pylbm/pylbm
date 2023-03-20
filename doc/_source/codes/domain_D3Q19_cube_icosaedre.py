@@ -7,7 +7,7 @@
 """
 Example of the cube in 3D with a D3Q19
 """
-from six.moves import range
+
 import pylbm
 dico = {
     'box': {'x': [-3, 3], 'y': [-3, 3], 'z': [-3, 3], 'label': 0},

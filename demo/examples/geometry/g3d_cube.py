@@ -9,7 +9,7 @@
 """
 Example of a 3D geometry: the cube [0,1] x [0,1] x [0,1]
 """
-from six.moves import range
+
 import pylbm
 
 # pylint: disable=invalid-name

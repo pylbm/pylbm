@@ -9,7 +9,7 @@
 """
 Example of a 9 velocities scheme in 2D
 """
-from six.moves import range
+
 import pylbm
 
 # pylint: disable=invalid-name

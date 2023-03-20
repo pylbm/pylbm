@@ -1,5 +1,4 @@
 
-from six.moves import range
 import numpy as np
 import sympy as sp
 import pylbm
