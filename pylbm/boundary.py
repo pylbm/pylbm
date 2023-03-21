@@ -42,6 +42,7 @@ class BoundaryVelocity:
         if self.indices.size != 0:
             self.indices += np.asarray(v.v)[:, np.newaxis]
         self.distance = np.array(domain.distance[(num,) + ind])
+        self.normal = np.array(domain.normal[(num,) + ind])  #
 
 class Boundary:
     """
@@ -92,6 +93,8 @@ class Boundary:
         distance = {}
         value_bc = {}
         time_bc = {}
+        normal = {}
+
 
         #pylint: disable=too-many-nested-blocks
         for label in self.domain.list_of_labels():
@@ -108,6 +111,7 @@ class Boundary:
                     if self.bv_per_label[label][stencil.unum2index[numk]].indices.size != 0:
                         indices = self.bv_per_label[label][stencil.unum2index[numk]].indices
                         distance_tmp = self.bv_per_label[label][stencil.unum2index[numk]].distance
+                        normal_tmp = self.bv_per_label[label][stencil.unum2index[numk]].normal
                         velocity = (inumk + stencil.nv_ptr[k])*np.ones(indices.shape[1], dtype=np.int32)[np.newaxis, :]
                         ilabel_tmp = label*np.ones(indices.shape[1], dtype=np.int32)
                         istore_tmp = np.concatenate([velocity, indices])
@@ -115,15 +119,18 @@ class Boundary:
                             istore[v] = istore_tmp.copy()
                             ilabel[v] = ilabel_tmp.copy()
                             distance[v] = distance_tmp.copy()
+                            normal[v] = normal_tmp.copy()
                         else:
                             istore[v] = np.concatenate([istore[v], istore_tmp], axis=1)
                             ilabel[v] = np.concatenate([ilabel[v], ilabel_tmp])
                             distance[v] = np.concatenate([distance[v], distance_tmp])
+                            normal[v] = np.concatenate([normal[v], normal_tmp])  #
 
         # for each method create the instance associated
         self.methods = []
         for k in list(istore.keys()):
-            self.methods.append(k(istore[k], ilabel[k], distance[k], stencil,
+            print(k)
+            self.methods.append(k(istore[k], ilabel[k], distance[k], normal[k], stencil,
                                   value_bc, time_bc, domain.distance.shape, generator))
 
 
@@ -154,12 +161,13 @@ class BoundaryMethod:
        the prescribed values on the border
 
     """
-    def __init__(self, istore, ilabel, distance, stencil, value_bc, time_bc, nspace, generator):
+    def __init__(self, istore, ilabel, distance, normal, stencil, value_bc, time_bc, nspace, generator):
         self.istore = istore
         self.feq = np.zeros((stencil.nv_ptr[-1], istore.shape[1]))
         self.rhs = np.zeros(istore.shape[1])
         self.ilabel = ilabel
         self.distance = distance
+        self.normal = normal
         self.stencil = stencil
         self.time_bc = {}
         self.value_bc = {}
@@ -413,8 +421,8 @@ class BouzidiBounceBack(BoundaryMethod):
     .. plot:: codes/Bouzidi.py
 
     """
-    def __init__(self, istore, ilabel, distance, stencil, value_bc, time_bc, nspace, generator):
-        super(BouzidiBounceBack, self).__init__(istore, ilabel, distance, stencil, value_bc, time_bc, nspace, generator)
+    def __init__(self, istore, ilabel, distance, normal, stencil, value_bc, time_bc, nspace, generator):
+        super(BouzidiBounceBack, self).__init__(istore, ilabel, distance, normal, stencil, value_bc, time_bc, nspace, generator)
         self.s = np.empty(self.istore.shape[1])
 
     def set_iload(self):
