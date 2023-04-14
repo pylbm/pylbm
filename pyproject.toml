@@ -1,0 +1,73 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pylbm"
+dynamic = ["version"]
+description = "A flexible Python package for lattice Boltzmann method"
+readme = "README.rst"
+license = "BSD-3-Clause"
+requires-python = ">=3.6"
+authors = [
+    { name = "Benjamin Graille", email = "benjamin.graille@universite-paris-saclay.fr" },
+    { name = "Loic Gouarin", email = "loic.gouarin@polytechnique.edu" },
+]
+keywords = [
+    "Boltzmann",
+    "Lattice",
+    "Methods",
+]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: Unix",
+    "Programming Language :: Cython",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Code Generators",
+]
+dependencies = [
+    "cerberus",
+    "colorama",
+    "colorlog",
+    "cython",
+    "h5py",
+    "jinja2",
+    "matplotlib",
+    "mpi4py",
+    "numpy",
+    "numpy-stl",
+    "sympy>=1.3",
+]
+
+[project.optional-dependencies]
+gpu = [
+    "loo.py==2017.2",
+    "pyopencl",
+]
+
+[project.urls]
+Source = "https://github.com/pylbm/pylbm"
+Documentation = "https://pylbm.readthedocs.io"
+
+[tool.hatch.version]
+path = "pylbm/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/pylbm",
+]

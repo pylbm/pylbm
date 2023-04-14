@@ -18,7 +18,8 @@ init()
 # pylint: disable=wildcard-import
 # pylint: disable=invalid-name
 
-from .version import version as __version__  # noqa: E402
+__version__ = "0.8.0"
+
 from .domain import Domain                   # noqa: E402
 from .stencil import Stencil                 # noqa: E402
 from .simulation import Simulation           # noqa: E402
