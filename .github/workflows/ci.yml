@@ -45,7 +45,6 @@ jobs:
           extra-specs: |
             sympy=${{ matrix.sympy-version }}
 
-
       # - name: Set up Python ${{ matrix.python-version }}
       #   uses: actions/setup-python@v2
       #   with:
@@ -61,7 +60,7 @@ jobs:
       - name: Install pylbm
         shell: bash -l {0}
         run: |
-          python setup.py install
+          pip install .
 
       - name: Lint with flake8
         shell: bash -l {0}
