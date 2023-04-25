@@ -129,7 +129,6 @@ class Boundary:
         # for each method create the instance associated
         self.methods = []
         for k in list(istore.keys()):
-            print(k)
             self.methods.append(k(istore[k], ilabel[k], distance[k], normal[k], stencil,
                                   value_bc, time_bc, domain.distance.shape, generator))
 
