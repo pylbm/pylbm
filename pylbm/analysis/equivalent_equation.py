@@ -31,8 +31,8 @@ class EquivalentEquation:
         func = []
         for i in range(nconsm):
             func.append(
-                sp.Function("f{}".format(i))(t, x, y, z)
-            )  # pylint: disable=not-callable
+                sp.Function("f{}".format(i))(t, x, y, z)  # pylint: disable=not-callable
+            )
         func = sp.Matrix(func)
 
         sublist = [(i, j) for i, j in zip(consm, func)]
