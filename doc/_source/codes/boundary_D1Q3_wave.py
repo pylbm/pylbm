@@ -1,4 +1,3 @@
-
 # Authors:
 #     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -11,34 +10,38 @@ Example of a D1Q3 for the wave equation
 import numpy as np
 import sympy as sp
 import pylbm
-u, v, X, c, LA = sp.symbols('u, v, X, c, LA')
+
+u, v, X, c, LA = sp.symbols("u, v, X, c, LA")
+
 
 def init_u(x):
-    return np.sin(2*np.pi/3*x)
+    return np.sin(2 * np.pi / 3 * x)
+
 
 def bc_in(f, m, x):
-    m[u] = 1.
+    m[u] = 1.0
+
 
 d = {
-    'box': {'x': [0., 3.], 'label': 0},
-    'scheme_velocity':LA,
-    'space_step': 0.01,
-    'parameters': {LA: 1., c: .5},
-    'schemes':[
+    "box": {"x": [0.0, 3.0], "label": 0},
+    "scheme_velocity": LA,
+    "space_step": 0.01,
+    "parameters": {LA: 1.0, c: 0.5},
+    "schemes": [
         {
-            'velocities': [0, 1, 2],
-            'conserved_moments':[u, v],
-            'polynomials': [1, X, 0.5*X**2],
-            'equilibrium': [u, v, .5*c**2*u],
-            'relaxation_parameters': [0., 0., 1.9],
-            'init': {v: (init_u,), u: 0.},
+            "velocities": [0, 1, 2],
+            "conserved_moments": [u, v],
+            "polynomials": [1, X, 0.5 * X**2],
+            "equilibrium": [u, v, 0.5 * c**2 * u],
+            "relaxation_parameters": [0.0, 0.0, 1.9],
+            "init": {v: (init_u,), u: 0.0},
         },
     ],
-    'boundary_conditions':{
-        0:{'method': {0: pylbm.bc.BounceBack}, 'value': None},
+    "boundary_conditions": {
+        0: {"method": {0: pylbm.bc.BounceBack}, "value": None},
     },
 }
-#s = pylbm.Scheme(d)
+# s = pylbm.Scheme(d)
 
 """
 import matplotlib.pyplot as plt

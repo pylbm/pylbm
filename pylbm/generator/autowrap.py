@@ -1,5 +1,5 @@
 # FIXME: make pylint happy !
-#pylint: disable=all
+# pylint: disable=all
 
 import sys
 import os
@@ -10,12 +10,14 @@ import importlib
 
 from .codegen import get_code_generator
 
+
 class CodeWrapError(Exception):
     pass
 
 
 class CodeWrapper(object):
     """Base Class for code wrappers"""
+
     _module_name = "wrapped_module"
 
     @property
@@ -30,7 +32,9 @@ class CodeWrapper(object):
     def module_name(self):
         return "%s_%s" % (self._module_name, self._module_counter)
 
-    def __init__(self, generator, filepath=None, flags=[], generate=True, verbose=False):
+    def __init__(
+        self, generator, filepath=None, flags=[], generate=True, verbose=False
+    ):
         """
         generator -- the code generator to use
         """
@@ -42,10 +46,8 @@ class CodeWrapper(object):
         self.verbose = verbose
         self._module_counter = 0
 
-
     def _generate_code(self, routines):
-        self.generator.write(
-            routines, self.full_path, True, True, False)
+        self.generator.write(routines, self.full_path, True, True, False)
 
     def wrap_code(self, routines):
         if not os.access(self.workdir, os.F_OK):
@@ -81,8 +83,9 @@ class CodeWrapper(object):
             retoutput = check_output(command, stderr=STDOUT)
         except CalledProcessError as e:
             raise CodeWrapError(
-                "Error while executing command: %s. Command output is:\n%s" % (
-                    " ".join(command), e.output.decode()))
+                "Error while executing command: %s. Command output is:\n%s"
+                % (" ".join(command), e.output.decode())
+            )
         if self.verbose:
             print(retoutput)
 
@@ -90,7 +93,7 @@ class CodeWrapper(object):
 class CythonCodeWrapper(CodeWrapper):
     @property
     def command(self):
-        bld = open(self.full_path + '.pyxbld', "w")
+        bld = open(self.full_path + ".pyxbld", "w")
         code = """
 def make_ext(modname, pyxfilename):
     from distutils.extension import Extension
@@ -106,8 +109,8 @@ def make_ext(modname, pyxfilename):
                     """
         bld.write(code)
         bld.close()
-        build_file = os.path.join(self.workdir, 'build.py')
-        bld = open(build_file, 'w')
+        build_file = os.path.join(self.workdir, "build.py")
+        bld = open(build_file, "w")
         code = f"""
 import pyximport
 pyximport.install(build_dir=r'{self.workdir}', inplace=True)
@@ -117,7 +120,7 @@ import {self.filename}
         bld.close()
 
         if self.verbose:
-            print(open(self.full_path + '.pyx').read())
+            print(open(self.full_path + ".pyx").read())
 
         command = [sys.executable, build_file]
 
@@ -125,6 +128,7 @@ import {self.filename}
 
     def _prepare_files(self, routines):
         pass
+
 
 class PythonCodeWrapper(CodeWrapper):
     @property
@@ -136,19 +140,29 @@ class PythonCodeWrapper(CodeWrapper):
 
     def _process_files(self, routines):
         if self.verbose:
-            print(open(self.full_path + '.py').read())
+            print(open(self.full_path + ".py").read())
+
 
 def get_code_wrapper(backend):
-    CodeWrapClass = {"NUMPY" : PythonCodeWrapper,
-                     "CYTHON": CythonCodeWrapper,
-                     "LOOPY": PythonCodeWrapper}.get(backend.upper())
+    CodeWrapClass = {
+        "NUMPY": PythonCodeWrapper,
+        "CYTHON": CythonCodeWrapper,
+        "LOOPY": PythonCodeWrapper,
+    }.get(backend.upper())
     if CodeWrapClass is None:
         raise ValueError("Language '%s' is not supported." % backend)
     return CodeWrapClass
 
-def autowrap(routines, backend='cython', tempdir=None, generate=True, args=None, flags=[],
-    verbose=False):
 
+def autowrap(
+    routines,
+    backend="cython",
+    tempdir=None,
+    generate=True,
+    args=None,
+    flags=[],
+    verbose=False,
+):
     code_generator = get_code_generator(backend, "project")
     CodeWrapperClass = get_code_wrapper(backend)
     code_wrapper = CodeWrapperClass(code_generator, tempdir, flags, generate, verbose)

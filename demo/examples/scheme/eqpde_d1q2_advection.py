@@ -1,5 +1,3 @@
-
-
 # Authors:
 #     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -14,25 +12,25 @@ import pylbm
 
 # pylint: disable=invalid-name
 
-U, X = sp.symbols('u, X')
-LA, C, SIGMA = sp.symbols('lambda, c, sigma', constants=True)
+U, X = sp.symbols("u, X")
+LA, C, SIGMA = sp.symbols("lambda, c, sigma", constants=True)
 
 scheme_cfg = {
-    'dim': 1,
-    'scheme_velocity': LA,
-    'schemes': [
+    "dim": 1,
+    "scheme_velocity": LA,
+    "schemes": [
         {
-            'velocities': [1, 2],
-            'conserved_moments': U,
-            'polynomials': [1, X],
-            'equilibrium': [U, C*U],
-            'relaxation_parameters': [0, 1/(0.5+SIGMA)],
+            "velocities": [1, 2],
+            "conserved_moments": U,
+            "polynomials": [1, X],
+            "equilibrium": [U, C * U],
+            "relaxation_parameters": [0, 1 / (0.5 + SIGMA)],
         },
     ],
-    'parameters': {
-        LA: 1.,
+    "parameters": {
+        LA: 1.0,
         C: 0.1,
-        SIGMA: 1./1.9-.5,
+        SIGMA: 1.0 / 1.9 - 0.5,
     },
 }
 

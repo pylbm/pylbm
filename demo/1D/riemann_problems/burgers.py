@@ -1,5 +1,3 @@
-
-
 # Authors:
 #     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -29,15 +27,11 @@ from exact_solvers import riemann_pb
 
 # pylint: disable=redefined-outer-name
 
-U, X = sp.symbols('u, X')
-LA, SIGMA = sp.symbols('lambda, sigma', constants=True)
+U, X = sp.symbols("u, X")
+LA, SIGMA = sp.symbols("lambda, sigma", constants=True)
 
 
-def run(space_step,
-        final_time,
-        generator="cython",
-        sorder=None,
-        with_plot=True):
+def run(space_step, final_time, generator="cython", sorder=None, with_plot=True):
     """
     Parameters
     ----------
@@ -64,52 +58,51 @@ def run(space_step,
         <class 'pylbm.simulation.Simulation'>
     """
     # parameters
-    xmin, xmax = -1., 1.    # bounds of the domain
-    la = 1.                 # scheme velocity (la = dx/dt)
-    s = 1.8                 # relaxation parameter
+    xmin, xmax = -1.0, 1.0  # bounds of the domain
+    la = 1.0  # scheme velocity (la = dx/dt)
+    s = 1.8  # relaxation parameter
 
-    symb_s = 1/(0.5+SIGMA)  # symbolic relaxation parameter
+    symb_s = 1 / (0.5 + SIGMA)  # symbolic relaxation parameter
 
     # initial values
-    u_left, u_right = .0, .3
+    u_left, u_right = 0.0, 0.3
     # discontinuity position
-    xmid = .5*(xmin+xmax)
+    xmid = 0.5 * (xmin + xmax)
     # fixed bounds of the graphics
-    ymin = min([u_left, u_right])-.1*abs(u_left-u_right)
-    ymax = max([u_left, u_right])+.1*abs(u_left-u_right)
+    ymin = min([u_left, u_right]) - 0.1 * abs(u_left - u_right)
+    ymax = max([u_left, u_right]) + 0.1 * abs(u_left - u_right)
 
-    exact_solution = exact_solver({
-        'jump abscissa': xmid,
-        'left state': [u_left],
-        'right state': [u_right],
-    })
+    exact_solution = exact_solver(
+        {
+            "jump abscissa": xmid,
+            "left state": [u_left],
+            "right state": [u_right],
+        }
+    )
 
     # dictionary for the D1Q2
     simu_cfg = {
-        'box': {'x': [xmin, xmax], 'label': 0},
-        'space_step': space_step,
-        'scheme_velocity': LA,
-        'schemes': [
+        "box": {"x": [xmin, xmax], "label": 0},
+        "space_step": space_step,
+        "scheme_velocity": LA,
+        "schemes": [
             {
-                'velocities': [1, 2],
-                'conserved_moments': U,
-                'polynomials': [1, X],
-                'relaxation_parameters': [0., symb_s],
-                'equilibrium': [U, U**2/2],
+                "velocities": [1, 2],
+                "conserved_moments": U,
+                "polynomials": [1, X],
+                "relaxation_parameters": [0.0, symb_s],
+                "equilibrium": [U, U**2 / 2],
             },
         ],
-        'init': {U: (riemann_pb, (xmid, u_left, u_right))},
-        'boundary_conditions': {
-            0: {'method': {
-                0: pylbm.bc.Neumann
-            }, },
+        "init": {U: (riemann_pb, (xmid, u_left, u_right))},
+        "boundary_conditions": {
+            0: {
+                "method": {0: pylbm.bc.Neumann},
+            },
         },
-        'generator': generator,
-        'parameters': {
-            LA: la,
-            SIGMA: 1/s-.5
-        },
-        'show_code': False,
+        "generator": generator,
+        "parameters": {LA: la, SIGMA: 1 / s - 0.5},
+        "show_code": False,
     }
 
     # build the simulation with D1Q2
@@ -127,25 +120,30 @@ def run(space_step,
 
         x = sol.domain.x
         l1a = axe.CurveScatter(
-            x, sol.m[U],
-            color='navy', label=r'$D_1Q_2$',
+            x,
+            sol.m[U],
+            color="navy",
+            label=r"$D_1Q_2$",
         )
         l1e = axe.CurveLine(
-            x, exact_solution.evaluate(x, sol.t)[0],
-            width=1, color='black',
-            label='exact',
+            x,
+            exact_solution.evaluate(x, sol.t)[0],
+            width=1,
+            color="black",
+            label="exact",
         )
-        axe.legend(loc='best',
-                   shadow=False,
-                   frameon=False,
-                   )
+        axe.legend(
+            loc="best",
+            shadow=False,
+            frameon=False,
+        )
 
         def update(iframe):  # pylint: disable=unused-argument
             if sol.t < final_time:  # time loop
                 sol.one_time_step()  # increment the solution
                 l1a.update(sol.m[U])
                 l1e.update(exact_solution.evaluate(x, sol.t)[0])
-                axe.title = r'Burgers at $t = {0:f}$'.format(sol.t)
+                axe.title = r"Burgers at $t = {0:f}$".format(sol.t)
 
         fig.animate(update)
         fig.show()
@@ -155,8 +153,9 @@ def run(space_step,
 
     return sol
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # pylint: disable=invalid-name
-    space_step = 1./128
-    final_time = 2.
+    space_step = 1.0 / 128
+    final_time = 2.0
     run(space_step, final_time, generator="cython")

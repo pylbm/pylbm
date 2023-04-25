@@ -27,7 +27,7 @@ class PerfMonitor:
 
 
 class Node:
-    def __init__(self, parent=None, name='root'):
+    def __init__(self, parent=None, name="root"):
         self.parent = parent
         self.name = name
         self.sons = []
@@ -57,7 +57,7 @@ class Monitoring:
         try:
             f_name = f.__qualname__
             return (mod_name, f_name)
-        except:
+        except:  # noqa: E722
             pass
 
     def set_size(self, size):
@@ -79,33 +79,39 @@ class Monitoring:
         t = mpi.Wtime()
         self.func[info].total_time[-1] = t - self.func[info].total_time[-1]
         self.tree.add_time(self.func[info].total_time[-1])
-        self.func[info].self_time[-1] = self.func[info].total_time[-1] \
-            - self.tree.time
+        self.func[info].self_time[-1] = self.func[info].total_time[-1] - self.tree.time
         self.tree = self.tree.del_node()
 
     def print(self):
         if mpi.COMM_WORLD.rank == 0:
             titles = [
-                '%', 'module name', 'function name',
-                'ncall', 'total time', 'self time', 'MLUPS'
+                "%",
+                "module name",
+                "function name",
+                "ncall",
+                "total time",
+                "self time",
+                "MLUPS",
             ]
             row_format = "{:>6}{:>25}{:>30}{:>8}{:>15}{:>15}{:>8}"
-            print('\n', row_format.format(*titles), '\n')
+            print("\n", row_format.format(*titles), "\n")
             row_format = "{:6.1f}{:>25}{:>30}{:8}{:15.9f}{:15.9f}{:8.2f}"
             names = [[k[0], k[1]] for k in self.func.keys()]
             data = [
-                [
-                    len(v.total_time),
-                    np.sum(v.total_time),
-                    np.sum(v.self_time)
-                ] for v in self.func.values()
+                [len(v.total_time), np.sum(v.total_time), np.sum(v.self_time)]
+                for v in self.func.values()
             ]
             ind = np.argsort(np.asarray(data)[:, 1])
             for i in ind[::-1]:
-                print(row_format.format(data[i][1]/data[ind[-1]][1]*100,
-                                        *names[i],
-                                        *data[i],
-                                        data[i][0]*self.size/data[i][1]/1e6))
+                print(
+                    row_format.format(
+                        data[i][1] / data[ind[-1]][1] * 100,
+                        *names[i],
+                        *data[i],
+                        data[i][0] * self.size / data[i][1] / 1e6,
+                    )
+                )
+
 
 Monitor = Monitoring()  # pylint: disable=invalid-name
 
@@ -121,4 +127,5 @@ def monitor(f):
         output = f(*args, **kwds)
         Monitor.stop_timing(f)
         return output
+
     return wrapper

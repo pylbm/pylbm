@@ -16,13 +16,15 @@ from sympy import symbols, IndexedBase, Idx, Eq
 
 from .storage import Array
 
-log = logging.getLogger(__name__) #pylint: disable=invalid-name
+log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
-#pylint: disable=too-few-public-methods
+
+# pylint: disable=too-few-public-methods
 class BoundaryVelocity:
     """
     Indices and distances for the label and the velocity ksym
     """
+
     def __init__(self, domain, label, ksym):
         # We are looking for the points on the outside that have a speed
         # that goes in (index ksym) on a border labeled by label.
@@ -43,6 +45,7 @@ class BoundaryVelocity:
             self.indices += np.asarray(v.v)[:, np.newaxis]
         self.distance = np.array(domain.distance[(num,) + ind])
         self.normal = np.array(domain.normal[(num,) + ind])  #
+
 
 class Boundary:
     """
@@ -70,14 +73,15 @@ class Boundary:
         The list contains Boundary_method instance.
 
     """
-    #pylint: disable=too-many-locals
+
+    # pylint: disable=too-many-locals
     def __init__(self, domain, generator, dico):
         self.domain = domain
 
         # build the list of indices for each unique velocity and for each label
         self.bv_per_label = {}
         for label in self.domain.list_of_labels():
-            if label in [-1, -2]: # periodic or interface conditions
+            if label in [-1, -2]:  # periodic or interface conditions
                 continue
             dummy_bv = []
             for k in range(self.domain.stencil.unvtot):
@@ -85,35 +89,47 @@ class Boundary:
             self.bv_per_label[label] = dummy_bv
 
         # build the list of boundary informations for each stencil and each label
-        dico_bound = dico.get('boundary_conditions', {})
+        dico_bound = dico.get("boundary_conditions", {})
         stencil = self.domain.stencil
 
-        istore = collections.OrderedDict() # important to set the boundary conditions always in the same way !!!
+        istore = (
+            collections.OrderedDict()
+        )  # important to set the boundary conditions always in the same way !!!
         ilabel = {}
         distance = {}
         value_bc = {}
         time_bc = {}
         normal = {}
 
-
-        #pylint: disable=too-many-nested-blocks
+        # pylint: disable=too-many-nested-blocks
         for label in self.domain.list_of_labels():
-            if label in [-1, -2]: # periodic or interface conditions
+            if label in [-1, -2]:  # periodic or interface conditions
                 continue
 
-            value_bc[label] = dico_bound[label].get('value', None)
-            time_bc[label] = dico_bound[label].get('time_bc', False)
-            methods = dico_bound[label]['method']
+            value_bc[label] = dico_bound[label].get("value", None)
+            time_bc[label] = dico_bound[label].get("time_bc", False)
+            methods = dico_bound[label]["method"]
             # for each method get the list of points, the labels and the distances
             # where the distribution function must be updated on the boundary
             for k, v in methods.items():
                 for inumk, numk in enumerate(stencil.num[k]):
-                    if self.bv_per_label[label][stencil.unum2index[numk]].indices.size != 0:
-                        indices = self.bv_per_label[label][stencil.unum2index[numk]].indices
-                        distance_tmp = self.bv_per_label[label][stencil.unum2index[numk]].distance
-                        normal_tmp = self.bv_per_label[label][stencil.unum2index[numk]].normal
-                        velocity = (inumk + stencil.nv_ptr[k])*np.ones(indices.shape[1], dtype=np.int32)[np.newaxis, :]
-                        ilabel_tmp = label*np.ones(indices.shape[1], dtype=np.int32)
+                    if (
+                        self.bv_per_label[label][stencil.unum2index[numk]].indices.size
+                        != 0
+                    ):
+                        indices = self.bv_per_label[label][
+                            stencil.unum2index[numk]
+                        ].indices
+                        distance_tmp = self.bv_per_label[label][
+                            stencil.unum2index[numk]
+                        ].distance
+                        normal_tmp = self.bv_per_label[label][
+                            stencil.unum2index[numk]
+                        ].normal
+                        velocity = (inumk + stencil.nv_ptr[k]) * np.ones(
+                            indices.shape[1], dtype=np.int32
+                        )[np.newaxis, :]
+                        ilabel_tmp = label * np.ones(indices.shape[1], dtype=np.int32)
                         istore_tmp = np.concatenate([velocity, indices])
                         if istore.get(v, None) is None:
                             istore[v] = istore_tmp.copy()
@@ -129,11 +145,22 @@ class Boundary:
         # for each method create the instance associated
         self.methods = []
         for k in list(istore.keys()):
-            self.methods.append(k(istore[k], ilabel[k], distance[k], normal[k], stencil,
-                                  value_bc, time_bc, domain.distance.shape, generator))
+            self.methods.append(
+                k(
+                    istore[k],
+                    ilabel[k],
+                    distance[k],
+                    normal[k],
+                    stencil,
+                    value_bc,
+                    time_bc,
+                    domain.distance.shape,
+                    generator,
+                )
+            )
 
 
-#pylint: disable=protected-access
+# pylint: disable=protected-access
 class BoundaryMethod:
     """
     Set boundary method.
@@ -160,7 +187,19 @@ class BoundaryMethod:
        the prescribed values on the border
 
     """
-    def __init__(self, istore, ilabel, distance, normal, stencil, value_bc, time_bc, nspace, generator):
+
+    def __init__(
+        self,
+        istore,
+        ilabel,
+        distance,
+        normal,
+        stencil,
+        value_bc,
+        time_bc,
+        nspace,
+        generator,
+    ):
         self.istore = istore
         self.feq = np.zeros((stencil.nv_ptr[-1], istore.shape[1]))
         self.rhs = np.zeros(istore.shape[1])
@@ -195,7 +234,7 @@ class BoundaryMethod:
             self.iload[i] = np.ascontiguousarray(self.iload[i].T, dtype=np.int32)
         self.istore = np.ascontiguousarray(self.istore.T, dtype=np.int32)
 
-    #pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals
     def prepare_rhs(self, simulation):
         """
         Compute the distribution function at the equilibrium with the value on the border.
@@ -209,7 +248,7 @@ class BoundaryMethod:
 
         nv = simulation.container.nv
         sorder = simulation.container.sorder
-        nspace = [1]*(len(sorder)-1)
+        nspace = [1] * (len(sorder) - 1)
         v = self.stencil.get_all_velocities()
 
         gpu_support = simulation.container.gpu_support
@@ -225,9 +264,11 @@ class BoundaryMethod:
                 coords = tuple()
                 for i in range(simulation.domain.dim):
                     x = simulation.domain.coords_halo[i][self.istore[i + 1, indices]]
-                    x += s*v[k, i]*simulation.domain.dx
+                    x += s * v[k, i] * simulation.domain.dx
                     x = x.ravel()
-                    for j in range(1, simulation.domain.dim): #pylint: disable=unused-variable
+                    for j in range(
+                        1, simulation.domain.dim
+                    ):  # pylint: disable=unused-variable
                         x = x[:, np.newaxis]
                     coords += (x,)
 
@@ -276,24 +317,26 @@ class BoundaryMethod:
             if self.generator.backend.upper() == "LOOPY":
                 self.f[i].array_cpu[...] = self.f[i].array.get()
 
-            self.feq[:, self.indices[i]] = self.f[i].swaparray.reshape((nv, self.indices[i].size))
+            self.feq[:, self.indices[i]] = self.f[i].swaparray.reshape(
+                (nv, self.indices[i].size)
+            )
 
     def _get_istore_iload_symb(self, dim):
-        ncond = symbols('ncond', integer=True)
+        ncond = symbols("ncond", integer=True)
 
-        istore = symbols('istore', integer=True)
-        istore = IndexedBase(istore, [ncond, dim+1])
+        istore = symbols("istore", integer=True)
+        istore = IndexedBase(istore, [ncond, dim + 1])
 
         iload = []
         for i in range(len(self.iload)):
-            iloads = symbols('iload%d'%i, integer=True)
-            iload.append(IndexedBase(iloads, [ncond, dim+1]))
+            iloads = symbols("iload%d" % i, integer=True)
+            iload.append(IndexedBase(iloads, [ncond, dim + 1]))
         return istore, iload, ncond
 
     @staticmethod
     def _get_rhs_dist_symb(ncond):
-        rhs = IndexedBase('rhs', [ncond])
-        dist = IndexedBase('dist', [ncond])
+        rhs = IndexedBase("rhs", [ncond])
+        dist = IndexedBase("dist", [ncond])
         return rhs, dist
 
     def update(self, ff, **kwargs):
@@ -310,9 +353,9 @@ class BoundaryMethod:
 
         args = self._get_args(ff)
         args.update(kwargs)
-        call_genfunction(self.function, args) #pylint: disable=no-member
+        call_genfunction(self.function, args)  # pylint: disable=no-member
 
-    #pylint: disable=possibly-unused-variable
+    # pylint: disable=possibly-unused-variable
     def _get_args(self, ff):
         dim = len(ff.nspace)
         nx = ff.nspace[0]
@@ -324,11 +367,11 @@ class BoundaryMethod:
         f = ff.array
 
         for i in range(len(self.iload)):
-            exec('iload{i} = self.iload[{i}]'.format(i=i)) #pylint: disable=exec-used
+            exec("iload{i} = self.iload[{i}]".format(i=i))  # pylint: disable=exec-used
 
         istore = self.istore
         rhs = self.rhs
-        if hasattr(self, 's'):
+        if hasattr(self, "s"):
             dist = self.s
         ncond = istore.shape[0]
         return locals()
@@ -340,17 +383,20 @@ class BoundaryMethod:
         if self.generator.backend.upper() == "LOOPY":
             try:
                 import pyopencl as cl
-                import pyopencl.array #pylint: disable=unused-variable
+                import pyopencl.array  # pylint: disable=unused-variable
                 from .context import queue
             except ImportError:
                 raise ImportError("Please install loo.py")
 
             self.rhs = cl.array.to_device(queue, self.rhs)
-            if hasattr(self, 's'):
-                self.s = cl.array.to_device(queue, self.s) #pylint: disable=attribute-defined-outside-init
+            if hasattr(self, "s"):
+                self.s = cl.array.to_device(
+                    queue, self.s
+                )  # pylint: disable=attribute-defined-outside-init
             self.istore = cl.array.to_device(queue, self.istore)
             for i in range(len(self.iload)):
                 self.iload[i] = cl.array.to_device(queue, self.iload[i])
+
 
 class BounceBack(BoundaryMethod):
     """
@@ -362,6 +408,7 @@ class BounceBack(BoundaryMethod):
     .. plot:: codes/bounce_back.py
 
     """
+
     def set_iload(self):
         """
         Compute the indices that are needed (symmertic velocities and space indices).
@@ -380,7 +427,7 @@ class BounceBack(BoundaryMethod):
         ksym = self.stencil.get_symmetric()[k]
         self.rhs[:] = self.feq[k, np.arange(k.size)] - self.feq[ksym, np.arange(k.size)]
 
-    #pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals
     def generate(self, sorder):
         """
         Generate the numerical code.
@@ -400,15 +447,28 @@ class BounceBack(BoundaryMethod):
         rhs, _ = self._get_rhs_dist_symb(ncond)
 
         idx = Idx(ix, (0, ncond))
-        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], priority=sorder)
-        fload = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], priority=sorder)
+        fstore = indexed(
+            "f",
+            [ns, nx, ny, nz],
+            index=[istore[idx, k] for k in range(dim + 1)],
+            priority=sorder,
+        )
+        fload = indexed(
+            "f",
+            [ns, nx, ny, nz],
+            index=[iload[0][idx, k] for k in range(dim + 1)],
+            priority=sorder,
+        )
 
-        self.generator.add_routine(('bounce_back', For(idx, Eq(fstore, fload + rhs[idx]))))
+        self.generator.add_routine(
+            ("bounce_back", For(idx, Eq(fstore, fload + rhs[idx])))
+        )
 
     @property
     def function(self):
         """Return the generated function"""
         return self.generator.module.bounce_back
+
 
 class BouzidiBounceBack(BoundaryMethod):
     """
@@ -420,8 +480,30 @@ class BouzidiBounceBack(BoundaryMethod):
     .. plot:: codes/Bouzidi.py
 
     """
-    def __init__(self, istore, ilabel, distance, normal, stencil, value_bc, time_bc, nspace, generator):
-        super(BouzidiBounceBack, self).__init__(istore, ilabel, distance, normal, stencil, value_bc, time_bc, nspace, generator)
+
+    def __init__(
+        self,
+        istore,
+        ilabel,
+        distance,
+        normal,
+        stencil,
+        value_bc,
+        time_bc,
+        nspace,
+        generator,
+    ):
+        super(BouzidiBounceBack, self).__init__(
+            istore,
+            ilabel,
+            distance,
+            normal,
+            stencil,
+            value_bc,
+            time_bc,
+            nspace,
+            generator,
+        )
         self.s = np.empty(self.istore.shape[1])
 
     def set_iload(self):
@@ -435,19 +517,19 @@ class BouzidiBounceBack(BoundaryMethod):
         iload1 = np.zeros(self.istore.shape, dtype=np.int32)
         iload2 = np.zeros(self.istore.shape, dtype=np.int32)
 
-        mask = self.distance < .5
+        mask = self.distance < 0.5
         iload1[0, mask] = ksym[mask]
         iload2[0, mask] = ksym[mask]
         iload1[1:, mask] = self.istore[1:, mask] + v[k[mask]].T
-        iload2[1:, mask] = self.istore[1:, mask] + 2*v[k[mask]].T
-        self.s[mask] = 2.*self.distance[mask]
+        iload2[1:, mask] = self.istore[1:, mask] + 2 * v[k[mask]].T
+        self.s[mask] = 2.0 * self.distance[mask]
 
         mask = np.logical_not(mask)
         iload1[0, mask] = ksym[mask]
         iload2[0, mask] = k[mask]
         iload1[1:, mask] = self.istore[1:, mask] + v[k[mask]].T
         iload2[1:, mask] = self.istore[1:, mask] + v[k[mask]].T
-        self.s[mask] = .5/self.distance[mask]
+        self.s[mask] = 0.5 / self.distance[mask]
 
         self.iload.append(iload1)
         self.iload.append(iload2)
@@ -468,11 +550,11 @@ class BouzidiBounceBack(BoundaryMethod):
         fcopy = ff.array.copy()
 
         for i in range(len(self.iload)):
-            exec('iload{i} = self.iload[{i}]'.format(i=i)) #pylint: disable=exec-used
+            exec("iload{i} = self.iload[{i}]".format(i=i))  # pylint: disable=exec-used
 
         istore = self.istore
         rhs = self.rhs
-        if hasattr(self, 's'):
+        if hasattr(self, "s"):
             dist = self.s
         ncond = istore.shape[0]
         return locals()
@@ -485,7 +567,7 @@ class BouzidiBounceBack(BoundaryMethod):
         ksym = self.stencil.get_symmetric()[k]
         self.rhs[:] = self.feq[k, np.arange(k.size)] - self.feq[ksym, np.arange(k.size)]
 
-    #pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals
     def generate(self, sorder):
         """
         Generate the numerical code.
@@ -505,16 +587,42 @@ class BouzidiBounceBack(BoundaryMethod):
         rhs, dist = self._get_rhs_dist_symb(ncond)
 
         idx = Idx(ix, (0, ncond))
-        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], priority=sorder)
-        fload0 = indexed('fcopy', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], priority=sorder)
-        fload1 = indexed('fcopy', [ns, nx, ny, nz], index=[iload[1][idx, k] for k in range(dim+1)], priority=sorder)
+        fstore = indexed(
+            "f",
+            [ns, nx, ny, nz],
+            index=[istore[idx, k] for k in range(dim + 1)],
+            priority=sorder,
+        )
+        fload0 = indexed(
+            "fcopy",
+            [ns, nx, ny, nz],
+            index=[iload[0][idx, k] for k in range(dim + 1)],
+            priority=sorder,
+        )
+        fload1 = indexed(
+            "fcopy",
+            [ns, nx, ny, nz],
+            index=[iload[1][idx, k] for k in range(dim + 1)],
+            priority=sorder,
+        )
 
-        self.generator.add_routine(('Bouzidi_bounce_back', For(idx, Eq(fstore, dist[idx]*fload0 + (1-dist[idx])*fload1 + rhs[idx]))))
+        self.generator.add_routine(
+            (
+                "Bouzidi_bounce_back",
+                For(
+                    idx,
+                    Eq(
+                        fstore, dist[idx] * fload0 + (1 - dist[idx]) * fload1 + rhs[idx]
+                    ),
+                ),
+            )
+        )
 
     @property
     def function(self):
         """Return the generated function"""
         return self.generator.module.Bouzidi_bounce_back
+
 
 class AntiBounceBack(BounceBack):
     """
@@ -526,6 +634,7 @@ class AntiBounceBack(BounceBack):
     .. plot:: codes/anti_bounce_back.py
 
     """
+
     def set_rhs(self):
         """
         Compute and set the additional terms to fix the boundary values.
@@ -534,7 +643,7 @@ class AntiBounceBack(BounceBack):
         ksym = self.stencil.get_symmetric()[k]
         self.rhs[:] = self.feq[k, np.arange(k.size)] + self.feq[ksym, np.arange(k.size)]
 
-    #pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals
     def generate(self, sorder):
         """
         Generate the numerical code.
@@ -554,14 +663,27 @@ class AntiBounceBack(BounceBack):
         rhs, _ = self._get_rhs_dist_symb(ncond)
 
         idx = Idx(ix, (0, ncond))
-        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], priority=sorder)
-        fload = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], priority=sorder)
+        fstore = indexed(
+            "f",
+            [ns, nx, ny, nz],
+            index=[istore[idx, k] for k in range(dim + 1)],
+            priority=sorder,
+        )
+        fload = indexed(
+            "f",
+            [ns, nx, ny, nz],
+            index=[iload[0][idx, k] for k in range(dim + 1)],
+            priority=sorder,
+        )
 
-        self.generator.add_routine(('anti_bounce_back', For(idx, Eq(fstore, -fload + rhs[idx]))))
+        self.generator.add_routine(
+            ("anti_bounce_back", For(idx, Eq(fstore, -fload + rhs[idx])))
+        )
 
     @property
     def function(self):
         return self.generator.module.anti_bounce_back
+
 
 class BouzidiAntiBounceBack(BouzidiBounceBack):
     """
@@ -573,6 +695,7 @@ class BouzidiAntiBounceBack(BouzidiBounceBack):
     .. plot:: codes/Bouzidi.py
 
     """
+
     def set_rhs(self):
         """
         Compute and set the additional terms to fix the boundary values.
@@ -581,7 +704,7 @@ class BouzidiAntiBounceBack(BouzidiBounceBack):
         ksym = self.stencil.get_symmetric()[k]
         self.rhs[:] = self.feq[k, np.arange(k.size)] + self.feq[ksym, np.arange(k.size)]
 
-    #pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals
     def generate(self, sorder):
         """
         Generate the numerical code.
@@ -601,22 +724,51 @@ class BouzidiAntiBounceBack(BouzidiBounceBack):
         rhs, dist = self._get_rhs_dist_symb(ncond)
 
         idx = Idx(ix, (0, ncond))
-        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], priority=sorder)
-        fload0 = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], priority=sorder)
-        fload1 = indexed('f', [ns, nx, ny, nz], index=[iload[1][idx, k] for k in range(dim+1)], priority=sorder)
+        fstore = indexed(
+            "f",
+            [ns, nx, ny, nz],
+            index=[istore[idx, k] for k in range(dim + 1)],
+            priority=sorder,
+        )
+        fload0 = indexed(
+            "f",
+            [ns, nx, ny, nz],
+            index=[iload[0][idx, k] for k in range(dim + 1)],
+            priority=sorder,
+        )
+        fload1 = indexed(
+            "f",
+            [ns, nx, ny, nz],
+            index=[iload[1][idx, k] for k in range(dim + 1)],
+            priority=sorder,
+        )
 
-        self.generator.add_routine(('Bouzidi_anti_bounce_back', For(idx, Eq(fstore, -dist[idx]*fload0 + (1-dist[idx])*fload1 + rhs[idx]))))
+        self.generator.add_routine(
+            (
+                "Bouzidi_anti_bounce_back",
+                For(
+                    idx,
+                    Eq(
+                        fstore,
+                        -dist[idx] * fload0 + (1 - dist[idx]) * fload1 + rhs[idx],
+                    ),
+                ),
+            )
+        )
 
     @property
     def function(self):
         return self.generator.module.Bouzidi_anti_bounce_back
+
 
 class Neumann(BoundaryMethod):
     """
     Boundary condition of type Neumann
 
     """
-    name = 'neumann'
+
+    name = "neumann"
+
     def set_rhs(self):
         """
         Compute and set the additional terms to fix the boundary values.
@@ -632,7 +784,7 @@ class Neumann(BoundaryMethod):
         indices = self.istore[1:] + v[k].T
         self.iload.append(np.concatenate([k[np.newaxis, :], indices]))
 
-    #pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals
     def generate(self, sorder):
         """
         Generate the numerical code.
@@ -651,8 +803,18 @@ class Neumann(BoundaryMethod):
         istore, iload, ncond = self._get_istore_iload_symb(dim)
 
         idx = Idx(ix, (0, ncond))
-        fstore = indexed('f', [ns, nx, ny, nz], index=[istore[idx, k] for k in range(dim+1)], priority=sorder)
-        fload = indexed('f', [ns, nx, ny, nz], index=[iload[0][idx, k] for k in range(dim+1)], priority=sorder)
+        fstore = indexed(
+            "f",
+            [ns, nx, ny, nz],
+            index=[istore[idx, k] for k in range(dim + 1)],
+            priority=sorder,
+        )
+        fload = indexed(
+            "f",
+            [ns, nx, ny, nz],
+            index=[iload[0][idx, k] for k in range(dim + 1)],
+            priority=sorder,
+        )
 
         self.generator.add_routine((self.name, For(idx, Eq(fstore, fload))))
 
@@ -661,12 +823,15 @@ class Neumann(BoundaryMethod):
         """Return the generated function"""
         return self.generator.module.neumann
 
+
 class NeumannX(Neumann):
     """
     Boundary condition of type Neumann along the x direction
 
     """
-    name = 'neumannx'
+
+    name = "neumannx"
+
     def set_iload(self):
         """
         Compute the indices that are needed (symmertic velocities and space indices).
@@ -682,12 +847,15 @@ class NeumannX(Neumann):
         """Return the generated function"""
         return self.generator.module.neumannx
 
+
 class NeumannY(Neumann):
     """
     Boundary condition of type Neumann along the y direction
 
     """
-    name = 'neumanny'
+
+    name = "neumanny"
+
     def set_iload(self):
         """
         Compute the indices that are needed (symmertic velocities and space indices).
@@ -703,12 +871,15 @@ class NeumannY(Neumann):
         """Return the generated function"""
         return self.generator.module.neumanny
 
+
 class NeumannZ(Neumann):
     """
     Boundary condition of type Neumann along the z direction
 
     """
-    name = 'neumannz'
+
+    name = "neumannz"
+
     def set_iload(self):
         """
         Compute the indices that are needed (symmertic velocities and space indices).

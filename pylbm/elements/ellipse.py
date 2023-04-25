@@ -10,6 +10,7 @@ Ellipse element
 # pylint: disable=invalid-name
 
 import logging
+
 # from textwrap import dedent
 import numpy as np
 
@@ -75,12 +76,13 @@ class Ellipse(Element):
         - type: solid
 
     """
+
     def __init__(self, center, v1, v2, label=0, isfluid=False):
         self.number_of_bounds = 1  # number of edges
         self.dim = 2
         self.center = np.asarray(center)
-        if abs(v1[0]*v2[0] + v1[1]*v2[1]) > 1.e-14:
-            log.error('The vectors of the ellipse are not orthogonal')
+        if abs(v1[0] * v2[0] + v1[1] * v2[1]) > 1.0e-14:
+            log.error("The vectors of the ellipse are not orthogonal")
         else:
             self.v1 = np.asarray(v1)
             self.v2 = np.asarray(v2)
@@ -121,11 +123,11 @@ class Ellipse(Element):
 
         X = x - self.center[0]
         Y = y - self.center[1]
-        vx2 = self.v1[0]**2 + self.v2[0]**2
-        vy2 = self.v1[1]**2 + self.v2[1]**2
-        vxy = 2 * (self.v1[0]*self.v1[1] + self.v2[0]*self.v2[1])
-        tv = self.v1[0]*self.v2[1]-self.v1[1]*self.v2[0]
-        return X**2*vy2 + Y**2*vx2 - X*Y*vxy <= tv**2
+        vx2 = self.v1[0] ** 2 + self.v2[0] ** 2
+        vy2 = self.v1[1] ** 2 + self.v2[1] ** 2
+        vxy = 2 * (self.v1[0] * self.v1[1] + self.v2[0] * self.v2[1])
+        tv = self.v1[0] * self.v2[1] - self.v1[1] * self.v2[0]
+        return X**2 * vy2 + Y**2 * vx2 - X * Y * vxy <= tv**2
 
     def distance(self, grid, v, dmax=None, normal=False):
         """
@@ -154,26 +156,20 @@ class Ellipse(Element):
         """
         x, y = grid
         return distance_ellipse(
-            x, y, v,
-            self.center, self.v1, self.v2,
-            dmax, self.label, normal
+            x, y, v, self.center, self.v1, self.v2, dmax, self.label, normal
         )
 
     def __str__(self):
         from ..utils import header_string
         from ..jinja_env import env
-        template = env.get_template('ellipse.tpl')
-        elem_type = 'fluid' if self.isfluid else 'solid'
+
+        template = env.get_template("ellipse.tpl")
+        elem_type = "fluid" if self.isfluid else "solid"
         return template.render(
-            header=header_string(self.__class__.__name__),
-            elem=self,
-            type=elem_type
+            header=header_string(self.__class__.__name__), elem=self, type=elem_type
         )
 
-    def visualize(self,
-                  viewer, color, viewlabel=False,
-                  scale=np.ones(2), alpha=1.
-                  ):
+    def visualize(self, viewer, color, viewlabel=False, scale=np.ones(2), alpha=1.0):
         nv1 = np.linalg.norm(self.v1)
         nv2 = np.linalg.norm(self.v2)
         if nv1 > nv2:
@@ -183,15 +179,18 @@ class Ellipse(Element):
             r1, r2 = nv2, nv2
             v = self.v2
         if v[0] == 0:
-            theta = .5*np.pi
+            theta = 0.5 * np.pi
         else:
-            theta = np.arctan(v[1]/v[0])
+            theta = np.arctan(v[1] / v[0])
 
         viewer.ellipse(
-            self.center*scale, (r1*scale[0], r2*scale[1]),
-            color, angle=theta, alpha=alpha
+            self.center * scale,
+            (r1 * scale[0], r2 * scale[1]),
+            color,
+            angle=theta,
+            alpha=alpha,
         )
         if viewlabel:
-            x = self.center[0] + r1*np.cos(theta)
-            y = self.center[1] + r1*np.sin(theta)
-            viewer.text(str(self.label[0]), [x*scale[0], y*scale[1]])
+            x = self.center[0] + r1 * np.cos(theta)
+            y = self.center[1] + r1 * np.sin(theta)
+            viewer.text(str(self.label[0]), [x * scale[0], y * scale[1]])

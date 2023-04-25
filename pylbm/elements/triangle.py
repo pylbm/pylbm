@@ -11,6 +11,7 @@ Triangle element
 # pylint: disable=invalid-name
 
 import logging
+
 # from textwrap import dedent
 import numpy as np
 
@@ -78,6 +79,7 @@ class Triangle(Element):
         2
 
     """
+
     def __init__(self, point, vecta, vectb, label=0, isfluid=False):
         self.number_of_bounds = 3  # number of edges
         self.dim = 2
@@ -93,7 +95,7 @@ class Triangle(Element):
                 self.point,
                 self.point + self.v1,
                 self.point + self.v1 + self.v2,
-                self.point + self.v2
+                self.point + self.v2,
             ]
         )
         return np.min(box, axis=0), np.max(box, axis=0)
@@ -102,9 +104,9 @@ class Triangle(Element):
         x, y = grid
         # Barycentric coordinates
         v2 = np.asarray([x - self.point[0], y - self.point[1]], dtype=object)
-        invdelta = 1./(self.v1[0]*self.v2[1] - self.v1[1]*self.v2[0])
-        u = (v2[0]*self.v2[1] - v2[1]*self.v2[0])*invdelta
-        v = (v2[1]*self.v1[0] - v2[0]*self.v1[1])*invdelta
+        invdelta = 1.0 / (self.v1[0] * self.v2[1] - self.v1[1] * self.v2[0])
+        u = (v2[0] * self.v2[1] - v2[1] * self.v2[0]) * invdelta
+        v = (v2[1] * self.v1[0] - v2[0] * self.v1[1]) * invdelta
         return np.logical_and(np.logical_and(u >= 0, v >= 0), u + v <= 1)
 
     def distance(self, grid, v, dmax=None, normal=False):
@@ -143,31 +145,25 @@ class Triangle(Element):
         vt = [self.v1, self.v2, self.v2 - self.v1]
 
         return distance_lines(
-            x - self.point[0],
-            y - self.point[1],
-            v, p, vt,
-            dmax, self.label, normal
+            x - self.point[0], y - self.point[1], v, p, vt, dmax, self.label, normal
         )
 
     def __str__(self):
         from ..utils import header_string
         from ..jinja_env import env
-        template = env.get_template('square.tpl')
-        elem_type = 'fluid' if self.isfluid else 'solid'
+
+        template = env.get_template("square.tpl")
+        elem_type = "fluid" if self.isfluid else "solid"
         return template.render(
-            header=header_string(self.__class__.__name__),
-            elem=self, type=elem_type
+            header=header_string(self.__class__.__name__), elem=self, type=elem_type
         )
 
-    def visualize(self,
-                  viewer, color, viewlabel=False,
-                  scale=np.ones(3), alpha=1.
-                  ):
+    def visualize(self, viewer, color, viewlabel=False, scale=np.ones(3), alpha=1.0):
         A = [self.point[k] for k in range(2)]
         B = [A[k] + self.v1[k] for k in range(2)]
         D = [A[k] + self.v2[k] for k in range(2)]
         viewer.polygon([A, B, D], color, alpha=alpha)
         if viewlabel:
-            viewer.text(str(self.label[0]), [0.5*(A[0]+B[0]), 0.5*(A[1]+B[1])])
-            viewer.text(str(self.label[1]), [0.5*(A[0]+D[0]), 0.5*(A[1]+D[1])])
-            viewer.text(str(self.label[2]), [0.5*(B[0]+D[0]), 0.5*(B[1]+D[1])])
+            viewer.text(str(self.label[0]), [0.5 * (A[0] + B[0]), 0.5 * (A[1] + B[1])])
+            viewer.text(str(self.label[1]), [0.5 * (A[0] + D[0]), 0.5 * (A[1] + D[1])])
+            viewer.text(str(self.label[2]), [0.5 * (B[0] + D[0]), 0.5 * (B[1] + D[1])])

@@ -1,5 +1,3 @@
-
-
 # Authors:
 #     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -17,34 +15,34 @@ import pylbm
 
 # pylint: disable=invalid-name
 
-H, Q, X = sp.symbols('h, q, X')
-LA, G = sp.symbols('lambda, g', constants=True)
-SIGMA_H, SIGMA_Q = sp.symbols('sigma_1, sigma_2', constants=True)
+H, Q, X = sp.symbols("h, q, X")
+LA, G = sp.symbols("lambda, g", constants=True)
+SIGMA_H, SIGMA_Q = sp.symbols("sigma_1, sigma_2", constants=True)
 
 scheme_cfg = {
-    'dim': 1,
-    'scheme_velocity': LA,
-    'schemes': [
+    "dim": 1,
+    "scheme_velocity": LA,
+    "schemes": [
         {
-            'velocities': [1, 2],
-            'conserved_moments': H,
-            'polynomials': [1, X],
-            'relaxation_parameters': [0, 1/(.5+SIGMA_H)],
-            'equilibrium': [H, Q],
+            "velocities": [1, 2],
+            "conserved_moments": H,
+            "polynomials": [1, X],
+            "relaxation_parameters": [0, 1 / (0.5 + SIGMA_H)],
+            "equilibrium": [H, Q],
         },
         {
-            'velocities': [1, 2],
-            'conserved_moments': Q,
-            'polynomials': [1, X],
-            'relaxation_parameters': [0, 1/(.5+SIGMA_Q)],
-            'equilibrium': [Q, Q**2/H+.5*G*H**2],
+            "velocities": [1, 2],
+            "conserved_moments": Q,
+            "polynomials": [1, X],
+            "relaxation_parameters": [0, 1 / (0.5 + SIGMA_Q)],
+            "equilibrium": [Q, Q**2 / H + 0.5 * G * H**2],
         },
     ],
-    'parameters': {
-        LA: 1.,
+    "parameters": {
+        LA: 1.0,
         G: 9.81,
-        SIGMA_H: 1/1.8-.5,
-        SIGMA_Q: 1/1.2-.5,
+        SIGMA_H: 1 / 1.8 - 0.5,
+        SIGMA_Q: 1 / 1.2 - 0.5,
     },
 }
 

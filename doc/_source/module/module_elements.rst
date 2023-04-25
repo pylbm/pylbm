@@ -15,7 +15,7 @@ The 2D elements are:
 
 .. autosummary::
    :toctree: generated/
-   
+
    Circle
    Ellipse
    Parallelogram

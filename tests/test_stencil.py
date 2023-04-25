@@ -1,6 +1,6 @@
 import pytest
-import numpy as np
 import pylbm
+
 
 class TestStencil:
     def test_extract_dim(self, schemes):
@@ -27,7 +27,7 @@ class TestStencil:
         if schemes.dim == 3:
             assert all_vel[:, 2] == pytest.approx(stencil.vz[0])
 
-    @pytest.mark.parametrize('unique_velocities', [True, False])
+    @pytest.mark.parametrize("unique_velocities", [True, False])
     @pytest.mark.mpl_image_compare(remove_text=True)
     def test_visualize(self, schemes, unique_velocities):
         stencil = pylbm.Stencil(schemes.dico)
@@ -38,24 +38,25 @@ class TestStencil:
         stencil = pylbm.Stencil(schemes.dico)
         if isinstance(schemes.scheme, list):
             for il, l in enumerate(schemes.scheme):
-                assert stencil.vx[il] == pytest.approx(l['vx'])
+                assert stencil.vx[il] == pytest.approx(l["vx"])
                 if schemes.dim > 1:
-                    assert stencil.vy[il] == pytest.approx(l['vy'])
+                    assert stencil.vy[il] == pytest.approx(l["vy"])
                     if schemes.dim > 2:
-                        assert stencil.vz[il] == pytest.approx(l['vz'])
+                        assert stencil.vz[il] == pytest.approx(l["vz"])
         else:
-            assert stencil.num[0] == pytest.approx(schemes.scheme['num'])
-            assert stencil.unum == pytest.approx(schemes.scheme['num'])
-            assert stencil.unvtot == len(schemes.scheme['num'])
+            assert stencil.num[0] == pytest.approx(schemes.scheme["num"])
+            assert stencil.unum == pytest.approx(schemes.scheme["num"])
+            assert stencil.unvtot == len(schemes.scheme["num"])
 
-            assert stencil.vx[0] == pytest.approx(schemes.scheme['vx'])
-            assert stencil.uvx == pytest.approx(schemes.scheme['vx'])
+            assert stencil.vx[0] == pytest.approx(schemes.scheme["vx"])
+            assert stencil.uvx == pytest.approx(schemes.scheme["vx"])
             if schemes.dim > 1:
-                assert stencil.vy[0] == pytest.approx(schemes.scheme['vy'])
-                assert stencil.uvy == pytest.approx(schemes.scheme['vy'])
+                assert stencil.vy[0] == pytest.approx(schemes.scheme["vy"])
+                assert stencil.uvy == pytest.approx(schemes.scheme["vy"])
                 if schemes.dim > 2:
-                    assert stencil.vz[0] == pytest.approx(schemes.scheme['vz'])
-                    assert stencil.uvz == pytest.approx(schemes.scheme['vz'])
+                    assert stencil.vz[0] == pytest.approx(schemes.scheme["vz"])
+                    assert stencil.uvz == pytest.approx(schemes.scheme["vz"])
+
 
 #     assert dim == stencil.dim
 #     assert nvel == stencil.num[0].size

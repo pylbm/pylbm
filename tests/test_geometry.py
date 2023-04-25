@@ -25,28 +25,20 @@ ELEMENTS = [
 ]
 
 
-@pytest.fixture(
-    params=ELEMENTS, ids=[
-        elem[1].__class__.__name__ for elem in ELEMENTS
-    ]
-)
+@pytest.fixture(params=ELEMENTS, ids=[elem[1].__class__.__name__ for elem in ELEMENTS])
 def get_element(request):
     """get one element of the geometry"""
     return request.param
 
 
 BOX = [
-    (1, {'x': [-2, 2], 'label': 3}),
-    (2, {'x': [-2, 2], 'y': [-2, 2], 'label': 3}),
-    (3, {'x': [-2, 2], 'y': [-2, 2], 'z': [-2, 2], 'label': 3}),
+    (1, {"x": [-2, 2], "label": 3}),
+    (2, {"x": [-2, 2], "y": [-2, 2], "label": 3}),
+    (3, {"x": [-2, 2], "y": [-2, 2], "z": [-2, 2], "label": 3}),
 ]
 
 
-@pytest.fixture(
-    params=BOX, ids=[
-        'box1d', 'box2d', 'box3d'
-    ]
-)
+@pytest.fixture(params=BOX, ids=["box1d", "box2d", "box3d"])
 def get_box(request):
     """get one box"""
     return request.param
@@ -56,17 +48,18 @@ class TestGeometry:
     """
     test the geometry with pytest
     """
+
     def test_box_label(self, get_box):
         dim_box, box = get_box
-        dico = {'box': box}
+        dico = {"box": box}
         geom = pylbm.Geometry(dico)
         assert geom.list_of_labels() == [3]
 
     def test_elem_label(self, get_box, get_element):
         dim_element, element = get_element
         dim_box, box = get_box
-        dico = {'box': box, 'elements': [element]}
-        
+        dico = {"box": box, "elements": [element]}
+
         if dim_element != dim_box:
             with pytest.raises(ValueError):
                 geom = pylbm.Geometry(dico)
@@ -79,8 +72,8 @@ class TestGeometry:
     def test_visualize(self, get_box, get_element):
         dim_element, element = get_element
         dim_box, box = get_box
-        dico = {'box': box, 'elements': [element]}
-        
+        dico = {"box": box, "elements": [element]}
+
         if dim_element == dim_box:
             geom = pylbm.Geometry(dico)
             views = geom.visualize(viewlabel=False)

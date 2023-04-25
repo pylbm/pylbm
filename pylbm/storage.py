@@ -18,7 +18,7 @@ import mpi4py.MPI as mpi
 from .generator import For
 from .monitoring import monitor
 
-log = logging.getLogger(__name__) # pylint: disable=invalid-name
+log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
 class Array:
@@ -55,9 +55,18 @@ class Array:
     size
 
     """
-    #pylint: disable=too-many-locals
-    def __init__(self, nv, gspace_size, vmax, sorder=None,
-                 mpi_topo=None, dtype=np.double, gpu_support=False):
+
+    # pylint: disable=too-many-locals
+    def __init__(
+        self,
+        nv,
+        gspace_size,
+        vmax,
+        sorder=None,
+        mpi_topo=None,
+        dtype=np.double,
+        gpu_support=False,
+    ):
         self.comm = mpi.COMM_WORLD
         self.sorder = sorder
 
@@ -82,14 +91,16 @@ class Array:
             ind = [i for i in range(self.dim + 1)]
         else:
             if len(sorder) != self.dim + 1:
-                log.error("storage order must have the same length of the spatial dimension + 1.")
+                log.error(
+                    "storage order must have the same length of the spatial dimension + 1."
+                )
             ind = copy.deepcopy(sorder)
 
         self.index = copy.copy(ind)
         self.vmax = vmax
 
         tmpshape = [nv] + self.region_size
-        shape = [0]*len(tmpshape)
+        shape = [0] * len(tmpshape)
         for i in range(self.dim + 1):
             shape[ind[i]] = int(tmpshape[i])
         self.array_cpu = np.zeros((shape), dtype=dtype)
@@ -98,7 +109,7 @@ class Array:
         if self.gpu_support:
             try:
                 import pyopencl as cl
-                import pyopencl.array #pylint: disable=unused-variable
+                import pyopencl.array  # pylint: disable=unused-variable
                 from .context import queue
             except ImportError:
                 raise ImportError("Please install loo.py")
@@ -127,7 +138,7 @@ class Array:
         if self.gpu_support:
             try:
                 import pyopencl as cl
-                import pyopencl.array #pylint: disable=unused-variable
+                import pyopencl.array  # pylint: disable=unused-variable
                 from .context import queue
             except ImportError:
                 raise ImportError("Please install loo.py")
@@ -144,7 +155,6 @@ class Array:
         if isinstance(key, (sp.Symbol, sp.IndexedBase)):
             return self.swaparray[self.consm[key]][tuple(ind)]
         return self.swaparray[key][tuple(ind)]
-
 
     def set_conserved_moments(self, consm):
         """
@@ -196,7 +206,7 @@ class Array:
         """
         return self.array.size
 
-    #pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals
     def _set_subarray(self):
         """
         Create the neigbors and the subarrays to update interfaces
@@ -209,8 +219,8 @@ class Array:
         vmax = self.vmax
 
         def swap(array_in):
-            array_out = [0]*(dim+1)
-            for i in range(dim+1):
+            array_out = [0] * (dim + 1)
+            for i in range(dim + 1):
                 array_out[self.index[i]] = array_in[i]
             return array_out
 
@@ -235,40 +245,64 @@ class Array:
         self.send_type = []
         self.recv_type = []
 
-        for d in range(dim): #pylint: disable=invalid-name
+        for d in range(dim):  # pylint: disable=invalid-name
             subsizes = [nv] + nspace
-            subsizes[d+1] = vmax[d]
+            subsizes[d + 1] = vmax[d]
             subsizes = swap(subsizes)
 
-            sstart = [0]*(dim+1)
-            sstart[d+1] = vmax[d]
+            sstart = [0] * (dim + 1)
+            sstart[d + 1] = vmax[d]
             sstart = swap(sstart)
-            rstart = [0]*(dim+1)
+            rstart = [0] * (dim + 1)
 
             self.send_type.append(mpi.DOUBLE.Create_subarray(sizes, subsizes, sstart))
             self.recv_type.append(mpi.DOUBLE.Create_subarray(sizes, subsizes, rstart))
 
-            log.info("[%d] send to %d with tag %d subarray:%s", rank, self.neighbors[2*d], self.send_tag[2*d], (sizes, subsizes, sstart))
-            log.info("[%d] recv from %d with tag %d subarray:%s", rank, self.neighbors[2*d], self.recv_tag[2*d], (sizes, subsizes, rstart))
+            log.info(
+                "[%d] send to %d with tag %d subarray:%s",
+                rank,
+                self.neighbors[2 * d],
+                self.send_tag[2 * d],
+                (sizes, subsizes, sstart),
+            )
+            log.info(
+                "[%d] recv from %d with tag %d subarray:%s",
+                rank,
+                self.neighbors[2 * d],
+                self.recv_tag[2 * d],
+                (sizes, subsizes, rstart),
+            )
 
-            sstart = [0]*(dim+1)
-            sstart[d+1] = nspace[d] - 2*vmax[d]
+            sstart = [0] * (dim + 1)
+            sstart[d + 1] = nspace[d] - 2 * vmax[d]
             sstart = swap(sstart)
-            rstart = [0]*(dim+1)
-            rstart[d+1] = nspace[d] - vmax[d]
+            rstart = [0] * (dim + 1)
+            rstart[d + 1] = nspace[d] - vmax[d]
             rstart = swap(rstart)
 
             self.send_type.append(mpi.DOUBLE.Create_subarray(sizes, subsizes, sstart))
             self.recv_type.append(mpi.DOUBLE.Create_subarray(sizes, subsizes, rstart))
 
-            log.info("[%d] send to %d with tag %d subarray:%s", rank, self.neighbors[2*d+1], self.send_tag[2*d+1], (sizes, subsizes, sstart))
-            log.info("[%d] recv from %d with tag %d subarray:%s", rank, self.neighbors[2*d+1], self.recv_tag[2*d+1], (sizes, subsizes, rstart))
+            log.info(
+                "[%d] send to %d with tag %d subarray:%s",
+                rank,
+                self.neighbors[2 * d + 1],
+                self.send_tag[2 * d + 1],
+                (sizes, subsizes, sstart),
+            )
+            log.info(
+                "[%d] recv from %d with tag %d subarray:%s",
+                rank,
+                self.neighbors[2 * d + 1],
+                self.recv_tag[2 * d + 1],
+                (sizes, subsizes, rstart),
+            )
 
         for send, recv in zip(self.send_type, self.recv_type):
             send.Commit()
             recv.Commit()
 
-    #pylint: disable=possibly-unused-variable
+    # pylint: disable=possibly-unused-variable
     @monitor
     def update(self):
         """
@@ -297,56 +331,94 @@ class Array:
                 call_genfunction(self.generator.module.update_z, args)
 
         else:
-            for d in range(self.dim): #pylint: disable=invalid-name
+            for d in range(self.dim):  # pylint: disable=invalid-name
                 req = []
 
-                req.append(self.comm.Irecv([self.array, self.recv_type[2*d]], source=self.neighbors[2*d], tag=self.recv_tag[2*d]))
-                req.append(self.comm.Irecv([self.array, self.recv_type[2*d + 1]], source=self.neighbors[2*d + 1], tag=self.recv_tag[2*d + 1]))
+                req.append(
+                    self.comm.Irecv(
+                        [self.array, self.recv_type[2 * d]],
+                        source=self.neighbors[2 * d],
+                        tag=self.recv_tag[2 * d],
+                    )
+                )
+                req.append(
+                    self.comm.Irecv(
+                        [self.array, self.recv_type[2 * d + 1]],
+                        source=self.neighbors[2 * d + 1],
+                        tag=self.recv_tag[2 * d + 1],
+                    )
+                )
 
-                req.append(self.comm.Isend([self.array, self.send_type[2*d]], dest=self.neighbors[2*d], tag=self.send_tag[2*d]))
-                req.append(self.comm.Isend([self.array, self.send_type[2*d + 1]], dest=self.neighbors[2*d + 1], tag=self.send_tag[2*d + 1]))
+                req.append(
+                    self.comm.Isend(
+                        [self.array, self.send_type[2 * d]],
+                        dest=self.neighbors[2 * d],
+                        tag=self.send_tag[2 * d],
+                    )
+                )
+                req.append(
+                    self.comm.Isend(
+                        [self.array, self.send_type[2 * d + 1]],
+                        dest=self.neighbors[2 * d + 1],
+                        tag=self.send_tag[2 * d + 1],
+                    )
+                )
 
                 mpi.Request.Waitall(req)
 
-    #pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals
     def generate(self, generator):
         """
         generate periodic conditions functions for loo.py backend.
         """
         self.generator = generator
+
         def set_order(array, remove_index=None):
-            out = [-1]*len(self.sorder)
+            out = [-1] * len(self.sorder)
             for i, s in enumerate(self.sorder):
                 out[s] = array[i]
             if remove_index:
                 out.pop(self.sorder[remove_index])
             return out
 
-        nx, ny, nz, nv = sp.symbols('nx, ny, nz, nv', integer=True)
+        nx, ny, nz, nv = sp.symbols("nx, ny, nz, nv", integer=True)
         shape = set_order([nv, nx, ny, nz])
 
-        i = sp.Idx('i', (0, nx))
-        j = sp.Idx('j', (0, ny))
-        k = sp.Idx('k', (0, nz))
-        s = sp.Idx('s', (0, nv))
+        i = sp.Idx("i", (0, nx))
+        j = sp.Idx("j", (0, ny))
+        k = sp.Idx("k", (0, nz))
+        s = sp.Idx("s", (0, nv))
 
-        fi = sp.IndexedBase('f', shape) #pylint: disable=invalid-name
-        f_store = sp.Matrix([fi[set_order([s, 0, j, k])], fi[set_order([s, nx-1, j, k])]])
-        f_load = sp.Matrix([fi[set_order([s, nx-2, j, k])], fi[set_order([s, 1, j, k])]])
+        fi = sp.IndexedBase("f", shape)  # pylint: disable=invalid-name
+        f_store = sp.Matrix(
+            [fi[set_order([s, 0, j, k])], fi[set_order([s, nx - 1, j, k])]]
+        )
+        f_load = sp.Matrix(
+            [fi[set_order([s, nx - 2, j, k])], fi[set_order([s, 1, j, k])]]
+        )
         iloop = set_order([s, i, j, k], remove_index=1)
-        generator.add_routine(('update_x', For(iloop, sp.Eq(f_store, f_load))))
+        generator.add_routine(("update_x", For(iloop, sp.Eq(f_store, f_load))))
 
         if len(self.sorder) > 2:
-            f_store = sp.Matrix([fi[set_order([s, i, 0, k])], fi[set_order([s, i, ny-1, k])]])
-            f_load = sp.Matrix([fi[set_order([s, i, ny-2, k])], fi[set_order([s, i, 1, k])]])
+            f_store = sp.Matrix(
+                [fi[set_order([s, i, 0, k])], fi[set_order([s, i, ny - 1, k])]]
+            )
+            f_load = sp.Matrix(
+                [fi[set_order([s, i, ny - 2, k])], fi[set_order([s, i, 1, k])]]
+            )
             iloop = set_order([s, i, j, k], remove_index=2)
-            generator.add_routine(('update_y', For(iloop, sp.Eq(f_store, f_load))))
+            generator.add_routine(("update_y", For(iloop, sp.Eq(f_store, f_load))))
 
         if len(self.sorder) > 3:
-            f_store = sp.Matrix([fi[set_order([s, i, j, 0])], fi[set_order([s, i, j, nz-1])]])
-            f_load = sp.Matrix([fi[set_order([s, i, j, nz-2])], fi[set_order([s, i, j, 1])]])
+            f_store = sp.Matrix(
+                [fi[set_order([s, i, j, 0])], fi[set_order([s, i, j, nz - 1])]]
+            )
+            f_load = sp.Matrix(
+                [fi[set_order([s, i, j, nz - 2])], fi[set_order([s, i, j, 1])]]
+            )
             iloop = set_order([s, i, j, k], remove_index=3)
-            generator.add_routine(('update_z', For(iloop, sp.Eq(f_store, f_load))))
+            generator.add_routine(("update_z", For(iloop, sp.Eq(f_store, f_load))))
+
 
 class SOA(Array):
     """
@@ -377,15 +449,28 @@ class SOA(Array):
     size
 
     """
-    def __init__(self, nv, gspace_size, vmax, mpi_topo, dtype=np.double, gpu_support=False):
+
+    def __init__(
+        self, nv, gspace_size, vmax, mpi_topo, dtype=np.double, gpu_support=False
+    ):
         sorder = [i for i in range(len(gspace_size) + 1)]
-        Array.__init__(self, nv, gspace_size, vmax, sorder, mpi_topo, dtype, gpu_support=gpu_support)
+        Array.__init__(
+            self,
+            nv,
+            gspace_size,
+            vmax,
+            sorder,
+            mpi_topo,
+            dtype,
+            gpu_support=gpu_support,
+        )
 
     def reshape(self):
         """
         reshape.
         """
         return self.array
+
 
 class AOS(Array):
     """
@@ -416,9 +501,21 @@ class AOS(Array):
     size
 
     """
-    def __init__(self, nv, gspace_size, vmax, mpi_topo, dtype=np.double, gpu_support=False):
+
+    def __init__(
+        self, nv, gspace_size, vmax, mpi_topo, dtype=np.double, gpu_support=False
+    ):
         sorder = [len(gspace_size)] + [i for i in range(len(gspace_size))]
-        Array.__init__(self, nv, gspace_size, vmax, sorder, mpi_topo, dtype, gpu_support=gpu_support)
+        Array.__init__(
+            self,
+            nv,
+            gspace_size,
+            vmax,
+            sorder,
+            mpi_topo,
+            dtype,
+            gpu_support=gpu_support,
+        )
 
     def reshape(self):
         """

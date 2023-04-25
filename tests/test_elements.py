@@ -1,5 +1,4 @@
 import pytest
-import numpy as np
 import pylbm
 
 elements = [
@@ -20,12 +19,13 @@ elements = [
 def get_element(request):
     return request.param
 
+
 class TestBase:
     def test_bounds(self, get_element):
         dim, element = get_element
         bounds = element.get_bounds()
-        assert bounds[0] == pytest.approx([-1]*dim)
-        assert bounds[1] == pytest.approx([1]*dim)
+        assert bounds[0] == pytest.approx([-1] * dim)
+        assert bounds[1] == pytest.approx([1] * dim)
 
     # def test_point_inside(self, get_element):
     #     dim, element = get_element

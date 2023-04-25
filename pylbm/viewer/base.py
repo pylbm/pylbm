@@ -9,11 +9,13 @@ Base module that describes what we need to define a new viewer.
 """
 from abc import ABC, abstractmethod
 
+
 class Viewer(ABC):
     """
     Base class which describes the methods needed to
     define a new viewer
     """
+
     @abstractmethod
     def text(self, t, pos, fontsize, color, **kwargs):
         """

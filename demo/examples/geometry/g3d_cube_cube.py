@@ -1,5 +1,3 @@
-
-
 # Authors:
 #     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -15,24 +13,15 @@ import pylbm
 
 # pylint: disable=invalid-name
 
-a, b = 1./np.sqrt(3), 1./np.sqrt(2)
-c = a*b
+a, b = 1.0 / np.sqrt(3), 1.0 / np.sqrt(2)
+c = a * b
 v0 = [a, a, a]
 v1 = [b, -b, 0]
-v2 = [c, c, -2*c]
+v2 = [c, c, -2 * c]
 v0, v1, v2 = [1, 0, 0], [0, 1, 0], [0, 0, 1]
 dgeom = {
-    'box': {
-        'x': [-3, 3],
-        'y': [-3, 3],
-        'z': [-3, 3],
-        'label': list(range(6))
-    },
-    'elements': [
-        pylbm.Parallelepiped(
-            (0, 0, 0), v0, v1, v2, label=0
-        )
-    ],
+    "box": {"x": [-3, 3], "y": [-3, 3], "z": [-3, 3], "label": list(range(6))},
+    "elements": [pylbm.Parallelepiped((0, 0, 0), v0, v1, v2, label=0)],
 }
 geom = pylbm.Geometry(dgeom)
 print(geom)

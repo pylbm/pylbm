@@ -86,4 +86,3 @@ and then, install pylbm
 For more information about what you can achieve with pylbm, take a look at the documentation
 
 `<http://pylbm.readthedocs.io>`_
-

@@ -1,5 +1,3 @@
-
-
 # Authors:
 #     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -15,11 +13,8 @@ import pylbm
 # pylint: disable=invalid-name
 
 dsten = {
-    'dim': 2,
-    'schemes': [
-        {'velocities': list(range(9))},
-        {'velocities': list(range(5))}
-    ],
+    "dim": 2,
+    "schemes": [{"velocities": list(range(9))}, {"velocities": list(range(5))}],
 }
 s = pylbm.Stencil(dsten)
 print(s)

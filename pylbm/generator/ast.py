@@ -1,5 +1,5 @@
 # FIXME: make pylint happy !
-#pylint: disable=all
+# pylint: disable=all
 
 """
 Types used to represent a full function/module as an Abstract Syntax Tree.
@@ -127,8 +127,6 @@ There is a function constructing a loop (or a complete function) like this in
 
 """
 
-from typing import Any, Dict, List
-
 from collections import defaultdict
 
 from sympy import Lt, Le, Ge, Gt
@@ -137,7 +135,8 @@ from sympy.core.basic import Basic
 from sympy.core.expr import Expr
 from sympy.core.numbers import Float, Integer, oo
 from sympy.core.sympify import _sympify, sympify, SympifyError
-from sympy.utilities.iterables import iterable, is_sequence
+from sympy.utilities.iterables import is_sequence
+from sympy.tensor import IndexedBase
 
 
 def _mk_Tuple(args):
@@ -159,11 +158,13 @@ def _mk_Tuple(args):
     args = [String(arg) if isinstance(arg, str) else arg for arg in args]
     return Tuple(*args)
 
+
 class WithBody:
     pass
 
+
 class Token(Basic):
-    """ Base class for the AST types.
+    """Base class for the AST types.
 
     Explanation
     ===========
@@ -183,7 +184,7 @@ class Token(Basic):
     __slots__ = ()
     defaults = {}  # type: Dict[str, Any]
     not_in_args = []  # type: List[str]
-    indented_args = ['body']
+    indented_args = ["body"]
 
     @property
     def is_Atom(self):
@@ -191,14 +192,14 @@ class Token(Basic):
 
     @classmethod
     def _get_constructor(cls, attr):
-        """ Get the constructor function for an attribute by name. """
-        return getattr(cls, '_construct_%s' % attr, lambda x: x)
+        """Get the constructor function for an attribute by name."""
+        return getattr(cls, "_construct_%s" % attr, lambda x: x)
 
     @classmethod
     def _construct(cls, attr, arg):
-        """ Construct an attribute value from argument passed to ``__new__()``. """
+        """Construct an attribute value from argument passed to ``__new__()``."""
         # arg may be ``NoneToken()``, so comparation is done using == instead of ``is`` operator
-        if arg == None:
+        if arg is None:
             return cls.defaults.get(attr, none)
         else:
             if isinstance(arg, Dummy):  # sympy's replace uses Dummy instances
@@ -212,19 +213,22 @@ class Token(Basic):
             return args[0]
 
         if len(args) > len(cls.__slots__):
-            raise ValueError("Too many arguments (%d), expected at most %d" % (len(args), len(cls.__slots__)))
+            raise ValueError(
+                "Too many arguments (%d), expected at most %d"
+                % (len(args), len(cls.__slots__))
+            )
 
         attrvals = []
 
         # Process positional arguments
         for attrname, argval in zip(cls.__slots__, args):
             if attrname in kwargs:
-                raise TypeError('Got multiple values for attribute %r' % attrname)
+                raise TypeError("Got multiple values for attribute %r" % attrname)
 
             attrvals.append(cls._construct(attrname, argval))
 
         # Process keyword arguments
-        for attrname in cls.__slots__[len(args):]:
+        for attrname in cls.__slots__[len(args) :]:
             if attrname in kwargs:
                 argval = kwargs.pop(attrname)
 
@@ -232,16 +236,19 @@ class Token(Basic):
                 argval = cls.defaults[attrname]
 
             else:
-                raise TypeError('No value for %r given and attribute has no default' % attrname)
+                raise TypeError(
+                    "No value for %r given and attribute has no default" % attrname
+                )
 
             attrvals.append(cls._construct(attrname, argval))
 
         if kwargs:
-            raise ValueError("Unknown keyword arguments: %s" % ' '.join(kwargs))
+            raise ValueError("Unknown keyword arguments: %s" % " ".join(kwargs))
 
         # Parent constructor
         basic_args = [
-            val for attr, val in zip(cls.__slots__, attrvals)
+            val
+            for attr, val in zip(cls.__slots__, attrvals)
             if attr not in cls.not_in_args
         ]
         obj = Basic.__new__(cls, *basic_args)
@@ -267,10 +274,11 @@ class Token(Basic):
         return super().__hash__()
 
     def _joiner(self, k, indent_level):
-        return (',\n' + ' '*indent_level) if k in self.indented_args else ', '
+        return (",\n" + " " * indent_level) if k in self.indented_args else ", "
 
     def _indented(self, printer, k, v, *args, **kwargs):
-        il = printer._context['indent_level']
+        il = printer._context["indent_level"]
+
         def _print(arg):
             if isinstance(arg, Token):
                 return printer._print(arg, *args, joiner=self._joiner(k, il), **kwargs)
@@ -280,17 +288,18 @@ class Token(Basic):
         if isinstance(v, Tuple):
             joined = self._joiner(k, il).join([_print(arg) for arg in v.args])
             if k in self.indented_args:
-                return '(\n' + ' '*il + joined + ',\n' + ' '*(il - 4) + ')'
+                return "(\n" + " " * il + joined + ",\n" + " " * (il - 4) + ")"
             else:
-                return ('({0},)' if len(v.args) == 1 else '({0})').format(joined)
+                return ("({0},)" if len(v.args) == 1 else "({0})").format(joined)
         else:
             return _print(v)
 
-    def _sympyrepr(self, printer, *args, joiner=', ', **kwargs):
+    def _sympyrepr(self, printer, *args, joiner=", ", **kwargs):
         from sympy.printing.printer import printer_context
-        exclude = kwargs.get('exclude', ())
+
+        exclude = kwargs.get("exclude", ())
         values = [getattr(self, k) for k in self.__slots__]
-        indent_level = printer._context.get('indent_level', 0)
+        indent_level = printer._context.get("indent_level", 0)
 
         arg_reprs = []
 
@@ -305,7 +314,9 @@ class Token(Basic):
             ilvl = indent_level + 4 if attr in self.indented_args else 0
             with printer_context(printer, indent_level=ilvl):
                 indented = self._indented(printer, attr, value, *args, **kwargs)
-            arg_reprs.append(('{1}' if i == 0 else '{0}={1}').format(attr, indented.lstrip()))
+            arg_reprs.append(
+                ("{1}" if i == 0 else "{0}={1}").format(attr, indented.lstrip())
+            )
 
         return "{}({})".format(self.__class__.__name__, joiner.join(arg_reprs))
 
@@ -313,10 +324,11 @@ class Token(Basic):
 
     def __repr__(self):  # sympy.core.Basic.__repr__ uses sstr
         from sympy.printing import srepr
+
         return srepr(self)
 
     def kwargs(self, exclude=(), apply=None):
-        """ Get instance's attributes as dict of keyword arguments.
+        """Get instance's attributes as dict of keyword arguments.
 
         Parameters
         ==========
@@ -335,7 +347,7 @@ class Token(Basic):
 
 
 class BreakToken(Token):
-    """ Represents 'break' in C/Python ('exit' in Fortran).
+    """Represents 'break' in C/Python ('exit' in Fortran).
 
     Use the premade instance ``break_`` or instantiate manually.
 
@@ -350,11 +362,12 @@ class BreakToken(Token):
     'exit'
     """
 
+
 break_ = BreakToken()
 
 
 class ContinueToken(Token):
-    """ Represents 'continue' in C/Python ('cycle' in Fortran)
+    """Represents 'continue' in C/Python ('cycle' in Fortran)
 
     Use the premade instance ``continue_`` or instantiate manually.
 
@@ -369,10 +382,12 @@ class ContinueToken(Token):
     'cycle'
     """
 
+
 continue_ = ContinueToken()
 
+
 class NoneToken(Token):
-    """ The AST equivalence of Python's NoneType
+    """The AST equivalence of Python's NoneType
 
     The corresponding instance of Python's ``None`` is ``none``.
 
@@ -385,6 +400,7 @@ class NoneToken(Token):
     x = None
 
     """
+
     def __eq__(self, other):
         return other is None or isinstance(other, NoneToken)
 
@@ -399,7 +415,7 @@ none = NoneToken()
 
 
 class AssignmentBase(Basic):
-    """ Abstract base class for Assignment and AugmentedAssignment.
+    """Abstract base class for Assignment and AugmentedAssignment.
 
     Attributes:
     ===========
@@ -426,12 +442,10 @@ class AssignmentBase(Basic):
 
     @classmethod
     def _check_args(cls, lhs, rhs):
-        """ Check arguments to __new__ and raise exception if any problems found.
+        """Check arguments to __new__ and raise exception if any problems found.
 
         Derived classes may wish to override this.
         """
-        from sympy.matrices.expressions.matexpr import (
-            MatrixElement, MatrixSymbol)
         from sympy.tensor.indexed import Indexed
 
         # Tuple of things that can be on the lhs of an assignment
@@ -442,8 +456,8 @@ class AssignmentBase(Basic):
         # Indexed types implement shape, but don't define it until later. This
         # causes issues in assignment validation. For now, matrices are defined
         # as anything with a shape that is not an Indexed
-        lhs_is_mat = hasattr(lhs, 'shape') and not isinstance(lhs, Indexed)
-        rhs_is_mat = hasattr(rhs, 'shape') and not isinstance(rhs, Indexed)
+        lhs_is_mat = hasattr(lhs, "shape") and not isinstance(lhs, Indexed)
+        rhs_is_mat = hasattr(rhs, "shape") and not isinstance(rhs, Indexed)
 
         # If lhs and rhs have same structure, then this assignment is ok
         if lhs_is_mat:
@@ -492,7 +506,7 @@ class Assignment(AssignmentBase):
     Assignment(A[0, 1], x)
     """
 
-    op = ':='
+    op = ":="
 
 
 class AugmentedAssignment(AssignmentBase):
@@ -506,38 +520,43 @@ class AugmentedAssignment(AssignmentBase):
        Symbol for binary operation being applied in the assignment, such as "+",
        "*", etc.
     """
+
     binop = None  # type: str
 
     @property
     def op(self):
-        return self.binop + '='
+        return self.binop + "="
 
 
 class AddAugmentedAssignment(AugmentedAssignment):
-    binop = '+'
+    binop = "+"
 
 
 class SubAugmentedAssignment(AugmentedAssignment):
-    binop = '-'
+    binop = "-"
 
 
 class MulAugmentedAssignment(AugmentedAssignment):
-    binop = '*'
+    binop = "*"
 
 
 class DivAugmentedAssignment(AugmentedAssignment):
-    binop = '/'
+    binop = "/"
 
 
 class ModAugmentedAssignment(AugmentedAssignment):
-    binop = '%'
+    binop = "%"
 
 
 # Mapping from binary op strings to AugmentedAssignment subclasses
 augassign_classes = {
-    cls.binop: cls for cls in [
-        AddAugmentedAssignment, SubAugmentedAssignment, MulAugmentedAssignment,
-        DivAugmentedAssignment, ModAugmentedAssignment
+    cls.binop: cls
+    for cls in [
+        AddAugmentedAssignment,
+        SubAugmentedAssignment,
+        MulAugmentedAssignment,
+        DivAugmentedAssignment,
+        ModAugmentedAssignment,
     ]
 }
 
@@ -626,6 +645,7 @@ class CodeBlock(Basic):
     y = x + 1;
 
     """
+
     def __new__(cls, *args):
         left_hand_sides = []
         right_hand_sides = []
@@ -645,11 +665,19 @@ class CodeBlock(Basic):
         return iter(self.args)
 
     def _sympyrepr(self, printer, *args, **kwargs):
-        il = printer._context.get('indent_level', 0)
-        joiner = ',\n' + ' '*il
+        il = printer._context.get("indent_level", 0)
+        joiner = ",\n" + " " * il
         joined = joiner.join(map(printer._print, self.args))
-        return ('{}(\n'.format(' '*(il-4) + self.__class__.__name__,) +
-                ' '*il + joined + '\n' + ' '*(il - 4) + ')')
+        return (
+            "{}(\n".format(
+                " " * (il - 4) + self.__class__.__name__,
+            )
+            + " " * il
+            + joined
+            + "\n"
+            + " " * (il - 4)
+            + ")"
+        )
 
     _sympystr = _sympyrepr
 
@@ -697,10 +725,14 @@ class CodeBlock(Basic):
 
         if not all(isinstance(i, Assignment) for i in assignments):
             # Will support more things later
-            raise NotImplementedError("CodeBlock.topological_sort only supports Assignments")
+            raise NotImplementedError(
+                "CodeBlock.topological_sort only supports Assignments"
+            )
 
         if any(isinstance(i, AugmentedAssignment) for i in assignments):
-            raise NotImplementedError("CodeBlock.topological_sort doesn't yet work with AugmentedAssignments")
+            raise NotImplementedError(
+                "CodeBlock.topological_sort doesn't yet work with AugmentedAssignments"
+            )
 
         # Create a graph where the nodes are assignments and there is a directed edge
         # between nodes that use a variable and nodes that assign that
@@ -742,8 +774,9 @@ class CodeBlock(Basic):
         # De-enumerate the result
         return cls(*[a for i, a in ordered_assignments])
 
-    def cse(self, symbols=None, optimizations=None, postprocess=None,
-        order='canonical'):
+    def cse(
+        self, symbols=None, optimizations=None, postprocess=None, order="canonical"
+    ):
         """
         Return a new code block with common subexpressions eliminated.
 
@@ -784,12 +817,16 @@ class CodeBlock(Basic):
             raise NotImplementedError("CodeBlock.cse only supports Assignments")
 
         if any(isinstance(i, AugmentedAssignment) for i in self.args):
-            raise NotImplementedError("CodeBlock.cse doesn't yet work with AugmentedAssignments")
+            raise NotImplementedError(
+                "CodeBlock.cse doesn't yet work with AugmentedAssignments"
+            )
 
         for i, lhs in enumerate(self.left_hand_sides):
             if lhs in self.left_hand_sides[:i]:
-                raise NotImplementedError("Duplicate assignments to the same "
-                    "variable are not yet supported (%s)" % lhs)
+                raise NotImplementedError(
+                    "Duplicate assignments to the same "
+                    "variable are not yet supported (%s)" % lhs
+                )
 
         # Ensure new symbols for subexpressions do not conflict with existing
         existing_symbols = self.atoms(Symbol)
@@ -797,63 +834,72 @@ class CodeBlock(Basic):
             symbols = numbered_symbols()
         symbols = filter_symbols(symbols, existing_symbols)
 
-        replacements, reduced_exprs = cse(list(self.right_hand_sides),
-            symbols=symbols, optimizations=optimizations, postprocess=postprocess,
-            order=order)
+        replacements, reduced_exprs = cse(
+            list(self.right_hand_sides),
+            symbols=symbols,
+            optimizations=optimizations,
+            postprocess=postprocess,
+            order=order,
+        )
 
-        new_block = [Assignment(var, expr) for var, expr in
-            zip(self.left_hand_sides, reduced_exprs)]
+        new_block = [
+            Assignment(var, expr)
+            for var, expr in zip(self.left_hand_sides, reduced_exprs)
+        ]
         new_assignments = [Assignment(var, expr) for var, expr in replacements]
         return self.topological_sort(new_assignments + new_block)
 
+
 class AssignmentIf(Assignment):
-    rel_op = '=='
+    rel_op = "=="
     __slots__ = []
+
 
 class For(Token, WithBody):
     """Represents a 'for-loop' in the code.
 
-    Expressions are of the form:
-        "for target in iter:
-            body..."
+        Expressions are of the form:
+            "for target in iter:
+                body..."
 
-    Parameters
-    ==========
+        Parameters
+        ==========
 
-    target : symbol
-    iter : iterable
-    body : CodeBlock or iterable
-!        When passed an iterable it is used to instantiate a CodeBlock.
+        target : symbol
+        iter : iterable
+        body : CodeBlock or iterable
+    !        When passed an iterable it is used to instantiate a CodeBlock.
 
-    Examples
-    ========
+        Examples
+        ========
 
-    >>> from sympy import symbols, Range
-    >>> from sympy.codegen.ast import aug_assign, For
-    >>> x, i, j, k = symbols('x i j k')
-    >>> for_i = For(i, Range(10), [aug_assign(x, '+', i*j*k)])
-    >>> for_i  # doctest: -NORMALIZE_WHITESPACE
-    For(i, iterable=Range(0, 10, 1), body=CodeBlock(
-        AddAugmentedAssignment(x, i*j*k)
-    ))
-    >>> for_ji = For(j, Range(7), [for_i])
-    >>> for_ji  # doctest: -NORMALIZE_WHITESPACE
-    For(j, iterable=Range(0, 7, 1), body=CodeBlock(
+        >>> from sympy import symbols, Range
+        >>> from sympy.codegen.ast import aug_assign, For
+        >>> x, i, j, k = symbols('x i j k')
+        >>> for_i = For(i, Range(10), [aug_assign(x, '+', i*j*k)])
+        >>> for_i  # doctest: -NORMALIZE_WHITESPACE
         For(i, iterable=Range(0, 10, 1), body=CodeBlock(
             AddAugmentedAssignment(x, i*j*k)
         ))
-    ))
-    >>> for_kji =For(k, Range(5), [for_ji])
-    >>> for_kji  # doctest: -NORMALIZE_WHITESPACE
-    For(k, iterable=Range(0, 5, 1), body=CodeBlock(
+        >>> for_ji = For(j, Range(7), [for_i])
+        >>> for_ji  # doctest: -NORMALIZE_WHITESPACE
         For(j, iterable=Range(0, 7, 1), body=CodeBlock(
             For(i, iterable=Range(0, 10, 1), body=CodeBlock(
                 AddAugmentedAssignment(x, i*j*k)
             ))
         ))
-    ))
+        >>> for_kji =For(k, Range(5), [for_ji])
+        >>> for_kji  # doctest: -NORMALIZE_WHITESPACE
+        For(k, iterable=Range(0, 5, 1), body=CodeBlock(
+            For(j, iterable=Range(0, 7, 1), body=CodeBlock(
+                For(i, iterable=Range(0, 10, 1), body=CodeBlock(
+                    AddAugmentedAssignment(x, i*j*k)
+                ))
+            ))
+        ))
     """
-    __slots__ = ('target', 'body')
+
+    __slots__ = ("target", "body")
     # _construct_target = staticmethod(_sympify)
 
     @classmethod
@@ -868,6 +914,7 @@ class For(Token, WithBody):
     @classmethod
     def _construct_target(cls, itr):
         from sympy.tensor import Idx
+
         if isinstance(itr, Idx):
             return Tuple(itr)
         elif is_sequence(itr):
@@ -878,7 +925,7 @@ class For(Token, WithBody):
 
 
 class String(Token):
-    """ SymPy object representing a string.
+    """SymPy object representing a string.
 
     Atomic object which is not an expression (as opposed to Symbol).
 
@@ -902,8 +949,9 @@ class String(Token):
     String('foo')
 
     """
-    __slots__ = ('text',)
-    not_in_args = ['text']
+
+    __slots__ = ("text",)
+    not_in_args = ["text"]
     is_Atom = True
 
     @classmethod
@@ -917,13 +965,15 @@ class String(Token):
 
 
 class QuotedString(String):
-    """ Represents a string which should be printed with quotes. """
+    """Represents a string which should be printed with quotes."""
+
 
 class Comment(String):
-    """ Represents a comment. """
+    """Represents a comment."""
+
 
 class Node(Token):
-    """ Subclass of Token, carrying the attribute 'attrs' (Tuple)
+    """Subclass of Token, carrying the attribute 'attrs' (Tuple)
 
     Examples
     ========
@@ -943,21 +993,21 @@ class Node(Token):
 
     """
 
-    __slots__ = ('attrs',)
+    __slots__ = ("attrs",)
 
-    defaults = {'attrs': Tuple()}  # type: Dict[str, Any]
+    defaults = {"attrs": Tuple()}  # type: Dict[str, Any]
 
     _construct_attrs = staticmethod(_mk_Tuple)
 
     def attr_params(self, looking_for):
-        """ Returns the parameters of the Attribute with name ``looking_for`` in self.attrs """
+        """Returns the parameters of the Attribute with name ``looking_for`` in self.attrs"""
         for attr in self.attrs:
             if str(attr.name) == str(looking_for):
                 return attr.parameters
 
 
 class Type(Token):
-    """ Represents a type.
+    """Represents a type.
 
     Explanation
     ===========
@@ -1011,7 +1061,8 @@ class Type(Token):
     .. [1] https://docs.scipy.org/doc/numpy/user/basics.types.html
 
     """
-    __slots__ = ('name',)
+
+    __slots__ = ("name",)
 
     _construct_name = String
 
@@ -1020,7 +1071,7 @@ class Type(Token):
 
     @classmethod
     def from_expr(cls, expr):
-        """ Deduces type from an expression or a ``Symbol``.
+        """Deduces type from an expression or a ``Symbol``.
 
         Parameters
         ==========
@@ -1050,13 +1101,13 @@ class Type(Token):
         """
         if isinstance(expr, (float, Float)):
             return real
-        if isinstance(expr, (int, Integer)) or getattr(expr, 'is_integer', False):
+        if isinstance(expr, (int, Integer)) or getattr(expr, "is_integer", False):
             return integer
-        if getattr(expr, 'is_real', False):
+        if getattr(expr, "is_real", False):
             return real
-        if isinstance(expr, complex) or getattr(expr, 'is_complex', False):
+        if isinstance(expr, complex) or getattr(expr, "is_complex", False):
             return complex_
-        if isinstance(expr, bool) or getattr(expr, 'is_Relational', False):
+        if isinstance(expr, bool) or getattr(expr, "is_Relational", False):
             return bool_
         else:
             raise ValueError("Could not deduce type from expr.")
@@ -1065,7 +1116,7 @@ class Type(Token):
         pass
 
     def cast_check(self, value, rtol=None, atol=0, limits=None, precision_targets=None):
-        """ Casts a value to the data type of the instance.
+        """Casts a value to the data type of the instance.
 
         Parameters
         ==========
@@ -1116,13 +1167,13 @@ class Type(Token):
         val = sympify(value)
 
         ten = Integer(10)
-        exp10 = getattr(self, 'decimal_dig', None)
+        exp10 = getattr(self, "decimal_dig", None)
 
         if rtol is None:
-            rtol = 1e-15 if exp10 is None else 2.0*ten**(-exp10)
+            rtol = 1e-15 if exp10 is None else 2.0 * ten ** (-exp10)
 
         def tol(num):
-            return atol + rtol*abs(num)
+            return atol + rtol * abs(num)
 
         new_val = self.cast_nocheck(value)
         self._check(new_val)
@@ -1135,13 +1186,17 @@ class Type(Token):
 
 
 class IntBaseType(Type):
-    """ Integer base type, contains no size information. """
-    __slots__ = ('name',)
+    """Integer base type, contains no size information."""
+
+    __slots__ = ("name",)
     cast_nocheck = lambda self, i: Integer(int(i))
 
 
 class _SizedIntType(IntBaseType):
-    __slots__ = ('name', 'nbits',)
+    __slots__ = (
+        "name",
+        "nbits",
+    )
 
     _construct_nbits = Integer
 
@@ -1153,18 +1208,20 @@ class _SizedIntType(IntBaseType):
 
 
 class SignedIntType(_SizedIntType):
-    """ Represents a signed integer type. """
+    """Represents a signed integer type."""
+
     @property
     def min(self):
-        return -2**(self.nbits-1)
+        return -(2 ** (self.nbits - 1))
 
     @property
     def max(self):
-        return 2**(self.nbits-1) - 1
+        return 2 ** (self.nbits - 1) - 1
 
 
 class UnsignedIntType(_SizedIntType):
-    """ Represents an unsigned integer type. """
+    """Represents an unsigned integer type."""
+
     @property
     def min(self):
         return 0
@@ -1173,14 +1230,18 @@ class UnsignedIntType(_SizedIntType):
     def max(self):
         return 2**self.nbits - 1
 
+
 two = Integer(2)
 
+
 class FloatBaseType(Type):
-    """ Represents a floating point number type. """
+    """Represents a floating point number type."""
+
     cast_nocheck = Float
 
+
 class FloatType(FloatBaseType):
-    """ Represents a floating point type with fixed bit width.
+    """Represents a floating point type with fixed bit width.
 
     Base 2 & one sign bit is assumed.
 
@@ -1220,55 +1281,59 @@ class FloatType(FloatBaseType):
     ValueError: Maximum value for data type smaller than new value.
     """
 
-    __slots__ = ('name', 'nbits', 'nmant', 'nexp',)
+    __slots__ = (
+        "name",
+        "nbits",
+        "nmant",
+        "nexp",
+    )
 
     _construct_nbits = _construct_nmant = _construct_nexp = Integer
 
-
     @property
     def max_exponent(self):
-        """ The largest positive number n, such that 2**(n - 1) is a representable finite value. """
+        """The largest positive number n, such that 2**(n - 1) is a representable finite value."""
         # cf. C++'s ``std::numeric_limits::max_exponent``
-        return two**(self.nexp - 1)
+        return two ** (self.nexp - 1)
 
     @property
     def min_exponent(self):
-        """ The lowest negative number n, such that 2**(n - 1) is a valid normalized number. """
+        """The lowest negative number n, such that 2**(n - 1) is a valid normalized number."""
         # cf. C++'s ``std::numeric_limits::min_exponent``
         return 3 - self.max_exponent
 
     @property
     def max(self):
-        """ Maximum value representable. """
-        return (1 - two**-(self.nmant+1))*two**self.max_exponent
+        """Maximum value representable."""
+        return (1 - two ** -(self.nmant + 1)) * two**self.max_exponent
 
     @property
     def tiny(self):
-        """ The minimum positive normalized value. """
+        """The minimum positive normalized value."""
         # See C macros: FLT_MIN, DBL_MIN, LDBL_MIN
         # or C++'s ``std::numeric_limits::min``
         # or numpy.finfo(dtype).tiny
-        return two**(self.min_exponent - 1)
-
+        return two ** (self.min_exponent - 1)
 
     @property
     def eps(self):
-        """ Difference between 1.0 and the next representable value. """
-        return two**(-self.nmant)
+        """Difference between 1.0 and the next representable value."""
+        return two ** (-self.nmant)
 
     @property
     def dig(self):
-        """ Number of decimal digits that are guaranteed to be preserved in text.
+        """Number of decimal digits that are guaranteed to be preserved in text.
 
         When converting text -> float -> text, you are guaranteed that at least ``dig``
         number of digits are preserved with respect to rounding or overflow.
         """
         from sympy.functions import floor, log
-        return floor(self.nmant * log(2)/log(10))
+
+        return floor(self.nmant * log(2) / log(10))
 
     @property
     def decimal_dig(self):
-        """ Number of digits needed to store & load without loss.
+        """Number of digits needed to store & load without loss.
 
         Explanation
         ===========
@@ -1279,10 +1344,11 @@ class FloatType(FloatBaseType):
         as text.
         """
         from sympy.functions import ceiling, log
-        return ceiling((self.nmant + 1) * log(2)/log(10) + 1)
+
+        return ceiling((self.nmant + 1) * log(2) / log(10) + 1)
 
     def cast_nocheck(self, value):
-        """ Casts without checking if out of bounds or subnormal. """
+        """Casts without checking if out of bounds or subnormal."""
         if value == oo:  # float(oo) or oo
             return float(oo)
         elif value == -oo:  # float(-oo) or -oo
@@ -1295,59 +1361,76 @@ class FloatType(FloatBaseType):
         if value > self.max:
             raise ValueError("Value is too big: %d > %d" % (value, self.max))
         if abs(value) < self.tiny:
-            raise ValueError("Smallest (absolute) value for data type bigger than new value.")
+            raise ValueError(
+                "Smallest (absolute) value for data type bigger than new value."
+            )
+
 
 class ComplexBaseType(FloatBaseType):
-
     def cast_nocheck(self, value):
-        """ Casts without checking if out of bounds or subnormal. """
+        """Casts without checking if out of bounds or subnormal."""
         from sympy.functions import re, im
-        return (
-            super().cast_nocheck(re(value)) +
-            super().cast_nocheck(im(value))*1j
-        )
+
+        return super().cast_nocheck(re(value)) + super().cast_nocheck(im(value)) * 1j
 
     def _check(self, value):
         from sympy.functions import re, im
+
         super()._check(re(value))
         super()._check(im(value))
 
 
 class ComplexType(ComplexBaseType, FloatType):
-    """ Represents a complex floating point number. """
+    """Represents a complex floating point number."""
 
 
 # NumPy types:
-intc = IntBaseType('intc')
-intp = IntBaseType('intp')
-int8 = SignedIntType('int8', 8)
-int16 = SignedIntType('int16', 16)
-int32 = SignedIntType('int32', 32)
-int64 = SignedIntType('int64', 64)
-uint8 = UnsignedIntType('uint8', 8)
-uint16 = UnsignedIntType('uint16', 16)
-uint32 = UnsignedIntType('uint32', 32)
-uint64 = UnsignedIntType('uint64', 64)
-float16 = FloatType('float16', 16, nexp=5, nmant=10)  # IEEE 754 binary16, Half precision
-float32 = FloatType('float32', 32, nexp=8, nmant=23)  # IEEE 754 binary32, Single precision
-float64 = FloatType('float64', 64, nexp=11, nmant=52)  # IEEE 754 binary64, Double precision
-float80 = FloatType('float80', 80, nexp=15, nmant=63)  # x86 extended precision (1 integer part bit), "long double"
-float128 = FloatType('float128', 128, nexp=15, nmant=112)  # IEEE 754 binary128, Quadruple precision
-float256 = FloatType('float256', 256, nexp=19, nmant=236)  # IEEE 754 binary256, Octuple precision
+intc = IntBaseType("intc")
+intp = IntBaseType("intp")
+int8 = SignedIntType("int8", 8)
+int16 = SignedIntType("int16", 16)
+int32 = SignedIntType("int32", 32)
+int64 = SignedIntType("int64", 64)
+uint8 = UnsignedIntType("uint8", 8)
+uint16 = UnsignedIntType("uint16", 16)
+uint32 = UnsignedIntType("uint32", 32)
+uint64 = UnsignedIntType("uint64", 64)
+float16 = FloatType(
+    "float16", 16, nexp=5, nmant=10
+)  # IEEE 754 binary16, Half precision
+float32 = FloatType(
+    "float32", 32, nexp=8, nmant=23
+)  # IEEE 754 binary32, Single precision
+float64 = FloatType(
+    "float64", 64, nexp=11, nmant=52
+)  # IEEE 754 binary64, Double precision
+float80 = FloatType(
+    "float80", 80, nexp=15, nmant=63
+)  # x86 extended precision (1 integer part bit), "long double"
+float128 = FloatType(
+    "float128", 128, nexp=15, nmant=112
+)  # IEEE 754 binary128, Quadruple precision
+float256 = FloatType(
+    "float256", 256, nexp=19, nmant=236
+)  # IEEE 754 binary256, Octuple precision
 
-complex64 = ComplexType('complex64', nbits=64, **float32.kwargs(exclude=('name', 'nbits')))
-complex128 = ComplexType('complex128', nbits=128, **float64.kwargs(exclude=('name', 'nbits')))
+complex64 = ComplexType(
+    "complex64", nbits=64, **float32.kwargs(exclude=("name", "nbits"))
+)
+complex128 = ComplexType(
+    "complex128", nbits=128, **float64.kwargs(exclude=("name", "nbits"))
+)
 
 # Generic types (precision may be chosen by code printers):
-untyped = Type('untyped')
-real = FloatBaseType('real')
-integer = IntBaseType('integer')
-complex_ = ComplexBaseType('complex')
-bool_ = Type('bool')
+untyped = Type("untyped")
+real = FloatBaseType("real")
+integer = IntBaseType("integer")
+complex_ = ComplexBaseType("complex")
+bool_ = Type("bool")
 
 
 class Attribute(Token):
-    """ Attribute (possibly parametrized)
+    """Attribute (possibly parametrized)
 
     For use with :class:`sympy.codegen.ast.Node` (which takes instances of
     ``Attribute`` as ``attrs``).
@@ -1373,8 +1456,9 @@ class Attribute(Token):
     >>> a.parameters == (1, 2, 3)
     True
     """
-    __slots__ = ('name', 'parameters')
-    defaults = {'parameters': Tuple()}
+
+    __slots__ = ("name", "parameters")
+    defaults = {"parameters": Tuple()}
 
     _construct_name = String
     _construct_parameters = staticmethod(_mk_Tuple)
@@ -1382,16 +1466,18 @@ class Attribute(Token):
     def _sympystr(self, printer, *args, **kwargs):
         result = str(self.name)
         if self.parameters:
-            result += '(%s)' % ', '.join(map(lambda arg: printer._print(
-                arg, *args, **kwargs), self.parameters))
+            result += "(%s)" % ", ".join(
+                map(lambda arg: printer._print(arg, *args, **kwargs), self.parameters)
+            )
         return result
 
-value_const = Attribute('value_const')
-pointer_const = Attribute('pointer_const')
+
+value_const = Attribute("value_const")
+pointer_const = Attribute("pointer_const")
 
 
 class Variable(Node):
-    """ Represents a variable.
+    """Represents a variable.
 
     Parameters
     ==========
@@ -1440,17 +1526,17 @@ class Variable(Node):
 
     """
 
-    __slots__ = ('symbol', 'type', 'value') + Node.__slots__
+    __slots__ = ("symbol", "type", "value") + Node.__slots__
 
     defaults = Node.defaults.copy()
-    defaults.update({'type': untyped, 'value': none})
+    defaults.update({"type": untyped, "value": none})
 
     _construct_symbol = staticmethod(sympify)
     _construct_value = staticmethod(sympify)
 
     @classmethod
     def deduced(cls, symbol, value=None, attrs=Tuple(), cast_check=True):
-        """ Alt. constructor with type deduction from ``Type.from_expr``.
+        """Alt. constructor with type deduction from ``Type.from_expr``.
 
         Deduces type primarily from ``symbol``, secondarily from ``value``.
 
@@ -1494,7 +1580,7 @@ class Variable(Node):
         return cls(symbol, type=type_, value=value, attrs=attrs)
 
     def as_Declaration(self, **kwargs):
-        """ Convenience method for creating a Declaration instance.
+        """Convenience method for creating a Declaration instance.
 
         Explanation
         ===========
@@ -1537,8 +1623,9 @@ class Variable(Node):
     __ge__ = lambda self, other: self._relation(other, Ge)
     __gt__ = lambda self, other: self._relation(other, Gt)
 
+
 class Pointer(Variable):
-    """ Represents a pointer. See ``Variable``.
+    """Represents a pointer. See ``Variable``.
 
     Examples
     ========
@@ -1562,7 +1649,7 @@ class Pointer(Variable):
 
 
 class Element(Token):
-    """ Element in (a possibly N-dimensional) array.
+    """Element in (a possibly N-dimensional) array.
 
     Examples
     ========
@@ -1580,8 +1667,9 @@ class Element(Token):
     'x[i*l + j*m + k*n + o]'
 
     """
-    __slots__ = ('symbol', 'indices', 'strides', 'offset')
-    defaults = {'strides': none, 'offset': none}
+
+    __slots__ = ("symbol", "indices", "strides", "offset")
+    defaults = {"strides": none, "offset": none}
     _construct_symbol = staticmethod(sympify)
     _construct_indices = staticmethod(lambda arg: Tuple(*arg))
     _construct_strides = staticmethod(lambda arg: Tuple(*arg))
@@ -1589,7 +1677,7 @@ class Element(Token):
 
 
 class Declaration(Token):
-    """ Represents a variable declaration
+    """Represents a variable declaration
 
     Parameters
     ==========
@@ -1611,12 +1699,13 @@ class Declaration(Token):
     >>> z.variable.value == NoneToken()  # OK
     True
     """
-    __slots__ = ('variable',)
+
+    __slots__ = ("variable",)
     _construct_variable = Variable
 
 
 class While(Token, WithBody):
-    """ Represents a 'for-loop' in the code.
+    """Represents a 'for-loop' in the code.
 
     Expressions are of the form:
         "while condition:
@@ -1642,7 +1731,8 @@ class While(Token, WithBody):
     ... ])
 
     """
-    __slots__ = ('condition', 'body')
+
+    __slots__ = ("condition", "body")
     _construct_condition = staticmethod(lambda cond: _sympify(cond))
 
     @classmethod
@@ -1654,7 +1744,7 @@ class While(Token, WithBody):
 
 
 class Scope(Token):
-    """ Represents a scope in the code.
+    """Represents a scope in the code.
 
     Parameters
     ==========
@@ -1663,7 +1753,8 @@ class Scope(Token):
         When passed an iterable it is used to instantiate a CodeBlock.
 
     """
-    __slots__ = ('body',)
+
+    __slots__ = ("body",)
 
     @classmethod
     def _construct_body(cls, itr):
@@ -1674,7 +1765,7 @@ class Scope(Token):
 
 
 class Stream(Token):
-    """ Represents a stream.
+    """Represents a stream.
 
     There are two predefined Stream instances ``stdout`` & ``stderr``.
 
@@ -1696,15 +1787,17 @@ class Stream(Token):
     print("x", file=sys.stderr)
 
     """
-    __slots__ = ('name',)
+
+    __slots__ = ("name",)
     _construct_name = String
 
-stdout = Stream('stdout')
-stderr = Stream('stderr')
+
+stdout = Stream("stdout")
+stderr = Stream("stderr")
 
 
 class Print(Token):
-    """ Represents print command in the code.
+    """Represents print command in the code.
 
     Parameters
     ==========
@@ -1722,8 +1815,8 @@ class Print(Token):
 
     """
 
-    __slots__ = ('print_args', 'format_string', 'file')
-    defaults = {'format_string': none, 'file': none}
+    __slots__ = ("print_args", "format_string", "file")
+    defaults = {"format_string": none, "file": none}
 
     _construct_print_args = staticmethod(_mk_Tuple)
     _construct_format_string = QuotedString
@@ -1731,7 +1824,7 @@ class Print(Token):
 
 
 class FunctionPrototype(Node):
-    """ Represents a function prototype
+    """Represents a function prototype
 
     Allows the user to generate forward declaration in e.g. C/C++.
 
@@ -1756,7 +1849,7 @@ class FunctionPrototype(Node):
 
     """
 
-    __slots__ = ('return_type', 'name', 'parameters', 'attrs')
+    __slots__ = ("return_type", "name", "parameters", "attrs")
 
     _construct_return_type = Type
     _construct_name = String
@@ -1770,17 +1863,18 @@ class FunctionPrototype(Node):
                 return arg
             else:
                 return Variable.deduced(arg)
+
         return Tuple(*map(_var, args))
 
     @classmethod
     def from_FunctionDefinition(cls, func_def):
         if not isinstance(func_def, FunctionDefinition):
             raise TypeError("func_def is not an instance of FunctionDefiniton")
-        return cls(**func_def.kwargs(exclude=('body',)))
+        return cls(**func_def.kwargs(exclude=("body",)))
 
 
 class FunctionDefinition(FunctionPrototype):
-    """ Represents a function definition in the code.
+    """Represents a function definition in the code.
 
     Parameters
     ==========
@@ -1810,7 +1904,7 @@ class FunctionDefinition(FunctionPrototype):
     }
     """
 
-    __slots__ = FunctionPrototype.__slots__[:-1] + ('body', 'attrs')
+    __slots__ = FunctionPrototype.__slots__[:-1] + ("body", "attrs")
 
     @classmethod
     def _construct_body(cls, itr):
@@ -1827,11 +1921,11 @@ class FunctionDefinition(FunctionPrototype):
 
 
 class Return(Basic):
-    """ Represents a return command in the code. """
+    """Represents a return command in the code."""
 
 
 class FunctionCall(Token, Expr):
-    """ Represents a call to a function in the code.
+    """Represents a call to a function in the code.
 
     Parameters
     ==========
@@ -1849,7 +1943,8 @@ class FunctionCall(Token, Expr):
     foo(bar, baz)
 
     """
-    __slots__ = ('name', 'function_args')
+
+    __slots__ = ("name", "function_args")
 
     _construct_name = String
     _construct_function_args = staticmethod(lambda args: Tuple(*args))
@@ -1874,10 +1969,13 @@ class If(Basic):
     def statement(self):
         return self.args
 
+
 class IdxRange(Basic):
     def __new__(cls, *args):
         if len(args) > 4:
-            raise ValueError("Range is defined by (top), (start, stop) or (start, stop, step)")
+            raise ValueError(
+                "Range is defined by (top), (start, stop) or (start, stop, step)"
+            )
 
         # for a in args:
         #     print(type(a))
@@ -1916,7 +2014,7 @@ class IdxRange(Basic):
     def step(self):
         return self.args[3]
 
-from sympy.tensor import IndexedBase
+
 class IndexedIntBase(IndexedBase):
     is_integer = True
     is_Integer = True

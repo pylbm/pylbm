@@ -9,10 +9,11 @@ Visualization options for the domain
 """
 
 import pylbm
+
 dico = {
-    'box': {'x': [0, 1], 'label': [0, 1]},
-    'space_step': 0.1,
-    'schemes': [{'velocities': list(range(3))}],
+    "box": {"x": [0, 1], "label": [0, 1]},
+    "space_step": 0.1,
+    "schemes": [{"velocities": list(range(3))}],
 }
 dom = pylbm.Domain(dico)
 dom.visualize(view_in=False, view_out=True, view_bound=True)

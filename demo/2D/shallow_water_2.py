@@ -1,5 +1,3 @@
-
-
 # Authors:
 #     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -19,11 +17,11 @@ import pylbm
 
 # pylint: disable=redefined-outer-name
 
-X, Y = sp.symbols('X, Y')
-H, QX, QY = sp.symbols('h, qx, qy')
-LA, G = sp.symbols('lambda, g', constants=True)
+X, Y = sp.symbols("X, Y")
+H, QX, QY = sp.symbols("h, qx, qy")
+LA, G = sp.symbols("lambda, g", constants=True)
 SIGMA_HX, SIGMA_HXY, SIGMA_QX, SIGMA_QXY = sp.symbols(
-    'sigma_0, sigma_1, sigma_2, sigma_3', constants=True
+    "sigma_0, sigma_1, sigma_2, sigma_3", constants=True
 )
 
 
@@ -31,17 +29,14 @@ def h_init(x, y, xmin, xmax, ymin, ymax):
     """
     initial condition
     """
-    xmiddle = .5*(xmin + xmax)
-    var = .1*(ymin - ymax)
-    return 1. \
-        + .5*(x <= (xmiddle + var*np.sin(2*np.pi*(y-ymin)/(ymax-ymin))))
+    xmiddle = 0.5 * (xmin + xmax)
+    var = 0.1 * (ymin - ymax)
+    return 1.0 + 0.5 * (
+        x <= (xmiddle + var * np.sin(2 * np.pi * (y - ymin) / (ymax - ymin)))
+    )
 
 
-def run(space_step,
-        final_time,
-        generator="cython",
-        sorder=None,
-        with_plot=True):
+def run(space_step, final_time, generator="cython", sorder=None, with_plot=True):
     """
     Parameters
     ----------
@@ -70,26 +65,26 @@ def run(space_step,
 
     """
     # parameters
-    xmin, xmax, ymin, ymax = 0., 5., 0, 1.  # bounds of the domain
-    la = 4                                  # velocity of the scheme
-    gravity = 1.                            # gravity
-    sigma_hx = 1.e-3
+    xmin, xmax, ymin, ymax = 0.0, 5.0, 0, 1.0  # bounds of the domain
+    la = 4  # velocity of the scheme
+    gravity = 1.0  # gravity
+    sigma_hx = 1.0e-3
     sigma_hxy = 0.5
-    sigma_qx = 1.e-1
+    sigma_qx = 1.0e-1
     sigma_qxy = 0.5
-    symb_s_hx = 1/(.5+SIGMA_HX)
-    symb_s_hxy = 1/(.5+SIGMA_HXY)
-    symb_s_qx = 1/(.5+SIGMA_QX)
-    symb_s_qxy = 1/(.5+SIGMA_QXY)
+    symb_s_hx = 1 / (0.5 + SIGMA_HX)
+    symb_s_hxy = 1 / (0.5 + SIGMA_HXY)
+    symb_s_qx = 1 / (0.5 + SIGMA_QX)
+    symb_s_qxy = 1 / (0.5 + SIGMA_QXY)
 
-    s_h = [0., symb_s_hx, symb_s_hx, symb_s_hxy]
-    s_q = [0., symb_s_qx, symb_s_qx, symb_s_qxy]
+    s_h = [0.0, symb_s_hx, symb_s_hx, symb_s_hxy]
+    s_q = [0.0, symb_s_qx, symb_s_qx, symb_s_qxy]
 
     vitesse = list(range(1, 5))
-    polynomes = [1, X, Y, X**2-Y**2]
+    polynomes = [1, X, Y, X**2 - Y**2]
 
     simu_cfg = {
-        'parameters': {
+        "parameters": {
             LA: la,
             G: gravity,
             SIGMA_HX: sigma_hx,
@@ -97,49 +92,45 @@ def run(space_step,
             SIGMA_QX: sigma_qx,
             SIGMA_QXY: sigma_qxy,
         },
-        'box': {
-            'x': [xmin, xmax],
-            'y': [ymin, ymax],
-            'label': [0, 0, -1, -1]
-        },
-        'space_step': space_step,
-        'scheme_velocity': LA,
-        'schemes': [
+        "box": {"x": [xmin, xmax], "y": [ymin, ymax], "label": [0, 0, -1, -1]},
+        "space_step": space_step,
+        "scheme_velocity": LA,
+        "schemes": [
             {
-                'velocities': vitesse,
-                'conserved_moments': H,
-                'polynomials': polynomes,
-                'relaxation_parameters': s_h,
-                'equilibrium': [H, QX, QY, 0.],
+                "velocities": vitesse,
+                "conserved_moments": H,
+                "polynomials": polynomes,
+                "relaxation_parameters": s_h,
+                "equilibrium": [H, QX, QY, 0.0],
             },
             {
-                'velocities': vitesse,
-                'conserved_moments': QX,
-                'polynomials': polynomes,
-                'relaxation_parameters': s_q,
-                'equilibrium': [QX, QX**2/H + G*H**2/2, QX*QY/H, 0.],
+                "velocities": vitesse,
+                "conserved_moments": QX,
+                "polynomials": polynomes,
+                "relaxation_parameters": s_q,
+                "equilibrium": [QX, QX**2 / H + G * H**2 / 2, QX * QY / H, 0.0],
             },
             {
-                'velocities': vitesse,
-                'conserved_moments': QY,
-                'polynomials': polynomes,
-                'relaxation_parameters': s_q,
-                'equilibrium': [QY, QX*QY/H, QY**2/H + G*H**2/2, 0.],
+                "velocities": vitesse,
+                "conserved_moments": QY,
+                "polynomials": polynomes,
+                "relaxation_parameters": s_q,
+                "equilibrium": [QY, QX * QY / H, QY**2 / H + G * H**2 / 2, 0.0],
             },
         ],
-        'init': {H: (h_init, (xmin, xmax, ymin, ymax)),
-                 QX: 0.,
-                 QY: 0.},
-        'boundary_conditions': {
-            0: {'method': {
-                0: pylbm.bc.BounceBack,
-                1: pylbm.bc.AntiBounceBack,
-                2: pylbm.bc.AntiBounceBack,
-            }},
+        "init": {H: (h_init, (xmin, xmax, ymin, ymax)), QX: 0.0, QY: 0.0},
+        "boundary_conditions": {
+            0: {
+                "method": {
+                    0: pylbm.bc.BounceBack,
+                    1: pylbm.bc.AntiBounceBack,
+                    2: pylbm.bc.AntiBounceBack,
+                }
+            },
         },
-        'relative_velocity': [QX/H, QY/H],
-        'generator': generator,
-        }
+        "relative_velocity": [QX / H, QY / H],
+        "generator": generator,
+    }
 
     # build the simulations
     sol = pylbm.Simulation(simu_cfg, sorder=sorder)
@@ -151,12 +142,11 @@ def run(space_step,
         axe = fig[0]
 
         surf = axe.SurfaceScatter(
-            sol.domain.x, sol.domain.y, sol.m[H],
-            size=2, sampling=4, color='navy'
+            sol.domain.x, sol.domain.y, sol.m[H], size=2, sampling=4, color="navy"
         )
-        axe.title = 'Shallow water'
+        axe.title = "Shallow water"
         axe.grid(visible=False)
-        axe.set_label(r'$x$', r'$y$', r'$h$')
+        axe.set_label(r"$x$", r"$y$", r"$h$")
 
         def update(iframe):  # pylint: disable=unused-argument
             if sol.t < final_time:
@@ -173,8 +163,9 @@ def run(space_step,
 
     return sol
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # pylint: disable=invalid-name
-    space_step = 1./128
+    space_step = 1.0 / 128
     final_time = 5
     run(space_step, final_time)

@@ -1,5 +1,3 @@
-
-
 # Authors:
 #     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -13,7 +11,7 @@ import pylbm
 
 # pylint: disable=invalid-name
 
-dgeom = {'box': {'x': [0, 1], 'label': [0, 1]}}
+dgeom = {"box": {"x": [0, 1], "label": [0, 1]}}
 geom = pylbm.Geometry(dgeom)
 print(geom)
 geom.visualize(viewlabel=True)

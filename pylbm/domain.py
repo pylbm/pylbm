@@ -54,7 +54,9 @@ def _create_view_something(something, unvtot):
     elif isinstance(something, int):
         # pylint: disable=chained-comparison
         if something >= 0 and something < unvtot:
-            return [something, ]
+            return [
+                something,
+            ]
         else:
             return []
     elif isinstance(something, (list, tuple)):
@@ -78,8 +80,7 @@ def _fix_color(vk):
     for a given velocity
     """
     return hsl_to_rgb(
-        np.sin(vk[0]+17)*np.cos(vk[1]+18)*np.cos(vk[2]+12),
-        1, 0.5
+        np.sin(vk[0] + 17) * np.cos(vk[1] + 18) * np.cos(vk[2] + 12), 1, 0.5
     )
 
 
@@ -250,7 +251,7 @@ class Domain:
 
     def __init__(self, dico, need_validation=True):
         self.valin = 999  # value in the fluid domain
-        self.valout = -1   # value in the solid domain
+        self.valout = -1  # value in the solid domain
 
         if dico is not None and need_validation:
             # pylint: disable=undefined-variable
@@ -258,7 +259,7 @@ class Domain:
 
         self.geom = Geometry(dico, need_validation=False)
         self.stencil = Stencil(dico, need_validation=False)
-        self.dx = dico['space_step']
+        self.dx = dico["space_step"]
         self.dim = self.geom.dim
         self.compute_normal = True
 
@@ -276,16 +277,16 @@ class Domain:
         # Modify box_label if the border becomes an interface
         for i in range(self.dim):
             if region[i][0] != 0:
-                self.box_label[2*i] = -2
+                self.box_label[2 * i] = -2
             if region[i][1] != self.global_size[i]:
-                self.box_label[2*i + 1] = -2
+                self.box_label[2 * i + 1] = -2
 
         # distance to the borders
         total_size = [self.stencil.unvtot] + self.shape_halo
         vect_total_size = [self.stencil.unvtot] + self.shape_halo + [self.dim]
-        self.in_or_out = self.valin*np.ones(self.shape_halo)
-        self.distance = self.valin*np.ones(total_size)
-        self.flag = self.valin*np.ones(total_size, dtype='int')
+        self.in_or_out = self.valin * np.ones(self.shape_halo)
+        self.distance = self.valin * np.ones(total_size)
+        self.flag = self.valin * np.ones(total_size, dtype="int")
         if self.compute_normal:
             self.normal = np.zeros(vect_total_size)
         else:
@@ -362,11 +363,9 @@ class Domain:
     def __str__(self):
         from .utils import header_string
         from .jinja_env import env
-        template = env.get_template('domain.tpl')
-        return template.render(
-            header=header_string('Domain information'),
-            dom=self
-        )
+
+        template = env.get_template("domain.tpl")
+        return template.render(header=header_string("Domain information"), dom=self)
 
     def __repr__(self):
         return self.__str__()
@@ -375,12 +374,12 @@ class Domain:
         """
         Create the mpi topology
         """
-        period = [True]*self.dim
+        period = [True] * self.dim
 
         if dico is None:
             comm = mpi.COMM_WORLD
         else:
-            comm = dico.get('comm', mpi.COMM_WORLD)
+            comm = dico.get("comm", mpi.COMM_WORLD)
         self.mpi_topo = MpiTopology(self.dim, period, comm)
 
     def create_coords(self):
@@ -392,7 +391,7 @@ class Domain:
 
         # validation of the space step with the physical box size
         for k in range(self.dim):
-            self.global_size.append((phys_box[k][1] - phys_box[k][0])/self.dx)
+            self.global_size.append((phys_box[k][1] - phys_box[k][0]) / self.dx)
             if not self.global_size[-1].is_integer():
                 dummy = round(self.global_size[-1])
                 diff_n = dummy - self.global_size[-1]
@@ -402,7 +401,7 @@ class Domain:
                     message += "is not exactly a multiple of the space step\n"
                     message += "The error in the length of the domain "
                     message += "in the direction {0:d} ".format(k)
-                    message += "is {0:10.3e}".format(diff_n*self.dx)
+                    message += "is {0:10.3e}".format(diff_n * self.dx)
                     log.info(message)
                     self.global_size[-1] = dummy
                 else:
@@ -415,20 +414,20 @@ class Domain:
                     sys.exit()
 
         # we now are sure that global_size item are integers
-        self.global_size = np.asarray(self.global_size, dtype='int')
+        self.global_size = np.asarray(self.global_size, dtype="int")
         # pylint: disable=no-value-for-parameter
         region = self.mpi_topo.get_region(*self.global_size)
         region_size = [r[1] - r[0] for r in region]
 
         # spatial mesh
         halo_size = np.asarray(self.stencil.vmax)
-        halo_beg = self.dx*(halo_size - 0.5)
+        halo_beg = self.dx * (halo_size - 0.5)
 
         self.coords_halo = [
             np.linspace(
-                phys_box[k][0] + self.dx*region[k][0] - halo_beg[k],
-                phys_box[k][0] + self.dx*region[k][1] + halo_beg[k],
-                region_size[k] + 2*halo_size[k]
+                phys_box[k][0] + self.dx * region[k][0] - halo_beg[k],
+                phys_box[k][0] + self.dx * region[k][1] + halo_beg[k],
+                region_size[k] + 2 * halo_size[k],
             )
             for k in range(self.dim)
         ]
@@ -438,7 +437,7 @@ class Domain:
         ind_end = [-k if k > 0 else 1 for k in halo_size]
         self.coords = [
             # self.coords_halo[k][halo_size[k]:-halo_size[k]]
-            self.coords_halo[k][ind_beg[k]:ind_end[k]]
+            self.coords_halo[k][ind_beg[k] : ind_end[k]]
             for k in range(self.dim)
         ]
 
@@ -447,12 +446,8 @@ class Domain:
         Return the coordinates of the bottom right and upper left corner of the
         whole domain with halo points.
         """
-        bottom_right = np.asarray(
-            [self.coords_halo[k][0] for k in range(self.dim)]
-        )
-        upper_left = np.asarray(
-            [self.coords_halo[k][-1] for k in range(self.dim)]
-        )
+        bottom_right = np.asarray([self.coords_halo[k][0] for k in range(self.dim)])
+        upper_left = np.asarray([self.coords_halo[k][-1] for k in range(self.dim)])
         return bottom_right, upper_left
 
     def get_bounds(self):
@@ -467,14 +462,8 @@ class Domain:
     # pylint: disable=too-many-locals
     def __add_init(self, label):
         halo_size = np.asarray(self.stencil.vmax)
-        phys_domain = [
-            slice(h, -h) if h > 0 else slice(None)
-            for h in halo_size
-        ]
-        phys_domain_vect = [
-            slice(h, -h) if h > 0 else slice(None)
-            for h in halo_size
-        ]
+        phys_domain = [slice(h, -h) if h > 0 else slice(None) for h in halo_size]
+        phys_domain_vect = [slice(h, -h) if h > 0 else slice(None) for h in halo_size]
         self.in_or_out[:] = self.valout
         in_view = self.in_or_out[tuple(phys_domain)]
         in_view[:] = self.valin
@@ -503,37 +492,29 @@ class Domain:
         s = self.stencil
         uvels = [s.uvx, s.uvy, s.uvz]
         # loop over the dimension
-        for iuvel, uvel in enumerate(uvels[:self.dim]):
+        for iuvel, uvel in enumerate(uvels[: self.dim]):
             # uvel is the list of all the velocities
             # in the x-direction, then y-direction and z-direction
             # loop over the velocities
             for k, vk in np.ndenumerate(uvel):
-                indices = [k] + [slice(None)]*self.dim
-                if vk < 0 and label[2*iuvel] != -2:
+                indices = [k] + [slice(None)] * self.dim
+                if vk < 0 and label[2 * iuvel] != -2:
                     for i in range(-vk):
                         indices[iuvel + 1] = i
-                        dvik = -(i + .5)/vk
-                        nind = new_indices(
-                            dvik, iuvel,
-                            indices,
-                            dist_view
-                        )
+                        dvik = -(i + 0.5) / vk
+                        nind = new_indices(dvik, iuvel, indices, dist_view)
                         dist_view[tuple(nind)] = dvik
-                        flag_view[tuple(nind)] = label[2*iuvel]
+                        flag_view[tuple(nind)] = label[2 * iuvel]
                         if self.compute_normal:
                             norm_view[tuple(nind + [slice(0, iuvel)])] = 0
                             norm_view[tuple(nind + [iuvel])] = -1
-                elif vk > 0 and label[2*iuvel + 1] != -2:
+                elif vk > 0 and label[2 * iuvel + 1] != -2:
                     for i in range(vk):
                         indices[iuvel + 1] = -i - 1
-                        dvik = (i + .5)/vk
-                        nind = new_indices(
-                            dvik, iuvel,
-                            indices,
-                            dist_view
-                        )
+                        dvik = (i + 0.5) / vk
+                        nind = new_indices(dvik, iuvel, indices, dist_view)
                         dist_view[tuple(nind)] = dvik
-                        flag_view[tuple(nind)] = label[2*iuvel+1]
+                        flag_view[tuple(nind)] = label[2 * iuvel + 1]
                         if self.compute_normal:
                             norm_view[tuple(nind + [slice(0, iuvel)])] = 0
                             norm_view[tuple(nind + [iuvel])] = 1
@@ -553,9 +534,9 @@ class Domain:
         vmax = self.stencil.vmax
         elem_bl, elem_ur = elem.get_bounds()
         phys_bl, _ = self.get_bounds_halo()
-        tmp = np.array((elem_bl - phys_bl)/self.dx, int) - vmax
+        tmp = np.array((elem_bl - phys_bl) / self.dx, int) - vmax
         nmin = np.maximum(vmax, tmp)
-        tmp = np.array((elem_ur - phys_bl)/self.dx, int) + vmax + 1
+        tmp = np.array((elem_ur - phys_bl) / self.dx, int) + vmax + 1
         nmax = np.minimum(vmax + self.shape_in, tmp)
 
         # set the grid
@@ -570,7 +551,7 @@ class Domain:
             norm_view = self.normal[tuple(total_slice_vect)]
 
         tcoords = (self.coords_halo[d][s] for d, s in enumerate(space_slice))
-        grid = np.meshgrid(*tcoords, sparse=True, indexing='ij')
+        grid = np.meshgrid(*tcoords, sparse=True, indexing="ij")
 
         if not elem.isfluid:  # add a solid part
             ind_solid = elem.point_inside(grid)
@@ -594,8 +575,7 @@ class Domain:
                 # compute the distance and set the boundary label
                 # of each cell and the element with the vk velocity
                 alpha, border, normvect = elem.distance(
-                    grid, self.dx*vk, 1.,
-                    self.compute_normal
+                    grid, self.dx * vk, 1.0, self.compute_normal
                 )
                 # take the indices where the distance is lower than 1
                 # between a fluid cell and the border of the element
@@ -628,7 +608,7 @@ class Domain:
                     ind3 = np.where(
                         np.logical_or(
                             alpha[ind4] > dist_view[k][ind4],
-                            dist_view[k][ind4] == self.valin
+                            dist_view[k][ind4] == self.valin,
                         )
                     )[0]
 
@@ -637,9 +617,7 @@ class Domain:
                 flag_view[k][tuple(ind)] = border[tuple(ind)]
                 if self.compute_normal:
                     for i in range(self.dim):
-                        norm_view[k][tuple(ind + [i])] = - normvect[
-                            tuple(ind + [i])
-                        ]
+                        norm_view[k][tuple(ind + [i])] = -normvect[tuple(ind + [i])]
 
     def clean(self):
         """
@@ -650,10 +628,7 @@ class Domain:
         # look for the outer points where the distance is computed
         # fix these points to full outer points
         for k in range(self.stencil.unvtot):
-            indk = np.logical_and(
-                self.distance[k] > 0,
-                self.in_or_out == self.valout
-            )
+            indk = np.logical_and(self.distance[k] > 0, self.in_or_out == self.valout)
             self.distance[k][indk] = self.valin
             self.flag[k][indk] = self.valin
             if self.compute_normal:
@@ -667,16 +642,18 @@ class Domain:
         return np.union1d(labels, self.geom.list_of_elements_labels())
 
     # pylint: disable=too-complex
-    def visualize(self,
-                  viewer_app=viewer.matplotlib_viewer,
-                  view_geom=True,
-                  view_distance=False,
-                  view_in=True,
-                  view_out=True,
-                  view_bound=False,
-                  view_normal=False,
-                  label=None,
-                  scale=1):
+    def visualize(
+        self,
+        viewer_app=viewer.matplotlib_viewer,
+        view_geom=True,
+        view_distance=False,
+        view_in=True,
+        view_out=True,
+        view_bound=False,
+        view_normal=False,
+        label=None,
+        scale=1,
+    ):
         """
         Visualize the domain by creating a plot.
 
@@ -723,67 +700,49 @@ class Domain:
         view.title = "Domain"
 
         # fix the axis for all dimensions
-        delta_l = .25 * max(
+        delta_l = 0.25 * max(
             np.diff(self.geom.bounds, axis=1).flatten()
         )  # small length to fix the empty area around the figure
-        bornes = [*[-delta_l, delta_l]]*max(2, self.dim)
-        bornes[:2*self.dim] += self.geom.bounds.flatten()
-        view.axis(*bornes, dim=self.dim, aspect='equal')
+        bornes = [*[-delta_l, delta_l]] * max(2, self.dim)
+        bornes[: 2 * self.dim] += self.geom.bounds.flatten()
+        view.axis(*bornes, dim=self.dim, aspect="equal")
 
         if view_geom and self.dim == 2:
             color_fluid = (0.9, 0.9, 0.9)
             xmin, xmax = self.geom.bounds[0][:]
             ymin, ymax = self.geom.bounds[1][:]
             view.polygon(
-                np.array(
-                    [
-                        [xmin, ymin],
-                        [xmin, ymax],
-                        [xmax, ymax],
-                        [xmax, ymin]
-                    ]
-                ),
-                color_fluid, alpha=1
+                np.array([[xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin]]),
+                color_fluid,
+                alpha=1,
             )
             for elem in self.geom.list_elem:
                 if elem.isfluid:
                     color = color_fluid
                 else:
-                    color = (1., 1., 1.)
-                elem.visualize(
-                    view, color,
-                    alpha=1
-                )
+                    color = (1.0, 1.0, 1.0)
+                elem.visualize(view, color, alpha=1)
         if view_geom and self.dim == 3:
             color_fluid = (0.9, 0.9, 0.9)
             for elem in self.geom.list_elem:
                 if elem.isfluid:
                     color = color_fluid
                 else:
-                    color = (.5, .5, .5)
-                elem.visualize(
-                    view, color,
-                    alpha=0.25
-                )
+                    color = (0.5, 0.5, 0.5)
+                elem.visualize(view, color, alpha=0.25)
 
         # compute the size of the symbols for the plot
         # in 1d and 2d: 100*dx
         # in 3d: 10*dx*dx
         coeff = 1 + 9 * (self.dim <= 2)
-        size = scale * 10 * coeff * self.dx**(1+(self.dim == 3))
+        size = scale * 10 * coeff * self.dx ** (1 + (self.dim == 3))
 
         # view_distance : list of the concerned velocities
-        view_distance = _create_view_something(
-            view_distance, self.stencil.unvtot
-        )
+        view_distance = _create_view_something(view_distance, self.stencil.unvtot)
         # view_bound : list of the concerned velocities
-        view_bound = _create_view_something(
-            view_bound, self.stencil.unvtot
-        )
+        view_bound = _create_view_something(view_bound, self.stencil.unvtot)
         # view_normal : list of the concerned velocities
-        view_normal = _create_view_something(
-            view_normal, self.stencil.unvtot
-        )
+        view_normal = _create_view_something(view_normal, self.stencil.unvtot)
 
         # temporary boolean array for considering specific labels
         if isinstance(label, int):
@@ -801,16 +760,22 @@ class Domain:
         if view_in:
             view.markers(
                 get_inorout_points(self.valin),
-                size, symbol='o', alpha=.25, color='navy',
-                dim=self.dim
+                size,
+                symbol="o",
+                alpha=0.25,
+                color="navy",
+                dim=self.dim,
             )
 
         # visualize the outer points
         if view_out:
             view.markers(
                 get_inorout_points(self.valout),
-                size, symbol='s', alpha=.5, color='orange',
-                dim=self.dim
+                size,
+                symbol="s",
+                alpha=0.5,
+                color="orange",
+                dim=self.dim,
             )
 
         def get_bounds(label, k, compute_normal=False):
@@ -851,10 +816,11 @@ class Domain:
                 vk = self.stencil.unique_velocities[k].v_full
                 color = _fix_color(vk)
                 # pylint: disable=unsubscriptable-object
-                lines = np.empty((2*bound.shape[0], max(2, self.dim)))
+                lines = np.empty((2 * bound.shape[0], max(2, self.dim)))
                 lines[::2, :] = bound
-                lines[1::2, :] = bound \
-                    + self.dx*np.outer(dist, vk[:max(2, self.dim)])
+                lines[1::2, :] = bound + self.dx * np.outer(
+                    dist, vk[: max(2, self.dim)]
+                )
                 view.segments(lines, alpha=0.5, width=2, color=color)
 
         # visualize the bounds as diamond
@@ -863,8 +829,8 @@ class Domain:
             if bound.size != 0:
                 vk = self.stencil.unique_velocities[k].v_full
                 color = np.array([[*_fix_color(vk)]])
-                lines = bound + self.dx*np.outer(dist, vk[:max(2, self.dim)])
-                view.markers(lines, size, symbol='d', color=color)
+                lines = bound + self.dx * np.outer(dist, vk[: max(2, self.dim)])
+                view.markers(lines, size, symbol="d", color=color)
 
         # visualize the normal vectors as small lines
         for k in view_normal:
@@ -873,11 +839,9 @@ class Domain:
                 vk = self.stencil.unique_velocities[k].v_full
                 color = _fix_color(vk)
                 # pylint: disable=unsubscriptable-object
-                lines = np.empty((2*bound.shape[0], max(2, self.dim)))
-                lines[::2, :] = bound \
-                    + self.dx*np.outer(dist, vk[:max(2, self.dim)])
-                lines[1::2, :self.dim] = lines[::2, :self.dim] \
-                    + self.dx*normal
+                lines = np.empty((2 * bound.shape[0], max(2, self.dim)))
+                lines[::2, :] = bound + self.dx * np.outer(dist, vk[: max(2, self.dim)])
+                lines[1::2, : self.dim] = lines[::2, : self.dim] + self.dx * normal
                 view.segments(lines, alpha=0.5, width=1, color=color)
 
         fig.show()

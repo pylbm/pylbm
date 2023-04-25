@@ -92,9 +92,9 @@ def permute_in_place(iterable):
                     j = j - 1
                 # swap the values
                 iterable[i], iterable[j] = iterable[j], iterable[i]
-                part = iterable[i + 1:last]
+                part = iterable[i + 1 : last]
                 part.reverse()
-                iterable[i + 1:last] = part
+                iterable[i + 1 : last] = part
                 yield list(iterable)
                 break
             if i == first:
@@ -106,14 +106,13 @@ class Singleton(type):
     """
     Singleton metaclasss
     """
+
     _instances = {}
 
     def __call__(cls, *args, **kwargs):
         key = (cls, args, str(kwargs))
         if key not in cls._instances:
-            cls._instances[key] = super(
-                Singleton, cls
-            ).__call__(*args, **kwargs)
+            cls._instances[key] = super(Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[key]
 
 
@@ -173,21 +172,16 @@ class Velocity:
     .. plot:: codes/Velocities.py
 
     """
+
     __metaclass__ = Singleton
     _d = 1e3
     _R2 = np.array(
         [
-            [
-                [5, 6, 4], [_d, _d, 2], [2, 5, 3]
-            ],
-            [
-                [3, _d, _d], [_d, -1, _d], [1, _d, _d]
-            ],
-            [
-                [6, 7, 7], [_d, _d, 0], [1, 4, 0]
-            ]
+            [[5, 6, 4], [_d, _d, 2], [2, 5, 3]],
+            [[3, _d, _d], [_d, -1, _d], [1, _d, _d]],
+            [[6, 7, 7], [_d, _d, 0], [1, 4, 0]],
         ],
-        dtype=int
+        dtype=int,
     )
 
     def __init__(self, dim=None, num=None, vx=None, vy=None, vz=None):
@@ -220,24 +214,24 @@ class Velocity:
         """
         velocity
         """
-        return [self.vx, self.vy, self.vz][:self.dim]
+        return [self.vx, self.vy, self.vz][: self.dim]
 
     @property
     def v_full(self):
         """
         velocity filled with 0 in 1d and 2d
         """
-        v_filled = [0]*3
-        v_filled[:self.dim] = self.v
+        v_filled = [0] * 3
+        v_filled[: self.dim] = self.v
         return v_filled
 
     def __str__(self):
-        output = '({:d}: {:d}'.format(self.num, self.vx)
+        output = "({:d}: {:d}".format(self.num, self.vx)
         if self.vy is not None:
-            output += ', {:d}'.format(self.vy)
+            output += ", {:d}".format(self.vy)
         if self.vz is not None:
-            output += ', {:d}'.format(self.vz)
-        output += ')'
+            output += ", {:d}".format(self.vz)
+        output += ")"
         return output
 
     def __repr__(self):
@@ -293,7 +287,7 @@ class Velocity:
         # the coordinates being given
         if self.dim == 1:
             avx = abs(self.vx)
-            self.num = (2*avx) - (1 if self.vx > 0 else 0)
+            self.num = (2 * avx) - (1 if self.vx > 0 else 0)
             return
         elif self.dim == 2:
             avx = abs(self.vx)
@@ -301,9 +295,9 @@ class Velocity:
             T1 = cmp(self.vx, 0)
             T2 = cmp(self.vy, 0)
             T3 = cmp(avx, avy)
-            p = (2*max(avx, avy) - 1)
+            p = 2 * max(avx, avy) - 1
             p *= p
-            q = 8*min(avx, avy)*abs(T3)
+            q = 8 * min(avx, avy) * abs(T3)
             r = self._R2[T1 + 1, T2 + 1, T3 + 1]
             self.num = int(p + q + r)
             return
@@ -313,16 +307,18 @@ class Velocity:
             for k in range(100):
                 for i in range(k + 1):
                     for j in range(i + 1):
-                        for (kk, ii, jj) in permute_in_place([k, i, j]):
+                        for kk, ii, jj in permute_in_place([k, i, j]):
                             # loop over + and - if kk > 0
-                            for pmk in sign[0: kk + 1]:
+                            for pmk in sign[0 : kk + 1]:
                                 # loop over + and - if ii > 0
-                                for pmi in sign[0:ii + 1]:
+                                for pmi in sign[0 : ii + 1]:
                                     # loop over + and - if jj > 0
-                                    for pmj in sign[0:jj + 1]:
-                                        if self.vx == pmk*kk and \
-                                           self.vy == pmi*ii and \
-                                           self.vz == pmj*jj:
+                                    for pmj in sign[0 : jj + 1]:
+                                        if (
+                                            self.vx == pmk * kk
+                                            and self.vy == pmi * ii
+                                            and self.vz == pmj * jj
+                                        ):
                                             self.num = count
                                             return
                                         else:
@@ -335,21 +331,21 @@ class Velocity:
         # the number being given
         if self.dim == 1:
             n = self.num + 1
-            self.vx = int((1 - 2*(n % 2))*(n/2))
+            self.vx = int((1 - 2 * (n % 2)) * (n / 2))
             return
         elif self.dim == 2:
-            n = (int)((sqrt(self.num)+1)/2)
-            p = self.num - (2*n-1)**2
+            n = (int)((sqrt(self.num) + 1) / 2)
+            p = self.num - (2 * n - 1) ** 2
             if p < 4:
                 Lx, Ly = [n, 0, -n, 0], [0, n, 0, -n]
                 vx, vy = Lx[p], Ly[p]
             elif p < 8:
                 Lx, Ly = [n, -n, -n, n], [n, n, -n, -n]
-                vx, vy = Lx[p-4], Ly[p-4]
+                vx, vy = Lx[p - 4], Ly[p - 4]
             else:
-                k, l = n, p/8
-                Lx = [k, l, -l, -k, -k, -l, l, k]
-                Ly = [l, k, k, l, -l, -k, -k, -l]
+                i, j = n, p / 8
+                Lx = [i, j, -j, -i, -i, -j, j, i]
+                Ly = [j, i, i, j, -j, -i, -i, -j]
                 vx, vy = Lx[p % 8], Ly[p % 8]
             self.vx = int(vx)
             self.vy = int(vy)
@@ -360,17 +356,17 @@ class Velocity:
             for k in range(100):
                 for i in range(k + 1):
                     for j in range(i + 1):
-                        for (kk, ii, jj) in permute_in_place([k, i, j]):
+                        for kk, ii, jj in permute_in_place([k, i, j]):
                             # loop over + and - if kk > 0
-                            for pmk in sign[0:kk + 1]:
+                            for pmk in sign[0 : kk + 1]:
                                 # loop over + and - if ii > 0
-                                for pmi in sign[0:ii + 1]:
+                                for pmi in sign[0 : ii + 1]:
                                     # loop over + and - if jj > 0
-                                    for pmj in sign[0:jj + 1]:
+                                    for pmj in sign[0 : jj + 1]:
                                         if self.num == count:
-                                            self.vx = int(pmk*kk)
-                                            self.vy = int(pmi*ii)
-                                            self.vz = int(pmj*jj)
+                                            self.vx = int(pmk * kk)
+                                            self.vy = int(pmi * ii)
+                                            self.vz = int(pmj * jj)
                                             return
                                         else:
                                             count += 1
@@ -643,11 +639,12 @@ class Stencil(list):
             3,  3,  1, -1, -3, -3, -1,  2,  3,  3,  2, -2, -3, -3, -2])
 
     """
+
     def __init__(self, dico, need_validation=True):
         super(Stencil, self).__init__()
 
         if need_validation:
-            validate(dico, __class__.__name__) #pylint: disable=undefined-variable
+            validate(dico, __class__.__name__)  # pylint: disable=undefined-variable
 
         # get the dimension of the stencil
         # (given in the dictionnary or computed
@@ -656,9 +653,9 @@ class Stencil(list):
 
         # get the schemes
         schemes_velocities = []
-        schemes = dico['schemes']
+        schemes = dico["schemes"]
         for scheme in schemes:
-            schemes_velocities.append(np.asarray(scheme['velocities']))
+            schemes_velocities.append(np.asarray(scheme["velocities"]))
         self.nstencils = len(schemes_velocities)
 
         # get the unique velocities involved in the stencil
@@ -703,7 +700,7 @@ class Stencil(list):
     @staticmethod
     def extract_dim(dico):
         """Extract the dimension from the dictionary"""
-        dim = dico.get('dim', None)
+        dim = dico.get("dim", None)
 
         if not dim:
             dim, _ = get_box(dico)
@@ -719,13 +716,13 @@ class Stencil(list):
     def vmax(self):
         """the maximal velocity in norm for each spatial direction."""
         tmp = np.asarray([self.uvx, self.uvy, self.uvz])
-        return np.max(tmp[:self.dim], axis=1)
+        return np.max(tmp[: self.dim], axis=1)
 
     @property
     def vmin(self):
         """the minimal velocity in norm for each spatial direction."""
         tmp = np.asarray([self.uvx, self.uvy, self.uvz])
-        return np.min(tmp[:self.dim], axis=1)
+        return np.min(tmp[: self.dim], axis=1)
 
     @property
     def vmax_full(self):
@@ -735,7 +732,7 @@ class Stencil(list):
         even if dim = 1 or 2
         """
         tmp = np.array([0, 0, 0])
-        tmp[:self.dim] = self.vmax
+        tmp[: self.dim] = self.vmax
         return tmp
 
     @property
@@ -782,8 +779,7 @@ class Stencil(list):
 
     @itemproperty
     def num(self, k):
-        """num[k] the numbering of the velocities for the stencil k.
-        """
+        """num[k] the numbering of the velocities for the stencil k."""
         vectorize = np.vectorize(lambda obj: obj.num)
         return vectorize(self.v[k])
 
@@ -806,19 +802,19 @@ class Stencil(list):
         """
         if scheme_id is None:
             size = self.nv_ptr[-1]
-            all_velocities = np.empty((size, self.dim), dtype='int')
+            all_velocities = np.empty((size, self.dim), dtype="int")
             for vind in range(len(self)):
                 vx = self.vx[vind]
                 vy = self.vy[vind]
                 vz = self.vz[vind]
                 all_velocities[
-                    self.nv_ptr[vind]:self.nv_ptr[vind+1], :
-                ] = np.asarray([vx, vy, vz][:self.dim]).T
+                    self.nv_ptr[vind] : self.nv_ptr[vind + 1], :
+                ] = np.asarray([vx, vy, vz][: self.dim]).T
         else:
             vx = self.vx[scheme_id]
             vy = self.vy[scheme_id]
             vz = self.vz[scheme_id]
-            all_velocities = np.asarray([vx, vy, vz][:self.dim]).T
+            all_velocities = np.asarray([vx, vy, vz][: self.dim]).T
         return all_velocities
 
     def get_symmetric(self, axis=None):
@@ -831,10 +827,11 @@ class Stencil(list):
         for v in self.v:
             for vk in v:
                 num = vk.get_symmetric(axis).num
-                n = np.searchsorted(self.nv_ptr, k, side='right') - 1
-                index = self.num2index[
-                    self.nv_ptr[n]:self.nv_ptr[n+1]
-                ].index(num) + self.nv_ptr[n]
+                n = np.searchsorted(self.nv_ptr, k, side="right") - 1
+                index = (
+                    self.num2index[self.nv_ptr[n] : self.nv_ptr[n + 1]].index(num)
+                    + self.nv_ptr[n]
+                )
                 ksym[k] = index
                 k += 1
 
@@ -843,10 +840,10 @@ class Stencil(list):
     def __str__(self):
         from .utils import header_string
         from .jinja_env import env
-        template = env.get_template('stencil.tpl')
+
+        template = env.get_template("stencil.tpl")
         return template.render(
-            header=header_string('Stencil information'),
-            stencil=self
+            header=header_string("Stencil information"), stencil=self
         )
 
     def __repr__(self):
@@ -861,9 +858,9 @@ class Stencil(list):
             scheme_velocities = np.array(self.num[n])
             for k in range(self.nv[n]):
                 v = self.v[n][k]
-                contains_sym = np.all(np.where(
-                    scheme_velocities == v.get_symmetric().num, False, True
-                ))
+                contains_sym = np.all(
+                    np.where(scheme_velocities == v.get_symmetric().num, False, True)
+                )
                 if contains_sym:
                     err_msg = "The velocity {0} ".format(v)
                     err_msg += "has no symmetric velocity "
@@ -878,11 +875,13 @@ class Stencil(list):
 
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
     # pylint: disable=too-complex
-    def visualize(self,
-                  viewer_mod=viewer.matplotlib_viewer,
-                  k=None,
-                  unique_velocities=False,
-                  view_label=True):
+    def visualize(
+        self,
+        viewer_mod=viewer.matplotlib_viewer,
+        k=None,
+        unique_velocities=False,
+        view_label=True,
+    ):
         """
         plot the velocities
 
@@ -903,8 +902,9 @@ class Stencil(list):
             the figure (fig if matplotlib is used)
 
         """
+
         def populate(vx, vy, vz):
-            dummy = np.asarray([vx, vy, vz][:self.dim])
+            dummy = np.asarray([vx, vy, vz][: self.dim])
             if self.dim == 1:
                 pos = np.zeros((dummy.size, 2))
                 pos[:, 0] = dummy
@@ -928,9 +928,7 @@ class Stencil(list):
                 pos.append(populate(self.vx[i], self.vy[i], self.vz[i]))
                 title.append("Stencil {0:d}".format(i))
 
-        views = viewer_mod.Fig(
-            len(pos), 1, dim=self.dim, figsize=(5, 5*len(pos))
-        )
+        views = viewer_mod.Fig(len(pos), 1, dim=self.dim, figsize=(5, 5 * len(pos)))
         views.fix_space(wspace=0.25, hspace=0.25)
 
         for i, posi in enumerate(pos):
@@ -939,27 +937,29 @@ class Stencil(list):
             pminmax = np.zeros(6 if self.dim == 3 else 4)
             pminmax[::2] = np.min(posi, axis=0) - 1
             pminmax[1::2] = np.max(posi, axis=0) + 1
-            view.axis(*pminmax, dim=self.dim, aspect='equal')
+            view.axis(*pminmax, dim=self.dim, aspect="equal")
 
             view.title = title[i]
             view.xaxis(np.arange(pminmax[0], pminmax[1] + 1))
             if self.dim == 1:
                 view.yaxis_set_visible(False)
-            view.plot(pminmax[:2], [0, 0], color='orange', alpha=0.25)
+            view.plot(pminmax[:2], [0, 0], color="orange", alpha=0.25)
 
             if self.dim >= 2:
                 view.yaxis(np.arange(pminmax[2], pminmax[3] + 1))
-                view.plot([0, 0], pminmax[2:4], color='orange', alpha=0.25)
+                view.plot([0, 0], pminmax[2:4], color="orange", alpha=0.25)
             if self.dim == 3:
                 view.zaxis(np.arange(pminmax[4], pminmax[5] + 1))
-                view.plot(
-                    [0, 0], [0, 0],
-                    pminmax[4:], color='orange', alpha=0.25
-                )
+                view.plot([0, 0], [0, 0], pminmax[4:], color="orange", alpha=0.25)
 
             if view_label:
-                view.text(list(map(str, self.num[i])), posi,
-                          fontsize=12, color='navy', fontweight='bold')
-            view.grid(visible=True, which='major', alpha=0.25)
+                view.text(
+                    list(map(str, self.num[i])),
+                    posi,
+                    fontsize=12,
+                    color="navy",
+                    fontweight="bold",
+                )
+            view.grid(visible=True, which="major", alpha=0.25)
 
         return views

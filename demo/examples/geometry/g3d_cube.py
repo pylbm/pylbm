@@ -1,5 +1,3 @@
-
-
 # Authors:
 #     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -15,12 +13,7 @@ import pylbm
 # pylint: disable=invalid-name
 
 dico = {
-    'box': {
-        'x': [0, 1],
-        'y': [0, 1],
-        'z': [0, 1],
-        'label': list(range(6))
-    },
+    "box": {"x": [0, 1], "y": [0, 1], "z": [0, 1], "label": list(range(6))},
 }
 geom = pylbm.Geometry(dico)
 print(geom)

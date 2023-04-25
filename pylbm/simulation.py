@@ -13,7 +13,6 @@ import sys
 import logging
 import types
 import numpy as np
-from sympy.parsing.sympy_parser import parse_expr
 import sympy as sp
 import mpi4py.MPI as mpi
 
@@ -85,13 +84,12 @@ class Simulation:
     are just call of the methods of the class
     :py:class:`Scheme<pylbm.scheme.Scheme>`.
     """
+
     # pylint: disable=too-many-branches, too-many-statements, too-many-locals
-    def __init__(self, dico,
-                 sorder=None, dtype='float64',
-                 check_inverse=False,
-                 initialize=True
-                 ):
-        validate(dico, __class__.__name__) #pylint: disable=undefined-variable
+    def __init__(
+        self, dico, sorder=None, dtype="float64", check_inverse=False, initialize=True
+    ):
+        validate(dico, __class__.__name__)  # pylint: disable=undefined-variable
 
         self.domain = Domain(dico, need_validation=False)
         domain_size = mpi.COMM_WORLD.allreduce(sendobj=np.prod(self.domain.shape_in))
@@ -99,26 +97,30 @@ class Simulation:
 
         self.scheme = Scheme(dico, check_inverse=check_inverse, need_validation=False)
         if self.domain.dim != self.scheme.dim:
-            log.error('Solution: the dimension of the domain and of the scheme are not the same\n')
+            log.error(
+                "Solution: the dimension of the domain and of the scheme are not the same\n"
+            )
             sys.exit()
 
         self._update_m = True
-        self.t = 0.
+        self.t = 0.0
         self.nt = 0
-        self.dt_ = self.domain.dx/self.scheme.la
+        self.dt_ = self.domain.dx / self.scheme.la
         self.dim = self.domain.dim
         self.extra_parameters = {}
 
         codegen_dir, generate = None, True
-        codegen_opt = dico.get('codegen_option', None)
+        codegen_opt = dico.get("codegen_option", None)
         if codegen_opt:
-            codegen_dir = os.path.realpath(codegen_opt['directory'])
-            generate = codegen_opt.get('generate', True)
+            codegen_dir = os.path.realpath(codegen_opt["directory"])
+            generate = codegen_opt.get("generate", True)
 
-        self.generator = Generator(dico.get('generator', "CYTHON").upper(),
-                                   codegen_dir,
-                                   generate,
-                                   dico.get('show_code', False))
+        self.generator = Generator(
+            dico.get("generator", "CYTHON").upper(),
+            codegen_dir,
+            generate,
+            dico.get("show_code", False),
+        )
 
         # FIXME remove that !!
         set_queue(self.generator.backend)
@@ -141,8 +143,8 @@ class Simulation:
 
         self.generator.compile()
 
-        self.init_type = dico.get('inittype', 'moments')
-        self.init_data = dico.get('init', None)
+        self.init_type = dico.get("inittype", "moments")
+        self.init_data = dico.get("init", None)
 
         self._need_init = True
         if initialize:
@@ -161,25 +163,26 @@ class Simulation:
         self._need_init = False
 
     def _get_container(self, sorder):
-        container_type = {'NUMPY': NumpyContainer,
-                          'CYTHON': CythonContainer,
-                          'LOOPY': LoopyContainer
+        container_type = {
+            "NUMPY": NumpyContainer,
+            "CYTHON": CythonContainer,
+            "LOOPY": LoopyContainer,
         }
         return container_type[self.generator.backend](self.domain, self.scheme, sorder)
 
     def _get_default_algo_settings(self):
-        if self.generator.backend == 'NUMPY':
-            return {'m_local': False, 'split': False, 'check_isfluid': False}
+        if self.generator.backend == "NUMPY":
+            return {"m_local": False, "split": False, "check_isfluid": False}
         else:
-            return {'m_local': True, 'split': False, 'check_isfluid': False}
+            return {"m_local": True, "split": False, "check_isfluid": False}
 
     def _get_algorithm(self, dico, sorder):
         algo_method = PullAlgorithm
         user_settings = {}
-        dummy = dico.get('lbm_algorithm', None)
+        dummy = dico.get("lbm_algorithm", None)
         if dummy:
-            algo_method = dummy.get('name', PullAlgorithm)
-            user_settings = dummy.get('settings', {})
+            algo_method = dummy.get("name", PullAlgorithm)
+            user_settings = dummy.get("settings", {})
         algo_settings = self._get_default_algo_settings()
         algo_settings.update(user_settings)
 
@@ -218,7 +221,7 @@ class Simulation:
             self._update_m = False
             self.f2m()
 
-        return self.container.m._in(i) #pylint: disable=protected-access
+        return self.container.m._in(i)  # pylint: disable=protected-access
 
     @utils.itemproperty
     def F_halo(self, i):
@@ -237,14 +240,16 @@ class Simulation:
         """
         get the distribution function i in the interior domain.
         """
-        return self.container.F._in(i) #pylint: disable=protected-access
+        return self.container.F._in(i)  # pylint: disable=protected-access
 
     def __str__(self):
         from .utils import header_string
         from .jinja_env import env
-        template = env.get_template('simulation.tpl')
-        return template.render(header=header_string("Simulation information"),
-                               simu=self)
+
+        template = env.get_template("simulation.tpl")
+        return template.render(
+            header=header_string("Simulation information"), simu=self
+        )
 
     def __repr__(self):
         return self.__str__()
@@ -274,20 +279,24 @@ class Simulation:
         # type of initialization
         # by default, the initialization is on the moments
         # else, it could be distributions
-        coords = np.meshgrid(*(c for c in self.domain.coords_halo), sparse=True, indexing='ij')
+        coords = np.meshgrid(
+            *(c for c in self.domain.coords_halo), sparse=True, indexing="ij"
+        )
 
-        if self.init_type == 'moments':
+        if self.init_type == "moments":
             array_to_init = self.container.m
-        elif self.init_type == 'distributions':
+        elif self.init_type == "distributions":
             array_to_init = self.container.F
         else:
-            sss = 'Error in the creation of the scheme: wrong dictionnary\n'
-            sss += 'the key `inittype` should be moments or distributions'
+            sss = "Error in the creation of the scheme: wrong dictionnary\n"
+            sss += "the key `inittype` should be moments or distributions"
             log.error(sss)
             sys.exit()
 
         if self.init_data is None:
-            log.warning("You don't define initialization step for your conserved moments")
+            log.warning(
+                "You don't define initialization step for your conserved moments"
+            )
             return
 
         for k, v in self.init_data.items():
@@ -302,10 +311,10 @@ class Simulation:
             else:
                 array_to_init[k] = v
 
-        if self.init_type == 'moments':
+        if self.init_type == "moments":
             self.equilibrium()
             self.m2f()
-        elif self.init_type == 'distributions':
+        elif self.init_type == "distributions":
             self.f2m()
 
         self.container.Fnew.array[:] = self.container.F.array[:]
@@ -315,21 +324,21 @@ class Simulation:
         compute the transport phase on distribution functions
         (the array _F is modified)
         """
-        self.algo.call_function('transport', self, **kwargs)
+        self.algo.call_function("transport", self, **kwargs)
 
     def relaxation(self, **kwargs):
         """
         compute the relaxation phase on moments
         (the array _m is modified)
         """
-        self.algo.call_function('relaxation', self, **kwargs)
+        self.algo.call_function("relaxation", self, **kwargs)
 
-    def source_term(self, fraction_of_time_step=1., **kwargs):
+    def source_term(self, fraction_of_time_step=1.0, **kwargs):
         """
         compute the source term phase on moments
         (the array _m is modified)
         """
-        self.algo.call_function('source_term', self, **kwargs)
+        self.algo.call_function("source_term", self, **kwargs)
 
     @monitor
     def f2m(self, **kwargs):
@@ -337,7 +346,7 @@ class Simulation:
         compute the moments from the distribution functions
         (the array _m is modified)
         """
-        self.algo.call_function('f2m', self, **kwargs)
+        self.algo.call_function("f2m", self, **kwargs)
 
     @monitor
     def m2f(self, m_user=None, f_user=None, **kwargs):
@@ -345,7 +354,7 @@ class Simulation:
         compute the distribution functions from the moments
         (the array _F is modified)
         """
-        self.algo.call_function('m2f', self, m_user, f_user, **kwargs)
+        self.algo.call_function("m2f", self, m_user, f_user, **kwargs)
 
     @monitor
     def equilibrium(self, m_user=None, **kwargs):
@@ -359,7 +368,7 @@ class Simulation:
         Another moments vector can be set to equilibrium values:
         use directly the method of the class Scheme
         """
-        self.algo.call_function('equilibrium', self, m_user, **kwargs)
+        self.algo.call_function("equilibrium", self, m_user, **kwargs)
 
     @monitor
     def boundary_condition(self, **kwargs):
@@ -400,11 +409,11 @@ class Simulation:
         if self._need_init:
             self._initialize()
 
-        self._update_m = True # we recompute f so m will be not correct
+        self._update_m = True  # we recompute f so m will be not correct
 
         self.boundary_condition(**kwargs)
 
-        self.algo.call_function('one_time_step', self, **kwargs)
+        self.algo.call_function("one_time_step", self, **kwargs)
         self.container.F, self.container.Fnew = self.container.Fnew, self.container.F
 
         self.t += self.dt
