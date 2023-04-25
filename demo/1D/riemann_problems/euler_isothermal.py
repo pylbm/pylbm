@@ -1,5 +1,3 @@
-
-
 # Authors:
 #     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -34,16 +32,12 @@ from exact_solvers import riemann_pb
 
 # pylint: disable=redefined-outer-name
 
-RHO, Q, X = sp.symbols('rho, q, X')
-LA, CO = sp.symbols('lambda, c_0', constants=True)
-SIGMA_RHO, SIGMA_U = sp.symbols('sigma_1, sigma_2', constants=True)
+RHO, Q, X = sp.symbols("rho, q, X")
+LA, CO = sp.symbols("lambda, c_0", constants=True)
+SIGMA_RHO, SIGMA_U = sp.symbols("sigma_1, sigma_2", constants=True)
 
 
-def run(space_step,
-        final_time,
-        generator="cython",
-        sorder=None,
-        with_plot=True):
+def run(space_step, final_time, generator="cython", sorder=None, with_plot=True):
     """
     Parameters
     ----------
@@ -71,74 +65,78 @@ def run(space_step,
 
     """
     # parameters
-    xmin, xmax = -1, 1               # bounds of the domain
-    la = 1.                          # velocity of the scheme
-    c_0 = la/sqrt(3)                 # velocity of the pressure waves
-    s_rho, s_u = 2., 1.85            # relaxation parameters
+    xmin, xmax = -1, 1  # bounds of the domain
+    la = 1.0  # velocity of the scheme
+    c_0 = la / sqrt(3)  # velocity of the pressure waves
+    s_rho, s_u = 2.0, 1.85  # relaxation parameters
 
-    symb_s_rho = 1/(.5+SIGMA_RHO)    # symbolic relaxation parameter
-    symb_s_u = 1/(.5+SIGMA_U)        # symbolic relaxation parameter
+    symb_s_rho = 1 / (0.5 + SIGMA_RHO)  # symbolic relaxation parameter
+    symb_s_u = 1 / (0.5 + SIGMA_U)  # symbolic relaxation parameter
 
     # initial values
     rhoo = 1
-    drho = rhoo/3
-    rho_left, u_left = rhoo-drho, 0    # left state
-    rho_right, u_right = rhoo+drho, 0  # right state
-    q_left = rho_left*u_left
-    q_right = rho_right*u_right
+    drho = rhoo / 3
+    rho_left, u_left = rhoo - drho, 0  # left state
+    rho_right, u_right = rhoo + drho, 0  # right state
+    q_left = rho_left * u_left
+    q_right = rho_right * u_right
     # fixed bounds of the graphics
-    ymina, ymaxa = rhoo-2*drho, rhoo+2*drho
-    yminb, ymaxb = -.25, .1
+    ymina, ymaxa = rhoo - 2 * drho, rhoo + 2 * drho
+    yminb, ymaxb = -0.25, 0.1
 
     # discontinuity position
-    xmid = .5*(xmin+xmax)
+    xmid = 0.5 * (xmin + xmax)
 
-    exact_solution = exact_solver({
-        'jump abscissa': xmid,
-        'left state': [rho_left, u_left],
-        'right state': [rho_right, u_right],
-        'sound_speed': c_0,
-    })
+    exact_solution = exact_solver(
+        {
+            "jump abscissa": xmid,
+            "left state": [rho_left, u_left],
+            "right state": [rho_right, u_right],
+            "sound_speed": c_0,
+        }
+    )
 
     exact_solution.diagram()
 
     simu_cfg = {
-        'box': {'x': [xmin, xmax], 'label': 0},
-        'space_step': space_step,
-        'scheme_velocity': LA,
-        'schemes': [
+        "box": {"x": [xmin, xmax], "label": 0},
+        "space_step": space_step,
+        "scheme_velocity": LA,
+        "schemes": [
             {
-                'velocities': [1, 2],
-                'conserved_moments': RHO,
-                'polynomials': [1, X],
-                'relaxation_parameters': [0, symb_s_rho],
-                'equilibrium': [RHO, Q],
+                "velocities": [1, 2],
+                "conserved_moments": RHO,
+                "polynomials": [1, X],
+                "relaxation_parameters": [0, symb_s_rho],
+                "equilibrium": [RHO, Q],
             },
             {
-                'velocities': [1, 2],
-                'conserved_moments': Q,
-                'polynomials': [1, X],
-                'relaxation_parameters': [0, symb_s_u],
-                'equilibrium': [Q, Q**2/RHO + CO**2*RHO],
+                "velocities": [1, 2],
+                "conserved_moments": Q,
+                "polynomials": [1, X],
+                "relaxation_parameters": [0, symb_s_u],
+                "equilibrium": [Q, Q**2 / RHO + CO**2 * RHO],
             },
         ],
-        'init': {RHO: (riemann_pb, (xmid, rho_left, rho_right)),
-                 Q: (riemann_pb, (xmid, q_left, q_right))},
-        'boundary_conditions': {
+        "init": {
+            RHO: (riemann_pb, (xmid, rho_left, rho_right)),
+            Q: (riemann_pb, (xmid, q_left, q_right)),
+        },
+        "boundary_conditions": {
             0: {
-                'method': {
+                "method": {
                     0: pylbm.bc.Neumann,
                     1: pylbm.bc.Neumann,
                 },
             },
         },
-        'parameters': {
+        "parameters": {
             LA: la,
-            SIGMA_RHO: 1/s_rho-.5,
-            SIGMA_U: 1/s_u-.5,
+            SIGMA_RHO: 1 / s_rho - 0.5,
+            SIGMA_U: 1 / s_u - 0.5,
             CO: c_0,
         },
-        'generator': generator,
+        "generator": generator,
     }
 
     # build the simulation
@@ -153,7 +151,7 @@ def run(space_step,
         fig = viewer.Fig(2, 1)
         axe1 = fig[0]
         axe1.axis(xmin, xmax, ymina, ymaxa)
-        axe1.set_label(None, r'$\rho$')
+        axe1.set_label(None, r"$\rho$")
         axe1.xaxis_set_visible(False)
         axe2 = fig[1]
         axe2.axis(xmin, xmax, yminb, ymaxb)
@@ -161,36 +159,42 @@ def run(space_step,
 
         x = sol.domain.x
         l1a = axe1.CurveScatter(
-            x, sol.m[RHO],
-            color='navy',
-            label=r'$D_1Q_2$',
+            x,
+            sol.m[RHO],
+            color="navy",
+            label=r"$D_1Q_2$",
         )
         sole = exact_solution.evaluate(x, sol.t)
         l1e = axe1.CurveLine(
-            x, sole[0], width=1,
-            label='exact',
+            x,
+            sole[0],
+            width=1,
+            label="exact",
         )
         l2a = axe2.CurveScatter(
-            x, sol.m[Q]/sol.m[RHO],
-            color='orange',
-            label=r'$D_1Q_2$',
+            x,
+            sol.m[Q] / sol.m[RHO],
+            color="orange",
+            label=r"$D_1Q_2$",
         )
         l2e = axe2.CurveLine(
-            x, sole[1], width=1,
-            label='exact',
+            x,
+            sole[1],
+            width=1,
+            label="exact",
         )
-        axe1.legend(loc='lower right')
-        axe2.legend(loc='lower right')
+        axe1.legend(loc="lower right")
+        axe2.legend(loc="lower right")
 
         def update(iframe):  # pylint: disable=unused-argument
             if sol.t < final_time:
                 sol.one_time_step()
                 l1a.update(sol.m[RHO])
-                l2a.update(sol.m[Q]/sol.m[RHO])
+                l2a.update(sol.m[Q] / sol.m[RHO])
                 sole = exact_solution.evaluate(x, sol.t)
                 l1e.update(sole[0])
                 l2e.update(sole[1])
-                axe1.title = r'isothermal Euler at $t = {0:f}$'.format(sol.t)
+                axe1.title = r"isothermal Euler at $t = {0:f}$".format(sol.t)
 
         fig.animate(update)
         fig.show()
@@ -200,8 +204,9 @@ def run(space_step,
 
     return sol
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # pylint: disable=invalid-name
-    space_step = 1./128
-    final_time = sqrt(3)/2
+    space_step = 1.0 / 128
+    final_time = sqrt(3) / 2
     solution = run(space_step, final_time, generator="numpy")

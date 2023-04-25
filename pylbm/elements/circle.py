@@ -11,6 +11,7 @@ Circle element
 # pylint: disable=invalid-name
 
 import logging
+
 # from textwrap import dedent
 import numpy as np
 
@@ -70,6 +71,7 @@ class Circle(Element):
         - type: solid
 
     """
+
     def __init__(self, center, radius, label=0, isfluid=False):
         self.number_of_bounds = 1  # number of edges
         self.dim = 2
@@ -77,7 +79,7 @@ class Circle(Element):
         if radius >= 0:
             self.radius = radius
         else:
-            log.error('The radius of the circle should be positive')
+            log.error("The radius of the circle should be positive")
         super(Circle, self).__init__(label, isfluid)
         log.info(self.__str__())
 
@@ -112,7 +114,7 @@ class Circle(Element):
         """
         x, y = grid
         v2 = np.asarray([x - self.center[0], y - self.center[1]], dtype=object)
-        return (v2[0]**2 + v2[1]**2) <= self.radius**2
+        return (v2[0] ** 2 + v2[1] ** 2) <= self.radius**2
 
     def distance(self, grid, v, dmax=None, normal=False):
         """
@@ -144,34 +146,26 @@ class Circle(Element):
             if normal is True
         """
         x, y = grid
-        v1 = self.radius*np.array([1, 0])
-        v2 = self.radius*np.array([0, 1])
-        return distance_ellipse(
-            x, y, v, self.center, v1, v2,
-            dmax, self.label, normal
-        )
+        v1 = self.radius * np.array([1, 0])
+        v2 = self.radius * np.array([0, 1])
+        return distance_ellipse(x, y, v, self.center, v1, v2, dmax, self.label, normal)
 
     def __str__(self):
         from ..utils import header_string
         from ..jinja_env import env
-        template = env.get_template('circle.tpl')
-        elem_type = 'fluid' if self.isfluid else 'solid'
+
+        template = env.get_template("circle.tpl")
+        elem_type = "fluid" if self.isfluid else "solid"
         return template.render(
-            header=header_string('Circle'),
-            elem=self, type=elem_type
+            header=header_string("Circle"), elem=self, type=elem_type
         )
 
-    def visualize(self,
-                  viewer, color, viewlabel=False,
-                  scale=np.ones(2), alpha=1.
-                  ):
-        viewer.ellipse(self.center*scale,
-                       tuple(self.radius*scale),
-                       color,
-                       alpha=alpha
-                       )
+    def visualize(self, viewer, color, viewlabel=False, scale=np.ones(2), alpha=1.0):
+        viewer.ellipse(
+            self.center * scale, tuple(self.radius * scale), color, alpha=alpha
+        )
         if viewlabel:
-            theta = self.center[0] + 2*self.center[1]+10*self.radius
-            x = self.center[0] + self.radius*np.cos(theta)
-            y = self.center[1] + self.radius*np.sin(theta)
-            viewer.text(str(self.label[0]), [x*scale[0], y*scale[1]])
+            theta = self.center[0] + 2 * self.center[1] + 10 * self.radius
+            x = self.center[0] + self.radius * np.cos(theta)
+            y = self.center[1] + self.radius * np.sin(theta)
+            viewer.text(str(self.label[0]), [x * scale[0], y * scale[1]])

@@ -1,5 +1,3 @@
-
-
 # Authors:
 #     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -14,30 +12,30 @@ import pylbm
 
 # pylint: disable=invalid-name
 
-U, X, Y, Z = sp.symbols('u, X, Y, Z')
-CX, CY, CZ = sp.symbols('c_0, c_1, c_2', constants=True)
-LA, SIGMA = sp.symbols('lambda, sigma', constants=True)
+U, X, Y, Z = sp.symbols("u, X, Y, Z")
+CX, CY, CZ = sp.symbols("c_0, c_1, c_2", constants=True)
+LA, SIGMA = sp.symbols("lambda, sigma", constants=True)
 
-s = 1/(.5+SIGMA)
+s = 1 / (0.5 + SIGMA)
 s_num = 1.9
 
 scheme_cfg = {
-    'parameters': {
-        LA: 1.,
+    "parameters": {
+        LA: 1.0,
         CX: 0.1,
-        CY: 0.,
-        CZ: 0.,
-        SIGMA: 1/s_num - .5,
+        CY: 0.0,
+        CZ: 0.0,
+        SIGMA: 1 / s_num - 0.5,
     },
-    'dim': 3,
-    'scheme_velocity': LA,
-    'schemes': [
+    "dim": 3,
+    "scheme_velocity": LA,
+    "schemes": [
         {
-            'velocities': [1, 2, 3, 4, 5, 6],
-            'conserved_moments': U,
-            'polynomials': [1, X, Y, Z, X**2-Y**2, X**2-Z**2],
-            'equilibrium': [U, CX*U, CY*U, CZ*U, 0., 0.],
-            'relaxation_parameters': [0., s, s, s, 1., 1.],
+            "velocities": [1, 2, 3, 4, 5, 6],
+            "conserved_moments": U,
+            "polynomials": [1, X, Y, Z, X**2 - Y**2, X**2 - Z**2],
+            "equilibrium": [U, CX * U, CY * U, CZ * U, 0.0, 0.0],
+            "relaxation_parameters": [0.0, s, s, s, 1.0, 1.0],
         },
     ],
 }

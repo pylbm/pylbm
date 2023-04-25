@@ -1,5 +1,3 @@
-
-
 # Authors:
 #     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -21,38 +19,33 @@ import pylbm
 
 # pylint: disable=redefined-outer-name
 
-X, U = sp.symbols('X, u')
-C, MU, LA = sp.symbols('c, mu, lambda', constants=True)
+X, U = sp.symbols("X, u")
+C, MU, LA = sp.symbols("c, mu, lambda", constants=True)
 
 
 def u_init(x, xmin, xmax):
     """
     initial condition
     """
-    middle = 0.5*(xmin+xmax)
-    width = 0.1*(xmax-xmin)
-    x_centered = xmin + x % (xmax-xmin)
-    middle = 0.5*(xmin+xmax)
-    return 0.25 \
-        + .125/width**10 * (x_centered-middle-width)**5 \
-        * (middle-x_centered-width)**5 \
-        * (abs(x_centered-middle) <= width)
+    middle = 0.5 * (xmin + xmax)
+    width = 0.1 * (xmax - xmin)
+    x_centered = xmin + x % (xmax - xmin)
+    middle = 0.5 * (xmin + xmax)
+    return 0.25 + 0.125 / width**10 * (x_centered - middle - width) ** 5 * (
+        middle - x_centered - width
+    ) ** 5 * (abs(x_centered - middle) <= width)
 
 
 def solution(t, x, xmin, xmax, c, mu):
     """
     exact solution
     """
-    dt = np.tanh(0.5*mu*t)
-    u_i = u_init(x - c*t, xmin, xmax)
-    return (dt+2*u_i-(1-2*u_i)*dt)/(2-2*(1-2*u_i)*dt)
+    dt = np.tanh(0.5 * mu * t)
+    u_i = u_init(x - c * t, xmin, xmax)
+    return (dt + 2 * u_i - (1 - 2 * u_i) * dt) / (2 - 2 * (1 - 2 * u_i) * dt)
 
 
-def run(space_step,
-        final_time,
-        generator="numpy",
-        sorder=None,
-        with_plot=True):
+def run(space_step, final_time, generator="numpy", sorder=None, with_plot=True):
     """
     Parameters
     ----------
@@ -81,30 +74,30 @@ def run(space_step,
 
     """
     # parameters
-    xmin, xmax = 0., 1.   # bounds of the domain
-    la = 1.               # scheme velocity (la = dx/dt)
-    c = 0.25              # velocity of the advection
-    mu = 1.               # parameter of the source term
-    s = 2.                # relaxation parameter
+    xmin, xmax = 0.0, 1.0  # bounds of the domain
+    la = 1.0  # scheme velocity (la = dx/dt)
+    c = 0.25  # velocity of the advection
+    mu = 1.0  # parameter of the source term
+    s = 2.0  # relaxation parameter
 
     # dictionary of the simulation
     simu_cfg = {
-        'box': {'x': [xmin, xmax], 'label': -1},
-        'space_step': space_step,
-        'scheme_velocity': LA,
-        'schemes': [
+        "box": {"x": [xmin, xmax], "label": -1},
+        "space_step": space_step,
+        "scheme_velocity": LA,
+        "schemes": [
             {
-                'velocities': [1, 2],
-                'conserved_moments': U,
-                'polynomials': [1, X],
-                'relaxation_parameters': [0., s],
-                'equilibrium': [U, C*U],
-                'source_terms': {U: MU*U*(1-U)},
+                "velocities": [1, 2],
+                "conserved_moments": U,
+                "polynomials": [1, X],
+                "relaxation_parameters": [0.0, s],
+                "equilibrium": [U, C * U],
+                "source_terms": {U: MU * U * (1 - U)},
             },
         ],
-        'init': {U: (u_init, (xmin, xmax))},
-        'generator': generator,
-        'parameters': {LA: la, C: c, MU: mu},
+        "init": {U: (u_init, (xmin, xmax))},
+        "generator": generator,
+        "parameters": {LA: la, C: c, MU: mu},
     }
 
     # build the simulation
@@ -115,18 +108,12 @@ def run(space_step,
         viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig()
         axe = fig[0]
-        ymin, ymax = -.2, 1.2
+        ymin, ymax = -0.2, 1.2
         axe.axis(xmin, xmax, ymin, ymax)
 
         x = sol.domain.x
-        l1a = axe.CurveScatter(
-            x, sol.m[U],
-            color='navy', label='D1Q2'
-        )
-        l1e = axe.CurveLine(
-            x, solution(sol.t, x, xmin, xmax, c, mu),
-            label='exact'
-        )
+        l1a = axe.CurveScatter(x, sol.m[U], color="navy", label="D1Q2")
+        l1e = axe.CurveLine(x, solution(sol.t, x, xmin, xmax, c, mu), label="exact")
         axe.legend()
 
         def update(iframe):  # pylint: disable=unused-argument
@@ -135,7 +122,7 @@ def run(space_step,
                 sol.one_time_step()
                 l1a.update(sol.m[U])
                 l1e.update(solution(sol.t, x, xmin, xmax, c, mu))
-                axe.title = 'solution at t = {0:f}'.format(sol.t)
+                axe.title = "solution at t = {0:f}".format(sol.t)
 
         fig.animate(update)
         fig.show()
@@ -145,8 +132,9 @@ def run(space_step,
 
     return sol
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # pylint: disable=invalid-name
-    space_step = 1./128
-    final_time = 2.
-    solution = run(space_step, final_time)
+    space_step = 1.0 / 128
+    final_time = 2.0
+    run(space_step, final_time)

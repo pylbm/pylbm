@@ -10,6 +10,6 @@
 {% block data_text scoped %}
 .. parsed-literal::
     :class: output
-    
+
 {{ output.data['text/plain'] | indent }}
 {% endblock data_text %}

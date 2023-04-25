@@ -1,5 +1,3 @@
-
-
 # Authors:
 #     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -15,15 +13,10 @@ import pylbm
 
 a, b = -1.5, 1.5
 
-sponge = pylbm.STLElement('Menger_sponge_sample.stl', label=1)
+sponge = pylbm.STLElement("Menger_sponge_sample.stl", label=1)
 dico = {
-    'box': {
-        'x': [a, b],
-        'y': [a, b],
-        'z': [a, b],
-        'label': 0
-    },
-    'elements': [sponge],
+    "box": {"x": [a, b], "y": [a, b], "z": [a, b], "label": 0},
+    "elements": [sponge],
 }
 geom = pylbm.Geometry(dico)
 print(geom)

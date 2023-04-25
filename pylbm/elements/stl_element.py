@@ -11,14 +11,12 @@ https://en.wikipedia.org/wiki/STL_(file_format)
 
 # pylint: disable=invalid-name
 
-from os.path import isfile
 import logging
-# from textwrap import dedent
+
 import numpy as np
 from stl import mesh
 
 from .base import Element
-# from .utils import distance_lines
 
 log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -42,9 +40,9 @@ def intersection(grid, v, tri):
     # A is 3x3 and does not depend on the grid
     A = np.array(
         [
-            [tri[6]-tri[0], tri[3]-tri[0], -v[0]],
-            [tri[7]-tri[1], tri[4]-tri[1], -v[1]],
-            [tri[8]-tri[2], tri[5]-tri[2], -v[2]]
+            [tri[6] - tri[0], tri[3] - tri[0], -v[0]],
+            [tri[7] - tri[1], tri[4] - tri[1], -v[1]],
+            [tri[8] - tri[2], tri[5] - tri[2], -v[2]],
         ]
     )
     # if the direction v is in the planed of the triangle tri
@@ -53,28 +51,22 @@ def intersection(grid, v, tri):
     try:
         invA = np.linalg.inv(A)
     except np.linalg.LinAlgError as e:
-        if 'Singular matrix' not in str(e):
+        if "Singular matrix" not in str(e):
             raise
         return None
 
     # right member of the intersection problem
     # it depends on the grid and is a (xsize, ysize, zsize) vector
     x, y, z = grid
-    P = np.asarray(
-        [x - tri[0], y - tri[1], z - tri[2]],
-        dtype=object
-    )
+    P = np.asarray([x - tri[0], y - tri[1], z - tri[2]], dtype=object)
     # solve the problem
     sol = invA.dot(P)
     # test if the intersection point is
     # - inside the triangle: s is computed
     # - outside the triangle: s = np.inf
     indin = np.logical_and(
-        np.logical_and(
-            sol[0] >= 0, sol[1] >= 0
-        ), np.logical_and(
-            sol[0] + sol[1] <= 1, sol[2] >= 0
-        )
+        np.logical_and(sol[0] >= 0, sol[1] >= 0),
+        np.logical_and(sol[0] + sol[1] <= 1, sol[2] >= 0),
     )
     s = np.full((x.size, y.size, z.size), np.inf)
     s[indin] = sol[2][indin]
@@ -118,6 +110,7 @@ class STLElement(Element):
     dim: int
         3
     """
+
     def __init__(self, filename, label=0, isfluid=False):
         self.filename = filename
         self.mesh = mesh.Mesh.from_file(filename)
@@ -174,9 +167,7 @@ class STLElement(Element):
                 if dmax is None:
                     indices = np.asarray(s < alpha).nonzero()
                 else:
-                    indices = np.logical_and(
-                        s < alpha, s <= dmax
-                    )
+                    indices = np.logical_and(s < alpha, s <= dmax)
                 alpha[indices] = s[indices]
                 border[indices] = self.label[0]
                 if normal:
@@ -193,18 +184,25 @@ class STLElement(Element):
     def __str__(self):
         from ..utils import header_string
         from ..jinja_env import env
-        template = env.get_template('stl.tpl')
-        elem_type = 'fluid' if self.isfluid else 'solid'
+
+        template = env.get_template("stl.tpl")
+        elem_type = "fluid" if self.isfluid else "solid"
         elem_dim = np.asarray(self.get_bounds()).reshape((6,))
         return template.render(
             header=header_string(self.__class__.__name__),
-            elem=self, type=elem_type, dim=elem_dim
+            elem=self,
+            type=elem_type,
+            dim=elem_dim,
         )
 
-    def visualize(self,
-                  viewer, color, viewlabel=False,
-                  scale=np.ones(3), alpha=0.25,
-                  ):
+    def visualize(
+        self,
+        viewer,
+        color,
+        viewlabel=False,
+        scale=np.ones(3),
+        alpha=0.25,
+    ):
         # coordinates of the basis triangle
         p = np.asarray(
             [
@@ -231,17 +229,17 @@ class STLElement(Element):
             # matrix of the change of basis
             A = np.array(
                 [
-                    [x[1]-x[0], x[2]-x[0], n[0]],
-                    [y[1]-y[0], y[2]-y[0], n[1]],
-                    [z[1]-z[0], z[2]-z[0], n[2]]
+                    [x[1] - x[0], x[2] - x[0], n[0]],
+                    [y[1] - y[0], y[2] - y[0], n[1]],
+                    [z[1] - z[0], z[2] - z[0], n[2]],
                 ]
             )
             # write the coordinates of the triangle
-            X = x[0] + A[0, 0]*Xb + A[0, 1]*Yb + A[0, 2]*Zb
-            Y = y[0] + A[1, 0]*Xb + A[1, 1]*Yb + A[1, 2]*Zb
-            Z = z[0] + A[2, 0]*Xb + A[2, 1]*Yb + A[2, 2]*Zb
+            X = x[0] + A[0, 0] * Xb + A[0, 1] * Yb + A[0, 2] * Zb
+            Y = y[0] + A[1, 0] * Xb + A[1, 1] * Yb + A[1, 2] * Zb
+            Z = z[0] + A[2, 0] * Xb + A[2, 1] * Yb + A[2, 2] * Zb
             # plot
-            viewer.surface(X, Y, Z, 'black', alpha=alpha)
+            viewer.surface(X, Y, Z, "black", alpha=alpha)
 
         if viewlabel:
             x, y, z = self._center()

@@ -1,5 +1,3 @@
-
-
 """
  Solver D1Q2Q2 for the p-system on [0, 1]
 
@@ -22,16 +20,12 @@ from exact_solvers import riemann_pb
 
 # pylint: disable=redefined-outer-name
 
-U1, U2, X = sp.symbols('u_1, u_2, X')
-LA, SIGMA_1, SIGMA_2 = sp.symbols('lambda, sigma_1, sigma_2', constants=True)
-GAMMA = sp.Symbol('gamma', constants=True)
+U1, U2, X = sp.symbols("u_1, u_2, X")
+LA, SIGMA_1, SIGMA_2 = sp.symbols("lambda, sigma_1, sigma_2", constants=True)
+GAMMA = sp.Symbol("gamma", constants=True)
 
 
-def run(space_step,
-        final_time,
-        generator="cython",
-        sorder=None,
-        with_plot=True):
+def run(space_step, final_time, generator="cython", sorder=None, with_plot=True):
     """
     Parameters
     ----------
@@ -60,64 +54,70 @@ def run(space_step,
 
     """
     # parameters
-    xmin, xmax = 0., 1.  # bounds of the domain
-    gamma = 2./3.        # exponent in the p-function
-    la = 2.              # velocity of the scheme
+    xmin, xmax = 0.0, 1.0  # bounds of the domain
+    gamma = 2.0 / 3.0  # exponent in the p-function
+    la = 2.0  # velocity of the scheme
     s_1, s_2 = 1.9, 1.9  # relaxation parameters
 
-    symb_s_1 = 1/(.5+SIGMA_1)  # symbolic relaxation parameters
-    symb_s_2 = 1/(.5+SIGMA_2)  # symbolic relaxation parameters
+    symb_s_1 = 1 / (0.5 + SIGMA_1)  # symbolic relaxation parameters
+    symb_s_2 = 1 / (0.5 + SIGMA_2)  # symbolic relaxation parameters
 
     # initial values
     u1_left, u1_right, u2_left, u2_right = 1.50, 0.50, 1.25, 1.50
     # fixed bounds of the graphics
-    ymina, ymaxa, yminb, ymaxb = .25, 1.75, 0.75, 1.75
+    ymina, ymaxa, yminb, ymaxb = 0.25, 1.75, 0.75, 1.75
     # discontinuity position
-    xmid = .5*(xmin+xmax)
+    xmid = 0.5 * (xmin + xmax)
 
-    exact_solution = exact_solver({
-        'jump abscissa': xmid,
-        'left state': [u1_left, u2_left],
-        'right state': [u1_right, u2_right],
-        'gamma': gamma,
-    })
+    exact_solution = exact_solver(
+        {
+            "jump abscissa": xmid,
+            "left state": [u1_left, u2_left],
+            "right state": [u1_right, u2_right],
+            "gamma": gamma,
+        }
+    )
 
     exact_solution.diagram()
 
     simu_cfg = {
-        'box': {'x': [xmin, xmax], 'label': 0},
-        'space_step': space_step,
-        'scheme_velocity': LA,
-        'schemes': [
+        "box": {"x": [xmin, xmax], "label": 0},
+        "space_step": space_step,
+        "scheme_velocity": LA,
+        "schemes": [
             {
-                'velocities': [1, 2],
-                'conserved_moments': U1,
-                'polynomials': [1, X],
-                'relaxation_parameters': [0, symb_s_1],
-                'equilibrium': [U1, -U2],
+                "velocities": [1, 2],
+                "conserved_moments": U1,
+                "polynomials": [1, X],
+                "relaxation_parameters": [0, symb_s_1],
+                "equilibrium": [U1, -U2],
             },
             {
-                'velocities': [1, 2],
-                'conserved_moments': U2,
-                'polynomials': [1, X],
-                'relaxation_parameters': [0, symb_s_2],
-                'equilibrium': [U2, U1**(-GAMMA)],
+                "velocities": [1, 2],
+                "conserved_moments": U2,
+                "polynomials": [1, X],
+                "relaxation_parameters": [0, symb_s_2],
+                "equilibrium": [U2, U1 ** (-GAMMA)],
             },
         ],
-        'init': {U1: (riemann_pb, (xmid, u1_left, u1_right)),
-                 U2: (riemann_pb, (xmid, u2_left, u2_right))},
-        'boundary_conditions': {
-            0: {'method': {
-                0: pylbm.bc.Neumann,
-                1: pylbm.bc.Neumann,
-            }, },
+        "init": {
+            U1: (riemann_pb, (xmid, u1_left, u1_right)),
+            U2: (riemann_pb, (xmid, u2_left, u2_right)),
         },
-        'generator': generator,
-        'parameters': {
+        "boundary_conditions": {
+            0: {
+                "method": {
+                    0: pylbm.bc.Neumann,
+                    1: pylbm.bc.Neumann,
+                },
+            },
+        },
+        "generator": generator,
+        "parameters": {
             LA: la,
             GAMMA: gamma,
-            SIGMA_1: 1/s_1-.5,
-            SIGMA_2: 1/s_2-.5,
+            SIGMA_1: 1 / s_1 - 0.5,
+            SIGMA_2: 1 / s_2 - 0.5,
         },
     }
 
@@ -141,24 +141,34 @@ def run(space_step,
 
         x = sol.domain.x
         l1a = axe1.CurveScatter(
-            x, sol.m[U1],
-            color='navy', label=r'$D_1Q_2$',
+            x,
+            sol.m[U1],
+            color="navy",
+            label=r"$D_1Q_2$",
         )
         sole = exact_solution.evaluate(x, sol.t)
         l1e = axe1.CurveLine(
-            x, sole[0],
-            width=1, color='black', label='exact',
+            x,
+            sole[0],
+            width=1,
+            color="black",
+            label="exact",
         )
         l2a = axe2.CurveScatter(
-            x, sol.m[U2],
-            color='orange', label=r'$D_1Q_2$',
+            x,
+            sol.m[U2],
+            color="orange",
+            label=r"$D_1Q_2$",
         )
         l2e = axe2.CurveLine(
-            x, sole[1],
-            width=1, color='black', label='exact',
+            x,
+            sole[1],
+            width=1,
+            color="black",
+            label="exact",
         )
-        axe1.legend(loc='upper right')
-        axe2.legend(loc='upper left')
+        axe1.legend(loc="upper right")
+        axe2.legend(loc="upper left")
 
         def update(iframe):  # pylint: disable=unused-argument
             if sol.t < final_time:
@@ -168,7 +178,7 @@ def run(space_step,
                 sole = exact_solution.evaluate(x, sol.t)
                 l1e.update(sole[0])
                 l2e.update(sole[1])
-                axe1.title = r'p-system at $t = {0:f}$'.format(sol.t)
+                axe1.title = r"p-system at $t = {0:f}$".format(sol.t)
 
         fig.animate(update)
         fig.show()
@@ -178,8 +188,9 @@ def run(space_step,
 
     return sol
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # pylint: disable=invalid-name
-    space_step = 1./256
-    final_time = .25
+    space_step = 1.0 / 256
+    final_time = 0.25
     solution = run(space_step, final_time, generator="numpy")

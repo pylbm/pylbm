@@ -1,5 +1,3 @@
-
-
 # Authors:
 #     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -15,15 +13,8 @@ import pylbm
 # pylint: disable=invalid-name
 
 dgeom = {
-    'box': {
-        'x': [0, 1],
-        'y': [0, 1],
-        'z': [0, 1],
-        'label': 0
-    },
-    'elements': [
-        pylbm.Sphere((.5, .5, .5), .25, label=1)
-    ],
+    "box": {"x": [0, 1], "y": [0, 1], "z": [0, 1], "label": 0},
+    "elements": [pylbm.Sphere((0.5, 0.5, 0.5), 0.25, label=1)],
 }
 geom = pylbm.Geometry(dgeom)
 print(geom)

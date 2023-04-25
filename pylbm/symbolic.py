@@ -8,32 +8,44 @@
 Symbolic module
 """
 
-import sys
 import inspect
 import numpy as np
 import sympy as sp
 from sympy.matrices.common import ShapeError
 
 # List of symbols used in pylbm
-nx, ny, nz, nv = sp.symbols("nx, ny, nz, nv", integer=True) #pylint: disable=invalid-name
-ix, iy, iz, iv = sp.symbols("ix, iy, iz, iv", integer=True) #pylint: disable=invalid-name
-ix_, iy_, iz_, iv_ = sp.symbols("ix_, iy_, iz_, iv_", integer=True) #pylint: disable=invalid-name
-rel_ux, rel_uy, rel_uz = sp.symbols('rel_ux, rel_uy, rel_uz', real=True) #pylint: disable=invalid-name
+nx, ny, nz, nv = sp.symbols(
+    "nx, ny, nz, nv", integer=True
+)  # pylint: disable=invalid-name
+ix, iy, iz, iv = sp.symbols(
+    "ix, iy, iz, iv", integer=True
+)  # pylint: disable=invalid-name
+ix_, iy_, iz_, iv_ = sp.symbols(
+    "ix_, iy_, iz_, iv_", integer=True
+)  # pylint: disable=invalid-name
+rel_ux, rel_uy, rel_uz = sp.symbols(
+    "rel_ux, rel_uy, rel_uz", real=True
+)  # pylint: disable=invalid-name
+
 
 class SymbolicVector(sp.Matrix):
-
     def __add__(self, other):
         if np.isscalar(other):
             mat = [a + other for a in self]
             return SymbolicVector._new(self.rows, self.cols, mat, copy=False)
         elif isinstance(other, (np.ndarray, SymbolicVector)):
             if self.shape[0] != other.shape[0]:
-                raise ShapeError("SymbolicVector size mismatch: %s + %s." % (self.shape, other.shape))
+                raise ShapeError(
+                    "SymbolicVector size mismatch: %s + %s." % (self.shape, other.shape)
+                )
             if len(other.shape) > 1:
                 for s in other.shape[1:]:
                     if s != 1:
-                        raise ShapeError("SymbolicVector size mismatch: %s + %s." % (self.shape, other.shape))
-            mat = [a + b for a,b in zip(self, other)]
+                        raise ShapeError(
+                            "SymbolicVector size mismatch: %s + %s."
+                            % (self.shape, other.shape)
+                        )
+            mat = [a + b for a, b in zip(self, other)]
             return SymbolicVector._new(self.rows, self.cols, mat, copy=False)
         else:
             return super(SymbolicVector, self).__add__(other)
@@ -43,25 +55,31 @@ class SymbolicVector(sp.Matrix):
 
     def _multiply(self, other, method):
         if np.isscalar(other):
-            mat = [a*other for a in self]
+            mat = [a * other for a in self]
             return SymbolicVector._new(self.rows, self.cols, mat, copy=False)
         elif isinstance(other, (np.ndarray, SymbolicVector, sp.MatrixSymbol)):
             if self.shape[0] != other.shape[0]:
-                raise ShapeError("SymbolicVector size mismatch: %s * %s." % (self.shape, other.shape))
+                raise ShapeError(
+                    "SymbolicVector size mismatch: %s * %s." % (self.shape, other.shape)
+                )
             if len(other.shape) > 1:
                 for s in other.shape[1:]:
                     if s != 1:
-                        raise ShapeError("SymbolicVector size mismatch: %s * %s." % (self.shape, other.shape))
-            mat = [a*b for a,b in zip(self, other)]
+                        raise ShapeError(
+                            "SymbolicVector size mismatch: %s * %s."
+                            % (self.shape, other.shape)
+                        )
+            mat = [a * b for a, b in zip(self, other)]
             return SymbolicVector._new(self.rows, self.cols, mat, copy=False)
         else:
             return getattr(super(SymbolicVector, self), method)(other)
 
     def __mul__(self, other):
-        return self._multiply(other, '__mul__')
+        return self._multiply(other, "__mul__")
 
     def __rmul__(self, other):
-        return self._multiply(other, '__rmul__')
+        return self._multiply(other, "__rmul__")
+
 
 def set_order(array, priority=None):
     """
@@ -92,8 +110,14 @@ def set_order(array, priority=None):
         return array
 
 
-def indexed(name, shape, index=[iv, ix, iy, iz], velocities=None,
-            velocities_index=None, priority=None):
+def indexed(
+    name,
+    shape,
+    index=[iv, ix, iy, iz],
+    velocities=None,
+    velocities_index=None,
+    priority=None,
+):
     """
     Return a SymPy matrix or an expression of indexed
     objects.
@@ -174,9 +198,9 @@ def indexed(name, shape, index=[iv, ix, iy, iz], velocities=None,
     elif velocities is not None:
         ind = []
         indices = index[1:]
-        for iv, v in enumerate(velocities): #pylint: disable=invalid-name
+        for iv, v in enumerate(velocities):  # pylint: disable=invalid-name
             tmp_ind = []
-            for ik, k in enumerate(v): #pylint: disable=invalid-name
+            for ik, k in enumerate(v):  # pylint: disable=invalid-name
                 tmp_ind.append(indices[ik] + int(k))
             ind.append(set_order([iv] + tmp_ind, priority))
         return SymbolicVector([output[i] for i in ind])
@@ -223,13 +247,14 @@ def space_idx(ranges, priority=None):
     indices = [ix_, iy_, iz_]
 
     idx = []
-    for ir, r in enumerate(ranges): #pylint: disable=invalid-name
+    for ir, r in enumerate(ranges):  # pylint: disable=invalid-name
         idx.append(sp.Idx(indices[ir], r))
 
     if priority:
         return set_order(idx, priority)
     else:
         return idx
+
 
 def alltogether(M, nsimplify=False):
     """
@@ -249,6 +274,7 @@ def alltogether(M, nsimplify=False):
             else:
                 M[i, j] = M[i, j].expand().together().factor()
 
+
 def recursive_sub(expr, replace):
     for _ in range(len(replace)):
         new_expr = expr.subs(replace)
@@ -258,14 +284,16 @@ def recursive_sub(expr, replace):
             expr = new_expr
     return new_expr
 
+
 def call_genfunction(function, args):
     from .monitoring import monitor
     from .context import queue
+
     try:
         func_args = function.arg_dict.keys()
-        d = {k:args[k] for k in func_args} #pylint: disable=invalid-name
-        d['queue'] = queue
-    except: #pylint: disable=bare-except
+        d = {k: args[k] for k in func_args}  # pylint: disable=invalid-name
+        d["queue"] = queue
+    except:  # noqa: E722
         func_args = inspect.getfullargspec(function).args
-        d = {k:args[k] for k in func_args} #pylint: disable=invalid-name
+        d = {k: args[k] for k in func_args}  # pylint: disable=invalid-name
     monitor(function)(**d)

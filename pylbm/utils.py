@@ -12,14 +12,14 @@ utils module
 
 import sys
 import logging
-from colorama import Fore, Style, Back  # pylint: disable=unused-import
+from colorama import Fore
 
 log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
 def header_string(title):
-    barre = '+' + '-'*(len(title)+2) + '+'
-    output = '\n| %s |\n' % title
+    barre = "+" + "-" * (len(title) + 2) + "+"
+    output = "\n| %s |\n" % title
     return Fore.BLUE + barre + output + barre + Fore.RESET
 
 
@@ -50,11 +50,7 @@ class bounditemproperty:
         if fget is None:
             raise AttributeError("unreadable attribute item")
         if self.nextItem:
-            return bound2itemproperty(
-                self.__item_property,
-                self.__instance,
-                key
-            )
+            return bound2itemproperty(self.__item_property, self.__instance, key)
         else:
             return fget(self.__instance, key)
 
@@ -84,7 +80,7 @@ class bound2itemproperty:
         fset(self.__instance, self.key, key, value)
 
 
-def hsl_to_rgb(h, s, l):
+def hsl_to_rgb(h, s, l):  # noqa: E741
     """
     Converts an HSL color value to RGB. Conversion formula
     adapted from http://en.wikipedia.org/wiki/HSL_color_space.
@@ -113,28 +109,27 @@ def hsl_to_rgb(h, s, l):
         g = l
         b = l
     else:
+
         def hue2rgb(p, q, t):
             t = t % 1
-            if t < 1/6:
+            if t < 1 / 6:
                 return p + (q - p) * 6 * t
-            if t < 1/2:
+            if t < 1 / 2:
                 return q
-            if t < 2/3:
-                return p + (q - p) * (2/3 - t) * 6
+            if t < 2 / 3:
+                return p + (q - p) * (2 / 3 - t) * 6
             return p
 
         q = l * (1 + s) if l < 0.5 else l + s - l * s
         p = 2 * l - q
-        r = hue2rgb(p, q, h + 1/3)
+        r = hue2rgb(p, q, h + 1 / 3)
         g = hue2rgb(p, q, h)
-        b = hue2rgb(p, q, h - 1/3)
+        b = hue2rgb(p, q, h - 1 / 3)
 
     return r, g, b
 
 
-def print_progress(iteration, total,
-                   prefix='', suffix='',
-                   decimals=1, barLength=100):
+def print_progress(iteration, total, prefix="", suffix="", decimals=1, barLength=100):
     """
     Call in a loop to create terminal progress bar
     @params:
@@ -149,26 +144,21 @@ def print_progress(iteration, total,
     formatStr = "{0:." + str(decimals) + "f}"
     percents = formatStr.format(100 * (iteration / float(total)))
     filledLength = int(round(barLength * iteration / float(total)))
-    p_bar = '*' * filledLength + '-' * (barLength - filledLength)
+    p_bar = "*" * filledLength + "-" * (barLength - filledLength)
     # pylint: disable=expression-not-assigned
-    sys.stdout.write(
-        '\r%s |%s| %s%s %s' % (prefix, p_bar, percents, '%', suffix)
-    ),
+    sys.stdout.write("\r%s |%s| %s%s %s" % (prefix, p_bar, percents, "%", suffix)),
     sys.stdout.flush()
     if iteration == total:
-        sys.stdout.write('\n')
+        sys.stdout.write("\n")
         sys.stdout.flush()
 
 
 class pylbm_progress_bar:
     def __init__(self, nb_total, title=None):
-        log.warning(
-            "module `alive_progress' not found\n"
-            "replaced by my poor own\n"
-        )
+        log.warning("module `alive_progress' not found\n" "replaced by my poor own\n")
         self.nb_total = nb_total
         if title is None:
-            self.title = ''
+            self.title = ""
         else:
             self.title = title
         self.compt = 0
@@ -188,9 +178,8 @@ class pylbm_progress_bar:
 
 try:
     from alive_progress import alive_bar, config_handler
-    config_handler.set_global(
-        spinner='waves', bar='smooth'
-    )
+
+    config_handler.set_global(spinner="waves", bar="smooth")
     progress_bar = alive_bar
 except ImportError:
     progress_bar = pylbm_progress_bar

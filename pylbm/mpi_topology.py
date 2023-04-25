@@ -13,6 +13,7 @@ import mpi4py.MPI as mpi
 
 from .options import options
 
+
 class MpiTopology:
     """
     Interface construction using a MPI topology.
@@ -61,6 +62,7 @@ class MpiTopology:
       update a numpy array according to the subarrays and the topology.
 
     """
+
     def __init__(self, dim, period, comm=mpi.COMM_WORLD):
         self.dim = dim
         self.set_options()
@@ -74,7 +76,7 @@ class MpiTopology:
         else:
             split = (self.npx, self.npy, self.npz)
 
-        self.split = np.asarray(split[:self.dim])
+        self.split = np.asarray(split[: self.dim])
         self.cartcomm = comm.Create_cart(self.split, period)
 
     def get_region_indices_(self, n, axis=0):
@@ -99,7 +101,7 @@ class MpiTopology:
         region_indices = [0]
         nproc = self.cartcomm.Get_topo()[0][axis]
         for i in range(nproc):
-            region_indices.append(region_indices[-1] + n//nproc + ((n % nproc) > i))
+            region_indices.append(region_indices[-1] + n // nproc + ((n % nproc) > i))
         return region_indices
 
     def get_region_indices(self, nx, ny=None, nz=None):
@@ -169,9 +171,9 @@ class MpiTopology:
         coords = self.get_coords()
         region = []
         for i in range(coords.size):
-            region.append([region_indices[i][coords[i]],
-                           region_indices[i][coords[i] + 1]
-                          ])
+            region.append(
+                [region_indices[i][coords[i]], region_indices[i][coords[i] + 1]]
+            )
         return region
 
     def set_options(self):
@@ -181,6 +183,7 @@ class MpiTopology:
         self.npx = int(options().npx)
         self.npy = int(options().npy)
         self.npz = int(options().npz)
+
 
 def get_directions(dim):
     """
@@ -232,7 +235,9 @@ def get_directions(dim):
 
         directions = np.empty((27, 3), dtype=np.int32)
         directions[:, 0] = np.repeat(common_direction, 9, axis=1).flatten()
-        directions[:, 1] = np.repeat(np.repeat(common_direction, 3, axis=0), 3).flatten()
+        directions[:, 1] = np.repeat(
+            np.repeat(common_direction, 3, axis=0), 3
+        ).flatten()
         directions[:, 2] = np.repeat(common_direction, 9, axis=0).flatten()
 
     return directions

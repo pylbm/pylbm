@@ -1,5 +1,3 @@
-
-
 """
  Solver D2Q(4,4,4) for a Poiseuille flow
 
@@ -33,15 +31,18 @@ import numpy as np
 import sympy as sp
 import pylbm
 
-X, Y, LA = sp.symbols('X, Y, lambda')
-p, ux, uy = sp.symbols('p, ux, uy')
+X, Y, LA = sp.symbols("X, Y, lambda")
+p, ux, uy = sp.symbols("p, ux, uy")
+
 
 def bc_in(f, m, x, y, width, height, max_velocity, grad_pressure, cte):
-    m[p] = (x-0.5*width) * grad_pressure * cte
-    m[ux] = max_velocity * (1. - 4.*y**2/height**2)
+    m[p] = (x - 0.5 * width) * grad_pressure * cte
+    m[ux] = max_velocity * (1.0 - 4.0 * y**2 / height**2)
+
 
 def bc_out(f, m, x, y, width, grad_pressure, cte):
-    m[p] = (x-0.5*width) * grad_pressure * cte
+    m[p] = (x - 0.5 * width) * grad_pressure * cte
+
 
 def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
     """
@@ -64,86 +65,96 @@ def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
 
     """
     # parameters
-    width = 1.
-    height = .5
-    xmin, xmax, ymin, ymax = 0., width, -.5*height, .5*height
-    la = 1. # velocity of the scheme
+    width = 1.0
+    height = 0.5
+    xmin, xmax, ymin, ymax = 0.0, width, -0.5 * height, 0.5 * height
+    la = 1.0  # velocity of the scheme
     max_velocity = 0.1
-    mu   = 0.00185
-    zeta = 1.e-5
-    grad_pressure = -mu * max_velocity * 8./height**2
-    cte = 3.
+    mu = 0.00185
+    zeta = 1.0e-5
+    grad_pressure = -mu * max_velocity * 8.0 / height**2
+    cte = 3.0
 
-    dummy = 3.0/(la*dx)
-    s1 = 1.0/(0.5+zeta*dummy)
-    s2 = 1.0/(0.5+mu*dummy)
+    dummy = 3.0 / (la * dx)
+    s1 = 1.0 / (0.5 + zeta * dummy)
+    s2 = 1.0 / (0.5 + mu * dummy)
 
     velocities = list(range(1, 5))
-    polynomes = [1, LA*X, LA*Y, X**2-Y**2]
+    polynomes = [1, LA * X, LA * Y, X**2 - Y**2]
 
     dico = {
-        'box':{'x':[xmin, xmax], 'y':[ymin, ymax], 'label':[2, 1, 0, 0]},
-        'space_step':dx,
-        'scheme_velocity':la,
-        'schemes':[{'velocities': velocities,
-                    'polynomials': polynomes,
-                    'relaxation_parameters': [0., s1, s1, 1.],
-                    'equilibrium': [p, ux, uy, 0.],
-                    'conserved_moments': p,
-                    },
-                    {'velocities': velocities,
-                    'polynomials': polynomes,
-                    'relaxation_parameters': [0., s2, s2, 1.],
-                    'equilibrium': [ux, ux**2 + p/cte, ux*uy, 0.],
-                    'conserved_moments': ux,
-                    },
-                    {'velocities': velocities,
-                    'polynomials': polynomes,
-                    'relaxation_parameters': [0., s2, s2, 1.],
-                    'equilibrium': [uy, ux*uy, uy**2 + p/cte, 0.],
-                    'conserved_moments': uy,
-                    },
+        "box": {"x": [xmin, xmax], "y": [ymin, ymax], "label": [2, 1, 0, 0]},
+        "space_step": dx,
+        "scheme_velocity": la,
+        "schemes": [
+            {
+                "velocities": velocities,
+                "polynomials": polynomes,
+                "relaxation_parameters": [0.0, s1, s1, 1.0],
+                "equilibrium": [p, ux, uy, 0.0],
+                "conserved_moments": p,
+            },
+            {
+                "velocities": velocities,
+                "polynomials": polynomes,
+                "relaxation_parameters": [0.0, s2, s2, 1.0],
+                "equilibrium": [ux, ux**2 + p / cte, ux * uy, 0.0],
+                "conserved_moments": ux,
+            },
+            {
+                "velocities": velocities,
+                "polynomials": polynomes,
+                "relaxation_parameters": [0.0, s2, s2, 1.0],
+                "equilibrium": [uy, ux * uy, uy**2 + p / cte, 0.0],
+                "conserved_moments": uy,
+            },
         ],
-        'parameters': {LA: la},
-        'init': {p: 0.,
-                 ux: 0.,
-                 uy: 0.},
-        'boundary_conditions':{
-            0:{'method':{0: pylbm.bc.BouzidiBounceBack,
-                         1: pylbm.bc.BouzidiAntiBounceBack,
-                         2: pylbm.bc.BouzidiAntiBounceBack
-                         },
+        "parameters": {LA: la},
+        "init": {p: 0.0, ux: 0.0, uy: 0.0},
+        "boundary_conditions": {
+            0: {
+                "method": {
+                    0: pylbm.bc.BouzidiBounceBack,
+                    1: pylbm.bc.BouzidiAntiBounceBack,
+                    2: pylbm.bc.BouzidiAntiBounceBack,
+                },
             },
-            1:{'method':{0: pylbm.bc.BouzidiAntiBounceBack,
-                         1: pylbm.bc.NeumannX,
-                         2: pylbm.bc.NeumannX
-                         },
-                'value':(bc_out, (width, grad_pressure, cte))
+            1: {
+                "method": {
+                    0: pylbm.bc.BouzidiAntiBounceBack,
+                    1: pylbm.bc.NeumannX,
+                    2: pylbm.bc.NeumannX,
+                },
+                "value": (bc_out, (width, grad_pressure, cte)),
             },
-            2:{'method':{0: pylbm.bc.BouzidiAntiBounceBack,
-                         1: pylbm.bc.BouzidiAntiBounceBack,
-                         2: pylbm.bc.BouzidiAntiBounceBack
-                         },
-                'value':(bc_in, (width, height, max_velocity, grad_pressure, cte)),
+            2: {
+                "method": {
+                    0: pylbm.bc.BouzidiAntiBounceBack,
+                    1: pylbm.bc.BouzidiAntiBounceBack,
+                    2: pylbm.bc.BouzidiAntiBounceBack,
+                },
+                "value": (bc_in, (width, height, max_velocity, grad_pressure, cte)),
             },
         },
-        'generator': generator,
+        "generator": generator,
     }
 
     sol = pylbm.Simulation(dico, sorder=sorder)
 
-    while sol.t<Tf:
+    while sol.t < Tf:
         sol.one_time_step()
 
     if with_plot:
-        print("*"*50)
+        print("*" * 50)
         p_n = sol.m[p]
         ux_n = sol.m[ux]
         uy_n = sol.m[uy]
-        x, y = np.meshgrid(*sol.domain.coords, sparse=True, indexing='ij')
-        coeff = sol.domain.dx / np.sqrt(width*height)
-        Err_p = coeff * np.linalg.norm(p_n - (x-0.5*width) * grad_pressure)
-        Err_ux = coeff * np.linalg.norm(ux_n - max_velocity * (1 - 4 * y**2 / height**2))
+        x, y = np.meshgrid(*sol.domain.coords, sparse=True, indexing="ij")
+        coeff = sol.domain.dx / np.sqrt(width * height)
+        Err_p = coeff * np.linalg.norm(p_n - (x - 0.5 * width) * grad_pressure)
+        Err_ux = coeff * np.linalg.norm(
+            ux_n - max_velocity * (1 - 4 * y**2 / height**2)
+        )
         Err_uy = coeff * np.linalg.norm(uy_n)
         print("Norm of the error on rho: {0:10.3e}".format(Err_p))
         print("Norm of the error on qx:  {0:10.3e}".format(Err_ux))
@@ -160,7 +171,8 @@ def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
 
     return sol
 
-if __name__ == '__main__':
-    dx = 1./128
-    Tf = 200.
+
+if __name__ == "__main__":
+    dx = 1.0 / 128
+    Tf = 200.0
     run(dx, Tf)

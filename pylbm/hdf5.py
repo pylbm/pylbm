@@ -13,21 +13,23 @@ import numpy as np
 import h5py
 import mpi4py.MPI as mpi
 
-log = logging.getLogger(__name__) #pylint: disable=invalid-name
+log = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
 
 class H5File:
     """
     class to manage hfd5 and xdmf file.
     """
-    def __init__(self, mpi_topo, filename, path='', timestep=None, init_xdmf=False):
+
+    def __init__(self, mpi_topo, filename, path="", timestep=None, init_xdmf=False):
         if timestep is not None:
-            prefix = '_{}'.format(timestep)
+            prefix = "_{}".format(timestep)
         else:
-            prefix = ''
+            prefix = ""
         self.path = path
         name, ext = os.path.splitext(filename)
         self.filename = name + prefix
-        self.h5filename = name + prefix + '.h5'
+        self.h5filename = name + prefix + ".h5"
 
         self.origin = None
         self.dx = None
@@ -41,7 +43,7 @@ class H5File:
             if not os.path.exists(path):
                 os.mkdir(path)
 
-            self.h5file = h5py.File(path + '/' + self.h5filename, "w")
+            self.h5file = h5py.File(path + "/" + self.h5filename, "w")
 
         # All the processes wait for the creation of the output directory
         mpi.COMM_WORLD.Barrier()
@@ -87,7 +89,7 @@ class H5File:
             coords.append(z)
 
         self.dim = len(self.origin)
-        self.n = [0]*self.dim
+        self.n = [0] * self.dim
         self.region = []
         self.global_size = []
 
@@ -95,7 +97,7 @@ class H5File:
         # the global size
         # and the global coords
         for i in range(self.dim):
-            sub = [False]*self.dim
+            sub = [False] * self.dim
             sub[i] = True
             comm = self.mpi_topo.cartcomm.Sub(sub)
             self.n[i] = comm.allreduce(coords[i].size, op=mpi.SUM)
@@ -108,12 +110,14 @@ class H5File:
             for i in range(len(self.region)):
                 self.region[i].insert(0, 0)
                 for j in range(1, len(self.region[i])):
-                    self.region[i][j] += self.region[i][j-1]
-            #self.region = np.asarray(self.region, dtype=np.int32)
-            #self.region = np.concatenate((np.zeros((self.dim, 1), dtype=np.int32), np.cumsum(self.region, axis=1)), axis=1)
-            #print(self.region)
+                    self.region[i][j] += self.region[i][j - 1]
+            # self.region = np.asarray(self.region, dtype=np.int32)
+            # self.region = np.concatenate((np.zeros((self.dim, 1), dtype=np.int32), np.cumsum(self.region, axis=1)), axis=1)
+            # print(self.region)
             for i in range(self.dim):
-                dset = self.h5file.create_dataset("x_{}".format(i), [self.global_size[i]], dtype=np.double)
+                dset = self.h5file.create_dataset(
+                    "x_{}".format(i), [self.global_size[i]], dtype=np.double
+                )
                 dset[:] = np.concatenate(coords[i])
 
     def _get_slice(self, rank):
@@ -126,8 +130,12 @@ class H5File:
         mpi_coords = self.mpi_topo.cartcomm.Get_coords(rank)
         # print('coords', rank, mpi_coords)
         for i in range(self.dim):
-            ind.append(slice(self.region[i][mpi_coords[i]], self.region[i][mpi_coords[i]+1]))
-            buffer_size.append(self.region[i][mpi_coords[i]+1] - self.region[i][mpi_coords[i]])
+            ind.append(
+                slice(self.region[i][mpi_coords[i]], self.region[i][mpi_coords[i] + 1])
+            )
+            buffer_size.append(
+                self.region[i][mpi_coords[i] + 1] - self.region[i][mpi_coords[i]]
+            )
         return ind[::-1], buffer_size[::-1]
 
     def _set_dset(self, dset, comm, data, index=0, with_index=False):
@@ -161,7 +169,7 @@ class H5File:
 
         for i in range(1, comm.Get_size()):
             ind, buffer_size = self._get_slice(i)
-            #print(i, ind, buffer_size)
+            # print(i, ind, buffer_size)
             ind = tuple(ind)
             if with_index:
                 ind = ind + (index,)
@@ -193,11 +201,17 @@ class H5File:
 
         comm = self.mpi_topo.cartcomm
         if comm.Get_rank() == 0:
-            dset = self.h5file.create_dataset(name, self.global_size[::-1], dtype=np.double)
+            dset = self.h5file.create_dataset(
+                name, self.global_size[::-1], dtype=np.double
+            )
             self._set_dset(dset, comm, data)
             self.scalars[name] = self.h5filename + ":/" + name
         else:
-            comm.Send([np.ascontiguousarray(data.T, dtype=np.double), mpi.DOUBLE], dest=0, tag=0)
+            comm.Send(
+                [np.ascontiguousarray(data.T, dtype=np.double), mpi.DOUBLE],
+                dest=0,
+                tag=0,
+            )
 
     def add_vector(self, name, f, *fargs):
         """
@@ -223,7 +237,9 @@ class H5File:
 
         comm = self.mpi_topo.cartcomm
         if comm.Get_rank() == 0:
-            dset = self.h5file.create_dataset(name, self.global_size[::-1] + [3], dtype=np.double)
+            dset = self.h5file.create_dataset(
+                name, self.global_size[::-1] + [3], dtype=np.double
+            )
             for i, data in enumerate(datas):
                 self._set_dset(dset, comm, data, i, with_index=True)
             self.vectors[name] = self.h5filename + ":/" + name
@@ -238,50 +254,72 @@ class H5File:
         comm = self.mpi_topo.cartcomm
         if comm.Get_rank() == 0:
             self.h5file.close()
-            self.xdmf_file = open(self.path + '/' + self.filename + '.xdmf', "w")
-            self.xdmf_file.write("""<?xml version="1.0" ?>
+            self.xdmf_file = open(self.path + "/" + self.filename + ".xdmf", "w")
+            self.xdmf_file.write(
+                """<?xml version="1.0" ?>
 <!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>
 <Xdmf>
  <Domain>
-            """)
+            """
+            )
             if self.dim == 2:
-                self.xdmf_file.write("""
+                self.xdmf_file.write(
+                    """
                 <Grid Name="Structured Grid" GridType="Uniform">
                     <Topology TopologyType="2DRectMesh" NumberOfElements="{0}"/>
                     <Geometry GeometryType="VXVY">
-                """.format(' '.join(map(str, self.global_size))))
+                """.format(
+                        " ".join(map(str, self.global_size))
+                    )
+                )
             else:
-                self.xdmf_file.write("""
+                self.xdmf_file.write(
+                    """
                 <Grid Name="Structured Grid" GridType="Uniform">
                     <Topology TopologyType="3DRectMesh" NumberOfElements="{0}"/>
                     <Geometry GeometryType="VXVYVZ">
-                """.format(' '.join(map(str, self.global_size))))
+                """.format(
+                        " ".join(map(str, self.global_size))
+                    )
+                )
             for i in range(self.dim):
-                self.xdmf_file.write("""
+                self.xdmf_file.write(
+                    """
                 <DataItem Format="HDF" Dimensions="{0}">
                     {1}:/x_{2}
                 </DataItem>
-                """.format(self.global_size[i], self.filename + '.h5', i))
+                """.format(
+                        self.global_size[i], self.filename + ".h5", i
+                    )
+                )
 
             self.xdmf_file.write("</Geometry>\n")
 
             for k, v in self.scalars.items():
-                self.xdmf_file.write("""
+                self.xdmf_file.write(
+                    """
                 <Attribute Name="{0}" AttributeType="Scalar" Center="Node">
                 <DataItem Format="HDF" Dimensions="{1}">
                 {2}
                 </DataItem>
                 </Attribute>
-                """.format(k, ' '.join(map(str, self.global_size[::-1])), v))
+                """.format(
+                        k, " ".join(map(str, self.global_size[::-1])), v
+                    )
+                )
 
             for k, v in self.vectors.items():
-                self.xdmf_file.write("""
+                self.xdmf_file.write(
+                    """
                 <Attribute Name="{0}" AttributeType="Vector" Center="Node">
                 <DataItem Format="HDF" Dimensions="{1} {2}">
                 {3}
                 </DataItem>
                 </Attribute>
-                """.format(k, ' '.join(map(str, self.global_size[::-1])), self.dim, v))
+                """.format(
+                        k, " ".join(map(str, self.global_size[::-1])), self.dim, v
+                    )
+                )
 
             self.xdmf_file.write("</Grid>\n</Domain>\n</Xdmf>\n")
             self.xdmf_file.close()

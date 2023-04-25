@@ -16,10 +16,10 @@ Cylinder element with
 # pylint: disable=wildcard-import, unused-wildcard-import
 
 import logging
-# from textwrap import dedent
+
 import numpy as np
 
-from .base import *  # pylint: disable=redefined-builtin
+from .base import Element, BaseCircle, BaseEllipse, BaseParallelogram, BaseTriangle
 
 log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -30,6 +30,7 @@ class Cylinder(Element):
 
     generic class for the cylinders
     """
+
     dim = 3
 
     def change_of_variables(self):
@@ -37,7 +38,7 @@ class Cylinder(Element):
         matrix for the change of variables
         used to write the coordinates in the basis of the cylinder
 
-        After the change of variables, 
+        After the change of variables,
         the base of the cylinder is in the plane x, y
         and the other direction is limited by -1 < z < 1
         """
@@ -58,7 +59,7 @@ class Cylinder(Element):
             minimal box where the cylinder is included
 
         """
-        lw = [0.5*abs(self.w[k]) for k in range(len(self.w))]
+        lw = [0.5 * abs(self.w[k]) for k in range(len(self.w))]
         bounds_base = self.base.get_bounds()
         return bounds_base[0] - lw, bounds_base[1] + lw
 
@@ -90,14 +91,13 @@ class Cylinder(Element):
         yy = y - self.center[1]
         zz = z - self.center[2]
         # the new x coordinates
-        x_cyl = self.iA[0, 0]*xx + self.iA[0, 1]*yy + self.iA[0, 2]*zz
+        x_cyl = self.iA[0, 0] * xx + self.iA[0, 1] * yy + self.iA[0, 2] * zz
         # the new y coordinates
-        y_cyl = self.iA[1, 0]*xx + self.iA[1, 1]*yy + self.iA[1, 2]*zz
+        y_cyl = self.iA[1, 0] * xx + self.iA[1, 1] * yy + self.iA[1, 2] * zz
         # the new z coordinates
-        z_cyl = self.iA[2, 0]*xx + self.iA[2, 1]*yy + self.iA[2, 2]*zz
+        z_cyl = self.iA[2, 0] * xx + self.iA[2, 1] * yy + self.iA[2, 2] * zz
         return np.logical_and(
-            self.base.point_inside((x_cyl, y_cyl)),
-            np.abs(z_cyl) <= 1.
+            self.base.point_inside((x_cyl, y_cyl)), np.abs(z_cyl) <= 1.0
         )
 
     # pylint: disable=too-many-locals
@@ -137,11 +137,11 @@ class Cylinder(Element):
         yy = y - self.center[1]
         zz = z - self.center[2]
         # the new x coordinates
-        x_cyl = self.iA[0, 0]*xx + self.iA[0, 1]*yy + self.iA[0, 2]*zz
+        x_cyl = self.iA[0, 0] * xx + self.iA[0, 1] * yy + self.iA[0, 2] * zz
         # the new y coordinates
-        y_cyl = self.iA[1, 0]*xx + self.iA[1, 1]*yy + self.iA[1, 2]*zz
+        y_cyl = self.iA[1, 0] * xx + self.iA[1, 1] * yy + self.iA[1, 2] * zz
         # the new z coordinates
-        z_cyl = self.iA[2, 0]*xx + self.iA[2, 1]*yy + self.iA[2, 2]*zz
+        z_cyl = self.iA[2, 0] * xx + self.iA[2, 1] * yy + self.iA[2, 2] * zz
 
         # normal vector in the frame of the cylinder
         normal_cyl = np.zeros(tuple(list(x_cyl.shape) + [3]))
@@ -150,19 +150,17 @@ class Cylinder(Element):
         normal_cyl_z = normal_cyl[..., 2]
         # considering the infinite cylinder
         alpha, border, normal_cyl[..., :2] = self.base.distance(
-            (x_cyl, y_cyl),
-            v_cyl[:-1],
-            dmax, self.label[:-2], normal
+            (x_cyl, y_cyl), v_cyl[:-1], dmax, self.label[:-2], normal
         )
         # indices where the intersection is too high or to low
-        alpha[alpha < 0] = 1.e16
+        alpha[alpha < 0] = 1.0e16
         border[alpha < 0] = -1
         normal_cyl_x[alpha < 0] = 0
         normal_cyl_y[alpha < 0] = 0
         normal_cyl_z[alpha < 0] = 0
-        ind = np.logical_and(alpha > 0, np.abs(z_cyl + alpha*v_cyl[2]) > 1.)
-        alpha[ind] = 1.e16
-        border[ind] = -1.
+        ind = np.logical_and(alpha > 0, np.abs(z_cyl + alpha * v_cyl[2]) > 1.0)
+        alpha[ind] = 1.0e16
+        border[ind] = -1.0
         normal_cyl_x[ind] = 0
         normal_cyl_y[ind] = 0
         normal_cyl_z[ind] = 0
@@ -170,93 +168,104 @@ class Cylinder(Element):
         # considering the two planes
         dummyf = self.base.point_inside
         if v_cyl[2] == 0:  # to avoid vertical velocities
-            decal = 1.e-16
+            decal = 1.0e-16
         else:
-            decal = 0.
-        alpha_top = (1.-z_cyl)/(v_cyl[2] + decal)
+            decal = 0.0
+        alpha_top = (1.0 - z_cyl) / (v_cyl[2] + decal)
         ind = np.logical_or(
             np.logical_or(alpha_top < 0, alpha_top > dmax),
-            np.logical_not(dummyf(
-                (x_cyl + alpha_top*v_cyl[0], y_cyl + alpha_top*v_cyl[1])
-            ))
+            np.logical_not(
+                dummyf((x_cyl + alpha_top * v_cyl[0], y_cyl + alpha_top * v_cyl[1]))
+            ),
         )
-        alpha_top[ind] = 1.e16
-        alpha_bot = -(1.+z_cyl)/(v_cyl[2] + decal)
+        alpha_top[ind] = 1.0e16
+        alpha_bot = -(1.0 + z_cyl) / (v_cyl[2] + decal)
         ind = np.logical_or(
             np.logical_or(alpha_bot < 0, alpha_bot > dmax),
-            np.logical_not(dummyf(
-                (x_cyl + alpha_bot*v_cyl[0], y_cyl + alpha_bot*v_cyl[1])
-            ))
+            np.logical_not(
+                dummyf((x_cyl + alpha_bot * v_cyl[0], y_cyl + alpha_bot * v_cyl[1]))
+            ),
         )
-        alpha_bot[ind] = 1.e16
+        alpha_bot[ind] = 1.0e16
 
         # considering the first intersection point
         alpha = np.amin([alpha, alpha_top, alpha_bot], axis=0)
         # fix the top
         ind = alpha == alpha_top
         border[ind] = self.label[-1]
-        normal_cyl_x[ind] = 0.
-        normal_cyl_y[ind] = 0.
-        normal_cyl_z[ind] = 1.
+        normal_cyl_x[ind] = 0.0
+        normal_cyl_y[ind] = 0.0
+        normal_cyl_z[ind] = 1.0
         # fix the bottom
         ind = alpha == alpha_bot
         border[ind] = self.label[-2]
-        normal_cyl_x[ind] = 0.
-        normal_cyl_y[ind] = 0.
-        normal_cyl_z[ind] = -1.
+        normal_cyl_x[ind] = 0.0
+        normal_cyl_y[ind] = 0.0
+        normal_cyl_z[ind] = -1.0
         # fix the distance
-        alpha[alpha == 1.e16] = -1.
+        alpha[alpha == 1.0e16] = -1.0
         # rewritte the normal vector in the initial frame
         normal_vect = np.zeros(normal_cyl.shape)
         for k in range(3):
-            normal_vect[..., k] = self.A[k, 0] * normal_cyl_x + \
-                self.A[k, 1] * normal_cyl_y + self.A[k, 2] * normal_cyl_z
+            normal_vect[..., k] = (
+                self.A[k, 0] * normal_cyl_x
+                + self.A[k, 1] * normal_cyl_y
+                + self.A[k, 2] * normal_cyl_z
+            )
 
         return alpha, border, normal_vect
 
     def __str__(self):
         from ..utils import header_string
         from ..jinja_env import env
-        template = env.get_template('cylinder.tpl')
-        elem_type = 'fluid' if self.isfluid else 'solid'
-        return template.render(header=header_string(self.__class__.__name__),
-                               elem=self, type=elem_type)
+
+        template = env.get_template("cylinder.tpl")
+        elem_type = "fluid" if self.isfluid else "solid"
+        return template.render(
+            header=header_string(self.__class__.__name__), elem=self, type=elem_type
+        )
 
     # pylint: disable=too-many-locals
-    def visualize(self,
-                  viewer, color, viewlabel=False,
-                  scale=np.ones(3), alpha=1.
-                  ):
+    def visualize(self, viewer, color, viewlabel=False, scale=np.ones(3), alpha=1.0):
         if not isinstance(color, list):
-            color = [color]*self.number_of_bounds
+            color = [color] * self.number_of_bounds
         lx_b, ly_b = self.base._visualize()  # pylint: disable=protected-access
         c = self.center
-        for k in range(len(lx_b)-2):  # loop over the faces of the side
+        for k in range(len(lx_b) - 2):  # loop over the faces of the side
             x_b, y_b = lx_b[k], ly_b[k]
-            z_b = [-1., 1.]
+            z_b = [-1.0, 1.0]
             X_cyl, Z_cyl = np.meshgrid(x_b, z_b)
             Y_cyl, Z_cyl = np.meshgrid(y_b, z_b)
-            X = c[0] + self.A[0, 0]*X_cyl \
-                + self.A[0, 1]*Y_cyl \
-                + self.A[0, 2]*Z_cyl
-            Y = c[1] + self.A[1, 0]*X_cyl \
-                + self.A[1, 1]*Y_cyl \
-                + self.A[1, 2]*Z_cyl
-            Z = c[2] + self.A[2, 0]*X_cyl \
-                + self.A[2, 1]*Y_cyl \
-                + self.A[2, 2]*Z_cyl
+            X = (
+                c[0]
+                + self.A[0, 0] * X_cyl
+                + self.A[0, 1] * Y_cyl
+                + self.A[0, 2] * Z_cyl
+            )
+            Y = (
+                c[1]
+                + self.A[1, 0] * X_cyl
+                + self.A[1, 1] * Y_cyl
+                + self.A[1, 2] * Z_cyl
+            )
+            Z = (
+                c[2]
+                + self.A[2, 0] * X_cyl
+                + self.A[2, 1] * Y_cyl
+                + self.A[2, 2] * Z_cyl
+            )
             viewer.surface(X, Y, Z, color[k], alpha=alpha)
         vv = np.sin(np.linspace(0, np.pi, 10))
         Xbase = np.outer(lx_b[-2], vv)
         Ybase = np.outer(ly_b[-2], vv)
         Zbase = np.ones(Xbase.shape)
-        X = c[0] + self.A[0, 0]*Xbase + self.A[0, 1]*Ybase + self.A[0, 2]*Zbase
-        Y = c[1] + self.A[1, 0]*Xbase + self.A[1, 1]*Ybase + self.A[1, 2]*Zbase
-        Z = c[2] + self.A[2, 0]*Xbase + self.A[2, 1]*Ybase + self.A[2, 2]*Zbase
+        X = c[0] + self.A[0, 0] * Xbase + self.A[0, 1] * Ybase + self.A[0, 2] * Zbase
+        Y = c[1] + self.A[1, 0] * Xbase + self.A[1, 1] * Ybase + self.A[1, 2] * Zbase
+        Z = c[2] + self.A[2, 0] * Xbase + self.A[2, 1] * Ybase + self.A[2, 2] * Zbase
         viewer.surface(X, Y, Z, color=color[-2], alpha=alpha)
-        X = c[0] + self.A[0, 0]*Xbase + self.A[0, 1]*Ybase - self.A[0, 2]*Zbase
-        Y = c[1] + self.A[1, 0]*Xbase + self.A[1, 1]*Ybase - self.A[1, 2]*Zbase
-        Z = c[2] + self.A[2, 0]*Xbase + self.A[2, 1]*Ybase - self.A[2, 2]*Zbase
+        X = c[0] + self.A[0, 0] * Xbase + self.A[0, 1] * Ybase - self.A[0, 2] * Zbase
+        Y = c[1] + self.A[1, 0] * Xbase + self.A[1, 1] * Ybase - self.A[1, 2] * Zbase
+        Z = c[2] + self.A[2, 0] * Xbase + self.A[2, 1] * Ybase - self.A[2, 2] * Zbase
         viewer.surface(X, Y, Z, color=color[-2], alpha=alpha)
 
 
@@ -321,6 +330,7 @@ class CylinderCircle(Cylinder):
         - type: solid
 
     """
+
     def __init__(self, center, v1, v2, w, label=0, isfluid=False):
         self.number_of_bounds = 3  # number of edges
         self.center = np.asarray(center)
@@ -398,6 +408,7 @@ class CylinderEllipse(Cylinder):
         - type: solid
 
     """
+
     def __init__(self, center, v1, v2, w, label=0, isfluid=False):
         self.number_of_bounds = 3  # number of edges
         self.center = np.asarray(center)
@@ -470,6 +481,7 @@ class CylinderTriangle(Cylinder):
         - type: solid
 
     """
+
     def __init__(self, center, v1, v2, w, label=0, isfluid=False):
         self.number_of_bounds = 5  # number of edges
         self.center = np.asarray(center)
@@ -541,12 +553,13 @@ class Parallelepiped(Cylinder):
         - type: solid
 
     """
+
     def __init__(self, point, v0, v1, v2, label=0, isfluid=False):
         self.number_of_bounds = 6  # number of edges
         self.point = np.asarray(point)
         self.v1 = np.asarray(v0)
         self.v2 = np.asarray(v1)
-        self.w = .5*np.asarray(v2)
+        self.w = 0.5 * np.asarray(v2)
         self.center = self.point + self.w
         self.change_of_variables()
         self.base = BaseParallelogram(self.center, self.v1, self.v2)

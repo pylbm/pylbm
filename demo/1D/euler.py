@@ -1,5 +1,3 @@
-
-
 """
  Solver D1Q2Q2 for the Euler system on [0, 1]
 
@@ -30,16 +28,18 @@ import sympy as sp
 import numpy as np
 import pylbm
 
-rho, q, E, X = sp.symbols('rho, q, E, X')
-LA = sp.symbols('lambda', constants=True)
+rho, q, E, X = sp.symbols("rho, q, E, X")
+LA = sp.symbols("lambda", constants=True)
+
 
 def Riemann_pb(x, xmin, xmax, uL, uR):
-    xm = 0.5*(xmin+xmax)
+    xm = 0.5 * (xmin + xmax)
     u = np.empty(x.shape)
     u[x < xm] = uL
-    u[x == xm] = .5*(uL+uR)
+    u[x == xm] = 0.5 * (uL + uR)
     u[x > xm] = uR
     return u
+
 
 def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
     """
@@ -63,61 +63,69 @@ def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
     """
     # parameters
     gamma = 1.4
-    xmin, xmax = 0., 1.
-    la = 3. # velocity of the scheme
-    rho_L, rho_R, p_L, p_R, u_L, u_R = 1., 1./8., 1., 0.1, 0., 0.
-    q_L = rho_L*u_L
-    q_R = rho_R*u_R
-    E_L = rho_L*u_L**2 + p_L/(gamma-1.)
-    E_R = rho_R*u_R**2 + p_R/(gamma-1.)
+    xmin, xmax = 0.0, 1.0
+    la = 3.0  # velocity of the scheme
+    rho_L, rho_R, p_L, p_R, u_L, u_R = 1.0, 1.0 / 8.0, 1.0, 0.1, 0.0, 0.0
+    q_L = rho_L * u_L
+    q_R = rho_R * u_R
+    E_L = rho_L * u_L**2 + p_L / (gamma - 1.0)
+    E_R = rho_R * u_R**2 + p_R / (gamma - 1.0)
     s_rho, s_q, s_E = 1.9, 1.5, 1.4
 
     dico = {
-        'box':{'x':[xmin, xmax], 'label':0},
-        'space_step':dx,
-        'scheme_velocity':la,
-        'schemes':[
+        "box": {"x": [xmin, xmax], "label": 0},
+        "space_step": dx,
+        "scheme_velocity": la,
+        "schemes": [
             {
-                'velocities':[1,2],
-                'conserved_moments':rho,
-                'polynomials':[1, LA*X],
-                'relaxation_parameters':[0, s_rho],
-                'equilibrium':[rho, q],
+                "velocities": [1, 2],
+                "conserved_moments": rho,
+                "polynomials": [1, LA * X],
+                "relaxation_parameters": [0, s_rho],
+                "equilibrium": [rho, q],
             },
             {
-                'velocities':[1,2],
-                'conserved_moments':q,
-                'polynomials':[1, LA*X],
-                'relaxation_parameters':[0, s_q],
-                'equilibrium':[q, (gamma-1.)*E+0.5*(3.-gamma)*q**2/rho],
+                "velocities": [1, 2],
+                "conserved_moments": q,
+                "polynomials": [1, LA * X],
+                "relaxation_parameters": [0, s_q],
+                "equilibrium": [
+                    q,
+                    (gamma - 1.0) * E + 0.5 * (3.0 - gamma) * q**2 / rho,
+                ],
             },
             {
-                'velocities':[1,2],
-                'conserved_moments':E,
-                'polynomials':[1, LA*X],
-                'relaxation_parameters':[0, s_E],
-                'equilibrium':[E, gamma*E*q/rho-0.5*(gamma-1.)*q**3/rho**2],
+                "velocities": [1, 2],
+                "conserved_moments": E,
+                "polynomials": [1, LA * X],
+                "relaxation_parameters": [0, s_E],
+                "equilibrium": [
+                    E,
+                    gamma * E * q / rho - 0.5 * (gamma - 1.0) * q**3 / rho**2,
+                ],
             },
         ],
-        'init':{rho: (Riemann_pb, (xmin, xmax, rho_L, rho_R)),
-                q: (Riemann_pb, (xmin, xmax, q_L, q_R)),
-                E: (Riemann_pb, (xmin, xmax, E_L, E_R))},
-        'boundary_conditions':{
-            0:{
-                'method':{
+        "init": {
+            rho: (Riemann_pb, (xmin, xmax, rho_L, rho_R)),
+            q: (Riemann_pb, (xmin, xmax, q_L, q_R)),
+            E: (Riemann_pb, (xmin, xmax, E_L, E_R)),
+        },
+        "boundary_conditions": {
+            0: {
+                "method": {
                     0: pylbm.bc.Neumann,
                     1: pylbm.bc.Neumann,
-                    2: pylbm.bc.Neumann
+                    2: pylbm.bc.Neumann,
                 },
             },
         },
-        'parameters':{LA:la},
-        'generator': generator,
+        "parameters": {LA: la},
+        "generator": generator,
     }
 
     sol = pylbm.Simulation(dico, sorder=sorder)
 
-    while (sol.t<Tf):
+    while sol.t < Tf:
         sol.one_time_step()
 
     if with_plot:
@@ -125,31 +133,32 @@ def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
         rho_n = sol.m[rho]
         q_n = sol.m[q]
         E_n = sol.m[E]
-        u = q_n/rho_n
-        p = (gamma-1.)*(E_n - .5*rho_n*u**2)
-        e = E_n/rho_n - .5*u**2
+        u = q_n / rho_n
+        p = (gamma - 1.0) * (E_n - 0.5 * rho_n * u**2)
+        e = E_n / rho_n - 0.5 * u**2
 
-        viewer= pylbm.viewer.matplotlib_viewer
+        viewer = pylbm.viewer.matplotlib_viewer
         fig = viewer.Fig(2, 3)
 
-        fig[0,0].plot(x, rho_n)
-        fig[0,0].title = 'mass'
-        fig[0,1].plot(x, u)
-        fig[0,1].title = 'velocity'
-        fig[0,2].plot(x, p)
-        fig[0,2].title = 'pressure'
-        fig[1,0].plot(x, E_n)
-        fig[1,0].title = 'energy'
-        fig[1,1].plot(x, q_n)
-        fig[1,1].title = 'momentum'
-        fig[1,2].plot(x, e)
-        fig[1,2].title = 'internal energy'
+        fig[0, 0].plot(x, rho_n)
+        fig[0, 0].title = "mass"
+        fig[0, 1].plot(x, u)
+        fig[0, 1].title = "velocity"
+        fig[0, 2].plot(x, p)
+        fig[0, 2].title = "pressure"
+        fig[1, 0].plot(x, E_n)
+        fig[1, 0].title = "energy"
+        fig[1, 1].plot(x, q_n)
+        fig[1, 1].title = "momentum"
+        fig[1, 2].plot(x, e)
+        fig[1, 2].title = "internal energy"
 
         fig.show()
 
     return sol
 
-if __name__ == '__main__':
-    dx = 1.e-3
-    Tf = .14
-    sol = run(dx, Tf, generator='numpy')
+
+if __name__ == "__main__":
+    dx = 1.0e-3
+    Tf = 0.14
+    sol = run(dx, Tf, generator="numpy")

@@ -11,6 +11,7 @@ Sphere element
 # pylint: disable=invalid-name
 
 import logging
+
 # from textwrap import dedent
 import numpy as np
 
@@ -72,6 +73,7 @@ class Sphere(Element):
         - type: solid
 
     """
+
     def __init__(self, center, radius, label=0, isfluid=False):
         self.number_of_bounds = 1  # number of edges
         self.dim = 3
@@ -79,7 +81,7 @@ class Sphere(Element):
         if radius >= 0:
             self.radius = radius
         else:
-            log.error('The radius of the sphere should be positive')
+            log.error("The radius of the sphere should be positive")
         super(Sphere, self).__init__(label, isfluid)
         log.info(self.__str__())
 
@@ -113,12 +115,10 @@ class Sphere(Element):
 
         """
         x, y, z = grid
-        v2 = np.asarray([
-            x - self.center[0],
-            y - self.center[1],
-            z - self.center[2]
-        ], dtype=object)
-        return (v2[0]**2 + v2[1]**2 + v2[2]**2) <= self.radius**2
+        v2 = np.asarray(
+            [x - self.center[0], y - self.center[1], z - self.center[2]], dtype=object
+        )
+        return (v2[0] ** 2 + v2[1] ** 2 + v2[2] ** 2) <= self.radius**2
 
     def distance(self, grid, v, dmax=None, normal=False):
         """
@@ -149,34 +149,30 @@ class Sphere(Element):
             if normal is True
         """
         x, y, z = grid
-        v1 = self.radius*np.array([1, 0, 0])
-        v2 = self.radius*np.array([0, 1, 0])
-        v3 = self.radius*np.array([0, 0, 1])
+        v1 = self.radius * np.array([1, 0, 0])
+        v2 = self.radius * np.array([0, 1, 0])
+        v3 = self.radius * np.array([0, 0, 1])
         return distance_ellipsoid(
-            x, y, z, v, self.center,
-            v1, v2, v3, dmax, self.label, normal
+            x, y, z, v, self.center, v1, v2, v3, dmax, self.label, normal
         )
 
     def __str__(self):
         from ..utils import header_string
         from ..jinja_env import env
-        template = env.get_template('circle.tpl')
-        elem_type = 'fluid' if self.isfluid else 'solid'
+
+        template = env.get_template("circle.tpl")
+        elem_type = "fluid" if self.isfluid else "solid"
         return template.render(
-            header=header_string(self.__class__.__name__),
-            elem=self, type=elem_type
+            header=header_string(self.__class__.__name__), elem=self, type=elem_type
         )
 
-    def visualize(self,
-                  viewer, color, viewlabel=False,
-                  scale=np.ones(3), alpha=1.
-                  ):
+    def visualize(self, viewer, color, viewlabel=False, scale=np.ones(3), alpha=1.0):
         if not isinstance(color, list):
             color = [color]
-        v1 = self.radius*np.array([1, 0, 0])*scale
-        v2 = self.radius*np.array([0, 1, 0])*scale
-        v3 = self.radius*np.array([0, 0, 1])*scale
-        viewer.ellipse_3d(self.center*scale, v1, v2, v3, color[0], alpha=alpha)
+        v1 = self.radius * np.array([1, 0, 0]) * scale
+        v2 = self.radius * np.array([0, 1, 0]) * scale
+        v3 = self.radius * np.array([0, 0, 1]) * scale
+        viewer.ellipse_3d(self.center * scale, v1, v2, v3, color[0], alpha=alpha)
         if viewlabel:
             x, y, z = self.center[0], self.center[1], self.center[2]
             viewer.text(str(self.label[0]), [x, y, z])

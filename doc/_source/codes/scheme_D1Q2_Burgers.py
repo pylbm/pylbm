@@ -1,4 +1,3 @@
-
 # Authors:
 #     Loic Gouarin <loic.gouarin@polytechnique.edu>
 #     Benjamin Graille <benjamin.graille@math.u-psud.fr>
@@ -10,18 +9,19 @@ Example of a D1Q2 for Burger's
 """
 import sympy as sp
 import pylbm
-u, X = sp.symbols('u, X')
+
+u, X = sp.symbols("u, X")
 
 d = {
-    'dim': 1,
-    'scheme_velocity': 1.,
-    'schemes': [
+    "dim": 1,
+    "scheme_velocity": 1.0,
+    "schemes": [
         {
-            'velocities': [1, 2],
-            'conserved_moments': u,
-            'polynomials': [1, X],
-            'equilibrium': [u, .5*u**2],
-            'relaxation_parameters': [0., 1.9],
+            "velocities": [1, 2],
+            "conserved_moments": u,
+            "polynomials": [1, X],
+            "equilibrium": [u, 0.5 * u**2],
+            "relaxation_parameters": [0.0, 1.9],
         },
     ],
 }

@@ -203,4 +203,3 @@ The cube :math:`[-3, 3]^3` with an icosaedric hole
 The icosaedre is created from a STL file and added in the geometry.
 The result is then visualized by using the method
 :py:meth:`visualize <pylbm.geometry.Geometry.visualize>`.
-

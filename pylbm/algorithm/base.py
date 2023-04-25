@@ -67,7 +67,19 @@ import sympy as sp
 from sympy import Eq
 
 from ..generator import For, If
-from ..symbolic import ix, iy, iz, nx, ny, nz, nv, indexed, space_idx, alltogether, recursive_sub
+from ..symbolic import (
+    ix,
+    iy,
+    iz,
+    nx,
+    ny,
+    nz,
+    nv,
+    indexed,
+    space_idx,
+    alltogether,
+    recursive_sub,
+)
 from ..symbolic import rel_ux, rel_uy, rel_uz
 from .transform import parse_expr
 from .ode import euler
@@ -76,7 +88,7 @@ from ..monitoring import monitor
 
 class BaseAlgorithm:
     def __init__(self, scheme, sorder, generator, settings=None):
-        xx, yy, zz = sp.symbols('xx, yy, zz')
+        xx, yy, zz = sp.symbols("xx, yy, zz")
         self.symb_coord_local = [xx, yy, zz]
         self.symb_coord = scheme.symb_coord
         self.dim = scheme.dim
@@ -84,10 +96,10 @@ class BaseAlgorithm:
         self.M = scheme.M.subs(scheme.param.items())
         self.invM = scheme.invM.subs(scheme.param.items())
         self.all_velocities = scheme.stencil.get_all_velocities()
-        self.mv = sp.MatrixSymbol('m', self.ns, 1)
+        self.mv = sp.MatrixSymbol("m", self.ns, 1)
 
         if scheme.rel_vel is not None:
-            self.rel_vel_symb = [rel_ux, rel_uy, rel_uz][:self.dim]
+            self.rel_vel_symb = [rel_ux, rel_uy, rel_uz][: self.dim]
             self.rel_vel = sp.Matrix(scheme.rel_vel)
 
             self.Tu = scheme.Tu.subs(scheme.param.items())
@@ -108,7 +120,11 @@ class BaseAlgorithm:
         self.generator = generator
 
         subs_coords = list(zip(self.symb_coord, self.symb_coord_local))
-        subs_moments = list(zip(scheme.consm.keys(), [self.mv[int(i), 0] for i in scheme.consm.values()]))
+        subs_moments = list(
+            zip(
+                scheme.consm.keys(), [self.mv[int(i), 0] for i in scheme.consm.values()]
+            )
+        )
         to_subs = subs_coords + list(scheme.param.items())
         to_subs_full = to_subs + subs_moments
 
@@ -132,9 +148,9 @@ class BaseAlgorithm:
                         rhs = recursive_sub(v, to_subs)
                     self.source_eq.append((lhs, rhs))
 
-        self.vmax = [0]*3
-        self.vmax[:scheme.dim] = scheme.stencil.vmax
-        self.local_vars = self.symb_coord_local[:self.dim]
+        self.vmax = [0] * 3
+        self.vmax[: scheme.dim] = scheme.stencil.vmax
+        self.local_vars = self.symb_coord_local[: self.dim]
         self.settings = settings if settings else {}
 
     def _get_space_idx_full(self):
@@ -162,10 +178,14 @@ class BaseAlgorithm:
         where vmax_i is the maximum of the velocities modulus in direction i.
         The length of the list is the dimension of the problem.
         """
-        return space_idx([(self.vmax[0], nx-self.vmax[0]),
-                          (self.vmax[1], ny-self.vmax[1]),
-                          (self.vmax[2], nz-self.vmax[2])],
-                         priority=self.sorder[1:])
+        return space_idx(
+            [
+                (self.vmax[0], nx - self.vmax[0]),
+                (self.vmax[1], ny - self.vmax[1]),
+                (self.vmax[2], nz - self.vmax[2]),
+            ],
+            priority=self.sorder[1:],
+        )
 
     def _get_indexed_on_range(self, name, space_index):
         """
@@ -188,9 +208,13 @@ class BaseAlgorithm:
             indexed objects for each velocity
 
         """
-        return indexed(name, [self.ns, nx, ny, nz],
-                       [nv] + space_index,
-                       velocities_index=range(self.ns), priority=self.sorder)
+        return indexed(
+            name,
+            [self.ns, nx, ny, nz],
+            [nv] + space_index,
+            velocities_index=range(self.ns),
+            priority=self.sorder,
+        )
 
     def _get_indexed_on_velocities(self, name, space_index, velocities):
         """
@@ -215,9 +239,13 @@ class BaseAlgorithm:
             indexed objects for each velocity
 
         """
-        return indexed(name, [self.ns, nx, ny, nz],
-                       [nv] + space_index,
-                       velocities=velocities, priority=self.sorder)
+        return indexed(
+            name,
+            [self.ns, nx, ny, nz],
+            [nv] + space_index,
+            velocities=velocities,
+            priority=self.sorder,
+        )
 
     def relative_velocity(self, m):
         rel_vel = sp.Matrix(self.rel_vel).subs(list(zip(self.mv, m)))
@@ -231,13 +259,15 @@ class BaseAlgorithm:
         else:
             m_consm = m[:nconsm]
 
-        return Eq(m_consm, sp.Matrix((self.Mu*f)[:nconsm]))
+        return Eq(m_consm, sp.Matrix((self.Mu * f)[:nconsm]))
 
     def coords(self):
         coord = []
-        for x in self.symb_coord[:self.dim]:
-            coord.append(indexed(x.name, [self.ns, nx, ny, nz], priority=self.sorder[1:]))
-        return [Eq(xx, x) for xx, x in zip(self.symb_coord_local[:self.dim], coord)]
+        for x in self.symb_coord[: self.dim]:
+            coord.append(
+                indexed(x.name, [self.ns, nx, ny, nz], priority=self.sorder[1:])
+            )
+        return [Eq(xx, x) for xx, x in zip(self.symb_coord_local[: self.dim], coord)]
 
     def transport_local(self, f, fnew):
         """
@@ -260,9 +290,9 @@ class BaseAlgorithm:
         Return the code expression of the lbm transport on the whole inner domain.
         """
         space_index = self._get_space_idx_inner()
-        f = self._get_indexed_on_velocities('f', space_index, -self.all_velocities)
-        fnew = self._get_indexed_on_range('fnew', space_index)
-        return {'code': For(space_index, self.transport_local(f, fnew))}
+        f = self._get_indexed_on_velocities("f", space_index, -self.all_velocities)
+        fnew = self._get_indexed_on_range("fnew", space_index)
+        return {"code": For(space_index, self.transport_local(f, fnew))}
 
     def f2m_local(self, f, m, with_rel_velocity=False):
         """
@@ -294,11 +324,13 @@ class BaseAlgorithm:
                 m_consm = m[:nconsm]
                 m_notconsm = m[nconsm:]
 
-            return [Eq(m_consm, sp.Matrix((self.M*f)[:nconsm])),
-                    *self.relative_velocity(m),
-                    Eq(m_notconsm, sp.Matrix((self.Mu*f)[nconsm:]))]
+            return [
+                Eq(m_consm, sp.Matrix((self.M * f)[:nconsm])),
+                *self.relative_velocity(m),
+                Eq(m_notconsm, sp.Matrix((self.Mu * f)[nconsm:])),
+            ]
         else:
-            return Eq(m, self.M*f)
+            return Eq(m, self.M * f)
 
     def f2m(self):
         """
@@ -306,9 +338,9 @@ class BaseAlgorithm:
         distributed functions on the whole domain.
         """
         space_index = self._get_space_idx_full()
-        f = self._get_indexed_on_range('f', space_index)
-        m = self._get_indexed_on_range('m', space_index)
-        return {'code': For(space_index, self.f2m_local(f, m))}
+        f = self._get_indexed_on_range("f", space_index)
+        m = self._get_indexed_on_range("m", space_index)
+        return {"code": For(space_index, self.f2m_local(f, m))}
 
     def m2f_local(self, m, f, with_rel_velocity=False):
         """
@@ -331,9 +363,9 @@ class BaseAlgorithm:
 
         """
         if with_rel_velocity:
-            return Eq(f, self.invMu*m)
+            return Eq(f, self.invMu * m)
         else:
-            return Eq(f, self.invM*m)
+            return Eq(f, self.invM * m)
 
     def m2f(self):
         """
@@ -341,9 +373,9 @@ class BaseAlgorithm:
         from the moments on the whole domain.
         """
         space_index = self._get_space_idx_full()
-        f = self._get_indexed_on_range('f', space_index)
-        m = self._get_indexed_on_range('m', space_index)
-        return {'code': For(space_index, self.m2f_local(m, f))}
+        f = self._get_indexed_on_range("f", space_index)
+        m = self._get_indexed_on_range("m", space_index)
+        return {"code": For(space_index, self.m2f_local(m, f))}
 
     def equilibrium_local(self, m):
         """
@@ -365,8 +397,8 @@ class BaseAlgorithm:
         on the whole domain.
         """
         space_index = self._get_space_idx_full()
-        m = self._get_indexed_on_range('m', space_index)
-        return {'code': For(space_index, self.equilibrium_local(m))}
+        m = self._get_indexed_on_range("m", space_index)
+        return {"code": For(space_index, self.equilibrium_local(m))}
 
     def relaxation_local(self, m, with_rel_velocity=False):
         """
@@ -384,10 +416,10 @@ class BaseAlgorithm:
 
         """
         if with_rel_velocity:
-            eq = (self.Tu*self.eq).subs(list(zip(self.mv, m)))
+            eq = (self.Tu * self.eq).subs(list(zip(self.mv, m)))
         else:
             eq = self.eq.subs(list(zip(self.mv, m)))
-        relax = (1 - self.s)*m + self.s*eq
+        relax = (1 - self.s) * m + self.s * eq
         alltogether(relax)
         return Eq(m, relax)
 
@@ -397,8 +429,8 @@ class BaseAlgorithm:
         on the whole domain.
         """
         space_index = self._get_space_idx_full()
-        m = self._get_indexed_on_range('m', space_index)
-        return {'code': For(space_index, self.relaxation_local(m))}
+        m = self._get_indexed_on_range("m", space_index)
+        return {"code": For(space_index, self.relaxation_local(m))}
 
     def source_term_local(self, m):
         """
@@ -413,30 +445,35 @@ class BaseAlgorithm:
 
         """
         rhs_eq = [mm for mm in m]
-        m_local = self.settings.get('m_local', False)
-        split = self.settings.get('split', False)
+        m_local = self.settings.get("m_local", False)
+        split = self.settings.get("split", False)
 
         indices = []
         if m_local and not split:
-            local_dict = {'m': m,
-                          'consm': self.consm,
-                          'sorder': None,
-                          'default_index': [0],
-                          }
+            local_dict = {
+                "m": m,
+                "consm": self.consm,
+                "sorder": None,
+                "default_index": [0],
+            }
         else:
-            indices_str = ['ix_', 'iy_', 'iz_']
+            indices_str = ["ix_", "iy_", "iz_"]
             lbm_ind = [ix, iy, iz]
             ind_to_subs = []
             for i, sorder in enumerate(self.sorder[1:]):
                 indices.append(m[0].indices[sorder])
-                ind_to_subs.extend([(indices_str[i], indices[i]),
-                                    (lbm_ind[i], indices[i]),
-                                    ])
-            local_dict = {'m': m[0].base,
-                          'consm': self.consm,
-                          'sorder': self.sorder,
-                          'default_index': indices,
-                          }
+                ind_to_subs.extend(
+                    [
+                        (indices_str[i], indices[i]),
+                        (lbm_ind[i], indices[i]),
+                    ]
+                )
+            local_dict = {
+                "m": m[0].base,
+                "consm": self.consm,
+                "sorder": self.sorder,
+                "default_index": indices,
+            }
             for i, ind in enumerate(indices):
                 local_dict[indices_str[i]] = ind
 
@@ -459,8 +496,8 @@ class BaseAlgorithm:
         on the whole inner domain.
         """
         space_index = self._get_space_idx_inner()
-        m = self._get_indexed_on_range('m', space_index)
-        return {'code': For(space_index, self.source_term_local(m))}
+        m = self._get_indexed_on_range("m", space_index)
+        return {"code": For(space_index, self.source_term_local(m))}
 
     def one_time_step_local(self, f, fnew, m):
         """
@@ -512,34 +549,35 @@ class BaseAlgorithm:
         Return the code expression which  makes one time step of
         LBM algorithm on the whole inner domain.
         """
-        m_local = self.settings.get('m_local', False)
-        check_isfluid = self.settings.get('check_isfluid', False)
-        split = self.settings.get('split', False)
+        m_local = self.settings.get("m_local", False)
+        check_isfluid = self.settings.get("check_isfluid", False)
+        split = self.settings.get("split", False)
 
         space_index = self._get_space_idx_inner()
         if m_local:
             if split:
-                m = self._get_indexed_on_range('m', space_index)
+                m = self._get_indexed_on_range("m", space_index)
                 local_vars = [m[0]]
             else:
-                m = sp.MatrixSymbol('m', self.ns, 1)
+                m = sp.MatrixSymbol("m", self.ns, 1)
                 local_vars = [m]
         else:
-            m = self._get_indexed_on_range('m', space_index)
+            m = self._get_indexed_on_range("m", space_index)
             local_vars = []
 
         if self.rel_vel_symb:
             local_vars.extend(self.rel_vel_symb)
 
-        f = self._get_indexed_on_velocities('f', space_index, -self.all_velocities)
-        fnew = self._get_indexed_on_range('fnew', space_index)
+        f = self._get_indexed_on_velocities("f", space_index, -self.all_velocities)
+        fnew = self._get_indexed_on_range("fnew", space_index)
 
         internal = self.one_time_step_local(f, fnew, m)
 
         if check_isfluid:
-            valin = sp.Symbol('valin', real=True)
-            in_or_out = indexed('in_or_out', [nx, ny, nz], space_index,
-                                priority=self.sorder[1:])
+            valin = sp.Symbol("valin", real=True)
+            in_or_out = indexed(
+                "in_or_out", [nx, ny, nz], space_index, priority=self.sorder[1:]
+            )
             loop = lambda x: For(space_index, If((Eq(in_or_out, valin), x)))
         else:
             loop = lambda x: For(space_index, x)
@@ -551,7 +589,11 @@ class BaseAlgorithm:
             # code = loop([*self.coords(), *internal])
             code = loop([*internal])
 
-        return {'code': code, 'local_vars': local_vars+self.local_vars, 'settings':{"prefetch":[f[0]]}}
+        return {
+            "code": code,
+            "local_vars": local_vars + self.local_vars,
+            "settings": {"prefetch": [f[0]]},
+        }
 
     @monitor
     def generate(self):
@@ -559,13 +601,14 @@ class BaseAlgorithm:
         Define the routines which must be generate by code generator of SymPy
         for a given generator.
         """
-        to_generate = [self.transport,
-                       self.f2m,
-                       self.m2f,
-                       self.relaxation,
-                       self.equilibrium,
-                       self.one_time_step
-                       ]
+        to_generate = [
+            self.transport,
+            self.f2m,
+            self.m2f,
+            self.relaxation,
+            self.equilibrium,
+            self.one_time_step,
+        ]
 
         if self.source_eq:
             to_generate.append(self.source_term)
@@ -573,10 +616,12 @@ class BaseAlgorithm:
         for gen in to_generate:
             name = gen.__name__
             output = gen()
-            code = output['code']
-            local_vars = output.get('local_vars', [])
-            settings = output.get('settings', {})
-            self.generator.add_routine((name, code), local_vars=local_vars, settings=settings)
+            code = output["code"]
+            local_vars = output.get("local_vars", [])
+            settings = output.get("settings", {})
+            self.generator.add_routine(
+                (name, code), local_vars=local_vars, settings=settings
+            )
 
     def _get_args(self, simulation, m_user=None, f_user=None, **kwargs):
         """
@@ -612,17 +657,19 @@ class BaseAlgorithm:
 
         local = locals()
         extra = {str(k): v for k, v in simulation.extra_parameters.items()}
-        if extra.get('lambda', None):
-            extra['lambda_'] = extra['lambda']
+        if extra.get("lambda", None):
+            extra["lambda_"] = extra["lambda"]
         local.update(extra)
         return locals()
 
-    def call_function(self, function_name, simulation,
-                      m_user=None, f_user=None, **kwargs):
+    def call_function(
+        self, function_name, simulation, m_user=None, f_user=None, **kwargs
+    ):
         """
         Call the generated function.
         """
         from ..symbolic import call_genfunction
+
         func = getattr(self.generator.module, function_name)
 
         args = self._get_args(simulation, m_user, f_user)
