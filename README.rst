@@ -81,7 +81,7 @@ and then, install pylbm
 
 .. code::
 
-   python setup.py install
+   pip install .
 
 For more information about what you can achieve with pylbm, take a look at the documentation
 
