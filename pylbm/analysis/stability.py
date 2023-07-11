@@ -133,7 +133,7 @@ class Stability:
             color = np.repeat(color[np.newaxis, :], self.nvtot, axis=0).flatten()
 
         # real and imaginary part
-        view0 = fig[0]
+        view0 = fig[0, 0]
         view0.title = "Stability: {}".format(self.is_stable_l2)
         view0.axis(-1.1, 1.1, -1.1, 1.1, aspect="equal")
         view0.grid(visible=False)
@@ -159,7 +159,7 @@ class Stability:
         markers0 = view0.markers(pos0, 5, color=color, alpha=0.5)
 
         # modulus
-        view1 = fig[1]
+        view1 = fig[0, 1]
         view1.title = "Stability: {}".format(self.is_stable_l2)
         view1.axis(0, 2 * np.pi, -0.1, 1.1)
         view1.grid(visible=True)
