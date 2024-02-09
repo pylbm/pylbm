@@ -22,9 +22,9 @@ class Test2D:
         dx, Tf = 1.0 / 64, 0.5
         return self.runtest(dx, Tf, "advection", generator)
 
-    # def test2D_advection_init_f(self, generator):
-    #     dx, Tf = 1.0 / 64, 0.5
-    #     return self.runtest(dx, Tf, "advection_init_f", generator)
+    def test2D_advection_init_f(self, generator):
+        dx, Tf = 1.0 / 64, 0.5
+        return self.runtest(dx, Tf, "advection_init_f", generator)
 
     def test2D_air_conditioning(self, generator):
         dx, Tf = 1.0 / 64, 0.5

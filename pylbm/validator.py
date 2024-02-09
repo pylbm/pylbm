@@ -305,9 +305,14 @@ def validate(dico, name):
             "keysrules": {"type": "symbol"},
             "valuesrules": {"anyof": [{"type": "expr"}, {"type": "number"}]},
         },
+        "inittype": {
+            "type": "string",
+            "allowed": ["moments", "distributions"],
+            "default": "moments",
+        },
         "init": {
             "type": "dict",
-            "keysrules": {"type": "symbol"},
+            "keysrules": {"anyof": [{"type": "symbol"}, {"type": "number"}]},
             "valuesrules": {
                 "anyof": [
                     {"type": "number"},
@@ -317,20 +322,6 @@ def validate(dico, name):
             },
             "required": name in ["Simulation"],
         },
-        # "inittype": {
-        #     "type": "string",
-        #     "allowed": ["moments", "distributions"],
-        #     "default": "moments",
-        # },
-        # "init": {"type": "dict",
-        #          "keysrules": {"anyof": [{"type": "symbol"}, {"type": "number"}]},
-        #          "valuesrules": {"anyof": [{"type": "number"},
-        #                                    {"type": "function"},
-        #                                    {"type": "list",
-        #                          "items": [{"type": "function"}, {"type": "list"}]}
-        #                          ]},
-        #           "required": name in ["Simulation"]
-        # },
         "boundary_conditions": {
             "type": "dict",
             "keysrules": {"type": "integer"},
