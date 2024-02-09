@@ -1,5 +1,4 @@
 import importlib
-import sys
 import os
 import pytest
 import numpy as np
@@ -8,25 +7,24 @@ path = os.path.dirname(__file__) + "/../demo/2D"
 path = os.path.abspath(path)
 
 
-@pytest.fixture
-def test2D_case_dir():
-    sys.path.append(path)
-    yield
-    sys.path.pop()
-
-
 @pytest.mark.slow
 @pytest.mark.h5diff(single_reference=True)
-@pytest.mark.usefixtures("test2D_case_dir")
 @pytest.mark.parametrize("generator", ["numpy", "cython"])
 class Test2D:
     def runtest(self, dx, Tf, name, generator):
-        module = importlib.import_module(name)
+        spec = importlib.util.spec_from_file_location(name, f"{path}/{name}.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
         return module.run(dx, Tf, generator=generator, with_plot=False)
 
     def test2D_advection(self, generator):
         dx, Tf = 1.0 / 64, 0.5
         return self.runtest(dx, Tf, "advection", generator)
+
+    # def test2D_advection_init_f(self, generator):
+    #     dx, Tf = 1.0 / 64, 0.5
+    #     return self.runtest(dx, Tf, "advection_init_f", generator)
 
     def test2D_air_conditioning(self, generator):
         dx, Tf = 1.0 / 64, 0.5

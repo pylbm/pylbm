@@ -1,13 +1,13 @@
-
 name: pylbm-env
 channels:
   - conda-forge
 dependencies:
+  - python<3.12
   - numpy
   - numpy-stl
   - matplotlib
   - sympy
-  - cython
+  - cython<3
   - h5py
   - mpi4py
   - colorlog
@@ -16,7 +16,6 @@ dependencies:
   - jinja2
   - pytest
   - pylint
-  - pytest-pylint
   - typed-ast
   - pytest
   - pytest-cov
@@ -25,3 +24,5 @@ dependencies:
   - ipywidgets
   - nbval
   - flake8
+  - pip:
+      - pytest-pylint==0.21

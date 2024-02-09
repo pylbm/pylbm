@@ -11,19 +11,14 @@ space_step = 1.0 / 64
 final_time = 0.5
 
 
-@pytest.fixture
-def test1D_case_dir():
-    sys.path.append(path)
-    yield
-    sys.path.pop()
-
-
 @pytest.mark.h5diff(single_reference=True)
-@pytest.mark.usefixtures("test1D_case_dir")
 @pytest.mark.parametrize("generator", ["numpy", "cython"])
 class Test1D:
     def runtest(self, name, generator):
-        module = importlib.import_module(name)
+        spec = importlib.util.spec_from_file_location(name, f"{path}/{name}.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
         return module.run(dx, Tf, generator=generator, with_plot=False)
 
     def test1D_advection(self, generator):
@@ -51,7 +46,11 @@ def test1D_riemann_case_dir():
 @pytest.mark.parametrize("generator", ["numpy", "cython"])
 class Test1DRiemann:
     def runtest(self, name, generator):
-        module = importlib.import_module(name)
+        spec = importlib.util.spec_from_file_location(
+            name, f"{path}/riemann_problems/{name}.py"
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
         return module.run(space_step, final_time, generator=generator, with_plot=False)
 
     def test1D_riemann_advection(self, generator):
