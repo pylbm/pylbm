@@ -7,7 +7,7 @@ dependencies:
   - numpy-stl
   - matplotlib
   - sympy
-  - cython<3
+  - cython
   - h5py
   - mpi4py
   - colorlog
