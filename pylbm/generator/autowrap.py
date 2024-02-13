@@ -91,39 +91,48 @@ class CodeWrapper(object):
 
 
 class CythonCodeWrapper(CodeWrapper):
+    setup_template = """\
+from setuptools import setup
+from setuptools import Extension
+from Cython.Build import cythonize
+import numpy as np
+ext_mods = [Extension(
+    "{modname}",
+    {pyxfilename},
+    include_dirs=[np.get_include()],
+    extra_compile_args=['-O3', '-w'],
+)]
+setup(ext_modules=cythonize(ext_mods))
+"""
+
+    pyproject_template = """\
+[build-system]
+requires = ["setuptools", "wheel", "Cython"]
+"""
+
     @property
     def command(self):
-        bld = open(self.full_path + ".pyxbld", "w")
-        code = """
-def make_ext(modname, pyxfilename):
-    from distutils.extension import Extension
+        setup_file = os.path.join(self.workdir, "setup.py")
+        with open(setup_file, "w") as f:
+            f.write(
+                self.setup_template.format(
+                    modname=self.module_name, pyxfilename=[self.full_path + ".pyx"]
+                )
+            )
 
-    return Extension(name = modname,
-                     sources=[pyxfilename],
-                     #extra_compile_args = ['-O3', '-fopenmp, '-w'],
-                     #extra_link_args= ['-fopenmp'])
-                     extra_compile_args = ['-O3', '-w']
-                     #extra_compile_args = ['-O3', '-fopenmp', '-w'],
-                     #extra_link_args= ['-fopenmp'])
-                    )
-                    """
-        bld.write(code)
-        bld.close()
-        build_file = os.path.join(self.workdir, "build.py")
-        bld = open(build_file, "w")
-        code = f"""
-import pyximport
-pyximport.install(build_dir=r'{self.workdir}', inplace=True)
-import {self.filename}
-        """
-        bld.write(code)
-        bld.close()
+        pyproject_file = os.path.join(self.workdir, "pyproject.toml")
+        with open(pyproject_file, "w") as f:
+            f.write(self.pyproject_template)
 
         if self.verbose:
             print(open(self.full_path + ".pyx").read())
 
-        command = [sys.executable, build_file]
-
+        command = [
+            sys.executable,
+            setup_file,
+            "build_ext",
+            f"--build-lib={self.workdir}",
+        ]
         return command
 
     def _prepare_files(self, routines):
