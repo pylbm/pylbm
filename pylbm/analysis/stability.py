@@ -15,22 +15,37 @@ from .. import viewer
 from ..utils import print_progress
 from ..symbolic import rel_ux, rel_uy, rel_uz, recursive_sub
 
-TPV = 1.e-3
+TPV = 1.e-10
 
 
 class Stability:
     """
-    generic class
+    create a class stability
+
+    Parameters
+    ----------
+
+    scheme: pylbm.Scheme
+        the investigated scheme
+
+    verbose: bool
+        to have more informations on the stability
+
+    Examples
+    --------
+
+    see demo/examples/stability
+
     """
 
-    def __init__(self, scheme, output_txt=False):
+    def __init__(self, scheme, verbose=False):
         # pylint: disable=unsubscriptable-object
         self.nvtot = scheme.s.shape[0]
         self.consm = list(scheme.consm.keys())
         self.param = scheme.param  # dictionary of the parameters
         self.dim = scheme.dim
         self.is_stable_l2 = True
-        self.output_txt = output_txt
+        self.verbose = verbose
 
         if scheme.rel_vel is None:
             jacobian = scheme.EQ.jacobian(self.consm)
@@ -75,7 +90,7 @@ class Stability:
         eigs = np.empty((n_wv, self.nvtot), dtype="complex")
         test_cohn_schur = np.empty((n_wv, 2), dtype=bool)
 
-        if self.output_txt:
+        if self.verbose:
             print("*" * 80)
             print("Compute the eigenvalues")
             print_progress(0, n_wv, barLength=50)
@@ -92,7 +107,7 @@ class Stability:
             data = set_matrix(1j * v_xi[:, k])
             eigs[k] = np.linalg.eig(data)[0]
             test_cohn_schur[k] = algo_cohn_schur(data)
-            if self.output_txt:
+            if self.verbose:
                 print_progress(k + 1, n_wv, barLength=50)
 
         # (ind_pb,) = np.where(np.max(np.abs(eigs), axis=1) > 1 + 1.0e-10)
@@ -105,7 +120,7 @@ class Stability:
         if not all(test_cohn_schur[:, 1]):
             self.is_stable_l2 = var_out
 
-        if self.output_txt:
+        if self.verbose:
             if self.is_stable_l2 == var_in:
                 print("*" * 80)
                 print("The scheme is stable")
@@ -428,7 +443,7 @@ def algo_cohn_schur(G):
 
     bool: True or False
         is Schur polynomial
-    
+
     bool: True or False
         is simple von Neumann polynomial
 
