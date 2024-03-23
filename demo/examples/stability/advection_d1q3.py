@@ -47,7 +47,7 @@ dico = {
 }
 
 scheme = pylbm.Scheme(dico)
-stab = pylbm.Stability(scheme)
+stab = pylbm.Stability(scheme, output_txt=True)
 
 stab.visualize(
     {

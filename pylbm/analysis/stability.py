@@ -55,9 +55,7 @@ class Stability:
         Compute the eigenvalues of the amplification matrix
         for n_wv wave vectors
         """
-        var_in = 0
-        var_on = 1
-        var_out = 2
+        var_in, var_on, var_out = 0, 1, 2  # in, on or out the unit circle
         extra_parameters = extra_parameters or {}
         to_subs = list((i, j) for i, j in zip(self.consm, consm0))
         to_subs += list(self.param.items())
@@ -126,7 +124,6 @@ class Stability:
                 (ind,) = np.logical_not(test_cohn_schur[:, 1]).nonzero()
                 pb_stable_l2 = v_xi[:, ind]
                 print(pb_stable_l2.T)
-                print(abs(eigs[ind, :]))
                 print("*" * 80)
 
         return v_xi, eigs
@@ -260,7 +257,6 @@ class Stability:
                 markers0.set_offsets(pos0)
                 view0.title = f"Stability: {title_msg[self.is_stable_l2]}"
 
-
                 for k in range(self.nvtot):
                     # pos1[nx*k:nx*(k+1), 0] = np.sqrt(np.sum(v_xi**2, axis=0))
                     pos1[nx * k : nx * (k + 1), 0] = np.max(v_xi, axis=0)
@@ -323,7 +319,6 @@ class Stability:
 
                 markers0.set_offsets(pos0)
                 view0.title = f"Stability: {title_msg[self.is_stable_l2]}"
-
 
                 for k in range(self.nvtot):
                     # pos1[nx*k:nx*(k+1), 0] = np.sqrt(np.sum(v_xi**2, axis=0))
