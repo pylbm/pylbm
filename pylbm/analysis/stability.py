@@ -15,20 +15,37 @@ from .. import viewer
 from ..utils import print_progress
 from ..symbolic import rel_ux, rel_uy, rel_uz, recursive_sub
 
+TPV = 1.e-10
+
 
 class Stability:
     """
-    generic class
+    create a class stability
+
+    Parameters
+    ----------
+
+    scheme: pylbm.Scheme
+        the investigated scheme
+
+    verbose: bool
+        to have more informations on the stability
+
+    Examples
+    --------
+
+    see demo/examples/stability
+
     """
 
-    def __init__(self, scheme, output_txt=False):
+    def __init__(self, scheme, verbose=False):
         # pylint: disable=unsubscriptable-object
         self.nvtot = scheme.s.shape[0]
         self.consm = list(scheme.consm.keys())
-        self.param = scheme.param
+        self.param = scheme.param  # dictionary of the parameters
         self.dim = scheme.dim
         self.is_stable_l2 = True
-        self.output_txt = output_txt
+        self.verbose = verbose
 
         if scheme.rel_vel is None:
             jacobian = scheme.EQ.jacobian(self.consm)
@@ -53,6 +70,7 @@ class Stability:
         Compute the eigenvalues of the amplification matrix
         for n_wv wave vectors
         """
+        var_in, var_on, var_out = 0, 1, 2  # in, on or out the unit circle
         extra_parameters = extra_parameters or {}
         to_subs = list((i, j) for i, j in zip(self.consm, consm0))
         to_subs += list(self.param.items())
@@ -70,8 +88,9 @@ class Stability:
             v_xi = np.array([v_xi_x.flatten(), v_xi_y.flatten()])
             n_wv = v_xi.shape[1]  # pylint: disable=unsubscriptable-object
         eigs = np.empty((n_wv, self.nvtot), dtype="complex")
+        test_cohn_schur = np.empty((n_wv, 2), dtype=bool)
 
-        if self.output_txt:
+        if self.verbose:
             print("*" * 80)
             print("Compute the eigenvalues")
             print_progress(0, n_wv, barLength=50)
@@ -87,21 +106,38 @@ class Stability:
         for k in range(n_wv):
             data = set_matrix(1j * v_xi[:, k])
             eigs[k] = np.linalg.eig(data)[0]
-            if self.output_txt:
+            test_cohn_schur[k] = algo_cohn_schur(data)
+            if self.verbose:
                 print_progress(k + 1, n_wv, barLength=50)
 
-        (ind_pb,) = np.where(np.max(np.abs(eigs), axis=1) > 1 + 1.0e-10)
-        pb_stable_l2 = v_xi[:, ind_pb]
-        self.is_stable_l2 = pb_stable_l2.shape[1] == 0
+        # (ind_pb,) = np.where(np.max(np.abs(eigs), axis=1) > 1 + 1.0e-10)
+        # pb_stable_l2 = v_xi[:, ind_pb]
+        # self.is_stable_l2 = pb_stable_l2.shape[1] == 0
 
-        if self.output_txt:
-            if self.is_stable_l2:
+        self.is_stable_l2 = var_on
+        if all(test_cohn_schur[:, 0]):
+            self.is_stable_l2 = var_in
+        if not all(test_cohn_schur[:, 1]):
+            self.is_stable_l2 = var_out
+
+        if self.verbose:
+            if self.is_stable_l2 == var_in:
                 print("*" * 80)
                 print("The scheme is stable")
+                print("*" * 80)
+            elif self.is_stable_l2 == var_on:
+                print("*" * 80)
+                print("The scheme may be stable")
+                print("Some wave vectors have to be checked")
+                (ind,) = np.logical_not(test_cohn_schur[:, 0]).nonzero()
+                pb_stable_l2 = v_xi[:, ind]
+                print(pb_stable_l2.T)
                 print("*" * 80)
             else:
                 print("*" * 80)
                 print("The scheme is not stable for these wave vectors:")
+                (ind,) = np.logical_not(test_cohn_schur[:, 1]).nonzero()
+                pb_stable_l2 = v_xi[:, ind]
                 print(pb_stable_l2.T)
                 print("*" * 80)
 
@@ -113,6 +149,7 @@ class Stability:
         """
         visualize the stability
         """
+        title_msg = ['stable', 'probably stable', 'unstable']
         if dico is None:
             dico = {}
         consm0 = [0.0] * len(self.consm)
@@ -125,7 +162,7 @@ class Stability:
         v_xi, eigs = self.eigenvalues(consm0, n_wv)
         nx = v_xi.shape[1]
 
-        fig = viewer_app.Fig(1, 2, figsize=(12.8, 6.4))  # , figsize=(12, 6))
+        fig = viewer_app.Fig(nrows=1, ncols=2, figsize=(12.8, 6.4))  # , figsize=(12, 6))
         if self.dim == 1:
             color = "orange"
         elif self.dim == 2:
@@ -134,7 +171,7 @@ class Stability:
 
         # real and imaginary part
         view0 = fig[0, 0]
-        view0.title = "Stability: {}".format(self.is_stable_l2)
+        view0.title = f"Stability: {title_msg[self.is_stable_l2]}"
         view0.axis(-1.1, 1.1, -1.1, 1.1, aspect="equal")
         view0.grid(visible=False)
         view0.set_label("real part", "imaginary part")
@@ -160,7 +197,7 @@ class Stability:
 
         # modulus
         view1 = fig[0, 1]
-        view1.title = "Stability: {}".format(self.is_stable_l2)
+        view1.title = f"Stability: {title_msg[self.is_stable_l2]}"
         view1.axis(0, 2 * np.pi, -0.1, 1.1)
         view1.grid(visible=True)
         view1.set_label("wave vector modulus", "modulus")
@@ -233,7 +270,7 @@ class Stability:
                     pos0[nx * k : nx * (k + 1), 1] = np.imag(eigs[:, k])
 
                 markers0.set_offsets(pos0)
-                view0.title = "Stability: {}".format(self.is_stable_l2)
+                view0.title = f"Stability: {title_msg[self.is_stable_l2]}"
 
                 for k in range(self.nvtot):
                     # pos1[nx*k:nx*(k+1), 0] = np.sqrt(np.sum(v_xi**2, axis=0))
@@ -241,7 +278,8 @@ class Stability:
                     pos1[nx * k : nx * (k + 1), 1] = np.abs(eigs[:, k])
 
                 markers1.set_offsets(pos1)
-                view1.title = "Stability: {}".format(self.is_stable_l2)
+                view1.title = f"Stability: {title_msg[self.is_stable_l2]}"
+
                 fig.fig.canvas.draw_idle()
                 with out:
                     clear_output(wait=True)
@@ -295,7 +333,7 @@ class Stability:
                     pos0[nx * k : nx * (k + 1), 1] = np.imag(eigs[:, k])
 
                 markers0.set_offsets(pos0)
-                view0.title = "Stability: {}".format(self.is_stable_l2)
+                view0.title = f"Stability: {title_msg[self.is_stable_l2]}"
 
                 for k in range(self.nvtot):
                     # pos1[nx*k:nx*(k+1), 0] = np.sqrt(np.sum(v_xi**2, axis=0))
@@ -303,10 +341,135 @@ class Stability:
                     pos1[nx * k : nx * (k + 1), 1] = np.abs(eigs[:, k])
 
                 markers1.set_offsets(pos1)
-                view1.title = "Stability: {}".format(self.is_stable_l2)
+                view1.title = f"Stability: {title_msg[self.is_stable_l2]}"
                 fig.fig.canvas.draw_idle()
 
             for k in sliders.keys():
                 sliders[k].on_changed(update)
 
             fig.show()
+
+
+def operator_star(p):
+    """
+    if p = sum(P_k*z^k, k=0..d)
+                    _
+    return p* = sum(P_{d-k}*z^k, k=0..d)
+
+    p =  [P_0, P_1, ..., P_d]
+          _    _             _
+    p* = [P_d, P_{d-1}, ..., P_0]
+    don't forget the conjugate _ !
+    """
+    d = len(p) - 1
+    return [np.conjugate(p[d - k]) for k in range(d + 1)]
+
+
+def operator_circ(p):
+    """    p*(0)p(z) - p(0)p*(z)
+    return ---------------------
+                     z
+    """
+    d = len(p) - 1
+    pstar = operator_star(p)
+    return [pstar[0] * p[k] - p[0] * pstar[k] for k in range(1, d + 1)]
+
+
+def operator_deriv(p):
+    """
+    Derivative operator for polynomial
+    """
+    d = len(p) - 1
+    return [k * p[k] for k in range(1, d + 1)]
+
+
+def is_S(p):
+    """
+    recursive algorithm
+    is the polynomial p a Schur polynomial
+    """
+    if len(p) == 2:
+        return abs(p[0]) < abs(p[1])
+    if abs(p[0]) < abs(p[-1]):
+        pcirc = operator_circ(p)
+        return is_S(pcirc)
+    return False
+
+
+def is_svN(p):
+    """
+    recursive algorithm
+    is the polynomial p a simple von Neumamn polynomial
+    """
+    if len(p) == 2:
+        return abs(p[0]) <= abs(p[1]) + TPV
+    pcirc = operator_circ(p)
+    if abs(p[0]) < abs(p[-1]):
+        return is_svN(pcirc)
+    if all([abs(pcirck) < TPV for pcirck in pcirc]):
+        pder = operator_deriv(p)
+        return is_S(pder)
+    return False
+
+
+def is_vN(p):
+    """
+    recursive algorithm
+    is the polynomial p a von Neumamn polynomial
+    """
+    if len(p) == 2:
+        return abs(p[0]) <= abs(p[1]) + TPV
+    pcirc = operator_circ(p)
+    if abs(p[0]) < abs(p[-1]):
+        return is_vN(pcirc)
+    if all([abs(pcirck) < TPV for pcirck in pcirc]):
+        pder = operator_deriv(p)
+        return is_vN(pder)
+    return False
+
+
+def algo_cohn_schur(G):
+    """
+    Cohn-Schur algorithm
+
+    Parameters
+    ----------
+
+    G: nparray
+        the amplification matrix
+
+    Returns
+    -------
+
+    bool: True or False
+        is Schur polynomial
+
+    bool: True or False
+        is simple von Neumann polynomial
+
+    bool: True or False
+        is von Neumann polynomial
+
+    Compute the characteristic polynomial
+    of the amplification matrix G
+    Use the Cohn-Schur algorithm to verify
+    if this polynomial is
+    - a Schur polynomial
+    - a simple von Neumann polynomial
+    - a von Neumann polynomial
+
+    """
+    # compute the characteristic polynomial of G
+    # algorithm of Faddeev-Leverrier
+    # https://fr.wikipedia.org/wiki/Algorithme_de_Faddeev-Le_Verrier
+    n = G.shape[0]
+    Id = np.eye(n)
+    Gk = G.copy()
+    d = n + 1
+    charpoly = [1., -1. * np.trace(G)]   # descending order
+    for k in range(1, d - 1):
+        Gk = G @ (Gk + charpoly[k] * Id)
+        charpoly.append(-np.trace(Gk) / (k + 1))
+    charpoly.reverse()             # ascending order
+    # tests and return
+    return is_svN(charpoly), is_vN(charpoly)

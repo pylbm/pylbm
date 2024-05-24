@@ -513,8 +513,30 @@ class PlotWidget:
         # ISSUE with MATPLOTLIB
         # https://github.com/matplotlib/matplotlib/issues/18758
         # self.ax.grid(visible=visible, which=which, alpha=alpha)
-        self.ax.grid(visible, which=which, alpha=alpha)
+        if visible:
+            self.ax.grid(visible, which=which, alpha=alpha)
+        else:
+            self.ax.grid(False)
 
+    def set_xscale(self, name, base=None):
+        if base:
+            self.ax.set_xscale(name, base=base)
+        else:
+            self.ax.set_xscale(name)
+
+    def set_yscale(self, name, base=None):
+        if base:
+            self.ax.set_yscale(name, base=base)
+        else:
+            self.ax.set_yscale(name)
+
+    def set_xlim(self, a, b):
+        self.ax.set_xlim(a, b)
+
+
+    def set_ylim(self, a, b):
+        self.ax.set_ylim(a, b)
+        
     def axis(self, xmin, xmax, ymin, ymax, zmin=0, zmax=0, dim=2, aspect=None):
         if (zmin == 0 and zmax == 0) or dim <= 2:
             self.ax.set_xlim(xmin, xmax)

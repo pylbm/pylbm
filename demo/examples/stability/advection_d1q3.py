@@ -20,10 +20,10 @@ ALPHA = sp.symbols("alpha", constants=True)
 S_1, S_2 = sp.symbols("s1, s2", constants=True)
 
 # numerical parameters
-la = 1.0  # velocity of the scheme
-s_1, s_2 = 1.5, 1.0  # relaxation parameters
-c = 0.75  # velocity of the advection equation
-alpha = 0.7  # equilibrium parameter for energy
+la = 1.0             # velocity of the scheme
+s_1, s_2 = 1.0, 1.0  # relaxation parameters
+c = 0.75             # velocity of the advection equation
+alpha = 0.           # equilibrium parameter for energy
 
 dico = {
     "dim": 1,
@@ -44,11 +44,10 @@ dico = {
         C: c,
         ALPHA: alpha,
     },
-    "relative_velocity": [C],
 }
 
 scheme = pylbm.Scheme(dico)
-stab = pylbm.Stability(scheme)
+stab = pylbm.Stability(scheme, output_txt=True)
 
 stab.visualize(
     {
