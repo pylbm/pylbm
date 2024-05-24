@@ -279,9 +279,8 @@ class BoundaryMethod:
                 f.set_conserved_moments(simulation.scheme.consm)
 
                 args = coords
-                if isinstance(value, types.FunctionType):
-                    func = value
-                elif isinstance(value, tuple):
+                func = value
+                if isinstance(value, tuple):
                     func = value[0]
                     args += value[1]
 
