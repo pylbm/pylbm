@@ -172,7 +172,7 @@ class Geometry:
         viewer_app=viewer.matplotlib_viewer,
         figsize=(6, 4),
         viewlabel=False,
-        viewgrid=False,
+        viewgrid=True,
         fluid_color="navy",
         alpha=1.0,
     ):
