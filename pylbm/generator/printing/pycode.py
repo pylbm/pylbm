@@ -5,6 +5,7 @@ Python code printers
 
 This module contains python code printers for plain python as well as NumPy & SciPy enabled code.
 """
+
 from collections import defaultdict
 from itertools import chain
 from sympy.core import S, Add, Eq, Symbol
@@ -86,7 +87,7 @@ _known_functions_math = {
 _known_constants_math = {
     "Exp1": "e",
     "Pi": "pi",
-    "E": "e"
+    "E": "e",
     # Only in python >= 3.5:
     # 'Infinity': 'inf',
     # 'NaN': 'nan'
@@ -343,19 +344,11 @@ class AbstractPythonCodePrinter(CodePrinter):
         func = self.known_functions.get(name, name)
         return "%s(%s)" % (func, self._print(expr.tolist()))
 
-    _print_SparseMatrix = (
-        _print_MutableSparseMatrix
-    ) = (
-        _print_ImmutableSparseMatrix
-    ) = (
+    _print_SparseMatrix = _print_MutableSparseMatrix = _print_ImmutableSparseMatrix = (
         _print_Matrix
-    ) = (
-        _print_DenseMatrix
-    ) = (
-        _print_MutableDenseMatrix
-    ) = (
-        _print_ImmutableMatrix
-    ) = _print_ImmutableDenseMatrix = lambda self, expr: self._print_MatrixBase(expr)
+    ) = _print_DenseMatrix = _print_MutableDenseMatrix = _print_ImmutableMatrix = (
+        _print_ImmutableDenseMatrix
+    ) = lambda self, expr: self._print_MatrixBase(expr)
 
     def _indent_codestring(self, codestring):
         return "\n".join([self.tab + line for line in codestring.split("\n")])
@@ -770,7 +763,7 @@ class NumPyPrinter(PythonCodePrinter):
     def _print_MatMul(self, expr):
         "Matrix multiplication printer"
         if expr.as_coeff_matrices()[0] is not S.One:
-            expr_list = expr.as_coeff_matrices()[1] + [(expr.as_coeff_matrices()[0])]
+            expr_list = expr.as_coeff_matrices()[1] + [expr.as_coeff_matrices()[0]]
             return "({0})".format(").dot(".join(self._print(i) for i in expr_list))
         return "({0})".format(").dot(".join(self._print(i) for i in expr.args))
 
@@ -938,9 +931,11 @@ class NumPyPrinter(PythonCodePrinter):
         if expr.exp.is_integer and expr.exp.is_negative:
             expr = Pow(expr.base, expr.exp.evalf(), evaluate=False)
         if expr.exp.is_integer and not expr.exp.is_negative:
-            line = self._print(expr.base)
+            # Ensure base is parenthesized to preserve operator precedence
+            base_str = self.parenthesize(expr.base, precedence(expr))
+            line = base_str
             for i in range(1, expr.exp):
-                line += "*" + self._print(expr.base)
+                line += "*" + base_str
             return f"({line})"
         return self._hprint_Pow(expr, rational=rational, sqrt="numpy.sqrt")
 
@@ -1168,11 +1163,9 @@ class NumPyPrinter(PythonCodePrinter):
     _print_fresnelc = CodePrinter._print_not_supported
     _print_fresnels = CodePrinter._print_not_supported
 
-    _print_Matrix = (
-        _print_DenseMatrix
-    ) = (
-        _print_MutableDenseMatrix
-    ) = _print_ImmutableMatrix = _print_ImmutableDenseMatrix = _print_MatrixBase
+    _print_Matrix = _print_DenseMatrix = _print_MutableDenseMatrix = (
+        _print_ImmutableMatrix
+    ) = _print_ImmutableDenseMatrix = _print_MatrixBase
 
 
 for k in NumPyPrinter._kf:
