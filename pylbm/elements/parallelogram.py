@@ -128,7 +128,7 @@ class Parallelogram(Element):
         """
         x, y = grid
         # Barycentric coordinates
-        v2 = np.asarray([x - self.point[0], y - self.point[1]], dtype=object)
+        v2 = [x - self.point[0], y - self.point[1]]
         invdelta = 1.0 / (self.v1[0] * self.v2[1] - self.v1[1] * self.v2[0])
         u = (v2[0] * self.v2[1] - v2[1] * self.v2[0]) * invdelta
         v = (v2[1] * self.v1[0] - v2[0] * self.v1[1]) * invdelta
