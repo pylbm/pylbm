@@ -41,7 +41,7 @@ jobs:
         with:
           environment-file: conda/environment.yml
           environment-name: pylbm-env
-          extra-specs: |
+          create-args: >-
             sympy=${{ matrix.sympy-version }}
 
       # - name: Set up Python ${{ matrix.python-version }}
