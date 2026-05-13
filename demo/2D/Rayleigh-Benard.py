@@ -78,7 +78,7 @@ def save(sol, im):
     h5.save()
 
 
-def run(dx, Tf, time_bc, generator="cython", sorder=None, with_plot=True):
+def run(dx, Tf, time_bc=True, generator="cython", sorder=None, with_plot=True):
     """
     Parameters
     ----------
@@ -237,7 +237,7 @@ def run(dx, Tf, time_bc, generator="cython", sorder=None, with_plot=True):
 
 
 if __name__ == "__main__":
-    dx = 1.0 / 128
+    dx = 1.0 / 256
     Tf = 10.0
     time_bc = False
     run(dx, Tf, time_bc)
