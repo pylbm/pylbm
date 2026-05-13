@@ -37,12 +37,10 @@ jobs:
         run: bash .github/workflows/mpi/install-${{ matrix.mpi }}.sh
 
       - name: install mamba
-        uses: mamba-org/setup-micromamba@v3
+        uses: conda-incubator/setup-miniconda@v4
         with:
           environment-file: conda/environment.yml
-          environment-name: pylbm-env
-          create-args: >-
-            sympy=${{ matrix.sympy-version }}
+          activate-environment: pylbm-env
 
       # - name: Set up Python ${{ matrix.python-version }}
       #   uses: actions/setup-python@v2
