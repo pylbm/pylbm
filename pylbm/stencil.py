@@ -744,8 +744,7 @@ class Stencil(list):
     @itemproperty
     def vx(self, k):
         """vx[k] the x component of the velocities for the stencil k."""
-        vectorize = np.vectorize(lambda obj: obj.vx)
-        return vectorize(self[k])
+        return self[k].vx
 
     @property
     def uvy(self):
@@ -756,8 +755,7 @@ class Stencil(list):
     @itemproperty
     def vy(self, k):
         """vy[k] the y component of the velocities for the stencil k."""
-        vectorize = np.vectorize(lambda obj: obj.vy)
-        return vectorize(self[k])
+        return self[k].vy
 
     @property
     def uvz(self):
@@ -768,8 +766,7 @@ class Stencil(list):
     @itemproperty
     def vz(self, k):
         """vz[k] the z component of the velocities for the stencil k."""
-        vectorize = np.vectorize(lambda obj: obj.vz)
-        return vectorize(self[k])
+        return self[k].vz
 
     @property
     def unum(self):
@@ -807,9 +804,9 @@ class Stencil(list):
                 vx = self.vx[vind]
                 vy = self.vy[vind]
                 vz = self.vz[vind]
-                all_velocities[
-                    self.nv_ptr[vind] : self.nv_ptr[vind + 1], :
-                ] = np.asarray([vx, vy, vz][: self.dim]).T
+                all_velocities[self.nv_ptr[vind] : self.nv_ptr[vind + 1], :] = (
+                    np.asarray([vx, vy, vz][: self.dim]).T
+                )
         else:
             vx = self.vx[scheme_id]
             vy = self.vy[scheme_id]

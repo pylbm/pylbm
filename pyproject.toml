@@ -40,9 +40,9 @@ dependencies = [
     "jinja2",
     "matplotlib",
     "mpi4py",
-    "numpy",
+    "numpy>=2",
     "numpy-stl",
-    "sympy>=1.3",
+    "sympy>=1.13",
 ]
 
 [project.optional-dependencies]

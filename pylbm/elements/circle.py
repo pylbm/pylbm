@@ -113,7 +113,7 @@ class Circle(Element):
 
         """
         x, y = grid
-        v2 = np.asarray([x - self.center[0], y - self.center[1]], dtype=object)
+        v2 = [x - self.center[0], y - self.center[1]]
         return (v2[0] ** 2 + v2[1] ** 2) <= self.radius**2
 
     def distance(self, grid, v, dmax=None, normal=False):

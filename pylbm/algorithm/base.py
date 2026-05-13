@@ -79,6 +79,7 @@ from ..symbolic import (
     space_idx,
     alltogether,
     recursive_sub,
+    SymbolicVector,
 )
 from ..symbolic import rel_ux, rel_uy, rel_uz
 from .transform import parse_expr
@@ -419,6 +420,9 @@ class BaseAlgorithm:
             eq = (self.Tu * self.eq).subs(list(zip(self.mv, m)))
         else:
             eq = self.eq.subs(list(zip(self.mv, m)))
+        # Ensure eq is a SymbolicVector for element-wise multiplication with self.s
+        if not isinstance(eq, SymbolicVector):
+            eq = SymbolicVector(eq)
         relax = (1 - self.s) * m + self.s * eq
         alltogether(relax)
         return Eq(m, relax)

@@ -14,8 +14,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # python-version: [3.7, 3.8, 3.9, "3.10"]
-        sympy-version: [1.8, 1.9, "1.10", "1.11"]
+        sympy-version: [1.13, 1.14]
         mpi:
           - openmpi
           - msmpi
@@ -38,12 +37,10 @@ jobs:
         run: bash .github/workflows/mpi/install-${{ matrix.mpi }}.sh
 
       - name: install mamba
-        uses: mamba-org/provision-with-micromamba@main
+        uses: conda-incubator/setup-miniconda@v4
         with:
           environment-file: conda/environment.yml
-          environment-name: pylbm-env
-          extra-specs: |
-            sympy=${{ matrix.sympy-version }}
+          activate-environment: pylbm-env
 
       # - name: Set up Python ${{ matrix.python-version }}
       #   uses: actions/setup-python@v2
@@ -58,12 +55,12 @@ jobs:
       #     pip install sympy==${{ matrix.sympy-version }}
 
       - name: Install pylbm
-        shell: bash -l {0}
+        shell: bash -el {0}
         run: |
           pip install .
 
       - name: Lint with flake8
-        shell: bash -l {0}
+        shell: bash -el {0}
         run: |
           # stop the build if there are Python syntax errors or undefined names
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
@@ -71,7 +68,7 @@ jobs:
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
       - name: Test with pytest
-        shell: bash -l {0}
+        shell: bash -el {0}
         run: |
           pytest --pylint --pylint-rcfile=.pyrcfile --pylint-error-types=EF pylbm
           pytest --nbval-lax notebooks

@@ -8,11 +8,11 @@
 Useful functions to compute the distance
 between a point and an object
 """
+
 # pylint: disable=invalid-name
 
 import logging
 import numpy as np
-
 
 log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 tgv = 1.0e16  # very large value
@@ -51,7 +51,7 @@ def distance_lines(x, y, v, p, vt, dmax, label, normal):
         shape = (x.size, y.size)
     else:
         shape = x.shape
-    v2 = np.asarray([x, y], dtype=object)
+    v2 = [x, y]
     alpha = tgv * np.ones(shape)
     border = -np.ones(shape)
     normal_x = np.zeros(shape)
