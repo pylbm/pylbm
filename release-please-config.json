@@ -22,7 +22,8 @@
       "extra-files": [
         {
           "type": "generic",
-          "path": "pylbm/__init__.py"
+          "path": "pylbm/__init__.py",
+          "pattern": "__version__ = \"([^\"]+)\""
         }
       ]
     }
