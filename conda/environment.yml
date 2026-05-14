@@ -23,4 +23,5 @@ dependencies:
   - ipywidgets
   - nbval
   - flake8
+  - pip
   - pytest-pylint
