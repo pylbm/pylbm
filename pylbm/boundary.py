@@ -886,7 +886,7 @@ class NeumannZ(Neumann):
         k = self.istore[0]
         v = self.stencil.get_all_velocities()
         indices = self.istore[1:].copy()
-        indices[1] += v[k].T[2]
+        indices[2] += v[k].T[2]
         self.iload.append(np.concatenate([k[np.newaxis, :], indices]))
 
     @property
