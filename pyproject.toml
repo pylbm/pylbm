@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "A flexible Python package for lattice Boltzmann method"
 readme = "README.rst"
 license = "BSD-3-Clause"
-requires-python = ">=3.6"
+requires-python = ">=3.10"
 authors = [
     { name = "Benjamin Graille", email = "benjamin.graille@universite-paris-saclay.fr" },
     { name = "Loic Gouarin", email = "loic.gouarin@polytechnique.edu" },
@@ -46,7 +46,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-gpu = ["loo.py==2017.2", "pyopencl"]
+gpu = ["loopy>=2025.2", "pyopencl"]
 
 [project.urls]
 Source = "https://github.com/pylbm/pylbm"

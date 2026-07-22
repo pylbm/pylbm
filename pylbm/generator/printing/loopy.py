@@ -324,12 +324,31 @@ class LoopyCodePrinter(CodePrinter):
         if isinstance(lhs, (MatrixBase, MatrixSymbol, MatrixSlice)):
             # Here we form an Assignment for each element in the array,
             # printing each one.
-            lines = []
+            codes = []
             for i, j in self._traverse_matrix_indices(lhs):
                 if lhs[i, j] != rhs[i, j]:
                     temp = Assignment(lhs[i, j], rhs[i, j])
-                    code0 = self._print(temp)
-                    lines.append(code0)  # + self.get_dep())
+                    codes.append(self._print(temp))
+
+            if len(codes) > 1:
+                # Each row of a matrix assignment writes a distinct
+                # array element by construction, so rows never alias
+                # one another. loopy's variable-access-ordering check
+                # cannot infer that on its own and refuses to schedule
+                # same-array accesses without an explicit ordering, so
+                # mark each row nosync with its siblings. `group` must
+                # match the enclosing `with {id_prefix=...}` set up in
+                # doprint(), which has already incremented self.instr
+                # by the time this method runs.
+                group = self.instr - 1
+                ids = ["inst_%d_r%d" % (group, k) for k in range(len(codes))]
+                lines = [
+                    "%s {id=%s, nosync=%s}"
+                    % (code0, ids[k], ":".join(i for i in ids if i != ids[k]))
+                    for k, code0 in enumerate(codes)
+                ]
+            else:
+                lines = codes
             return "\n".join(lines)
         else:
             lhs_code = self._print(lhs)
@@ -388,7 +407,7 @@ class LoopyCodePrinter(CodePrinter):
 
         tab = "    "
         inc_tokenb = ("for", '"""  # noqa', "with", "if")
-        dec_token = ("end\n", "])#endArg\n")
+        dec_token = ("end\n", "])#endArg\n", "))#endArg\n")
 
         code = [line.lstrip(" \t") for line in code]
 

@@ -1421,7 +1421,7 @@ class LoopyCodeGen(CodeGen):
         code_list.append("[")
         args = ",\n".join(args)
         code_list.append(args)
-        code_list.append("])#endArg\n")
+        code_list.append("], lang_version=(2018, 2))#endArg\n")
 
         # add type
         dim = len(routine.idx_vars)
@@ -1446,7 +1446,8 @@ class LoopyCodeGen(CodeGen):
             i += 1
         code_list.append("{name} = lp.expand_subst({name})\n".format(name=routine.name))
         code_list.append(
-            "{name} = lp.set_options({name}, no_numpy = True)\n".format(
+            "{name} = lp.set_options({name}, no_numpy = True, "
+            'enforce_array_accesses_within_bounds="no_check")\n'.format(
                 name=routine.name
             )
         )
@@ -1457,8 +1458,11 @@ class LoopyCodeGen(CodeGen):
                 indices = []
                 for idx in routine.idx_vars:
                     indices.append("%s__inner" % idx.label)
+                # loopy>=2025.2 deprecates the implicit default_tag of
+                # add_prefetch; "l.auto" reproduces the historical
+                # behavior and silences the deprecation warning.
                 code_list.append(
-                    '{name} = lp.add_prefetch({name}, "{var}", "{label}", fetch_bounding_box=True)\n'.format(
+                    '{name} = lp.add_prefetch({name}, "{var}", "{label}", fetch_bounding_box=True, default_tag="l.auto")\n'.format(
                         name=routine.name, var=var.base.label, label=",".join(indices)
                     )
                 )

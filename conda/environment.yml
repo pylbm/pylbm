@@ -24,4 +24,3 @@ dependencies:
   - nbval
   - flake8
   - pip
-  - pytest-pylint

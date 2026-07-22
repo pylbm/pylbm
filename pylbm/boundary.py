@@ -385,7 +385,7 @@ class BoundaryMethod:
                 import pyopencl.array  # pylint: disable=unused-variable
                 from .context import queue
             except ImportError:
-                raise ImportError("Please install loo.py")
+                raise ImportError("Please install pylbm[gpu]")
 
             self.rhs = cl.array.to_device(queue, self.rhs)
             if hasattr(self, "s"):

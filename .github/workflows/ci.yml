@@ -67,9 +67,45 @@ jobs:
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
+      - name: Lint with pylint
+        shell: bash -el {0}
+        run: |
+          pylint --rcfile=.pylintrc --disable=all --enable=E,F pylbm
+
       - name: Test with pytest
         shell: bash -el {0}
         run: |
-          pytest --pylint --pylint-rcfile=.pyrcfile --pylint-error-types=EF pylbm
           pytest --nbval-lax notebooks
-          cd tests; pytest --mpl --h5diff -m "not slow" --cov=pylbm
+          cd tests; pytest --mpl --h5diff -m "not gpu and not slow" --cov=pylbm
+
+  gpu:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Add pocl to the conda environment file
+        run: |
+          cp conda/environment.yml conda/environment-gpu.yml
+          echo "  - pocl" >> conda/environment-gpu.yml
+          echo "  - ocl-icd" >> conda/environment-gpu.yml
+
+      - name: install mamba
+        uses: conda-incubator/setup-miniconda@v4
+        with:
+          environment-file: conda/environment-gpu.yml
+          activate-environment: pylbm-env
+
+      - name: Install pylbm[gpu]
+        shell: bash -el {0}
+        run: |
+          pip install .[gpu]
+
+      - name: Test GPU backend with pytest
+        shell: bash -el {0}
+        run: |
+          echo "OpenCL ICD vendor files in this env:"
+          ls -la "$CONDA_PREFIX/etc/OpenCL/vendors/" || echo "(directory not found)"
+          export OCL_ICD_VENDORS="$CONDA_PREFIX/etc/OpenCL/vendors"
+          cd tests; pytest -m gpu test_gpu_backend_2d.py
