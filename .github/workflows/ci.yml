@@ -111,4 +111,7 @@ jobs:
       - name: Test GPU backend with pytest
         shell: bash -el {0}
         run: |
+          echo "OpenCL ICD vendor files in this env:"
+          ls -la "$CONDA_PREFIX/etc/OpenCL/vendors/" || echo "(directory not found)"
+          export OCL_ICD_VENDORS="$CONDA_PREFIX/etc/OpenCL/vendors"
           cd tests; pytest -m gpu test_gpu_backend_2d.py
