@@ -82,4 +82,32 @@ jobs:
         shell: bash -el {0}
         run: |
           pytest --nbval-lax notebooks
-          cd tests; pytest --mpl --h5diff -m "not slow" --cov=pylbm
+          cd tests; pytest --mpl --h5diff -m "not gpu and not slow" --cov=pylbm
+
+  gpu:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: install mamba
+        uses: conda-incubator/setup-miniconda@v4
+        with:
+          environment-file: conda/environment.yml
+          activate-environment: pylbm-env
+
+      - name: Install pocl
+        shell: bash -el {0}
+        run: |
+          conda install -y -c conda-forge pocl ocl-icd
+
+      - name: Install pylbm[gpu]
+        shell: bash -el {0}
+        run: |
+          pip install .[gpu]
+
+      - name: Test GPU backend with pytest
+        shell: bash -el {0}
+        run: |
+          cd tests; pytest -m gpu test_gpu_backend_2d.py

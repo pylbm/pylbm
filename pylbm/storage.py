@@ -112,7 +112,7 @@ class Array:
                 import pyopencl.array  # pylint: disable=unused-variable
                 from .context import queue
             except ImportError:
-                raise ImportError("Please install loo.py")
+                raise ImportError("Please install pylbm[gpu]")
             self.array = cl.array.to_device(queue, self.array_cpu)
 
         self.swaparray = np.transpose(self.array_cpu, self.index)
@@ -141,7 +141,7 @@ class Array:
                 import pyopencl.array  # pylint: disable=unused-variable
                 from .context import queue
             except ImportError:
-                raise ImportError("Please install loo.py")
+                raise ImportError("Please install pylbm[gpu]")
             self.array = cl.array.to_device(queue, self.array_cpu)
 
     def _in(self, key):
@@ -369,7 +369,7 @@ class Array:
     # pylint: disable=too-many-locals
     def generate(self, generator):
         """
-        generate periodic conditions functions for loo.py backend.
+        generate periodic conditions functions for loopy backend.
         """
         self.generator = generator
 

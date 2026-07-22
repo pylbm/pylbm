@@ -12,6 +12,6 @@ def set_queue(backend):
         try:
             import pyopencl as cl
         except ImportError:
-            raise ImportError("Please install loo.py")
+            raise ImportError("Please install pylbm[gpu]")
         ctx = cl.create_some_context()
         queue = cl.CommandQueue(ctx)

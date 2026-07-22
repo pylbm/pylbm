@@ -9,6 +9,7 @@ Symbolic module
 """
 
 import inspect
+import weakref
 import numpy as np
 import sympy as sp
 from sympy.matrices.common import ShapeError
@@ -285,15 +286,48 @@ def recursive_sub(expr, replace):
     return new_expr
 
 
+# loopy>=2025.2 warns ("DirectCallUncachedWarning") when a
+# TranslationUnit is called directly, since it re-resolves and
+# recompiles the kernel executor on every call. Cache one executor
+# per (kernel, queue) instead, as loopy recommends.
+_loopy_executor_cache = weakref.WeakKeyDictionary()
+
+
+def _get_loopy_executor(function, queue):
+    cached = _loopy_executor_cache.get(function)
+    if cached is not None and cached[0] is queue:
+        return cached[1]
+    # loopy memoizes make_kernel, so `function` may be the very same
+    # TranslationUnit reused across independent Simulation instances
+    # even though each creates its own OpenCL context/queue. Rebuild
+    # the executor whenever the queue identity changes to avoid
+    # calling a kernel executor bound to a stale, destroyed context.
+    executor = function.executor(queue.context)
+    _loopy_executor_cache[function] = (queue, executor)
+    return executor
+
+
 def call_genfunction(function, args):
     from .monitoring import monitor
     from .context import queue
 
-    try:
-        func_args = function.arg_dict.keys()
+    # loopy>=2025.2 returns a TranslationUnit, whose kernel arguments
+    # live on its default entrypoint rather than directly on the
+    # object (`LoopKernel.arg_dict` no longer exists).
+    arg_dict = getattr(
+        function, "arg_dict", getattr(function, "default_entrypoint", None)
+    )
+    arg_dict = getattr(arg_dict, "arg_dict", arg_dict)
+
+    if isinstance(arg_dict, dict):
+        func_args = arg_dict.keys()
         d = {k: args[k] for k in func_args}  # pylint: disable=invalid-name
-        d["queue"] = queue
-    except:  # noqa: E722
+        # loopy>=2025.2 requires the queue as a positional
+        # `queue_or_context` argument; it is no longer accepted as a
+        # `queue=` keyword.
+        executor = _get_loopy_executor(function, queue)
+        monitor(executor)(queue, **d)
+    else:
         func_args = inspect.getfullargspec(function).args
         d = {k: args[k] for k in func_args}  # pylint: disable=invalid-name
-    monitor(function)(**d)
+        monitor(function)(**d)
