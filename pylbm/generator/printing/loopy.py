@@ -101,6 +101,9 @@ class LoopyCodePrinter(CodePrinter):
         self._dereference = set(settings.get("dereference", []))
         self.reserved_words = set(reserved_words)
         self.instr = 0
+        # substitution rules of the loop indices already written in the
+        # current kernel: a kernel with several loops must define them once
+        self.substitutions = {}
 
     def doprint(self, expr, assign_to=None):
         """
@@ -290,6 +293,15 @@ class LoopyCodePrinter(CodePrinter):
 
         lines.append("for %s" % ",".join(sfor))
         for i in index:
+            if i.label in self.substitutions:
+                if self.substitutions[i.label] != i.lower:
+                    raise ValueError(
+                        f"the loops over {i.label} of a Loopy kernel must start "
+                        f"at the same index ({self.substitutions[i.label]} "
+                        f"and {i.lower})"
+                    )
+                continue
+            self.substitutions[i.label] = i.lower
             lines.append("%s := %s_ + %d" % (i.label, i.label, i.lower))
 
         for e in expr.body:

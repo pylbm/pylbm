@@ -88,16 +88,13 @@ def run(dico, nsteps):
 ALGORITHMS = [
     {},
     {"lbm_algorithm": {"settings": {"m_local": False}}},
+    {"lbm_algorithm": {"settings": {"split": True}}},
     {"lbm_algorithm": {"name": pylbm.algorithm.BaseAlgorithm}},
 ]
 GENERATOR_AND_ALGORITHM = [(g, a) for g in GENERATORS for a in ALGORITHMS]
 GENERATOR_AND_ALGORITHM += [
     pytest.param("loopy", a, marks=pytest.mark.gpu) for a in ALGORITHMS
 ]
-# the split setting does not compile with Cython, with or without a source
-GENERATOR_AND_ALGORITHM.append(
-    ("numpy", {"lbm_algorithm": {"settings": {"m_local": True, "split": True}}})
-)
 
 
 @pytest.mark.parametrize("generator, algorithm", GENERATOR_AND_ALGORITHM)
