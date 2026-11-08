@@ -502,6 +502,9 @@ class BouzidiBounceBack(BoundaryMethod):
             generator,
         )
         self.s = np.empty(self.istore.shape[1])
+        # factor of the wall term rhs: 1 when the wall is closer than half
+        # a link to the fluid node, 1/(2 distance) otherwise
+        self.rhs_scale = np.empty(self.istore.shape[1])
 
     def set_iload(self):
         """
@@ -520,6 +523,7 @@ class BouzidiBounceBack(BoundaryMethod):
         iload1[1:, mask] = self.istore[1:, mask] + v[k[mask]].T
         iload2[1:, mask] = self.istore[1:, mask] + 2 * v[k[mask]].T
         self.s[mask] = 2.0 * self.distance[mask]
+        self.rhs_scale[mask] = 1.0
 
         mask = np.logical_not(mask)
         iload1[0, mask] = ksym[mask]
@@ -527,6 +531,7 @@ class BouzidiBounceBack(BoundaryMethod):
         iload1[1:, mask] = self.istore[1:, mask] + v[k[mask]].T
         iload2[1:, mask] = self.istore[1:, mask] + v[k[mask]].T
         self.s[mask] = 0.5 / self.distance[mask]
+        self.rhs_scale[mask] = 0.5 / self.distance[mask]
 
         self.iload.append(iload1)
         self.iload.append(iload2)
@@ -546,7 +551,9 @@ class BouzidiBounceBack(BoundaryMethod):
         """
         k = self.istore[:, 0]
         ksym = self.stencil.get_symmetric()[k]
-        self.rhs[:] = self.feq[k, np.arange(k.size)] - self.feq[ksym, np.arange(k.size)]
+        self.rhs[:] = self.rhs_scale * (
+            self.feq[k, np.arange(k.size)] - self.feq[ksym, np.arange(k.size)]
+        )
 
     # pylint: disable=too-many-locals
     def generate(self, sorder):
@@ -683,7 +690,34 @@ class BouzidiAntiBounceBack(BouzidiBounceBack):
         """
         k = self.istore[:, 0]
         ksym = self.stencil.get_symmetric()[k]
-        self.rhs[:] = self.feq[k, np.arange(k.size)] + self.feq[ksym, np.arange(k.size)]
+        self.rhs[:] = self.rhs_scale * (
+            self.feq[k, np.arange(k.size)] + self.feq[ksym, np.arange(k.size)]
+        )
+
+    def set_iload(self):
+        super().set_iload()
+        # The scheme reads f_q at the fluid node and one node further when
+        # the wall is closer than half a link, and f_q and f_-q at the fluid
+        # node otherwise. Only the sign of the second term differs from the
+        # Bouzidi bounce-back.
+        self.sign = np.where(self.distance < 0.5, -1.0, 1.0)
+
+    def _get_args(self, ff):
+        args = super()._get_args(ff)
+        args["sign"] = self.sign
+        return args
+
+    def move2gpu(self):
+        super().move2gpu()
+        if self.generator.backend.upper() == "LOOPY":
+            try:
+                import pyopencl as cl
+                import pyopencl.array  # pylint: disable=unused-variable
+                from .context import queue
+            except ImportError:
+                raise ImportError("Please install loo.py")
+
+            self.sign = cl.array.to_device(queue, self.sign)
 
     # pylint: disable=too-many-locals
     def generate(self, sorder):
@@ -703,6 +737,7 @@ class BouzidiAntiBounceBack(BouzidiBounceBack):
 
         istore, iload, ncond = self._get_istore_iload_symb(dim)
         rhs, dist = self._get_rhs_dist_symb(ncond)
+        sign = IndexedBase("sign", [ncond])
 
         idx = Idx(ix, (0, ncond))
         fstore = indexed(
@@ -731,7 +766,9 @@ class BouzidiAntiBounceBack(BouzidiBounceBack):
                     idx,
                     Eq(
                         fstore,
-                        -dist[idx] * fload0 + (1 - dist[idx]) * fload1 + rhs[idx],
+                        -dist[idx] * fload0
+                        + sign[idx] * (1 - dist[idx]) * fload1
+                        + rhs[idx],
                     ),
                 ),
             )
