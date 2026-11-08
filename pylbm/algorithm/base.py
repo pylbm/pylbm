@@ -71,6 +71,9 @@ from ..symbolic import (
     ix,
     iy,
     iz,
+    ix_,
+    iy_,
+    iz_,
     nx,
     ny,
     nz,
@@ -188,6 +191,19 @@ class BaseAlgorithm:
             priority=self.sorder[1:],
         )
 
+    @staticmethod
+    def _logical_order(space_index):
+        """
+        Return the space indices in the order x, y, z.
+
+        The list given by _get_space_idx_full or _get_space_idx_inner is
+        ordered by sorder to set the nesting of the loops. The function
+        indexed applies sorder itself, so it must receive the indices in
+        their logical order.
+        """
+        rank = {ix_: 0, iy_: 1, iz_: 2}
+        return sorted(space_index, key=lambda idx: rank[idx.label])
+
     def _get_indexed_on_range(self, name, space_index):
         """
         Return a SymPy matrix of indexed objects
@@ -212,7 +228,7 @@ class BaseAlgorithm:
         return indexed(
             name,
             [self.ns, nx, ny, nz],
-            [nv] + space_index,
+            [nv] + self._logical_order(space_index),
             velocities_index=range(self.ns),
             priority=self.sorder,
         )
@@ -243,7 +259,7 @@ class BaseAlgorithm:
         return indexed(
             name,
             [self.ns, nx, ny, nz],
-            [nv] + space_index,
+            [nv] + self._logical_order(space_index),
             velocities=velocities,
             priority=self.sorder,
         )
@@ -580,7 +596,10 @@ class BaseAlgorithm:
         if check_isfluid:
             valin = sp.Symbol("valin", real=True)
             in_or_out = indexed(
-                "in_or_out", [nx, ny, nz], space_index, priority=self.sorder[1:]
+                "in_or_out",
+                [nx, ny, nz],
+                self._logical_order(space_index),
+                priority=self.sorder[1:],
             )
             loop = lambda x: For(space_index, If((Eq(in_or_out, valin), x)))
         else:
