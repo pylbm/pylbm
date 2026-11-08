@@ -82,3 +82,50 @@ def test_same_results(generator, settings):
     expected = run(generator, None)
     np.testing.assert_allclose(run(generator, settings), expected, rtol=0, atol=1e-14)
     assert np.max(np.abs(expected[1])) > 1e-3
+
+
+def run_with_obstacle(generator, check_isfluid):
+    if generator == "loopy":
+        pytest.importorskip("loopy")
+        pytest.importorskip("pyopencl")
+
+    u = sp.symbols("u")
+    dico = {
+        "box": {"x": [0.0, 1.0], "y": [0.0, 1.0], "label": -1},
+        "elements": [pylbm.Circle([0.5, 0.5], 0.2, label=0)],
+        "space_step": 1.0 / 32,
+        "scheme_velocity": 1.0,
+        "schemes": [
+            {
+                "velocities": list(range(5)),
+                "conserved_moments": u,
+                "polynomials": [1, X, Y, X**2 - Y**2, X**2 + Y**2],
+                "relaxation_parameters": [0.0, 1.5, 1.5, 1.2, 1.2],
+                "equilibrium": [u, 0.1 * u, 0.2 * u, 0.0, 0.3 * u],
+            }
+        ],
+        "init": {u: lambda x, y: 1.0 + 0.1 * np.sin(2 * np.pi * x)},
+        "boundary_conditions": {0: {"method": {0: pylbm.bc.Neumann}}},
+        "lbm_algorithm": {"settings": {"check_isfluid": check_isfluid}},
+        "generator": generator,
+    }
+    sol = pylbm.Simulation(dico)
+    for _ in range(20):
+        sol.one_time_step()
+    fluid = sol.domain.in_or_out == sol.domain.valin
+    inner = tuple(slice(1, -1) for _ in range(2))
+    values = sol.m[u]
+    # Loopy gives a device array
+    values = values.get() if hasattr(values, "get") else np.asarray(values)
+    return values[fluid[inner]]
+
+
+@pytest.mark.parametrize("generator", GENERATORS)
+def test_check_isfluid(generator):
+    """
+    Skipping the solid points does not change the fluid points.
+    """
+    expected = run_with_obstacle(generator, False)
+    result = run_with_obstacle(generator, True)
+    np.testing.assert_allclose(result, expected, rtol=0, atol=1e-14)
+    assert np.max(np.abs(expected - 1.0)) > 1e-2

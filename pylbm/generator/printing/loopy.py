@@ -9,7 +9,7 @@ from sympy.core.symbol import Symbol
 
 from sympy.printing.precedence import precedence
 
-from ..ast import Assignment, AssignmentIf
+from ..ast import Assignment
 
 # dictionary mapping sympy function to (argument_conditions, C_function).
 # Used in CCodePrinter._print_Function(self)
@@ -315,14 +315,19 @@ class LoopyCodePrinter(CodePrinter):
 
     def _print_If(self, expr):
         lines = []
-        for c, e in expr.statement:
-            # temp1, temp2, cond = self.doprint(c)
-            c = c.replace(Eq, AssignmentIf)
-            lines.append("if %s" % self._print(c))
-            for ee in e:
-                temp1, temp2, output = self.doprint(ee)
-                lines.append(output)
-        lines.append("end")
+        for cond, body in expr.statement:
+            if isinstance(cond, Eq):
+                cond = "%s == %s" % (self._print(cond.lhs), self._print(cond.rhs))
+            else:
+                cond = self._print(cond)
+            lines.append("if %s" % cond)
+            for statement in body:
+                _, _, output = self.doprint(statement)
+                if isinstance(output, str):
+                    lines.append(output)
+                else:
+                    lines += output
+            lines.append("end")
         return "\n".join(lines)
 
     def _print_Assignment(self, expr):

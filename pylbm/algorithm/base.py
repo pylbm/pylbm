@@ -400,6 +400,22 @@ class BaseAlgorithm:
     def _dense_coords(self):
         return self._vectorized
 
+    def _in_or_out_args(self, simulation):
+        """
+        Return the array that tells the fluid points from the solid ones,
+        moved to the device when the container is on a GPU. The array of the
+        domain stays on the host.
+        """
+        in_or_out = simulation.domain.in_or_out
+        if not simulation.container.gpu_support:
+            return in_or_out
+        if getattr(self, "_in_or_out_cache", (None,))[0] is not in_or_out:
+            self._in_or_out_cache = (
+                in_or_out,
+                simulation.container.move2gpu(in_or_out),
+            )
+        return self._in_or_out_cache[1]
+
     def _coords_args(self, coords_halo, container):
         """
         Return the coordinate arrays given to the generated code, keyed by
@@ -745,7 +761,11 @@ class BaseAlgorithm:
         Return the code expression which  makes one time step of
         LBM algorithm on the whole inner domain.
         """
-        check_isfluid = self.settings.get("check_isfluid", False)
+        # skipping the solid points needs a loop over the points: NumPy runs
+        # each instruction on the whole domain and computes them all
+        check_isfluid = (
+            self.settings.get("check_isfluid", False) and not self._vectorized
+        )
         split = self.settings.get("split", False)
 
         space_index = self._get_space_idx_inner()
@@ -834,7 +854,7 @@ class BaseAlgorithm:
             "fnew": simulation.container.Fnew.array,
             "t": simulation.t,
             "dt": simulation.dt,
-            "in_or_out": simulation.domain.in_or_out,
+            "in_or_out": self._in_or_out_args(simulation),
             "valin": simulation.domain.valin,
         }
         for name, size in zip(["nx", "ny", "nz"], mm.nspace):

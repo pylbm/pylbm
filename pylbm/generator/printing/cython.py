@@ -1,6 +1,7 @@
 from sympy.printing.codeprinter import CodePrinter
 
 from sympy.core import sympify, Eq
+from sympy.core.relational import Equality
 from sympy.core.basic import Basic
 from sympy.core.symbol import Symbol
 from ..ast import Assignment
@@ -230,18 +231,22 @@ class CythonCodePrinter(CodePrinter):
     def _print_NegativeInfinity(self, expr):
         return "-HUGE_VAL"
 
-    # TODO Loic: fix
-    # def _print_If(self, expr):
-    #     lines = []
-    #     for c, e in expr.statement:
-    #         #temp1, temp2, cond = self.doprint(c)
-    #         c = c.replace(Eq, AssignmentIf)
-    #         lines.append("if %s:"%self._print(c))
-    #         for ee in e:
-    #             temp1, temp2, output = self.doprint(ee)
-    #             lines.append(output)
-    #     lines.append("#end")
-    #     return "\n".join(lines)
+    def _print_If(self, expr):
+        lines = []
+        for cond, body in expr.statement:
+            if isinstance(cond, Equality):
+                cond = "%s == %s" % (self._print(cond.lhs), self._print(cond.rhs))
+            else:
+                cond = self._print(cond)
+            lines.append("if %s:" % cond)
+            for statement in body:
+                _, _, output = self.doprint(statement)
+                if isinstance(output, str):
+                    lines.append(output)
+                else:
+                    lines += output
+            lines.append("#end")
+        return "\n".join(lines)
 
     def _print_Piecewise(self, expr):
         if not expr.args[-1].cond:
