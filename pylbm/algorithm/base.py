@@ -374,8 +374,31 @@ class BaseAlgorithm:
         return code
 
     @property
-    def _dense_coords(self):
+    def _local_moments(self):
+        """
+        True if the time step keeps the moments of each point in a local
+        array (setting m_local). It needs one loop over the points that runs
+        all the instructions: with split, each instruction has its own loop,
+        and NumPy runs each instruction on the whole domain, so the moments
+        are kept in the array m of the container between the instructions.
+        """
+        return (
+            self.settings.get("m_local", False)
+            and not self.settings.get("split", False)
+            and not self._vectorized
+        )
+
+    @property
+    def _vectorized(self):
+        """
+        True if the generated code runs each instruction on the whole domain
+        at once (NumPy) instead of looping over the points.
+        """
         return self.generator.backend.upper() == "NUMPY"
+
+    @property
+    def _dense_coords(self):
+        return self._vectorized
 
     def _coords_args(self, coords_halo, container):
         """
@@ -588,11 +611,9 @@ class BaseAlgorithm:
 
         """
         rhs_eq = [mm for mm in m]
-        m_local = self.settings.get("m_local", False)
-        split = self.settings.get("split", False)
 
         indices = []
-        if m_local and not split:
+        if self._local_moments:
             local_dict = {
                 "m": m,
                 "consm": self.consm,
@@ -724,18 +745,13 @@ class BaseAlgorithm:
         Return the code expression which  makes one time step of
         LBM algorithm on the whole inner domain.
         """
-        m_local = self.settings.get("m_local", False)
         check_isfluid = self.settings.get("check_isfluid", False)
         split = self.settings.get("split", False)
 
         space_index = self._get_space_idx_inner()
-        if m_local:
-            if split:
-                m = self._get_indexed_on_range("m", space_index)
-                local_vars = [m[0]]
-            else:
-                m = sp.MatrixSymbol("m", self.nm, 1)
-                local_vars = [m]
+        if self._local_moments:
+            m = sp.MatrixSymbol("m", self.nm, 1)
+            local_vars = [m]
         else:
             m = self._get_indexed_on_range("m", space_index)
             local_vars = []

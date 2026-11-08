@@ -1345,6 +1345,7 @@ class LoopyCodeGen(CodeGen):
     def _get_routine_opening(self, routine):
         """Returns the opening statements of the routine."""
         self.printer.instr = 0
+        self.printer.substitutions = {}
         code_list = []
         code_list.append("%s = lp.make_kernel(" % routine.name)
         name = []
