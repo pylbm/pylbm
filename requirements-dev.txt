@@ -11,7 +11,6 @@ cerberus
 jinja2<3.0.0
 pytest
 pylint
-pytest-pylint
 typed-ast
 pytest-cov
 pytest-mpl

@@ -92,17 +92,55 @@ class CodeWrapper(object):
 
 class CythonCodeWrapper(CodeWrapper):
     setup_template = """\
+import os
+import subprocess
 from setuptools import setup
 from setuptools import Extension
+from setuptools.command.build_ext import build_ext
 from Cython.Build import cythonize
 import numpy as np
+
+
+def gcc_major(compiler):
+    # Return the major version of GCC, or None for any other compiler
+    # (clang and Intel compilers also define __GNUC__).
+    try:
+        out = subprocess.run(
+            compiler + ["-dM", "-E", "-x", "c", os.devnull],
+            capture_output=True, text=True, check=True,
+        ).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    macros = dict(
+        line.split()[1:3] for line in out.splitlines()
+        if line.startswith("#define ") and len(line.split()) >= 3
+    )
+    if "__clang__" in macros or "__INTEL_COMPILER" in macros:
+        return None
+    if "__GNUC__" not in macros:
+        return None
+    return int(macros["__GNUC__"])
+
+
+class BuildExt(build_ext):
+    def build_extensions(self):
+        # GCC 15 SLP vectorizer miscompiles the fused one_time_step kernel
+        # on x86_64 (wrong values, then NaN), even at -O2.
+        if self.compiler.compiler_type == "unix":
+            major = gcc_major(self.compiler.compiler_so[:1])
+            if major is not None and major >= 15:
+                for ext in self.extensions:
+                    ext.extra_compile_args.append("-fno-tree-slp-vectorize")
+        super().build_extensions()
+
+
 ext_mods = [Extension(
     "{modname}",
     {pyxfilename},
     include_dirs=[np.get_include()],
     extra_compile_args=['-O3', '-w'],
 )]
-setup(ext_modules=cythonize(ext_mods))
+setup(ext_modules=cythonize(ext_mods), cmdclass={{"build_ext": BuildExt}})
 """
 
     pyproject_template = """\
