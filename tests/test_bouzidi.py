@@ -113,3 +113,50 @@ def test_bouzidi_bounce_back_couette(generator, delta):
     np.testing.assert_allclose(
         ux[:, fluid], np.broadcast_to(exact, ux[:, fluid].shape), atol=1e-12
     )
+
+
+@pytest.mark.parametrize("generator", ["numpy", "cython"])
+@pytest.mark.parametrize("delta", DELTAS)
+def test_bouzidi_anti_bounce_back_diffusion(generator, delta):
+    """
+    Steady diffusion between u = 0 at y = 0 and u = 1 on a wall at a distance
+    delta of the last fluid node, with a D2Q5 TRT scheme.
+    """
+    yw = wall_position(delta)
+
+    def value(c):
+        def wall(f, m, x, y):
+            m[u] = c
+
+        return wall
+
+    dico = {
+        "box": {"x": [0.0, 0.5], "y": [0.0, HEIGHT], "label": [-1, -1, 0, 1]},
+        "elements": [top_wall(yw)],
+        "space_step": DX,
+        "scheme_velocity": LA,
+        "schemes": [
+            {
+                "velocities": list(range(5)),
+                "conserved_moments": u,
+                "polynomials": [1, X, Y, X**2 - Y**2, X**2 + Y**2],
+                "relaxation_parameters": [0.0, 0.8, 0.8, 1.3, 1.3],
+                "equilibrium": [u, 0, 0, 0, 0.5 * u],
+            }
+        ],
+        "parameters": {LA: 1.0},
+        "init": {u: 0.0},
+        "boundary_conditions": {
+            0: {"method": {0: pylbm.bc.BouzidiAntiBounceBack}, "value": value(0.0)},
+            1: {"method": {0: pylbm.bc.BouzidiAntiBounceBack}, "value": value(1.0)},
+        },
+        "generator": generator,
+    }
+    sol = pylbm.Simulation(dico)
+    c = run_to_steady_state(sol, u)
+
+    fluid = sol.domain.y < yw
+    exact = sol.domain.y[fluid] / yw
+    np.testing.assert_allclose(
+        c[:, fluid], np.broadcast_to(exact, c[:, fluid].shape), atol=1e-12
+    )
