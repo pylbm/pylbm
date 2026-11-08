@@ -9,14 +9,15 @@ on:
   pull_request:
     branches: [master]
 
+env:
+  # UCX fails to open the network device of the GitHub runners
+  # (ud_verbs/mana_0) and Open MPI then aborts with MPI_ERR_OTHER.
+  OMPI_MCA_pml: ob1
+  OMPI_MCA_btl: self,tcp
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
-    env:
-      # UCX fails to open the network device of the GitHub runners
-      # (ud_verbs/mana_0) and Open MPI then aborts with MPI_ERR_OTHER.
-      OMPI_MCA_pml: ob1
-      OMPI_MCA_btl: self,tcp
     strategy:
       fail-fast: false
       matrix:
