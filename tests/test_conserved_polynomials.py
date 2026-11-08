@@ -12,7 +12,16 @@ from pylbm.symbolic import recursive_sub
 X, Y, LA = sp.symbols("X, Y, lambda")
 rho, qx, qy, u = sp.symbols("rho, qx, qy, u")
 
-GENERATORS = ["numpy", "cython"]
+GENERATORS = ["numpy", "cython", pytest.param("loopy", marks=pytest.mark.gpu)]
+
+
+@pytest.fixture(autouse=True)
+def skip_without_loopy(request):
+    callspec = getattr(request.node, "callspec", None)
+    if callspec and callspec.params.get("generator") == "loopy":
+        pytest.importorskip("loopy")
+        pytest.importorskip("pyopencl")
+
 
 E = 3 * (X**2 + Y**2) - 4
 EPS = sp.Rational(1, 2) * (9 * (X**2 + Y**2) ** 2 - 21 * (X**2 + Y**2) + 8)

@@ -119,7 +119,7 @@ def test_equilibrium_and_source_depending_on_space(generator, sorder):
     np.testing.assert_allclose(sol.m[2], yy * u_half, atol=1e-13)
 
 
-@pytest.mark.parametrize("generator", ["numpy", "cython"])
+@pytest.mark.parametrize("generator", GENERATORS)
 def test_space_dependent_scheme_with_boundary_values(generator):
     """
     The boundary conditions compute their equilibrium on arrays of boundary

@@ -15,6 +15,15 @@ rho, qx, qy, u = sp.symbols("rho, qx, qy, u")
 GENERATORS = ["numpy", "cython"]
 WITH_LOOPY = [*GENERATORS, pytest.param("loopy", marks=pytest.mark.gpu)]
 
+
+@pytest.fixture(autouse=True)
+def skip_without_loopy(request):
+    callspec = getattr(request.node, "callspec", None)
+    if callspec and callspec.params.get("generator") == "loopy":
+        pytest.importorskip("loopy")
+        pytest.importorskip("pyopencl")
+
+
 E = 3 * (X**2 + Y**2) - 4
 EPS = sp.Rational(1, 2) * (9 * (X**2 + Y**2) ** 2 - 21 * (X**2 + Y**2) + 8)
 QX = 3 * X * (X**2 + Y**2) - 5 * X
@@ -76,9 +85,6 @@ def periodic(schemes, generator, init=None, **kw):
 
 
 def run(dico, nsteps):
-    if dico["generator"] == "loopy":
-        pytest.importorskip("loopy")
-        pytest.importorskip("pyopencl")
     sol = pylbm.Simulation(dico)
     for _ in range(nsteps):
         sol.one_time_step()
@@ -128,7 +134,7 @@ def test_source_depending_on_time_and_on_a_conserved_moment(generator):
     np.testing.assert_allclose(sol.m[qx], fx * rho0 * times.sum(), rtol=0, atol=1e-13)
 
 
-@pytest.mark.parametrize("generator", GENERATORS)
+@pytest.mark.parametrize("generator", WITH_LOOPY)
 @pytest.mark.parametrize("source, expected", [(X, 0), (Y, 1), (Z, 2)])
 def test_source_depending_on_space(generator, source, expected):
     """
@@ -166,7 +172,7 @@ def test_source_depending_on_space(generator, source, expected):
     np.testing.assert_allclose(sol.m[u], coords[expected], rtol=0, atol=1e-14)
 
 
-@pytest.mark.parametrize("generator", GENERATORS)
+@pytest.mark.parametrize("generator", WITH_LOOPY)
 def test_same_as_adding_the_source_before_the_boundary_conditions(generator):
     """
     Adding S after the relaxation is the same scheme as adding S to the
@@ -211,7 +217,7 @@ def test_same_as_adding_the_source_before_the_boundary_conditions(generator):
     assert np.max(np.abs(ref.m[qx])) > 1e-2
 
 
-@pytest.mark.parametrize("generator", GENERATORS)
+@pytest.mark.parametrize("generator", WITH_LOOPY)
 def test_with_conserved_polynomials(generator):
     """
     A force on a TRT scheme written in a basis which contains neither 1, X
@@ -245,7 +251,7 @@ def test_with_conserved_polynomials(generator):
     np.testing.assert_allclose(sol.m[qy], 20 * 2e-3, rtol=0, atol=1e-13)
 
 
-@pytest.mark.parametrize("generator", GENERATORS)
+@pytest.mark.parametrize("generator", WITH_LOOPY)
 def test_one_scheme_out_of_two(generator):
     """
     Only the second scheme has a source, which depends on a conserved moment
