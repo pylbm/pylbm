@@ -354,26 +354,24 @@ class BoundaryMethod:
         args.update(kwargs)
         call_genfunction(self.function, args)  # pylint: disable=no-member
 
-    # pylint: disable=possibly-unused-variable
     def _get_args(self, ff):
-        dim = len(ff.nspace)
-        nx = ff.nspace[0]
-        if dim > 1:
-            ny = ff.nspace[1]
-        if dim > 2:
-            nz = ff.nspace[2]
+        """
+        Return the arguments that the generated boundary function may need,
+        keyed by the names used in the generated code.
+        """
+        args = {"f": ff.array}
+        for name, size in zip(["nx", "ny", "nz"], ff.nspace):
+            args[name] = size
 
-        f = ff.array
+        for i, iload in enumerate(self.iload):
+            args[f"iload{i}"] = iload
 
-        for i in range(len(self.iload)):
-            exec("iload{i} = self.iload[{i}]".format(i=i))  # pylint: disable=exec-used
-
-        istore = self.istore
-        rhs = self.rhs
+        args["istore"] = self.istore
+        args["rhs"] = self.rhs
         if hasattr(self, "s"):
-            dist = self.s
-        ncond = istore.shape[0]
-        return locals()
+            args["dist"] = self.s
+        args["ncond"] = self.istore.shape[0]
+        return args
 
     def move2gpu(self):
         """
@@ -534,29 +532,13 @@ class BouzidiBounceBack(BoundaryMethod):
         self.iload.append(iload2)
 
     def _get_args(self, ff):
-        dim = len(ff.nspace)
-        nx = ff.nspace[0]
-        if dim > 1:
-            ny = ff.nspace[1]
-        if dim > 2:
-            nz = ff.nspace[2]
-
-        f = ff.array
+        args = super()._get_args(ff)
         # FIXME: needed to have the same results between numpy and cython
         # That means that there are dependencies between the rhs and the lhs
         # during the loop over the boundary elements
         # check why (to test it use air_conditioning example)
-        fcopy = ff.array.copy()
-
-        for i in range(len(self.iload)):
-            exec("iload{i} = self.iload[{i}]".format(i=i))  # pylint: disable=exec-used
-
-        istore = self.istore
-        rhs = self.rhs
-        if hasattr(self, "s"):
-            dist = self.s
-        ncond = istore.shape[0]
-        return locals()
+        args["fcopy"] = ff.array.copy()
+        return args
 
     def set_rhs(self):
         """
