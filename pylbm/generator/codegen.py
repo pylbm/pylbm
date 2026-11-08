@@ -1112,10 +1112,11 @@ class CythonCodeGen(CodeGen):
 
     def _declare_locals(self, routine):
         args = []
-        for idx in routine.idx_vars:
+        # sort the declarations to get the same code from one run to another
+        for idx in sorted(routine.idx_vars, key=str):
             args.append("cdef int %s\n" % self._get_symbol(idx))
 
-        for g in routine.local_vars:
+        for g in sorted(routine.local_vars, key=str):
             if isinstance(g, Symbol):
                 args.append("cdef double %s\n" % (self._get_symbol(g)))
             else:
@@ -1402,7 +1403,7 @@ class LoopyCodeGen(CodeGen):
                             name=name, dtype=self._get_type(arg.datatype)
                         )
                     )
-        for i, arg in enumerate(routine.local_vars):
+        for i, arg in enumerate(sorted(routine.local_vars, key=str)):
             if isinstance(arg, Symbol):
                 args.append(
                     'lp.TemporaryVariable("{name}", dtype=float)'.format(
