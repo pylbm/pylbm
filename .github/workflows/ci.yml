@@ -67,9 +67,13 @@ jobs:
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
+      - name: Lint with pylint
+        shell: bash -el {0}
+        run: |
+          pylint --rcfile=.pylintrc --errors-only pylbm
+
       - name: Test with pytest
         shell: bash -el {0}
         run: |
-          pytest --pylint --pylint-rcfile=.pyrcfile --pylint-error-types=EF pylbm
           pytest --nbval-lax notebooks
           cd tests; pytest --mpl --h5diff -m "not slow" --cov=pylbm
