@@ -156,6 +156,16 @@ class BaseAlgorithm:
                         rhs = recursive_sub(v, to_subs)
                     self.source_eq.append((lhs, rhs))
 
+        # values added to the distribution functions after the relaxation:
+        # (velocity index, value) for the nonzero ones
+        self.source_distribution = []
+        if scheme.source_distribution is not None:
+            to_subs_t = [(scheme.symb_t, sp.Symbol("t"))]
+            for q, value in enumerate(scheme.source_distribution):
+                value = recursive_sub(sp.sympify(value), to_subs_full + to_subs_t)
+                if value != 0:
+                    self.source_distribution.append((q, value))
+
         self.vmax = [0] * 3
         self.vmax[: scheme.dim] = scheme.stencil.vmax
         self.local_vars = self.symb_coord_local[: self.dim]
@@ -165,6 +175,7 @@ class BaseAlgorithm:
         if self.rel_vel_symb:
             relaxation.append(self.rel_vel)
         sources = [rhs for _, rhs in self.source_eq]
+        sources += [value for _, value in self.source_distribution]
         self.routines_with_coords = {
             name
             for name, exprs in [
@@ -619,6 +630,34 @@ class BaseAlgorithm:
                 rhs_eq[lhs.i] = dummy.rhs
         return [Eq(m, sp.Matrix(rhs_eq))]
 
+    def source_distribution_local(self, f, m):
+        """
+        Return symbolic expressions which add the values of
+        ``source_distribution`` to the distribution functions.
+
+        Parameters
+        ----------
+
+        f : SymPy Matrix
+            indexed objects for the distributed functions
+
+        m : SymPy Matrix
+            indexed objects for the moments, used for the conserved
+            moments the values depend on
+
+        """
+        if not self.source_distribution:
+            return []
+        lhs = sp.Matrix([f[q] for q, _ in self.source_distribution])
+        rhs = sp.Matrix(
+            [
+                f[q] + value.subs(list(zip(self.mv, m)))
+                for q, value in self.source_distribution
+            ]
+        )
+        # f + c == f is decidable for a constant c: keep the equation
+        return [Eq(lhs, rhs, evaluate=False)]
+
     def source_term(self):
         """
         Return the code expression which computes the source terms
@@ -705,6 +744,10 @@ class BaseAlgorithm:
         fnew = self._get_indexed_on_range("fnew", space_index)
 
         internal = self.one_time_step_local(f, fnew, m)
+        # the population source is added once the step is done, whatever the
+        # algorithm: fnew holds the post-collision populations and m the
+        # moments of this step
+        internal = [*internal, *self.source_distribution_local(fnew, m)]
 
         if check_isfluid:
             valin = sp.Symbol("valin", real=True)

@@ -110,6 +110,7 @@ of this dictionary:
   - ``equilibrium``: the list of the equilibrium value of the moments,
   - ``relaxation_parameters``: the list of the relaxation parameters, (by convention, the relaxation parameter of a conserved moment is taken to 0).
   - ``conserved_polynomials`` (optional): the list of the polynomials that define the conserved moments, in the order of ``conserved_moments``. See :ref:`conserved_polynomials`.
+  - ``source_distribution`` (optional): the list of the values added to the distribution functions after the relaxation, one for each velocity. See :ref:`source_distribution`.
 
 Examples in 1D
 ==============================
@@ -464,6 +465,52 @@ so that a vectorial scheme can use it in some elementary schemes only.
 It cannot be combined with ``relative_velocity``,
 nor with ``source_terms`` acting on a moment it defines,
 and :py:class:`EquivalentEquation <pylbm.analysis.EquivalentEquation>` does not handle it.
+
+.. _source_distribution:
+
+Source added to the distribution functions
+==========================================
+
+The optional key ``source_distribution`` gives one value :math:`S_j` for each velocity of the elementary scheme.
+These values are added to the distribution functions after the relaxation, once per time step,
+so that the transport phase reads
+
+.. math::
+  :nowrap:
+
+  \begin{equation*}
+  f_j(x, t+dt) = f_j^\star(x-v_jdt, t) + S_j(x-v_jdt, t),
+  \qquad
+  0\leqslant j\leqslant q{-}1.
+  \end{equation*}
+
+The values can depend on the space variables ``X``, ``Y`` and ``Z``, on the time ``t``,
+on the conserved moments of all the elementary schemes and on the symbols of ``parameters``.
+They are evaluated with the conserved moments of the point,
+which the relaxation does not change,
+and at the time :math:`t` of the beginning of the time step, as the equilibrium.
+
+The following scheme adds a body force :math:`(F_x, F_y)` with the isotropic weights :math:`w_j` of the D2Q9 stencil,
+:math:`S_j = 3 w_j (v_j \cdot F)` in lattice units.
+The momentum of the source is :math:`F`, its mass is 0,
+so each time step adds :math:`F_x` to :math:`q_x`.
+
+:download:`script<codes/scheme_D2Q9_source_distribution.py>`
+
+.. literalinclude:: codes/scheme_D2Q9_source_distribution.py
+    :lines: 12-
+
+``source_terms`` and ``source_distribution`` do not give the same scheme.
+``source_terms`` acts on the conserved moments with a splitting:
+half of the source before the relaxation, half after.
+``source_distribution`` adds the whole source once, after the relaxation,
+with weights chosen by the user for each velocity.
+The two keys can be used in the same elementary scheme.
+
+The source is part of the distribution functions at the end of the time step:
+after one call to ``one_time_step``, ``sol.m[qx]`` contains the momentum of the source of that step.
+The populations are initialized without the source.
+Only ``one_time_step`` adds the source: the separate calls to ``relaxation`` and ``m2f`` do not.
 
 The vectorial schemes
 ******************************

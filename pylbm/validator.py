@@ -234,6 +234,10 @@ def validate(dico, name):
             ],
             "dependencies": "conserved_moments",
         },
+        "source_distribution": {
+            "type": "list",
+            "schema": {"anyof_type": ["number", "expr"]},
+        },
         "source_terms": {
             "type": "dict",
             "keysrules": {"type": "symbol"},
