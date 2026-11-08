@@ -40,11 +40,15 @@ def run_to_steady_state(sol, moment):
 
 @pytest.mark.parametrize("generator", ["numpy", "cython"])
 @pytest.mark.parametrize("delta", DELTAS)
-def test_bouzidi_bounce_back_couette(generator, delta):
+@pytest.mark.parametrize("x_boundary", ["periodic", "profile"])
+def test_bouzidi_bounce_back_couette(generator, delta, x_boundary):
     """
     Couette flow between a fixed wall (y = 0) and a wall moving at uw, at a
-    distance delta of the last fluid node. The inlet and the outlet impose
-    the exact profile, so that every cut link has a consistent value.
+    distance delta of the last fluid node. The x direction is either
+    periodic, or closed by an inlet and an outlet that impose the exact
+    profile. The periodic case checks the diagonal links at the corners,
+    which leave the domain through the wall and not through the periodic
+    face.
     """
     uw = 0.05
     yw = wall_position(delta)
@@ -60,8 +64,13 @@ def test_bouzidi_bounce_back_couette(generator, delta):
 
         return wall
 
+    x_label = -1 if x_boundary == "periodic" else 2
     dico = {
-        "box": {"x": [0.0, 0.5], "y": [0.0, HEIGHT], "label": [2, 2, 0, 1]},
+        "box": {
+            "x": [0.0, 0.5],
+            "y": [0.0, HEIGHT],
+            "label": [x_label, x_label, 0, 1],
+        },
         "elements": [top_wall(yw)],
         "space_step": DX,
         "scheme_velocity": LA,
@@ -98,13 +107,14 @@ def test_bouzidi_bounce_back_couette(generator, delta):
                 "method": {0: pylbm.bc.BouzidiBounceBack},
                 "value": velocity(lambda y: uw),
             },
-            2: {
-                "method": {0: pylbm.bc.BouzidiBounceBack},
-                "value": velocity(lambda y: uw * y / yw),
-            },
         },
         "generator": generator,
     }
+    if x_boundary == "profile":
+        dico["boundary_conditions"][2] = {
+            "method": {0: pylbm.bc.BouzidiBounceBack},
+            "value": velocity(lambda y: uw * y / yw),
+        }
     sol = pylbm.Simulation(dico)
     ux = run_to_steady_state(sol, qx)
 

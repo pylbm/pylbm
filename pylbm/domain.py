@@ -498,7 +498,10 @@ class Domain:
             # loop over the velocities
             for k, vk in np.ndenumerate(uvel):
                 indices = [k] + [slice(None)] * self.dim
-                if vk < 0 and label[2 * iuvel] != -2:
+                # Periodic faces (-1) and MPI interfaces (-2) are not walls:
+                # they must not claim a link, otherwise a diagonal link at a
+                # corner that leaves through a wall gets no boundary condition.
+                if vk < 0 and label[2 * iuvel] not in (-1, -2):
                     for i in range(-vk):
                         indices[iuvel + 1] = i
                         dvik = -(i + 0.5) / vk
@@ -508,7 +511,7 @@ class Domain:
                         if self.compute_normal:
                             norm_view[tuple(nind + [slice(0, iuvel)])] = 0
                             norm_view[tuple(nind + [iuvel])] = -1
-                elif vk > 0 and label[2 * iuvel + 1] != -2:
+                elif vk > 0 and label[2 * iuvel + 1] not in (-1, -2):
                     for i in range(vk):
                         indices[iuvel + 1] = -i - 1
                         dvik = (i + 0.5) / vk
