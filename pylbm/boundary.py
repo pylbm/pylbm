@@ -215,6 +215,8 @@ class BoundaryMethod:
         self.iload = []
         self.nspace = nspace
         self.generator = generator
+        # copies on the device of the arrays of _host_args (Loopy backend)
+        self._device_args = None
 
         # used if time boundary
         self.func = []
@@ -360,6 +362,19 @@ class BoundaryMethod:
         args.update(kwargs)
         call_genfunction(self.function, args)  # pylint: disable=no-member
 
+    def _host_args(self):
+        """
+        Return the arrays of the boundary that the generated function may
+        need, keyed by the names used in the generated code. They stay on
+        the host: set_rhs and update_feq compute with them at each step.
+        """
+        args = {f"iload{i}": iload for i, iload in enumerate(self.iload)}
+        args["istore"] = self.istore
+        args["rhs"] = self.rhs
+        if hasattr(self, "s"):
+            args["dist"] = self.s
+        return args
+
     def _get_args(self, ff):
         """
         Return the arguments that the generated boundary function may need,
@@ -369,19 +384,18 @@ class BoundaryMethod:
         for name, size in zip(["nx", "ny", "nz"], ff.nspace):
             args[name] = size
 
-        for i, iload in enumerate(self.iload):
-            args[f"iload{i}"] = iload
-
-        args["istore"] = self.istore
-        args["rhs"] = self.rhs
-        if hasattr(self, "s"):
-            args["dist"] = self.s
+        if self._device_args is None:
+            args.update(self._host_args())
+        else:
+            # rhs is computed on the host at each step
+            self._device_args["rhs"].set(self.rhs)
+            args.update(self._device_args)
         args["ncond"] = self.istore.shape[0]
         return args
 
     def move2gpu(self):
         """
-        Move arrays needed to compute the boundary on the GPU memory.
+        Copy the arrays needed to compute the boundary to the GPU memory.
         """
         if self.generator.backend.upper() == "LOOPY":
             try:
@@ -391,14 +405,10 @@ class BoundaryMethod:
             except ImportError:
                 raise ImportError("Please install pylbm[gpu]")
 
-            self.rhs = cl.array.to_device(queue, self.rhs)
-            if hasattr(self, "s"):
-                self.s = cl.array.to_device(
-                    queue, self.s
-                )  # pylint: disable=attribute-defined-outside-init
-            self.istore = cl.array.to_device(queue, self.istore)
-            for i in range(len(self.iload)):
-                self.iload[i] = cl.array.to_device(queue, self.iload[i])
+            self._device_args = {
+                name: cl.array.to_device(queue, array)
+                for name, array in self._host_args().items()
+            }
 
 
 class BounceBack(BoundaryMethod):
@@ -708,22 +718,10 @@ class BouzidiAntiBounceBack(BouzidiBounceBack):
         # Bouzidi bounce-back.
         self.sign = np.where(self.distance < 0.5, -1.0, 1.0)
 
-    def _get_args(self, ff):
-        args = super()._get_args(ff)
+    def _host_args(self):
+        args = super()._host_args()
         args["sign"] = self.sign
         return args
-
-    def move2gpu(self):
-        super().move2gpu()
-        if self.generator.backend.upper() == "LOOPY":
-            try:
-                import pyopencl as cl
-                import pyopencl.array  # pylint: disable=unused-variable
-                from .context import queue
-            except ImportError:
-                raise ImportError("Please install pylbm[gpu]")
-
-            self.sign = cl.array.to_device(queue, self.sign)
 
     # pylint: disable=too-many-locals
     def generate(self, sorder):
