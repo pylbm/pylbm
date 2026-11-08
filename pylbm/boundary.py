@@ -715,7 +715,7 @@ class BouzidiAntiBounceBack(BouzidiBounceBack):
                 import pyopencl.array  # pylint: disable=unused-variable
                 from .context import queue
             except ImportError:
-                raise ImportError("Please install loo.py")
+                raise ImportError("Please install pylbm[gpu]")
 
             self.sign = cl.array.to_device(queue, self.sign)
 
