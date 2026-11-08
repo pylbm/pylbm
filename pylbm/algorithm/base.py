@@ -366,26 +366,29 @@ class BaseAlgorithm:
     def _dense_coords(self):
         return self.generator.backend.upper() == "NUMPY"
 
-    def _coords_args(self, coords_halo):
+    def _coords_args(self, coords_halo, container):
         """
         Return the coordinate arrays given to the generated code, keyed by
-        the names of the space variables.
+        the names of the space variables. They are moved to the device when
+        the container is on a GPU.
         """
-        if not self._dense_coords:
-            return {self.symb_coord[d].name: coords_halo[d] for d in range(self.dim)}
-
         key = tuple(c.size for c in coords_halo)
-        if getattr(self, "_dense_coords_cache", (None,))[0] != key:
-            grids = np.meshgrid(*coords_halo[: self.dim], indexing="ij")
-            axes = np.argsort(self.sorder[1:])
-            self._dense_coords_cache = (
-                key,
-                {
+        if getattr(self, "_coords_cache", (None,))[0] != key:
+            if self._dense_coords:
+                grids = np.meshgrid(*coords_halo[: self.dim], indexing="ij")
+                axes = np.argsort(self.sorder[1:])
+                coords = {
                     self.symb_coord[d].name: np.ascontiguousarray(np.transpose(g, axes))
                     for d, g in enumerate(grids)
-                },
-            )
-        return self._dense_coords_cache[1]
+                }
+            else:
+                coords = {
+                    self.symb_coord[d].name: coords_halo[d] for d in range(self.dim)
+                }
+            if container.gpu_support:
+                coords = {k: container.move2gpu(v) for k, v in coords.items()}
+            self._coords_cache = (key, coords)
+        return self._coords_cache[1]
 
     def transport_local(self, f, fnew):
         """
@@ -784,7 +787,7 @@ class BaseAlgorithm:
         coords_halo = simulation.domain.coords_halo
         if list(mm.nspace) == [c.size for c in coords_halo]:
             if self.uses_coords:
-                args.update(self._coords_args(coords_halo))
+                args.update(self._coords_args(coords_halo, simulation.container))
             else:
                 for d in range(len(mm.nspace)):
                     args[self.symb_coord[d].name] = coords_halo[d]
