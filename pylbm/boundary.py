@@ -272,7 +272,13 @@ class BoundaryMethod:
                         x = x[:, np.newaxis]
                     coords += (x,)
 
-                m = Array(nv, nspace, 0, sorder, gpu_support=gpu_support)
+                m = Array(
+                    simulation.container.nm,
+                    nspace,
+                    0,
+                    sorder,
+                    gpu_support=gpu_support,
+                )
                 m.set_conserved_moments(simulation.scheme.consm)
 
                 f = Array(nv, nspace, 0, sorder, gpu_support=gpu_support)

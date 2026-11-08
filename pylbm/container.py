@@ -15,13 +15,16 @@ class BaseContainer:
         self.mpi_topo = domain.mpi_topo
 
         self.nv = scheme.stencil.nv_ptr[-1]
+        # number of moments: nv, plus the conserved moments defined
+        # with conserved_polynomials
+        self.nm = scheme.nmoments
         self.nspace = domain.global_size
         self.vmax = domain.stencil.vmax
         self.sorder = sorder
 
         if sorder:
             self.m = Array(
-                self.nv,
+                self.nm,
                 self.nspace,
                 self.vmax,
                 sorder,
@@ -38,7 +41,7 @@ class BaseContainer:
             )
         else:
             self.m = default_type(
-                self.nv,
+                self.nm,
                 self.nspace,
                 self.vmax,
                 self.mpi_topo,

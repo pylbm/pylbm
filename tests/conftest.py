@@ -419,6 +419,9 @@ class H5Comparison:
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "H5_file_compare: Compares H5 file")
+    config.addinivalue_line(
+        "markers", "gpu: needs loopy and pyopencl (pip install pylbm[gpu])"
+    )
 
     if (
         config.getoption("--h5diff")
