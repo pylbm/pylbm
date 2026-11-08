@@ -1342,6 +1342,29 @@ class LoopyCodeGen(CodeGen):
         code_lines = ["import loopy as lp\n", "import numpy as np\n"]
         return code_lines + ["\n\n"]
 
+    @staticmethod
+    def _loop_indices(routine):
+        """
+        Return the loop indices of the routine in the order of the loops,
+        from the outermost to the innermost: pylbm orders the loops with the
+        storage order, so that the innermost index is the most contiguous
+        one. The indices outside of the loops come last, sorted by name.
+        """
+        from .ast import For
+
+        order = []
+
+        def visit(expr):
+            if isinstance(expr, For):
+                order.extend(i for i in expr.target if i not in order)
+                for statement in expr.body.args:
+                    visit(statement)
+
+        for statement in routine.statements:
+            visit(statement)
+        others = [i for i in routine.idx_vars if i not in order]
+        return order + sorted(others, key=str)
+
     def _get_routine_opening(self, routine):
         """Returns the opening statements of the routine."""
         self.printer.instr = 0
@@ -1349,7 +1372,7 @@ class LoopyCodeGen(CodeGen):
         code_list.append("%s = lp.make_kernel(" % routine.name)
         name = []
         bounds = []
-        for i in routine.idx_vars:
+        for i in self._loop_indices(routine):
             if isinstance(i, Idx):
                 name.append("%s_" % i.label)
                 bounds.append(
@@ -1433,9 +1456,12 @@ class LoopyCodeGen(CodeGen):
         if dim == 3:
             block_size = [4, 4, 4]
 
-        # for i, idx in enumerate(routine.idx_vars[-1::-1]):
+        # the innermost index, which is the most contiguous in memory, goes
+        # to the first axis of the work groups so that consecutive work
+        # items access consecutive memory
+        loop_indices = self._loop_indices(routine)
         i = 0
-        for idx in routine.idx_vars:
+        for idx in loop_indices[::-1]:
             code_list.append(
                 '{name} = lp.split_iname({name}, "{label}", {block}, outer_tag="g.{ilabel}", inner_tag="l.{ilabel}")'.format(
                     name=routine.name,
@@ -1457,7 +1483,7 @@ class LoopyCodeGen(CodeGen):
         if prefetch:
             for var in prefetch:
                 indices = []
-                for idx in routine.idx_vars:
+                for idx in loop_indices:
                     indices.append("%s__inner" % idx.label)
                 # loopy>=2025.2 deprecates the implicit default_tag of
                 # add_prefetch; "l.auto" reproduces the historical
