@@ -80,7 +80,9 @@ class CodeWrapper(object):
         command.extend(self.flags)
 
         try:
-            retoutput = check_output(command, stderr=STDOUT)
+            # run in the working directory so that the build does not read
+            # the user's setup files nor write into the current directory
+            retoutput = check_output(command, stderr=STDOUT, cwd=self.workdir)
         except CalledProcessError as e:
             raise CodeWrapError(
                 "Error while executing command: %s. Command output is:\n%s"
