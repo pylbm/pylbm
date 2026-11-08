@@ -98,10 +98,13 @@ class BaseAlgorithm:
         self.symb_coord = scheme.symb_coord
         self.dim = scheme.dim
         self.ns = scheme.stencil.nv_ptr[-1]
+        # number of moments stored for each point: ns, plus the conserved
+        # moments defined with conserved_polynomials
+        self.nm = scheme.nmoments
         self.M = scheme.M.subs(scheme.param.items())
         self.invM = scheme.invM.subs(scheme.param.items())
         self.all_velocities = scheme.stencil.get_all_velocities()
-        self.mv = sp.MatrixSymbol("m", self.ns, 1)
+        self.mv = sp.MatrixSymbol("m", self.nm, 1)
 
         if scheme.rel_vel is not None:
             self.rel_vel_symb = [rel_ux, rel_uy, rel_uz][: self.dim]
@@ -266,13 +269,21 @@ class BaseAlgorithm:
             indexed objects for each velocity
 
         """
+        size = self._size(name)
         return indexed(
             name,
-            [self.ns, nx, ny, nz],
+            [size, nx, ny, nz],
             [nv] + self._logical_order(space_index),
-            velocities_index=range(self.ns),
+            velocities_index=range(size),
             priority=self.sorder,
         )
+
+    def _size(self, name):
+        """
+        Return the number of components of the array called name:
+        the number of moments for m, the number of velocities otherwise.
+        """
+        return self.nm if name == "m" else self.ns
 
     def _get_indexed_on_velocities(self, name, space_index, velocities):
         """
@@ -299,7 +310,7 @@ class BaseAlgorithm:
         """
         return indexed(
             name,
-            [self.ns, nx, ny, nz],
+            [self._size(name), nx, ny, nz],
             [nv] + self._logical_order(space_index),
             velocities=velocities,
             priority=self.sorder,
@@ -681,7 +692,7 @@ class BaseAlgorithm:
                 m = self._get_indexed_on_range("m", space_index)
                 local_vars = [m[0]]
             else:
-                m = sp.MatrixSymbol("m", self.ns, 1)
+                m = sp.MatrixSymbol("m", self.nm, 1)
                 local_vars = [m]
         else:
             m = self._get_indexed_on_range("m", space_index)

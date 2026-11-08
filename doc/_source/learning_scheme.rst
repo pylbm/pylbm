@@ -109,6 +109,7 @@ of this dictionary:
   - ``polynomials``: the list of the polynomials that define the moments, the polynomials are built with the symbolic variables X, Y, and Z,
   - ``equilibrium``: the list of the equilibrium value of the moments,
   - ``relaxation_parameters``: the list of the relaxation parameters, (by convention, the relaxation parameter of a conserved moment is taken to 0).
+  - ``conserved_polynomials`` (optional): the list of the polynomials that define the conserved moments, in the order of ``conserved_moments``. See :ref:`conserved_polynomials`.
 
 Examples in 1D
 ==============================
@@ -407,6 +408,62 @@ by the relations
   \right.
   \end{equation*}
 
+.. _conserved_polynomials:
+
+Conserved moments outside of the basis
+======================================
+
+By default, each conserved moment is one of the moments of the basis:
+its polynomial is the one of the row where it appears as its own equilibrium value.
+The equilibrium must therefore contain the symbol of every conserved moment,
+and the polynomial of every conserved moment must be in ``polynomials``.
+
+The optional key ``conserved_polynomials`` removes these two constraints.
+It gives one polynomial :math:`P^c_i` for each conserved moment, in the order of ``conserved_moments``,
+and the conserved moments are computed as :math:`c_i = \sum_j P^c_i(v_j) f_j`.
+The relaxation then reads
+
+.. math::
+  :nowrap:
+
+  \begin{equation*}
+  m_k^\star = m_k - s_k \bigl(m_k - m_k^{\textrm{eq}}(c_0, c_1, \ldots)\bigr),
+  \qquad
+  0\leqslant k\leqslant q{-}1,
+  \end{equation*}
+
+for all the moments of the basis, which do not have to contain the conserved moments.
+This allows
+
+- a basis where the conserved polynomials are not rows,
+  such as the TRT basis made of symmetric and antisymmetric pairs;
+- an equilibrium value that differs from the conserved moment itself,
+  for instance :math:`q_x + F_x/s` to add a body force :math:`F_x` through the equilibrium.
+
+The following scheme uses both: its basis contains neither :math:`1`, :math:`X` nor :math:`Y`,
+and the force enters the equilibrium of the third order moment.
+
+:download:`script<codes/scheme_D2Q9_conserved_polynomials.py>`
+
+.. literalinclude:: codes/scheme_D2Q9_conserved_polynomials.py
+    :lines: 12-
+
+The conserved moments are stored before the moments of the basis,
+so that ``sol.m[0]``, ``sol.m[1]`` and ``sol.m[2]`` are :math:`\rho`, :math:`q_x` and :math:`q_y`,
+as without ``conserved_polynomials``,
+and ``sol.m[rho]`` gives the same array.
+The moments of the basis follow, from index 3 to 11.
+
+The populations are initialized with the equilibrium of the initial values of the conserved moments.
+When the equilibrium differs from the conserved moment, the conserved moment computed from
+the initial populations differs from its initial value: in the example above,
+it is :math:`q_x + F_x/s^-`.
+
+``conserved_polynomials`` is set for each elementary scheme,
+so that a vectorial scheme can use it in some elementary schemes only.
+It cannot be combined with ``relative_velocity``,
+nor with ``source_terms`` acting on a moment it defines,
+and :py:class:`EquivalentEquation <pylbm.analysis.EquivalentEquation>` does not handle it.
 
 The vectorial schemes
 ******************************

@@ -17,6 +17,12 @@ class EquivalentEquation:
     def __init__(self, scheme):
         # TODO: add source terms
 
+        if scheme.nmoments > scheme.stencil.nv_ptr[-1]:
+            raise NotImplementedError(
+                "the equivalent equations are not available for schemes "
+                "with 'conserved_polynomials'."
+            )
+
         t, x, y, z = sp.symbols("t x y z", type="real")
         consm = list(scheme.consm.keys())
         nconsm = len(scheme.consm)

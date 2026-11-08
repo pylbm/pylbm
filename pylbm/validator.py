@@ -227,6 +227,13 @@ def validate(dico, name):
             ],
             "required": name in ["Scheme", "Simulation"],
         },
+        "conserved_polynomials": {
+            "anyof": [
+                {"anyof_type": ["number", "expr"]},
+                {"type": "list", "schema": {"anyof_type": ["number", "expr"]}},
+            ],
+            "dependencies": "conserved_moments",
+        },
         "source_terms": {
             "type": "dict",
             "keysrules": {"type": "symbol"},

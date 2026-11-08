@@ -40,7 +40,10 @@ class Stability:
 
     def __init__(self, scheme, verbose=False):
         # pylint: disable=unsubscriptable-object
-        self.nvtot = scheme.s.shape[0]
+        # number of distribution functions, and of moments: with
+        # conserved_polynomials, there are more moments than velocities
+        self.nvtot = scheme.stencil.nv_ptr[-1]
+        nmoments = scheme.s.shape[0]
         self.consm = list(scheme.consm.keys())
         self.param = scheme.param  # dictionary of the parameters
         self.dim = scheme.dim
@@ -51,7 +54,7 @@ class Stability:
             jacobian = scheme.EQ.jacobian(self.consm)
         else:
             jacobian = (scheme.Tu * scheme.EQ).jacobian(self.consm)
-        relax_mat_m = sp.eye(self.nvtot) - sp.diag(*scheme.s)
+        relax_mat_m = sp.eye(nmoments) - sp.diag(*scheme.s)
         relax_mat_m[:, : len(self.consm)] += sp.diag(*scheme.s) * jacobian
 
         if scheme.rel_vel is not None:

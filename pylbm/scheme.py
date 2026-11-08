@@ -66,6 +66,17 @@ def param_to_tuple(param):
     return keys, values
 
 
+def _as_list(value):
+    """
+    Return a scheme entry that can be a single item or a list as a list.
+    """
+    if value is None:
+        return []
+    if isinstance(value, (list, tuple)):
+        return list(value)
+    return [value]
+
+
 # pylint: disable=invalid-name, too-many-locals, too-many-branches, too-many-statements
 class Scheme:
     """
@@ -87,6 +98,12 @@ class Scheme:
 
     - velocities : list of the velocities number
     - conserved moments : list of the moments conserved by each scheme
+    - conserved_polynomials : list of the polynomial functions that define
+      the conserved moments (optional). Without this key, each conserved
+      moment must be a row of the equilibrium, and its polynomial is the
+      one of that row. With it, the conserved moments are computed with
+      their own polynomials, which do not have to belong to the basis, and
+      the equilibrium does not have to contain them.
     - polynomials : list of the polynomial functions that define the moments
     - equilibrium : list of the values that define the equilibrium
     - relaxation_parameters : list of the value of the relaxation parameters
@@ -117,6 +134,13 @@ class Scheme:
     s  : list of list of doubles
       relaxation parameters
       (exemple: s[k][l] is the parameter associated to the lth moment in the kth scheme)
+    nmoments : int
+      the number of moments stored for each point: the number of velocities,
+      plus one for each conserved moment defined with ``conserved_polynomials``.
+      These moments are computed by the extra rows of M (``m = M f``, M has
+      nmoments rows), they are not used by invM, they keep their value during
+      the relaxation (relaxation parameter 0) and their equilibrium is
+      themselves.
     M : sympy matrix
       the symbolic matrix of the moments
     Mnum : numpy array
@@ -172,12 +196,15 @@ class Scheme:
         self._source_terms = [s.get("source_terms", None) for s in scheme]
         self.EQ = self._get_equilibrium(scheme)
 
+        self.consm = self._get_conserved_moments(scheme)
+        self._add_conserved_polynomials(scheme)
+        self.nmoments = self.M.shape[0]
+
         self.s_no_swap = self.s.copy()
         self.EQ_no_swap = self.EQ.copy()
         self.M_no_swap = self.M.copy()
         self.invM_no_swap = self.invM.copy()
 
-        self.consm = self._get_conserved_moments(scheme)
         # put conserved moments at the beginning of EQ and s
         # and permute M, invM, Tu, and Tmu accordingly
         self._permute_consm_in_front()
@@ -535,8 +562,7 @@ class Scheme:
         # verification
         res = self.Tu * self.Tmu
         alltogether(res)
-        gshape = self.stencil.nv_ptr[-1]
-        test = res == sp.eye(gshape)
+        test = res == sp.eye(self.Tu.shape[0])
         if not test:
             log.warning(
                 "The property on the translation matrix is not verified\n T(u) * T(-u) is not identity !!!"
@@ -564,7 +590,9 @@ class Scheme:
         """
         # verification
         gshape = self.stencil.nv_ptr[-1]
-        dummy = M * invM
+        # with conserved_polynomials, M has extra rows and invM is only
+        # a left inverse
+        dummy = invM * M if M.shape[0] > M.shape[1] else M * invM
         alltogether(dummy)
         test = dummy == sp.eye(gshape)
         if not test:
@@ -592,19 +620,84 @@ class Scheme:
         """
         from collections import OrderedDict
 
-        consm_tmp = [s.get("conserved_moments", None) for s in scheme]
         consm = OrderedDict()
+        # the conserved moments defined by conserved_polynomials get
+        # new rows, after the ones of the basis
+        iextra = self.stencil.nv_ptr[-1]
 
-        for i in range(len(self.stencil.nv_ptr) - 1):
+        for i, s in enumerate(scheme):
+            cm_ieq = _as_list(s.get("conserved_moments", None))
+            if s.get("conserved_polynomials", None) is not None:
+                for c in cm_ieq:
+                    consm[c] = iextra
+                    iextra += 1
+                continue
             leq = self.EQ[self.stencil.nv_ptr[i] : self.stencil.nv_ptr[i + 1]]
-            cm_ieq = consm_tmp[i]
-            if cm_ieq is not None:
-                if isinstance(cm_ieq, (sp.Symbol, sp.IndexedBase)):
-                    consm[cm_ieq] = self.stencil.nv_ptr[i] + leq.index(cm_ieq)
-                else:
-                    for c in cm_ieq:
-                        consm[c] = self.stencil.nv_ptr[i] + leq.index(c)
+            for c in cm_ieq:
+                if c not in leq:
+                    raise ValueError(
+                        f"the conserved moment {c} of the scheme {i} is not a row "
+                        "of its equilibrium. Put it in the equilibrium or define "
+                        "the conserved moments with 'conserved_polynomials'."
+                    )
+                consm[c] = self.stencil.nv_ptr[i] + leq.index(c)
         return consm
+
+    def _add_conserved_polynomials(self, scheme):
+        """
+        Add one row to M, EQ and s, and one zero column to invM, for each
+        conserved moment defined with ``conserved_polynomials``.
+        """
+        ns = self.stencil.nv_ptr[-1]
+        rows = []
+        for i, s in enumerate(scheme):
+            polynomials = _as_list(s.get("conserved_polynomials", None))
+            if not polynomials:
+                continue
+            consm = _as_list(s.get("conserved_moments", None))
+            if len(polynomials) != len(consm):
+                raise ValueError(
+                    f"the scheme {i} has {len(consm)} conserved moments but "
+                    f"{len(polynomials)} conserved polynomials."
+                )
+            if self.rel_vel is not None:
+                raise NotImplementedError(
+                    "'conserved_polynomials' cannot be used with 'relative_velocity'."
+                )
+            for p in polynomials:
+                row = sp.zeros(1, ns)
+                for j, vj in enumerate(self.stencil.v[i]):
+                    sublist = [
+                        (str(self.symb_coord[d]), sp.Integer(vj.v[d]) * self.la)
+                        for d in range(self.dim)
+                    ]
+                    row[0, self.stencil.nv_ptr[i] + j] = sp.sympify(p).subs(sublist)
+                rows.append(row)
+        if not rows:
+            return
+
+        extra = [
+            k for k, v in sorted(self.consm.items(), key=lambda kv: kv[1]) if v >= ns
+        ]
+        for i, s in enumerate(scheme):
+            for k in s.get("source_terms", None) or {}:
+                if k in extra:
+                    raise NotImplementedError(
+                        f"the source term of the scheme {i} acts on {k}, which is "
+                        "defined with 'conserved_polynomials': 'source_terms' "
+                        "cannot change such a moment. Put the source in the "
+                        "equilibrium instead."
+                    )
+
+        Mc = sp.Matrix.vstack(*rows)
+        alltogether(Mc, nsimplify=True)
+        nextra = Mc.shape[0]
+        self.M = self.M.col_join(Mc)
+        self.invM = self.invM.row_join(sp.zeros(ns, nextra))
+        self.EQ = SymbolicVector([*self.EQ, *extra])
+        self.s = SymbolicVector([*self.s, *([0] * nextra)])
+        self.Tu = sp.eye(ns + nextra)
+        self.Tmu = sp.eye(ns + nextra)
 
     def _get_indices_cons_noncons(self):
         """
