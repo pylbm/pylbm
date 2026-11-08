@@ -42,6 +42,7 @@ dependencies = [
     "mpi4py",
     "numpy>=2",
     "numpy-stl",
+    "setuptools",
     "sympy>=1.13",
 ]
 

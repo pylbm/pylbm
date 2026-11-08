@@ -24,3 +24,4 @@ dependencies:
   - nbval
   - flake8
   - pip
+  - setuptools
