@@ -63,6 +63,7 @@ Therefore, for our example we have
 
 """
 
+import numpy as np
 import sympy as sp
 from sympy import Eq
 
@@ -156,6 +157,46 @@ class BaseAlgorithm:
         self.vmax[: scheme.dim] = scheme.stencil.vmax
         self.local_vars = self.symb_coord_local[: self.dim]
         self.settings = settings if settings else {}
+        # generated routines that need the local space variables
+        relaxation = [self.eq, self.s]
+        if self.rel_vel_symb:
+            relaxation.append(self.rel_vel)
+        sources = [rhs for _, rhs in self.source_eq]
+        self.routines_with_coords = {
+            name
+            for name, exprs in [
+                ("equilibrium", [self.eq]),
+                ("relaxation", relaxation),
+                ("source_term", sources),
+                ("one_time_step", relaxation + sources),
+            ]
+            if self._depends_on_coords(exprs)
+        }
+        self.uses_coords = bool(self.routines_with_coords)
+
+    def _depends_on_coords(self, exprs):
+        """
+        Return True if one of the expressions depends on the space variables.
+        """
+        local_coords = set(self.symb_coord_local[: self.dim])
+        for expr in exprs:
+            if isinstance(expr, (list, tuple, sp.MatrixBase, SymbolicVector)):
+                if self._depends_on_coords(list(expr)):
+                    return True
+            elif isinstance(expr, sp.Basic) and expr.free_symbols & local_coords:
+                return True
+        return False
+
+    def _with_coords(self, routine, space_index, code):
+        """
+        Prepend the computation of the local space variables to the code
+        of a loop body when the routine depends on them.
+        """
+        if routine not in self.routines_with_coords:
+            return code
+        if not isinstance(code, list):
+            code = [code]
+        return [*self.coords(space_index), *code]
 
     def _get_space_idx_full(self):
         """
@@ -278,13 +319,62 @@ class BaseAlgorithm:
 
         return Eq(m_consm, sp.Matrix((self.Mu * f)[:nconsm]))
 
-    def coords(self):
-        coord = []
-        for x in self.symb_coord[: self.dim]:
-            coord.append(
-                indexed(x.name, [self.ns, nx, ny, nz], priority=self.sorder[1:])
+    def coords(self, space_index):
+        """
+        Return the symbolic expressions which set the local space variables
+        (xx, yy, zz) from the 1D arrays of coordinates (with halo) at the
+        current loop indices.
+
+        Parameters
+        ----------
+
+        space_index : list
+            the SymPy Idx of the space loops
+        """
+        idx_by_label = {idx.label: idx for idx in space_index}
+        loop_idx = [idx_by_label[label] for label in [ix_, iy_, iz_][: self.dim]]
+        sizes = [nx, ny, nz][: self.dim]
+
+        code = []
+        for d in range(self.dim):
+            if self._dense_coords:
+                # vectorized backend: the loops become slices on all the space
+                # directions, so the coordinates are arrays of the domain shape
+                x = indexed(
+                    self.symb_coord[d].name,
+                    sizes,
+                    index=loop_idx,
+                    priority=self.sorder[1:],
+                )
+            else:
+                x = sp.IndexedBase(self.symb_coord[d].name, [sizes[d]])[loop_idx[d]]
+            code.append(Eq(self.symb_coord_local[d], x))
+        return code
+
+    @property
+    def _dense_coords(self):
+        return self.generator.backend.upper() == "NUMPY"
+
+    def _coords_args(self, coords_halo):
+        """
+        Return the coordinate arrays given to the generated code, keyed by
+        the names of the space variables.
+        """
+        if not self._dense_coords:
+            return {self.symb_coord[d].name: coords_halo[d] for d in range(self.dim)}
+
+        key = tuple(c.size for c in coords_halo)
+        if getattr(self, "_dense_coords_cache", (None,))[0] != key:
+            grids = np.meshgrid(*coords_halo[: self.dim], indexing="ij")
+            axes = np.argsort(self.sorder[1:])
+            self._dense_coords_cache = (
+                key,
+                {
+                    self.symb_coord[d].name: np.ascontiguousarray(np.transpose(g, axes))
+                    for d, g in enumerate(grids)
+                },
             )
-        return [Eq(xx, x) for xx, x in zip(self.symb_coord_local[: self.dim], coord)]
+        return self._dense_coords_cache[1]
 
     def transport_local(self, f, fnew):
         """
@@ -415,7 +505,11 @@ class BaseAlgorithm:
         """
         space_index = self._get_space_idx_full()
         m = self._get_indexed_on_range("m", space_index)
-        return {"code": For(space_index, self.equilibrium_local(m))}
+        code = self._with_coords("equilibrium", space_index, self.equilibrium_local(m))
+        output = {"code": For(space_index, code)}
+        if "equilibrium" in self.routines_with_coords:
+            output["local_vars"] = self.local_vars
+        return output
 
     def relaxation_local(self, m, with_rel_velocity=False):
         """
@@ -450,7 +544,11 @@ class BaseAlgorithm:
         """
         space_index = self._get_space_idx_full()
         m = self._get_indexed_on_range("m", space_index)
-        return {"code": For(space_index, self.relaxation_local(m))}
+        code = self._with_coords("relaxation", space_index, self.relaxation_local(m))
+        output = {"code": For(space_index, code)}
+        if "relaxation" in self.routines_with_coords:
+            output["local_vars"] = self.local_vars
+        return output
 
     def source_term_local(self, m):
         """
@@ -517,7 +615,11 @@ class BaseAlgorithm:
         """
         space_index = self._get_space_idx_inner()
         m = self._get_indexed_on_range("m", space_index)
-        return {"code": For(space_index, self.source_term_local(m))}
+        code = self._with_coords("source_term", space_index, self.source_term_local(m))
+        output = {"code": For(space_index, code)}
+        if "source_term" in self.routines_with_coords:
+            output["local_vars"] = self.local_vars
+        return output
 
     def one_time_step_local(self, f, fnew, m):
         """
@@ -606,11 +708,12 @@ class BaseAlgorithm:
             loop = lambda x: For(space_index, x)
 
         if split:
-            # code = [loop([*self.coords(), i]) for i in internal]
-            code = [loop([i]) for i in internal]
+            code = [
+                loop(self._with_coords("one_time_step", space_index, [i]))
+                for i in internal
+            ]
         else:
-            # code = loop([*self.coords(), *internal])
-            code = loop([*internal])
+            code = loop(self._with_coords("one_time_step", space_index, [*internal]))
 
         return {
             "code": code,
@@ -650,40 +753,36 @@ class BaseAlgorithm:
         """
         Define all the arguments needed to call the generated code.
         """
-        if m_user:
-            mm = m_user
-        else:
-            mm = simulation.container.m
-        m = mm.array
+        mm = m_user if m_user else simulation.container.m
 
-        dim = len(mm.nspace)
-        nx = mm.nspace[0]
-        X = simulation.domain.coords[0]
-        if dim > 1:
-            ny = mm.nspace[1]
-            Y = simulation.domain.coords[1]
-        if dim > 2:
-            nz = mm.nspace[2]
-            Z = simulation.domain.coords[1]
+        args = {
+            "m": mm.array,
+            "f": f_user.array if f_user else simulation.container.F.array,
+            "fnew": simulation.container.Fnew.array,
+            "t": simulation.t,
+            "dt": simulation.dt,
+            "in_or_out": simulation.domain.in_or_out,
+            "valin": simulation.domain.valin,
+        }
+        for name, size in zip(["nx", "ny", "nz"], mm.nspace):
+            args[name] = size
 
-        if f_user:
-            f = f_user.array
-        else:
-            f = simulation.container.F.array
-        fnew = simulation.container.Fnew.array
+        # The generated loops run over the arrays with their halo, so the
+        # coordinates must include the halo too. They only make sense for
+        # arrays defined on the whole domain.
+        coords_halo = simulation.domain.coords_halo
+        if list(mm.nspace) == [c.size for c in coords_halo]:
+            if self.uses_coords:
+                args.update(self._coords_args(coords_halo))
+            else:
+                for d in range(len(mm.nspace)):
+                    args[self.symb_coord[d].name] = coords_halo[d]
 
-        t = simulation.t
-        dt = simulation.dt
-
-        in_or_out = simulation.domain.in_or_out
-        valin = simulation.domain.valin
-
-        local = locals()
         extra = {str(k): v for k, v in simulation.extra_parameters.items()}
         if extra.get("lambda", None):
             extra["lambda_"] = extra["lambda"]
-        local.update(extra)
-        return locals()
+        args.update(extra)
+        return args
 
     def call_function(
         self, function_name, simulation, m_user=None, f_user=None, **kwargs
@@ -694,6 +793,16 @@ class BaseAlgorithm:
         from ..symbolic import call_genfunction
 
         func = getattr(self.generator.module, function_name)
+
+        if (
+            m_user
+            and function_name in self.routines_with_coords
+            and list(m_user.nspace) != list(simulation.domain.shape_halo)
+        ):
+            raise NotImplementedError(
+                f"{function_name} depends on the space variables in this scheme: "
+                "it can only be called on arrays defined on the whole domain."
+            )
 
         args = self._get_args(simulation, m_user, f_user)
         args.update(kwargs)
