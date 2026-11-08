@@ -173,7 +173,6 @@ class BaseCircle:
         """
         return self.center - self.radius, self.center + self.radius
 
-    # pylint: disable=no-self-use
     def point_inside(self, grid):
         """
         return a boolean array which defines
@@ -287,7 +286,6 @@ class BaseEllipse:
         r = max(np.linalg.norm(self.v1), np.linalg.norm(self.v2))
         return self.center - r, self.center + r
 
-    # pylint: disable=no-self-use
     def point_inside(self, grid):
         """
         return a boolean array which defines
@@ -403,7 +401,6 @@ class BaseTriangle:
         )
         return np.min(box, axis=0), np.max(box, axis=0)
 
-    # pylint: disable=no-self-use
     def point_inside(self, grid):
         """
         return a boolean array which defines
@@ -525,7 +522,6 @@ class BaseParallelogram:
         )
         return np.min(box, axis=0), np.max(box, axis=0)
 
-    # pylint: disable=no-self-use
     def point_inside(self, grid):
         """
         return a boolean array which defines
