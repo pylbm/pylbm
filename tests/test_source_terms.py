@@ -7,8 +7,18 @@ import pylbm
 X, Y, Z, LA = sp.symbols("X, Y, Z, lambda")
 u = sp.symbols("u")
 
+GENERATORS = ["numpy", "cython", pytest.param("loopy", marks=pytest.mark.gpu)]
 
-@pytest.mark.parametrize("generator", ["numpy", "cython"])
+
+@pytest.fixture(autouse=True)
+def skip_without_loopy(request):
+    callspec = getattr(request.node, "callspec", None)
+    if callspec and callspec.params.get("generator") == "loopy":
+        pytest.importorskip("loopy")
+        pytest.importorskip("pyopencl")
+
+
+@pytest.mark.parametrize("generator", GENERATORS)
 @pytest.mark.parametrize(
     "source, expected",
     [
@@ -59,7 +69,7 @@ def test_source_term_uses_the_right_coordinate_in_3d(generator, source, expected
     np.testing.assert_allclose(sol.m[u], sol.dt * expected(xx, yy, zz), atol=1e-14)
 
 
-@pytest.mark.parametrize("generator", ["numpy", "cython"])
+@pytest.mark.parametrize("generator", GENERATORS)
 @pytest.mark.parametrize("sorder", [None, [2, 0, 1], [1, 2, 0]])
 def test_equilibrium_and_source_depending_on_space(generator, sorder):
     """
