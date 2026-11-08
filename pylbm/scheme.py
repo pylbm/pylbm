@@ -108,6 +108,10 @@ class Scheme:
     - equilibrium : list of the values that define the equilibrium
     - relaxation_parameters : list of the value of the relaxation parameters
     - source_terms : dictionary do define the source terms (optional, see examples)
+    - source_distribution : list of the values added to the distribution
+      functions after the relaxation, one for each velocity (optional).
+      They may depend on the space variables, on the time and on the
+      conserved moments.
     - init : dictionary to define the initial conditions (see examples)
 
     If the stencil has already been computed, it can be pass in argument.
@@ -141,6 +145,10 @@ class Scheme:
       nmoments rows), they are not used by invM, they keep their value during
       the relaxation (relaxation parameter 0) and their equilibrium is
       themselves.
+    source_distribution : SymbolicVector or None
+      the values added to the distribution functions after the relaxation,
+      one for each velocity of all the schemes (0 for a scheme without
+      ``source_distribution``), or None if no scheme has this key.
     M : sympy matrix
       the symbolic matrix of the moments
     Mnum : numpy array
@@ -199,6 +207,7 @@ class Scheme:
         self.consm = self._get_conserved_moments(scheme)
         self._add_conserved_polynomials(scheme)
         self.nmoments = self.M.shape[0]
+        self.source_distribution = self._get_source_distribution(scheme)
 
         self.s_no_swap = self.s.copy()
         self.EQ_no_swap = self.EQ.copy()
@@ -290,6 +299,7 @@ class Scheme:
         P = []
         EQ = []
         s = []
+        source = []
         header_scheme = []
         for k in range(self.nschemes):
             myslice = slice(self.stencil.nv_ptr[k], self.stencil.nv_ptr[k + 1])
@@ -297,6 +307,10 @@ class Scheme:
             P.append(sp.pretty(sp.Matrix(self.P[myslice])))
             EQ.append(sp.pretty(sp.Matrix(self.EQ_no_swap[myslice])))
             s.append(sp.pretty(sp.Matrix(self.s_no_swap[myslice])))
+            if self._has_source_distribution[k]:
+                source.append(sp.pretty(sp.Matrix(self.source_distribution[myslice])))
+            else:
+                source.append(None)
 
         if self.rel_vel:
             addons = {"rel_vel": self.rel_vel, "Tu": sp.pretty(self.Tu_no_swap)}
@@ -311,6 +325,7 @@ class Scheme:
             P=P,
             EQ=EQ,
             s=s,
+            source=source,
             M=sp.pretty(self.M_no_swap),
             invM=sp.pretty(self.invM_no_swap),
             **addons,
@@ -642,6 +657,49 @@ class Scheme:
                     )
                 consm[c] = self.stencil.nv_ptr[i] + leq.index(c)
         return consm
+
+    def _get_source_distribution(self, scheme):
+        """
+        Return the values added to the distribution functions after the
+        relaxation (``source_distribution``) for all the velocities, or None
+        if no scheme defines them.
+        """
+        self._has_source_distribution = [
+            s.get("source_distribution", None) is not None for s in scheme
+        ]
+        if not any(self._has_source_distribution):
+            return None
+
+        allowed = {self.symb_t, *self.symb_coord[: self.dim], *self.consm}
+        allowed |= set(self.param)
+        if isinstance(self.la, sp.Symbol):
+            allowed.add(self.la)
+
+        source = []
+        for i, s in enumerate(scheme):
+            nv = self.stencil.nv[i]
+            values = s.get("source_distribution", None)
+            if values is None:
+                source.extend([0] * nv)
+                continue
+            if len(values) != nv:
+                raise ValueError(
+                    f"the scheme {i} has {nv} velocities but its "
+                    f"'source_distribution' has {len(values)} values."
+                )
+            for v in values:
+                v = sp.sympify(v)
+                unknown = v.free_symbols - allowed
+                if unknown:
+                    names = ", ".join(sorted(str(u) for u in unknown))
+                    raise ValueError(
+                        f"the 'source_distribution' of the scheme {i} depends "
+                        f"on {names}: it can only depend on the space "
+                        "variables, the time, the conserved moments and the "
+                        "parameters."
+                    )
+                source.append(v)
+        return SymbolicVector(source)
 
     def _add_conserved_polynomials(self, scheme):
         """

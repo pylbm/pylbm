@@ -19,6 +19,11 @@
 
         - relaxation parameters
         {{ wrap(s[k]) | indent(12, True) }}
+        {%- if source[k] is not none %}
+
+        - source distribution
+        {{ wrap(source[k]) | indent(12, True) }}
+        {%- endif %}
 
     {%- endfor %}
 
