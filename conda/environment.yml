@@ -16,9 +16,9 @@ dependencies:
   - pytest
   - pylint
   - typed-ast
-  - pytest
   - pytest-cov
   - pytest-mpl
+  - pytest-xdist
   - codecov
   - ipywidgets
   - nbval

@@ -21,7 +21,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sympy-version: [1.13, 1.14]
         mpi:
           - openmpi
           - msmpi
@@ -38,28 +37,26 @@ jobs:
             mpi: openmpi
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Install MPI (${{ matrix.mpi }})
         run: bash .github/workflows/mpi/install-${{ matrix.mpi }}.sh
 
-      - name: install mamba
-        uses: conda-incubator/setup-miniconda@v4
+      # the environment is cached for a week: it follows the new releases of
+      # the dependencies without solving and downloading it at each run
+      - name: Get the week of the year
+        id: week
+        shell: bash
+        run: echo "week=$(date +%Y-%V)" >> "$GITHUB_OUTPUT"
+
+      - name: Install the conda environment
+        uses: mamba-org/setup-micromamba@v2
         with:
           environment-file: conda/environment.yml
-          activate-environment: pylbm-env
-
-      # - name: Set up Python ${{ matrix.python-version }}
-      #   uses: actions/setup-python@v2
-      #   with:
-      #     python-version: ${{ matrix.python-version }}
-
-      # - name: Install dependencies
-      #   run: |
-      #     python -m pip install --upgrade pip
-      #     pip install flake8 pytest
-      #     pip install -r requirements-dev.txt
-      #     pip install sympy==${{ matrix.sympy-version }}
+          environment-name: pylbm-env
+          cache-environment: true
+          cache-environment-key: environment-${{ steps.week.outputs.week }}
+          init-shell: bash
 
       - name: Install pylbm
         shell: bash -el {0}
@@ -83,14 +80,13 @@ jobs:
         shell: bash -el {0}
         run: |
           pytest --nbval-lax notebooks
-          cd tests; pytest --mpl --h5diff -m "not gpu and not slow" --cov=pylbm
+          cd tests; pytest --mpl --h5diff -m "not gpu and not slow" --cov=pylbm --numprocesses=auto
 
   gpu:
-    needs: build
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Add pocl to the conda environment file
         run: |
@@ -98,11 +94,18 @@ jobs:
           echo "  - pocl" >> conda/environment-gpu.yml
           echo "  - ocl-icd" >> conda/environment-gpu.yml
 
-      - name: install mamba
-        uses: conda-incubator/setup-miniconda@v4
+      - name: Get the week of the year
+        id: week
+        run: echo "week=$(date +%Y-%V)" >> "$GITHUB_OUTPUT"
+
+      - name: Install the conda environment
+        uses: mamba-org/setup-micromamba@v2
         with:
           environment-file: conda/environment-gpu.yml
-          activate-environment: pylbm-env
+          environment-name: pylbm-env
+          cache-environment: true
+          cache-environment-key: environment-gpu-${{ steps.week.outputs.week }}
+          init-shell: bash
 
       - name: Install pylbm[gpu]
         shell: bash -el {0}
@@ -115,4 +118,4 @@ jobs:
           echo "OpenCL ICD vendor files in this env:"
           ls -la "$CONDA_PREFIX/etc/OpenCL/vendors/" || echo "(directory not found)"
           export OCL_ICD_VENDORS="$CONDA_PREFIX/etc/OpenCL/vendors"
-          cd tests; pytest -m gpu test_gpu_backend_2d.py
+          cd tests; pytest -m gpu --numprocesses=auto
