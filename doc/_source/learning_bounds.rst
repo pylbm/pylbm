@@ -16,13 +16,26 @@ functions on nodes outside the domain. We describe
    - second, how personal boundary conditions can be implemented.
 
 The classical conditions
+========================
+
+The bounce back and anti bounce back conditions
+-----------------------------------------------
+
+The bounce back condition (*resp.* anti bounce back) is used to impose
+the odd moments (*resp.* even moments) on the bounds.
+
+When the wall cuts a link at a distance :math:`\delta` from the fluid node,
+the interpolated bounce back conditions differ by a coefficient
+:math:`\alpha(\delta)` and by a post-collision correction
+(see :py:class:`LinearBounceBack <pylbm.boundary.LinearBounceBack>`):
+
 .. list-table::
    :header-rows: 1
 
    * - class
      - :math:`\alpha(\delta)`
      - post-collision correction
-   * - :py:class:`BouzidiBounceBack <pylbm.boundary.BouzidiBounceBack>`
+   * - :py:class:`BFLBounceBack <pylbm.boundary.BFLBounceBack>`
      - :math:`2` or :math:`1/\delta`
      - no
    * - :py:class:`CLIBounceBack <pylbm.boundary.CLIBounceBack>`
@@ -39,7 +52,7 @@ The classical conditions
      - yes
 
 The anti bounce back has the same family with the symmetric parts:
-:py:class:`BouzidiAntiBounceBack <pylbm.boundary.BouzidiAntiBounceBack>`,
+:py:class:`BFLAntiBounceBack <pylbm.boundary.BFLAntiBounceBack>`,
 :py:class:`LMKCAntiBounceBack <pylbm.boundary.LMKCAntiBounceBack>` and
 :py:class:`ParLMKAAntiBounceBack <pylbm.boundary.ParLMKAAntiBounceBack>`
 (see :py:class:`LinearAntiBounceBack <pylbm.boundary.LinearAntiBounceBack>`).

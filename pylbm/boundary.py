@@ -846,7 +846,7 @@ class LinearBounceBack(BoundaryMethod):
 
     A subclass defines the scheme with the method ``alpha`` and the class
     attribute ``post_collision_correction``. :py:class:`BounceBack` is
-    :math:`\alpha = 2, \delta = 1/2`, and :py:class:`BouzidiBounceBack` is
+    :math:`\alpha = 2, \delta = 1/2`, and :py:class:`BFLBounceBack` is
     :math:`\alpha = 2` for :math:`\delta \le 1/2` and :math:`\alpha = 1/\delta`
     otherwise.
 
@@ -1087,7 +1087,7 @@ class LinearAntiBounceBack(LinearBounceBack):
 
     with :math:`\hat K = -1 - \hat\alpha` when the post-collision correction
     is applied. :py:class:`AntiBounceBack` is
-    :math:`\alpha = -2, \delta = 1/2`, and :py:class:`BouzidiAntiBounceBack`
+    :math:`\alpha = -2, \delta = 1/2`, and :py:class:`BFLAntiBounceBack`
     is :math:`\alpha = -2` for :math:`\delta \le 1/2` and
     :math:`\alpha = -1/\delta` otherwise.
     """
@@ -1135,7 +1135,7 @@ class ParYLIBounceBack(YLIBounceBack):
 
 class ParBFLBounceBack(LinearBounceBack):
     r"""
-    :py:class:`BouzidiBounceBack` with the post-collision correction:
+    :py:class:`BFLBounceBack` with the post-collision correction:
     :math:`\alpha = 2` for :math:`\delta \le 1/2`, :math:`1/\delta` otherwise.
     """
 
@@ -1161,7 +1161,7 @@ class LMKCAntiBounceBack(LinearAntiBounceBack):
 
 class ParLMKAAntiBounceBack(LinearAntiBounceBack):
     r"""
-    :py:class:`BouzidiAntiBounceBack` with the post-collision correction:
+    :py:class:`BFLAntiBounceBack` with the post-collision correction:
     :math:`\alpha = -2` for :math:`\delta \le 1/2`,
     :math:`-1/\delta` otherwise.
     """

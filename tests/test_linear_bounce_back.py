@@ -293,14 +293,14 @@ class _LMKA(LinearAntiBounceBack):
 @pytest.mark.parametrize(
     "generic, method, generators",
     [
-        (_BFL, pylbm.bc.BouzidiBounceBack, ["numpy", "cython"]),
-        (_LMKA, pylbm.bc.BouzidiAntiBounceBack, ["numpy", "cython"]),
+        (_BFL, pylbm.bc.BFLBounceBack, ["numpy", "cython"]),
+        (_LMKA, pylbm.bc.BFLAntiBounceBack, ["numpy", "cython"]),
     ],
 )
-def test_generic_scheme_gives_bouzidi(generic, method, generators):
+def test_generic_scheme_gives_bfl(generic, method, generators):
     """
-    With the coefficients of Bouzidi and without correction, the generic
-    scheme gives the Bouzidi conditions.
+    With the BFL coefficients and without correction, the generic scheme
+    gives the BFL conditions.
     """
     for generator in generators:
         np.testing.assert_allclose(
