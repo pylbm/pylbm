@@ -17,6 +17,14 @@ The classes are
    AntiBounceBack
    BFLBounceBack
    BFLAntiBounceBack
+   LinearBounceBack
+   CLIBounceBack
+   YLIBounceBack
+   ParYLIBounceBack
+   ParBFLBounceBack
+   LinearAntiBounceBack
+   LMKCAntiBounceBack
+   ParLMKAAntiBounceBack
    Neumann
    NeumannX
    NeumannY

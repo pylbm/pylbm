@@ -24,6 +24,61 @@ The bounce back and anti bounce back conditions
 The bounce back condition (*resp.* anti bounce back) is used to impose
 the odd moments (*resp.* even moments) on the bounds.
 
+When the wall cuts a link at a distance :math:`\delta` from the fluid node,
+the interpolated bounce back conditions differ by a coefficient
+:math:`\alpha(\delta)` and by a post-collision correction
+(see :py:class:`LinearBounceBack <pylbm.boundary.LinearBounceBack>`):
+
+.. list-table::
+   :header-rows: 1
+
+   * - class
+     - :math:`\alpha(\delta)`
+     - post-collision correction
+   * - :py:class:`BFLBounceBack <pylbm.boundary.BFLBounceBack>`
+     - :math:`2` or :math:`1/\delta`
+     - no
+   * - :py:class:`CLIBounceBack <pylbm.boundary.CLIBounceBack>`
+     - :math:`4/(1+2\delta)`
+     - not needed
+   * - :py:class:`YLIBounceBack <pylbm.boundary.YLIBounceBack>`
+     - :math:`2/(1+\delta)`
+     - no
+   * - :py:class:`ParYLIBounceBack <pylbm.boundary.ParYLIBounceBack>`
+     - :math:`2/(1+\delta)`
+     - yes
+   * - :py:class:`ParBFLBounceBack <pylbm.boundary.ParBFLBounceBack>`
+     - :math:`2` or :math:`1/\delta`
+     - yes
+
+The anti bounce back has the same family with the symmetric parts:
+:py:class:`BFLAntiBounceBack <pylbm.boundary.BFLAntiBounceBack>`,
+:py:class:`LMKCAntiBounceBack <pylbm.boundary.LMKCAntiBounceBack>` and
+:py:class:`ParLMKAAntiBounceBack <pylbm.boundary.ParLMKAAntiBounceBack>`
+(see :py:class:`LinearAntiBounceBack <pylbm.boundary.LinearAntiBounceBack>`).
+
+The post-collision correction adds the change of the populations during the
+previous time step, collision and source included. It makes the scheme
+parametrized: with a TRT collision, the steady solution only depends on the
+product :math:`\Lambda^+\Lambda^-` of the relaxation parameters, as for the
+bounce back. For example, a force-driven Poiseuille flow is exact for
+:math:`\Lambda^+\Lambda^- = \delta^2/2` with a wall momentum
+:math:`\Lambda^- F`, whatever the viscosity (the momentum of the stored
+populations is then the velocity plus :math:`F/2`).
+:py:class:`CLIBounceBack <pylbm.boundary.CLIBounceBack>` and
+:py:class:`LMKCAntiBounceBack <pylbm.boundary.LMKCAntiBounceBack>` are
+parametrized without correction.
+
+The correction reads the populations of the previous time step. With the
+NumPy generator, the simulation then stores them in a second array, which
+doubles the memory of the distribution functions. If the populations are
+modified between two time steps (``sol.F_halo[...] = ...``), the correction
+of the next time step is wrong.
+
+To use another interpolation, subclass ``LinearBounceBack`` or
+``LinearAntiBounceBack``, define the method ``alpha`` and set
+``post_collision_correction``.
+
 
 
 The Neumann conditions

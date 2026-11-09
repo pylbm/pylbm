@@ -10,7 +10,6 @@ Module for LBM boundary conditions
 
 import collections
 import logging
-import types
 import warnings
 import numpy as np
 from sympy import symbols, IndexedBase, Idx, Eq
@@ -225,6 +224,20 @@ class BoundaryMethod:
         self.f = []
         self.m = []
         self.indices = []
+
+    @classmethod
+    def reads_previous_populations(cls):
+        """
+        Return True if the condition reads the populations of the previous
+        time step: the simulation then passes them to update as fprevious.
+        """
+        return False
+
+    def init_previous_populations(self, container):
+        """
+        Prepare the populations of the previous time step before the first
+        one. Nothing to do for a condition that does not read them.
+        """
 
     def fix_iload(self):
         """
@@ -792,6 +805,371 @@ class BFLAntiBounceBack(BFLBounceBack):
     @property
     def function(self):
         return self.generator.module.Bouzidi_anti_bounce_back
+
+
+class LinearBounceBack(BoundaryMethod):
+    r"""
+    Linear interpolation of the bounce-back for a Dirichlet condition on
+    the antisymmetric equilibrium (velocity of a flow).
+
+    For a link cut by the wall, let :math:`x_b` be the fluid node,
+    :math:`q` the velocity that leaves :math:`x_b` towards the wall,
+    :math:`\bar q` its opposite, and :math:`\delta \in [0, 1]` the distance
+    from :math:`x_b` to the wall in link units. The population that enters
+    the fluid at the next time step is
+
+    .. math::
+
+        f_{\bar q}(x_b, t+1) = \hat\alpha \hat f_q(x_b, t)
+        + \hat\beta \hat f_{\bar q}(x_b, t) + \beta f_q(x_b, t+1)
+        - \alpha e^-_q(x_w, t) + \hat K (g^-_q + S^-_q)(x_b, t),
+
+    where :math:`\hat f` are the post-collision populations,
+    :math:`e^-_q = (f^{eq}_q - f^{eq}_{\bar q})/2` is the antisymmetric part
+    of the equilibrium computed with the moments given by the ``value``
+    function at the wall point :math:`x_w = x_b + \delta c_q`, and :math:`g^-_q + S^-_q` is the
+    antisymmetric part of the change of the populations during the time step
+    (collision and source). The coefficients only depend on
+    :math:`\alpha(\delta)`:
+
+    .. math::
+
+        \hat\alpha = -1 + \alpha (1/2 + \delta), \quad
+        \beta = 1 - \alpha \delta, \quad
+        \hat\beta = 1 - \alpha / 2,
+
+    and :math:`\hat K = 1 - \hat\alpha` when the post-collision correction
+    is applied, :math:`\hat K = 0` otherwise. With the correction, or when
+    :math:`\hat\alpha = 1`, the scheme is parametrized: with a TRT
+    collision, the steady solution depends on the relaxation rates only
+    through the product :math:`\Lambda^+\Lambda^-`, as with the bounce-back.
+
+    A subclass defines the scheme with the method ``alpha`` and the class
+    attribute ``post_collision_correction``. :py:class:`BounceBack` is
+    :math:`\alpha = 2, \delta = 1/2`, and :py:class:`BFLBounceBack` is
+    :math:`\alpha = 2` for :math:`\delta \le 1/2` and :math:`\alpha = 1/\delta`
+    otherwise.
+
+    The post-collision correction reads the populations of the previous
+    time step: with the NumPy generator, the simulation then stores them in
+    a second array.
+    """
+
+    # +1: antisymmetric part (flow), -1: symmetric part (advection-diffusion)
+    parity = 1
+    post_collision_correction = False
+
+    def alpha(self, delta):
+        """
+        Return the coefficient alpha of the scheme for the distances delta
+        (array of the distances from the fluid nodes to the wall).
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def reads_previous_populations(cls):
+        return cls.post_collision_correction
+
+    def __init__(
+        self,
+        istore,
+        ilabel,
+        distance,
+        normal,
+        stencil,
+        value_bc,
+        time_bc,
+        nspace,
+        generator,
+    ):
+        super().__init__(
+            istore,
+            ilabel,
+            distance,
+            normal,
+            stencil,
+            value_bc,
+            time_bc,
+            nspace,
+            generator,
+        )
+        sigma = self.parity
+        delta = self.distance
+        alpha = np.broadcast_to(np.asarray(self.alpha(delta), dtype=float), delta.shape)
+        self.coef_alpha = alpha.copy()
+        self.coef_alpha_hat = -sigma + alpha * (0.5 + delta)
+        self.coef_beta = sigma - alpha * delta
+        self.coef_beta_hat = 1.0 - 0.5 * sigma * alpha
+        if self.post_collision_correction:
+            self.coef_k_hat = sigma - self.coef_alpha_hat
+        else:
+            self.coef_k_hat = np.zeros_like(delta)
+
+    def set_iload(self):
+        """
+        Compute the indices that are needed: the outgoing velocity at the
+        fluid node and at the next node towards the fluid, and the incoming
+        velocity at the fluid node.
+        """
+        k = self.istore[0]
+        ksym = self.stencil.get_symmetric()[k]
+        v = self.stencil.get_all_velocities()
+        fluid = self.istore[1:] + v[k].T
+        # outgoing population at the fluid node
+        self.iload.append(np.concatenate([ksym[np.newaxis, :], fluid]).astype(np.int32))
+        # outgoing population one node further in the fluid
+        self.iload.append(
+            np.concatenate([ksym[np.newaxis, :], fluid + v[k].T]).astype(np.int32)
+        )
+        # incoming population at the fluid node
+        self.iload.append(np.concatenate([k[np.newaxis, :], fluid]).astype(np.int32))
+
+    def set_rhs(self):
+        """
+        Compute and set the wall term -alpha e_q(x_w).
+        """
+        k = self.istore[:, 0]
+        ksym = self.stencil.get_symmetric()[k]
+        n = np.arange(k.size)
+        self.rhs[:] = (
+            -0.5 * self.coef_alpha * (self.feq[ksym, n] - self.parity * self.feq[k, n])
+        )
+
+    def _host_args(self):
+        args = super()._host_args()
+        args["alpha_hat"] = self.coef_alpha_hat
+        args["beta"] = self.coef_beta
+        args["beta_hat"] = self.coef_beta_hat
+        if self.post_collision_correction:
+            args["k_hat"] = self.coef_k_hat
+        return args
+
+    def _get_args(self, ff):
+        args = super()._get_args(ff)
+        # the condition reads populations that another link of the same
+        # condition may write (corners)
+        args["fcopy"] = ff.array.copy()
+        return args
+
+    def update(self, ff, fprevious=None, **kwargs):
+        """
+        Update distribution functions with this boundary condition.
+
+        Parameters
+        ----------
+
+        ff : Array
+            The distribution functions
+        fprevious : Array
+            The distribution functions of the previous time step, needed by
+            the post-collision correction
+        """
+        from .symbolic import call_genfunction
+
+        args = self._get_args(ff)
+        if self.post_collision_correction:
+            if fprevious is None:
+                raise ValueError(
+                    f"{type(self).__name__} needs the populations of the previous time step"
+                )
+            args["fprev"] = fprevious.array
+        args.update(kwargs)
+        call_genfunction(self.function, args)
+
+    def init_previous_populations(self, container):
+        """
+        Set the previous populations read by the correction so that the
+        change during the first time step is zero.
+
+        At the first time step, no collision has happened yet: the
+        correction must vanish. It reads f_q(x - c_q) in the previous
+        populations and f_q(x) in the current ones, for the incoming and the
+        outgoing velocity of each link. Only these values are set; the other
+        ones are written by the first time step before being read.
+        """
+        if not self.post_collision_correction:
+            return
+        F, Fprev = container.F, container.Fnew
+        if F.gpu_support:
+            F.array_cpu[...] = F.array.get()
+            Fprev.array_cpu[...] = Fprev.array.get()
+        # after fix_iload, the indices are stored by row
+        for current, previous in [
+            (self.iload[0], self.iload[1]),
+            (self.iload[2], self.istore),
+        ]:
+            Fprev.swaparray[tuple(previous.T)] = F.swaparray[tuple(current.T)]
+        if F.gpu_support:
+            Fprev.array.set(Fprev.array_cpu)
+
+    @property
+    def routine_name(self):
+        """Name of the generated function."""
+        return "linear_bc_" + type(self).__name__.lower()
+
+    # pylint: disable=too-many-locals
+    def generate(self, sorder):
+        """
+        Generate the numerical code.
+
+        Parameters
+        ----------
+        sorder : list
+            the order of nv, nx, ny and nz
+        """
+        from .generator import For
+        from .symbolic import nx, ny, nz, indexed, ix
+
+        ns = int(self.stencil.nv_ptr[-1])
+        dim = self.stencil.dim
+
+        istore, iload, ncond = self._get_istore_iload_symb(dim)
+        rhs, _ = self._get_rhs_dist_symb(ncond)
+        alpha_hat = IndexedBase("alpha_hat", [ncond])
+        beta = IndexedBase("beta", [ncond])
+        beta_hat = IndexedBase("beta_hat", [ncond])
+
+        idx = Idx(ix, (0, ncond))
+
+        def population(name, index):
+            return indexed(
+                name,
+                [ns, nx, ny, nz],
+                index=[index[idx, k] for k in range(dim + 1)],
+                priority=sorder,
+            )
+
+        fstore = population("f", istore)
+        # post-collision populations: outgoing and incoming at the fluid
+        # node, outgoing one node further
+        f_out = population("fcopy", iload[0])
+        f_next = population("fcopy", iload[1])
+        f_in = population("fcopy", iload[2])
+
+        expr = (
+            alpha_hat[idx] * f_out
+            + beta_hat[idx] * f_in
+            + beta[idx] * f_next
+            + rhs[idx]
+        )
+
+        if self.post_collision_correction:
+            k_hat = IndexedBase("k_hat", [ncond])
+            # change of the populations during the previous time step:
+            # post-collision at the fluid node minus the population that
+            # the collision read there
+            g_out = f_out - population("fprev", iload[1])
+            g_in = f_in - population("fprev", istore)
+            expr += k_hat[idx] * 0.5 * (g_out - self.parity * g_in)
+
+        self.generator.add_routine((self.routine_name, For(idx, Eq(fstore, expr))))
+
+    @property
+    def function(self):
+        """Return the generated function"""
+        return getattr(self.generator.module, self.routine_name)
+
+
+class LinearAntiBounceBack(LinearBounceBack):
+    r"""
+    Linear interpolation of the anti-bounce-back for a Dirichlet condition
+    on the symmetric equilibrium (advection-diffusion).
+
+    The scheme is the one of :py:class:`LinearBounceBack` with the symmetric
+    parts :math:`e^+_q = (f^{eq}_q + f^{eq}_{\bar q})/2` and
+    :math:`g^+_q + S^+_q` instead of the antisymmetric ones, and
+
+    .. math::
+
+        \hat\alpha = 1 + \alpha (1/2 + \delta), \quad
+        \beta = -1 - \alpha \delta, \quad
+        \hat\beta = 1 + \alpha / 2,
+
+    with :math:`\hat K = -1 - \hat\alpha` when the post-collision correction
+    is applied. :py:class:`AntiBounceBack` is
+    :math:`\alpha = -2, \delta = 1/2`, and :py:class:`BFLAntiBounceBack`
+    is :math:`\alpha = -2` for :math:`\delta \le 1/2` and
+    :math:`\alpha = -1/\delta` otherwise.
+    """
+
+    parity = -1
+
+
+def _alpha_bfl(delta):
+    return np.where(delta <= 0.5, 2.0, 1.0 / np.maximum(delta, 0.5))
+
+
+class CLIBounceBack(LinearBounceBack):
+    r"""
+    Central linear interpolation: :math:`\alpha = 4/(1 + 2\delta)`.
+
+    One rule for all :math:`\delta \in [0, 1]`, reduced to the bounce-back for
+    :math:`\delta = 1/2`. :math:`\hat\alpha = 1`, so the scheme is
+    parametrized without correction.
+    """
+
+    def alpha(self, delta):
+        return 4.0 / (1.0 + 2.0 * delta)
+
+
+class YLIBounceBack(LinearBounceBack):
+    r"""
+    Linear interpolation of Yu, Mei, Luo and Shyy:
+    :math:`\alpha = 2/(1 + \delta)`.
+
+    One rule for all :math:`\delta \in [0, 1]`. Without correction, the
+    scheme is not parametrized: see :py:class:`ParYLIBounceBack`.
+    """
+
+    def alpha(self, delta):
+        return 2.0 / (1.0 + delta)
+
+
+class ParYLIBounceBack(YLIBounceBack):
+    """
+    :py:class:`YLIBounceBack` with the post-collision correction.
+    """
+
+    post_collision_correction = True
+
+
+class ParBFLBounceBack(LinearBounceBack):
+    r"""
+    :py:class:`BFLBounceBack` with the post-collision correction:
+    :math:`\alpha = 2` for :math:`\delta \le 1/2`, :math:`1/\delta` otherwise.
+    """
+
+    post_collision_correction = True
+
+    def alpha(self, delta):
+        return _alpha_bfl(delta)
+
+
+class LMKCAntiBounceBack(LinearAntiBounceBack):
+    r"""
+    Central linear interpolation of the anti-bounce-back:
+    :math:`\alpha = -4/(1 + 2\delta)`.
+
+    One rule for all :math:`\delta \in [0, 1]`, reduced to the
+    anti-bounce-back for :math:`\delta = 1/2`. :math:`\hat\alpha = -1`, so the
+    scheme is parametrized without correction.
+    """
+
+    def alpha(self, delta):
+        return -4.0 / (1.0 + 2.0 * delta)
+
+
+class ParLMKAAntiBounceBack(LinearAntiBounceBack):
+    r"""
+    :py:class:`BFLAntiBounceBack` with the post-collision correction:
+    :math:`\alpha = -2` for :math:`\delta \le 1/2`,
+    :math:`-1/\delta` otherwise.
+    """
+
+    post_collision_correction = True
+
+    def alpha(self, delta):
+        return -_alpha_bfl(delta)
 
 
 class Neumann(BoundaryMethod):
