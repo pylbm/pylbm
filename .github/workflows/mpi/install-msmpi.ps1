@@ -93,6 +93,8 @@ function InstallMicrosoftMPI () {
     SaveMicrosoftMPIEnvironment "SetEnvMPI.cmd"
     $MSMPI_BIN = [Environment]::GetEnvironmentVariable("MSMPI_BIN", "Machine")
     if ($Env:GITHUB_PATH) { echo "$MSMPI_BIN" >> $Env:GITHUB_PATH }
+    # mpi4py looks for msmpi.dll in MSMPI_BIN
+    if ($Env:GITHUB_ENV) { echo "MSMPI_BIN=$MSMPI_BIN" >> $Env:GITHUB_ENV }
     Write-Host "##vso[task.prependpath]$MSMPI_BIN";
 }
 

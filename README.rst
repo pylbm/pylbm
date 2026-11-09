@@ -35,53 +35,45 @@ You can install pylbm in several ways
 
    conda install pylbm -c conda-forge
 
-With Pypi
+With PyPI
 ---------
 
-.. code::
+.. code:: bash
+
+   uv pip install pylbm
+
+or, without uv
+
+.. code:: bash
 
    pip install pylbm
 
-or
-
-.. code::
-
-   pip install pylbm --user
+The PyPI package of mpi4py, a dependency of pylbm, needs an MPI library. Install
+one with your system package manager (for example Open MPI or MPICH), or from
+PyPI with ``pip install mpich``. The conda package installs it for you.
 
 From source
 -----------
 
-You can also clone the project and install the latest version
+You can also clone the project and work on the latest version with
+`uv <https://docs.astral.sh/uv/>`_
 
-.. code::
+.. code:: bash
 
    git clone https://github.com/pylbm/pylbm
+   cd pylbm
+   uv sync
 
-To install pylbm from source, we encourage you to create a fresh environment using conda.
+``uv sync`` creates the environment ``.venv`` with pylbm and the tools to test
+it. Then run the tests, or any script, through uv
 
-.. code::
+.. code:: bash
 
-    conda create -n pylbm_env python
+   cd tests
+   uv run pytest --mpl --h5diff -m "not gpu and not slow"
 
-As mentioned at the end of the creation of this environment, you can activate it
-using the comamnd line
-
-.. code::
-
-    conda activate pylbm_env
-
-Now, you just have to go into the pylbm directory that you cloned and install
-the dependencies
-
-.. code::
-
-    conda install --file requirements-dev.txt -c conda-forge
-
-and then, install pylbm
-
-.. code::
-
-   pip install .
+Add ``--extra gpu`` to ``uv sync`` for the Loopy (OpenCL) backend, and
+``--group docs`` for the documentation.
 
 For more information about what you can achieve with pylbm, take a look at the documentation
 
