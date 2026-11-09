@@ -1,0 +1,71 @@
+name: publish
+
+# Build pylbm from a release tag with uv and upload it to PyPI with trusted
+# publishing (no token: PyPI trusts this workflow and the "pypi" environment).
+#
+# Runs for a release published in the GitHub interface, when release-please
+# creates a release (it starts this workflow itself, see release-please.yml),
+# or by hand with the tag to publish.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to publish, for example v0.12.0"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: astral-sh/setup-uv@v10.3.3
+
+      - name: Check that the tag is the version of the package
+        run: |
+          version=$(sed -n 's/^__version__ = "\(.*\)"$/\1/p' pylbm/__init__.py)
+          if [ "${TAG#v}" != "$version" ]; then
+            echo "::error::tag $TAG does not match __version__ = $version"
+            exit 1
+          fi
+
+      - name: Build the sdist and the wheel
+        run: |
+          uv build
+          uv tool run twine check --strict dist/*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/pylbm/
+    permissions:
+      # required by trusted publishing
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - uses: astral-sh/setup-uv@v10.3.3
+
+      - name: Upload to PyPI
+        run: uv publish --trusted-publishing always dist/*
