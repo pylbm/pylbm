@@ -750,14 +750,17 @@ class BouzidiAntiBounceBack(BouzidiBounceBack):
             index=[istore[idx, k] for k in range(dim + 1)],
             priority=sorder,
         )
+        # read the copy made by BouzidiBounceBack._get_args: near a corner,
+        # a link reads a population that another link of this condition
+        # writes, and the result must not depend on the loop order
         fload0 = indexed(
-            "f",
+            "fcopy",
             [ns, nx, ny, nz],
             index=[iload[0][idx, k] for k in range(dim + 1)],
             priority=sorder,
         )
         fload1 = indexed(
-            "f",
+            "fcopy",
             [ns, nx, ny, nz],
             index=[iload[1][idx, k] for k in range(dim + 1)],
             priority=sorder,
