@@ -294,7 +294,7 @@ class _LMKA(LinearAntiBounceBack):
     "generic, method, generators",
     [
         (_BFL, pylbm.bc.BouzidiBounceBack, ["numpy", "cython"]),
-        (_LMKA, pylbm.bc.BouzidiAntiBounceBack, ["numpy"]),
+        (_LMKA, pylbm.bc.BouzidiAntiBounceBack, ["numpy", "cython"]),
     ],
 )
 def test_generic_scheme_gives_bouzidi(generic, method, generators):
