@@ -14,6 +14,12 @@ env:
   # (ud_verbs/mana_0) and Open MPI then aborts with MPI_ERR_OTHER.
   OMPI_MCA_pml: ob1
   OMPI_MCA_btl: self,tcp
+  # uv run uses the environment made by the install step as it is
+  UV_NO_SYNC: "1"
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   build:
@@ -42,45 +48,29 @@ jobs:
       - name: Install MPI (${{ matrix.mpi }})
         run: bash .github/workflows/mpi/install-${{ matrix.mpi }}.sh
 
-      # the environment is cached for a week: it follows the new releases of
-      # the dependencies without solving and downloading it at each run
-      - name: Get the week of the year
-        id: week
-        shell: bash
-        run: echo "week=$(date +%Y-%V)" >> "$GITHUB_OUTPUT"
-
-      - name: Install the conda environment
-        uses: mamba-org/setup-micromamba@v2
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
-          environment-file: conda/environment.yml
-          environment-name: pylbm-env
-          cache-environment: true
-          cache-environment-key: environment-${{ steps.week.outputs.week }}
-          init-shell: bash
+          python-version: "3.14"
 
-      - name: Install pylbm
-        shell: bash -el {0}
-        run: |
-          pip install .
+      # pylbm is installed as a package (not editable), with the dev group
+      - name: Install pylbm and the development tools
+        run: uv sync --no-editable
 
       - name: Lint with flake8
-        shell: bash -el {0}
         run: |
           # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          uv run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          uv run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
       - name: Lint with pylint
-        shell: bash -el {0}
         run: |
-          pylint --rcfile=.pylintrc --errors-only pylbm
+          uv run pylint --rcfile=.pylintrc --errors-only pylbm
 
       - name: Test with pytest
-        shell: bash -el {0}
         run: |
-          pytest --nbval-lax notebooks
-          cd tests; pytest --mpl --h5diff -m "not gpu and not slow" --cov=pylbm --numprocesses=auto
+          uv run pytest --nbval-lax notebooks
+          cd tests; uv run pytest --mpl --h5diff -m "not gpu and not slow" --cov=pylbm --numprocesses=auto
 
   gpu:
     runs-on: ubuntu-latest
@@ -88,34 +78,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Add pocl to the conda environment file
-        run: |
-          cp conda/environment.yml conda/environment-gpu.yml
-          echo "  - pocl" >> conda/environment-gpu.yml
-          echo "  - ocl-icd" >> conda/environment-gpu.yml
-
-      - name: Get the week of the year
-        id: week
-        run: echo "week=$(date +%Y-%V)" >> "$GITHUB_OUTPUT"
-
-      - name: Install the conda environment
-        uses: mamba-org/setup-micromamba@v2
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
-          environment-file: conda/environment-gpu.yml
-          environment-name: pylbm-env
-          cache-environment: true
-          cache-environment-key: environment-gpu-${{ steps.week.outputs.week }}
-          init-shell: bash
+          python-version: "3.14"
 
-      - name: Install pylbm[gpu]
-        shell: bash -el {0}
-        run: |
-          pip install .[gpu]
+      # pocl gives an OpenCL device on the CPU of the runner
+      - name: Install pylbm[gpu] and pocl
+        run: uv sync --no-editable --extra gpu --group opencl
 
       - name: Test GPU backend with pytest
-        shell: bash -el {0}
         run: |
-          echo "OpenCL ICD vendor files in this env:"
-          ls -la "$CONDA_PREFIX/etc/OpenCL/vendors/" || echo "(directory not found)"
-          export OCL_ICD_VENDORS="$CONDA_PREFIX/etc/OpenCL/vendors"
-          cd tests; pytest -m gpu --numprocesses=auto
+          cd tests; uv run pytest -m gpu --numprocesses=auto

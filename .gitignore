@@ -15,3 +15,5 @@ generated
 version.py
 demo/**/*.h5
 .vscode
+uv.lock
+.venv

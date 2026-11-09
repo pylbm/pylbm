@@ -26,8 +26,9 @@
     HAS_SOURCE: {{ has_source| lower }}
       };
 </script>
+{#- the entries are objects or paths, js_tag writes both #}
 {%- for scriptfile in script_files %}
-<script type="text/javascript" src="{{ pathto(scriptfile, 1) }}"></script>
+{{ js_tag(scriptfile) }}
 {%- endfor %}
 {%- endmacro %}
 
@@ -53,8 +54,13 @@
 <link href="https://fonts.googleapis.com/css?family=Lora" rel="stylesheet" type="text/css">
 <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet" type="text/css">
 <link href="https://fonts.googleapis.com/css?Source+Code+Pro" rel="stylesheet" type="text/css">
+{#- the entries are objects with css_tag, or paths #}
 {%- for cssfile in css_files %}
+{%- if cssfile|attr("filename") %}
+{{ css_tag(cssfile) }}
+{%- else %}
 <link rel="stylesheet" href="{{ pathto(cssfile, 1) }}" type="text/css" />
+{%- endif %}
 {%- endfor %}
 {%- endmacro %}
 

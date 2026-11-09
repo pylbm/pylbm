@@ -54,6 +54,41 @@ gpu = [
     "pyopencl",
 ]
 
+[dependency-groups]
+test = [
+    "ipykernel",
+    "ipywidgets",
+    "nbval",
+    "pytest",
+    "pytest-cov",
+    "pytest-mpl",
+    "pytest-xdist",
+]
+lint = [
+    "black",
+    "flake8",
+    "pylint",
+]
+# installed by default by uv sync
+dev = [
+    { include-group = "test" },
+    { include-group = "lint" },
+]
+docs = [
+    "ipykernel",
+    "ipython",
+    "ipywidgets",
+    "jupyter-sphinx",
+    "nbsphinx",
+    "numpydoc",
+    "sphinx",
+]
+# OpenCL on the CPU, to run the Loopy backend without a GPU (wheels for
+# Linux x86_64 only; elsewhere, install pocl with the system package manager)
+opencl = [
+    "pocl-binary-distribution; sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+
 [project.urls]
 Source = "https://github.com/pylbm/pylbm"
 Documentation = "https://pylbm.readthedocs.io"
