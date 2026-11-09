@@ -5,13 +5,25 @@ on: workflow_dispatch
 permissions:
   contents: write
   pull-requests: write
+  # to start the publish workflow
+  actions: write
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
       - uses: googleapis/release-please-action@v4
+        id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: python
           target-branch: master
+
+      # A release created with GITHUB_TOKEN does not start the workflows
+      # that listen to releases: start the publication explicitly.
+      - name: Publish the release on PyPI
+        if: ${{ steps.release.outputs.release_created }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.release.outputs.tag_name }}
+        run: gh workflow run publish.yml --repo "$GITHUB_REPOSITORY" --ref master -f tag="$TAG"
