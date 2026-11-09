@@ -123,15 +123,15 @@ def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
         "boundary_conditions": {
             0: {
                 "method": {
-                    0: pylbm.bc.BouzidiBounceBack,
-                    1: pylbm.bc.BouzidiAntiBounceBack,
+                    0: pylbm.bc.BFLBounceBack,
+                    1: pylbm.bc.BFLAntiBounceBack,
                 },
                 "value": (bc, (T0,)),
             },
             1: {
                 "method": {
-                    0: pylbm.bc.BouzidiBounceBack,
-                    1: pylbm.bc.BouzidiAntiBounceBack,
+                    0: pylbm.bc.BFLBounceBack,
+                    1: pylbm.bc.BFLAntiBounceBack,
                 },
                 "value": (bc_in, (T0, Tin, ymax, rhoo, uo)),
             },

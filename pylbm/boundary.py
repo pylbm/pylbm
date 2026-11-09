@@ -11,6 +11,7 @@ Module for LBM boundary conditions
 import collections
 import logging
 import types
+import warnings
 import numpy as np
 from sympy import symbols, IndexedBase, Idx, Eq
 
@@ -483,9 +484,13 @@ class BounceBack(BoundaryMethod):
         return self.generator.module.bounce_back
 
 
-class BouzidiBounceBack(BoundaryMethod):
+class BFLBounceBack(BoundaryMethod):
     """
-    Boundary condition of type Bouzidi bounce-back [BFL01]
+    Boundary condition of type Bouzidi-Firdaouss-Lallemand bounce-back
+    [BFL01]
+
+    .. versionchanged:: 0.12.0
+       Renamed from ``BouzidiBounceBack``, which is deprecated.
 
     Notes
     ------
@@ -506,7 +511,7 @@ class BouzidiBounceBack(BoundaryMethod):
         nspace,
         generator,
     ):
-        super(BouzidiBounceBack, self).__init__(
+        super().__init__(
             istore,
             ilabel,
             distance,
@@ -689,9 +694,12 @@ class AntiBounceBack(BounceBack):
         return self.generator.module.anti_bounce_back
 
 
-class BouzidiAntiBounceBack(BouzidiBounceBack):
+class BFLAntiBounceBack(BFLBounceBack):
     """
-    Boundary condition of type Bouzidi anti bounce-back
+    Boundary condition of type Bouzidi-Firdaouss-Lallemand anti bounce-back
+
+    .. versionchanged:: 0.12.0
+       Renamed from ``BouzidiAntiBounceBack``, which is deprecated.
 
     Notes
     ------
@@ -715,7 +723,7 @@ class BouzidiAntiBounceBack(BouzidiBounceBack):
         # The scheme reads f_q at the fluid node and one node further when
         # the wall is closer than half a link, and f_q and f_-q at the fluid
         # node otherwise. Only the sign of the second term differs from the
-        # Bouzidi bounce-back.
+        # BFL bounce-back.
         self.sign = np.where(self.distance < 0.5, -1.0, 1.0)
 
     def _host_args(self):
@@ -750,7 +758,7 @@ class BouzidiAntiBounceBack(BouzidiBounceBack):
             index=[istore[idx, k] for k in range(dim + 1)],
             priority=sorder,
         )
-        # read the copy made by BouzidiBounceBack._get_args: near a corner,
+        # read the copy made by BFLBounceBack._get_args: near a corner,
         # a link reads a population that another link of this condition
         # writes, and the result must not depend on the loop order
         fload0 = indexed(
@@ -919,3 +927,22 @@ class NeumannZ(Neumann):
     def function(self):
         """Return the generated function"""
         return self.generator.module.neumannz
+
+
+# former names of the boundary conditions, kept for compatibility
+_DEPRECATED_NAMES = {
+    "BouzidiBounceBack": "BFLBounceBack",
+    "BouzidiAntiBounceBack": "BFLAntiBounceBack",
+}
+
+
+def __getattr__(name):
+    if name in _DEPRECATED_NAMES:
+        new_name = _DEPRECATED_NAMES[name]
+        warnings.warn(
+            f"{name} is deprecated since pylbm 0.12.0, use {new_name} instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return globals()[new_name]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

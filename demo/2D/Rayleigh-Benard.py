@@ -128,16 +128,16 @@ def run(dx, Tf, time_bc=True, generator="cython", sorder=None, with_plot=True):
         bc = {
             0: {
                 "method": {
-                    0: pylbm.bc.BouzidiBounceBack,
-                    1: pylbm.bc.BouzidiAntiBounceBack,
+                    0: pylbm.bc.BFLBounceBack,
+                    1: pylbm.bc.BFLAntiBounceBack,
                 },
                 "value": (bc_down_with_time, (Td, Tu)),
                 "time_bc": True,
             },
             1: {
                 "method": {
-                    0: pylbm.bc.BouzidiBounceBack,
-                    1: pylbm.bc.BouzidiAntiBounceBack,
+                    0: pylbm.bc.BFLBounceBack,
+                    1: pylbm.bc.BFLAntiBounceBack,
                 },
                 "value": (bc_up, (Tu,)),
             },
@@ -146,15 +146,15 @@ def run(dx, Tf, time_bc=True, generator="cython", sorder=None, with_plot=True):
         bc = {
             0: {
                 "method": {
-                    0: pylbm.bc.BouzidiBounceBack,
-                    1: pylbm.bc.BouzidiAntiBounceBack,
+                    0: pylbm.bc.BFLBounceBack,
+                    1: pylbm.bc.BFLAntiBounceBack,
                 },
                 "value": (bc_down, (Td,)),
             },
             1: {
                 "method": {
-                    0: pylbm.bc.BouzidiBounceBack,
-                    1: pylbm.bc.BouzidiAntiBounceBack,
+                    0: pylbm.bc.BFLBounceBack,
+                    1: pylbm.bc.BFLAntiBounceBack,
                 },
                 "value": (bc_up, (Tu,)),
             },

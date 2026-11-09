@@ -14,8 +14,8 @@ u = sp.symbols("u")
 BOUNCE_BACK = [
     pylbm.bc.BounceBack,
     pylbm.bc.AntiBounceBack,
-    pylbm.bc.BouzidiBounceBack,
-    pylbm.bc.BouzidiAntiBounceBack,
+    pylbm.bc.BFLBounceBack,
+    pylbm.bc.BFLAntiBounceBack,
 ]
 NSTEPS = 20
 

@@ -1,5 +1,5 @@
 """
-Bouzidi conditions on a wall at a distance delta of the last fluid node.
+BFL (Bouzidi-Firdaouss-Lallemand) conditions on a wall at a distance delta of the last fluid node.
 The steady solutions are linear, which these schemes reproduce exactly.
 """
 
@@ -100,11 +100,11 @@ def test_bouzidi_bounce_back_couette(generator, delta, x_boundary):
         "init": {rho: 1.0, qx: 0.0, qy: 0.0},
         "boundary_conditions": {
             0: {
-                "method": {0: pylbm.bc.BouzidiBounceBack},
+                "method": {0: pylbm.bc.BFLBounceBack},
                 "value": velocity(lambda y: 0.0),
             },
             1: {
-                "method": {0: pylbm.bc.BouzidiBounceBack},
+                "method": {0: pylbm.bc.BFLBounceBack},
                 "value": velocity(lambda y: uw),
             },
         },
@@ -112,7 +112,7 @@ def test_bouzidi_bounce_back_couette(generator, delta, x_boundary):
     }
     if x_boundary == "profile":
         dico["boundary_conditions"][2] = {
-            "method": {0: pylbm.bc.BouzidiBounceBack},
+            "method": {0: pylbm.bc.BFLBounceBack},
             "value": velocity(lambda y: uw * y / yw),
         }
     sol = pylbm.Simulation(dico)
@@ -157,8 +157,8 @@ def test_bouzidi_anti_bounce_back_diffusion(generator, delta):
         "parameters": {LA: 1.0},
         "init": {u: 0.0},
         "boundary_conditions": {
-            0: {"method": {0: pylbm.bc.BouzidiAntiBounceBack}, "value": value(0.0)},
-            1: {"method": {0: pylbm.bc.BouzidiAntiBounceBack}, "value": value(1.0)},
+            0: {"method": {0: pylbm.bc.BFLAntiBounceBack}, "value": value(0.0)},
+            1: {"method": {0: pylbm.bc.BFLAntiBounceBack}, "value": value(1.0)},
         },
         "generator": generator,
     }
@@ -223,9 +223,7 @@ def advection_diffusion_with_corners(method, generator):
     return np.array(sol.F_halo[:])[:, 1:-1, 1:-1]
 
 
-@pytest.mark.parametrize(
-    "method", [pylbm.bc.BouzidiBounceBack, pylbm.bc.BouzidiAntiBounceBack]
-)
+@pytest.mark.parametrize("method", [pylbm.bc.BFLBounceBack, pylbm.bc.BFLAntiBounceBack])
 def test_bouzidi_corners_numpy_and_cython(method):
     """NumPy and Cython give the same populations near the corners."""
     np.testing.assert_allclose(
@@ -237,9 +235,7 @@ def test_bouzidi_corners_numpy_and_cython(method):
 
 
 @pytest.mark.gpu
-@pytest.mark.parametrize(
-    "method", [pylbm.bc.BouzidiBounceBack, pylbm.bc.BouzidiAntiBounceBack]
-)
+@pytest.mark.parametrize("method", [pylbm.bc.BFLBounceBack, pylbm.bc.BFLAntiBounceBack])
 def test_bouzidi_corners_loopy(method):
     np.testing.assert_allclose(
         advection_diffusion_with_corners(method, "loopy"),
@@ -247,3 +243,17 @@ def test_bouzidi_corners_loopy(method):
         rtol=0,
         atol=1e-14,
     )
+
+
+@pytest.mark.parametrize(
+    "old_name, new_name",
+    [
+        ("BouzidiBounceBack", "BFLBounceBack"),
+        ("BouzidiAntiBounceBack", "BFLAntiBounceBack"),
+    ],
+)
+def test_former_names_are_deprecated(old_name, new_name):
+    """The former names still give the classes, with a DeprecationWarning."""
+    with pytest.warns(DeprecationWarning, match=new_name):
+        method = getattr(pylbm.bc, old_name)
+    assert method is getattr(pylbm.bc, new_name)
