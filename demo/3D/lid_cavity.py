@@ -126,8 +126,8 @@ def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
         ],
         "init": {mass: 1.0, qx: 0.0, qy: 0.0, qz: 0.0},
         "boundary_conditions": {
-            0: {"method": {0: pylbm.bc.BouzidiBounceBack}},
-            1: {"method": {0: pylbm.bc.BouzidiBounceBack}, "value": bc_up},
+            0: {"method": {0: pylbm.bc.BFLBounceBack}},
+            1: {"method": {0: pylbm.bc.BFLBounceBack}, "value": bc_up},
         },
         "parameters": {LA: la},
         "generator": generator,

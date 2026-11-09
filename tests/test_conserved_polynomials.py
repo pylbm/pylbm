@@ -114,8 +114,8 @@ def test_same_as_basis_rows(generator):
             "schemes": [mrt_d2q9(conserved_polynomials)],
             "init": {rho: 1.0, qx: 0.0, qy: 0.0},
             "boundary_conditions": {
-                0: {"method": {0: pylbm.bc.BouzidiBounceBack}, "value": wall},
-                1: {"method": {0: pylbm.bc.BouzidiBounceBack}, "value": lid},
+                0: {"method": {0: pylbm.bc.BFLBounceBack}, "value": wall},
+                1: {"method": {0: pylbm.bc.BFLBounceBack}, "value": lid},
             },
             "generator": generator,
         }

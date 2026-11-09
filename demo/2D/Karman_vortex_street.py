@@ -215,11 +215,11 @@ def run(space_step, final_time, generator="cython", sorder=None, with_plot=True)
         "init": {RHO: rho_o, QX: rho_o * u_o, QY: 0.0},
         "boundary_conditions": {
             0: {
-                "method": {0: pylbm.bc.BouzidiBounceBack},
+                "method": {0: pylbm.bc.BFLBounceBack},
                 "value": (bc_in, (rho_o, u_o)),
             },
             1: {"method": {0: pylbm.bc.NeumannX}},
-            2: {"method": {0: pylbm.bc.BouzidiBounceBack}},
+            2: {"method": {0: pylbm.bc.BFLBounceBack}},
         },
         "generator": generator,
         "relative_velocity": [QX / RHO, QY / RHO],

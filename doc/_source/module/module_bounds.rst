@@ -15,8 +15,8 @@ The classes are
    BoundaryMethod
    BounceBack
    AntiBounceBack
-   BouzidiBounceBack
-   BouzidiAntiBounceBack
+   BFLBounceBack
+   BFLAntiBounceBack
    Neumann
    NeumannX
    NeumannY

@@ -94,10 +94,10 @@ def run(dx, Tf, generator="cython", sorder=None, with_plot=True):
         "parameters": {LA: la},
         "init": {rho: 1.0, qx: 0.0, qy: 0.0},
         "boundary_conditions": {
-            0: {"method": {0: pylbm.bc.BouzidiBounceBack}},
+            0: {"method": {0: pylbm.bc.BFLBounceBack}},
             1: {"method": {0: pylbm.bc.NeumannX}},
             2: {
-                "method": {0: pylbm.bc.BouzidiBounceBack},
+                "method": {0: pylbm.bc.BFLBounceBack},
                 "value": (bc_in, (width, height, max_velocity, grad_pressure)),
             },
         },
