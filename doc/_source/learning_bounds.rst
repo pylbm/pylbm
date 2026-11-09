@@ -79,6 +79,44 @@ To use another interpolation, subclass ``LinearBounceBack`` or
 ``LinearAntiBounceBack``, define the method ``alpha`` and set
 ``post_collision_correction``.
 
+Choosing the condition link by link
+-----------------------------------
+
+By default, one class applies to all the links of a label for a scheme.
+To use different conditions for the links that cut the same wall, give a
+dictionary from velocity numbers to classes, with an optional
+``"default"`` for the velocities not listed:
+
+.. code-block:: python
+
+    "boundary_conditions": {
+        0: {
+            "method": {
+                0: {
+                    "default": pylbm.bc.CLIBounceBack,
+                    5: pylbm.bc.ParYLIBounceBack,
+                    6: pylbm.bc.ParYLIBounceBack,
+                    7: pylbm.bc.ParYLIBounceBack,
+                    8: pylbm.bc.ParYLIBounceBack,
+                },
+            },
+            "fallback": {0: pylbm.bc.BounceBack},
+            "value": wall,
+        },
+    }
+
+The interpolated conditions also read the next node towards the fluid,
+after the fluid node next to the wall. Near a corner or a solid one cell
+thick, this node may be in the solid. The links concerned then use the
+class given by ``"fallback"`` (a class, or a dictionary by velocity, for
+each scheme), which must read only the fluid node: for example
+:py:class:`BounceBack <pylbm.boundary.BounceBack>`, or
+:py:class:`BFLBounceBack <pylbm.boundary.BFLBounceBack>` when the wall is at
+least half a link away. Without ``"fallback"``, the
+simulation emits a ``pylbm.boundary.BoundaryWarning`` with the number of
+links concerned for each label and class. The nodes of the halo that copy
+fluid nodes (periodic faces, MPI interfaces) count as fluid nodes.
+
 
 
 The Neumann conditions

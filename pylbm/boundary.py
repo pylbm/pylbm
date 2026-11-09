@@ -47,6 +47,26 @@ class BoundaryVelocity:
         self.normal = np.array(domain.normal[(num,) + ind])  #
 
 
+class BoundaryWarning(UserWarning):
+    """Warning about a boundary condition that may not apply as given."""
+
+
+def _method_for_velocity(spec, velocity, label):
+    """
+    Return the boundary method of a velocity: spec is either a class, or a
+    dictionary from velocity numbers to classes with an optional "default".
+    """
+    if not isinstance(spec, dict):
+        return spec
+    method = spec.get(velocity, spec.get("default"))
+    if method is None:
+        raise ValueError(
+            f"label {int(label)}: no boundary method for the velocity {velocity} "
+            '(give it or a "default" in the dictionary of the method)'
+        )
+    return method
+
+
 class Boundary:
     """
     Construct the boundary problem by defining the list of indices on the border and the methods used on each label.
@@ -77,6 +97,7 @@ class Boundary:
     # pylint: disable=too-many-locals
     def __init__(self, domain, generator, dico):
         self.domain = domain
+        self._fluid_with_halo = None
 
         # build the list of indices for each unique velocity and for each label
         self.bv_per_label = {}
@@ -101,6 +122,24 @@ class Boundary:
         time_bc = {}
         normal = {}
 
+        def add_links(method, label, velocity, bv, mask):
+            indices = bv.indices[:, mask]
+            istore_tmp = np.concatenate(
+                [velocity * np.ones((1, indices.shape[1]), dtype=np.int32), indices]
+            )
+            ilabel_tmp = label * np.ones(indices.shape[1], dtype=np.int32)
+            if istore.get(method, None) is None:
+                istore[method] = istore_tmp
+                ilabel[method] = ilabel_tmp
+                distance[method] = bv.distance[mask]
+                normal[method] = bv.normal[mask]
+            else:
+                istore[method] = np.concatenate([istore[method], istore_tmp], axis=1)
+                ilabel[method] = np.concatenate([ilabel[method], ilabel_tmp])
+                distance[method] = np.concatenate([distance[method], bv.distance[mask]])
+                normal[method] = np.concatenate([normal[method], bv.normal[mask]])
+
+        self.missing_next_node = {}
         # pylint: disable=too-many-nested-blocks
         for label in self.domain.list_of_labels():
             if label in [-1, -2]:  # periodic or interface conditions
@@ -109,38 +148,53 @@ class Boundary:
             value_bc[label] = dico_bound[label].get("value", None)
             time_bc[label] = dico_bound[label].get("time_bc", False)
             methods = dico_bound[label]["method"]
+            fallbacks = dico_bound[label].get("fallback", {})
             # for each method get the list of points, the labels and the distances
             # where the distribution function must be updated on the boundary
-            for k, v in methods.items():
+            for k, spec in methods.items():
                 for inumk, numk in enumerate(stencil.num[k]):
-                    if (
-                        self.bv_per_label[label][stencil.unum2index[numk]].indices.size
-                        != 0
-                    ):
-                        indices = self.bv_per_label[label][
-                            stencil.unum2index[numk]
-                        ].indices
-                        distance_tmp = self.bv_per_label[label][
-                            stencil.unum2index[numk]
-                        ].distance
-                        normal_tmp = self.bv_per_label[label][
-                            stencil.unum2index[numk]
-                        ].normal
-                        velocity = (inumk + stencil.nv_ptr[k]) * np.ones(
-                            indices.shape[1], dtype=np.int32
-                        )[np.newaxis, :]
-                        ilabel_tmp = label * np.ones(indices.shape[1], dtype=np.int32)
-                        istore_tmp = np.concatenate([velocity, indices])
-                        if istore.get(v, None) is None:
-                            istore[v] = istore_tmp.copy()
-                            ilabel[v] = ilabel_tmp.copy()
-                            distance[v] = distance_tmp.copy()
-                            normal[v] = normal_tmp.copy()
+                    bv = self.bv_per_label[label][stencil.unum2index[numk]]
+                    if bv.indices.size == 0:
+                        continue
+                    method = _method_for_velocity(spec, numk, label)
+                    velocity = inumk + stencil.nv_ptr[k]
+                    links = np.ones(bv.distance.shape, dtype=bool)
+
+                    missing = method.needs_next_node(bv.distance)
+                    if missing.any():
+                        # the next node towards the fluid, read by the
+                        # condition: ghost + 2 c_k
+                        next_node = bv.indices + 2 * np.asarray(bv.v.v)[:, np.newaxis]
+                        missing &= ~self.fluid_with_halo[tuple(next_node)]
+                    if missing.any():
+                        if k in fallbacks:
+                            fallback = _method_for_velocity(fallbacks[k], numk, label)
+                            if fallback.needs_next_node(bv.distance[missing]).any():
+                                raise ValueError(
+                                    f"label {int(label)}, velocity {numk}: the fallback "
+                                    f"{fallback.__name__} needs the next node towards "
+                                    "the fluid, which is not a fluid node"
+                                )
+                            add_links(fallback, label, velocity, bv, missing)
+                            links = ~missing
                         else:
-                            istore[v] = np.concatenate([istore[v], istore_tmp], axis=1)
-                            ilabel[v] = np.concatenate([ilabel[v], ilabel_tmp])
-                            distance[v] = np.concatenate([distance[v], distance_tmp])
-                            normal[v] = np.concatenate([normal[v], normal_tmp])  #
+                            key = (label, method.__name__)
+                            self.missing_next_node[key] = (
+                                self.missing_next_node.get(key, 0) + missing.sum()
+                            )
+                    if links.any():
+                        add_links(method, label, velocity, bv, links)
+
+        for (label, name), count in self.missing_next_node.items():
+            warnings.warn(
+                f"label {int(label)}: {count} links of {name} read a node that is not "
+                "a fluid node (the next node towards the fluid, near a corner "
+                "or a thin solid). Give a condition that only reads the fluid "
+                'node with the key "fallback" of this label.',
+                BoundaryWarning,
+                # the line of the user that builds the Simulation
+                stacklevel=3,
+            )
 
         # for each method create the instance associated
         self.methods = []
@@ -158,6 +212,47 @@ class Boundary:
                     generator,
                 )
             )
+
+    @property
+    def fluid_with_halo(self):
+        """
+        Boolean array, with the halo, of the nodes that hold fluid
+        populations: the fluid nodes of the domain, and the halo nodes that
+        are copies of fluid nodes (periodic faces and MPI interfaces).
+        """
+        if self._fluid_with_halo is None:
+            domain = self.domain
+            fluid = domain.in_or_out == domain.valin
+            copy = Array(
+                1,
+                domain.global_size,
+                domain.stencil.vmax,
+                list(range(domain.dim + 1)),
+                domain.mpi_topo,
+            )
+            copy.swaparray[0] = fluid
+            copy.update()
+            halo_copy = copy.swaparray[0] > 0.5
+
+            # a halo node is a copy of a fluid node only if every face it
+            # lies beyond is periodic or an interface
+            through_wall = np.zeros(fluid.shape, dtype=bool)
+            for d, vmax in enumerate(domain.stencil.vmax):
+                if vmax == 0:
+                    continue
+                for side, region in enumerate([slice(0, vmax), slice(-vmax, None)]):
+                    if domain.box_label[2 * d + side] not in (-1, -2):
+                        index = [slice(None)] * domain.dim
+                        index[d] = region
+                        through_wall[tuple(index)] = True
+            interior = np.zeros(fluid.shape, dtype=bool)
+            interior[
+                tuple(
+                    slice(v, -v) if v > 0 else slice(None) for v in domain.stencil.vmax
+                )
+            ] = True
+            self._fluid_with_halo = np.where(interior, fluid, halo_copy & ~through_wall)
+        return self._fluid_with_halo
 
 
 # pylint: disable=protected-access
@@ -232,6 +327,15 @@ class BoundaryMethod:
         time step: the simulation then passes them to update as fprevious.
         """
         return False
+
+    @classmethod
+    def needs_next_node(cls, distance):
+        """
+        Return, for each link of distance in distance, whether the condition
+        reads the populations of the next node towards the fluid, after the
+        fluid node next to the wall.
+        """
+        return np.zeros(np.shape(distance), dtype=bool)
 
     def init_previous_populations(self, container):
         """
@@ -539,6 +643,12 @@ class BFLBounceBack(BoundaryMethod):
         # factor of the wall term rhs: 1 when the wall is closer than half
         # a link to the fluid node, 1/(2 distance) otherwise
         self.rhs_scale = np.empty(self.istore.shape[1])
+
+    @classmethod
+    def needs_next_node(cls, distance):
+        # the scheme interpolates with the next node when the wall is closer
+        # than half a link to the fluid node
+        return np.asarray(distance) < 0.5
 
     def set_iload(self):
         """
@@ -869,6 +979,16 @@ class LinearBounceBack(BoundaryMethod):
     @classmethod
     def reads_previous_populations(cls):
         return cls.post_collision_correction
+
+    @classmethod
+    def needs_next_node(cls, distance):
+        # beta = parity - alpha delta weighs f_q(x_b, t+1), which comes from
+        # the next node towards the fluid
+        delta = np.asarray(distance, dtype=float)
+        alpha = np.broadcast_to(
+            np.asarray(cls.alpha(None, delta), dtype=float), delta.shape
+        )
+        return np.abs(cls.parity - alpha * delta) > 1e-14
 
     def __init__(
         self,

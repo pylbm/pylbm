@@ -171,9 +171,12 @@ class Simulation:
         previous time step.
         """
         for bc in dico.get("boundary_conditions", {}).values():
-            for method in bc.get("method", {}).values():
-                if method.reads_previous_populations():
-                    return True
+            for key in ["method", "fallback"]:
+                for spec in bc.get(key, {}).values():
+                    # one class, or a dictionary of classes by velocity
+                    methods = spec.values() if isinstance(spec, dict) else [spec]
+                    if any(m.reads_previous_populations() for m in methods):
+                        return True
         return False
 
     def _get_container(self, sorder, separate_fnew=False):
