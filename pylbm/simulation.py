@@ -125,7 +125,9 @@ class Simulation:
         # FIXME remove that !!
         set_queue(self.generator.backend)
 
-        self.container = self._get_container(sorder)
+        self.container = self._get_container(
+            sorder, self._reads_previous_populations(dico)
+        )
         if self.container.gpu_support:
             self.container.F.generate(self.generator)
             self.container.Fnew.generate(self.generator)
@@ -159,11 +161,27 @@ class Simulation:
             method.fix_iload()
             method.set_rhs()
             method.move2gpu()
+            method.init_previous_populations(self.container)
         self._need_init = False
 
-    def _get_container(self, sorder):
+    @staticmethod
+    def _reads_previous_populations(dico):
+        """
+        Return True if a boundary condition reads the populations of the
+        previous time step.
+        """
+        for bc in dico.get("boundary_conditions", {}).values():
+            for method in bc.get("method", {}).values():
+                if method.reads_previous_populations():
+                    return True
+        return False
+
+    def _get_container(self, sorder, separate_fnew=False):
+        if self.generator.backend == "NUMPY":
+            return NumpyContainer(
+                self.domain, self.scheme, sorder, separate_fnew=separate_fnew
+            )
         container_type = {
-            "NUMPY": NumpyContainer,
             "CYTHON": CythonContainer,
             "LOOPY": LoopyContainer,
         }
@@ -386,7 +404,12 @@ class Simulation:
         for method in self.bc.methods:
             method.update_feq(self)
             method.set_rhs()
-            method.update(f, **kwargs)
+            if method.reads_previous_populations():
+                # after the swap, Fnew holds the populations read by the
+                # collision of the previous time step
+                method.update(f, fprevious=self.container.Fnew, **kwargs)
+            else:
+                method.update(f, **kwargs)
 
     @monitor
     def one_time_step(self, **kwargs):

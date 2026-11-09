@@ -66,9 +66,25 @@ class BaseContainer:
 
 
 class NumpyContainer(BaseContainer):
-    def __init__(self, domain, scheme, sorder=None, default_type=SOA):
+    """
+    Storage of the NumPy backend.
+
+    The time step runs in place in a single array, unless separate_fnew is
+    True: a boundary condition that reads the populations of the previous
+    time step then finds them in Fnew.
+    """
+
+    def __init__(
+        self, domain, scheme, sorder=None, default_type=SOA, separate_fnew=False
+    ):
         super(NumpyContainer, self).__init__(domain, scheme, sorder, default_type)
-        self.Fnew = self.F
+        if separate_fnew:
+            self.Fnew = Array(
+                self.nv, self.nspace, self.vmax, self.sorder, self.mpi_topo
+            )
+            self.Fnew.set_conserved_moments(scheme.consm)
+        else:
+            self.Fnew = self.F
 
     def _set_sorder(self, sorder):
         if not self.sorder:
