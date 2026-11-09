@@ -53,8 +53,20 @@ class MyValidator(Validator):
         {'type': 'boolean'}
         """
         if isboundary:
-            if not isinstance(value, type) or not issubclass(value, BoundaryMethod):
-                self._error(field, "Must be a BoundaryMethod")
+
+            def is_method(method):
+                return isinstance(method, type) and issubclass(method, BoundaryMethod)
+
+            if isinstance(value, dict):
+                for key, method in value.items():
+                    if not (key == "default" or isinstance(key, int)):
+                        self._error(field, 'Keys must be velocity numbers or "default"')
+                    if not is_method(method):
+                        self._error(field, "Must be a BoundaryMethod")
+            elif not is_method(value):
+                self._error(
+                    field, "Must be a BoundaryMethod or a dictionary of them by velocity"
+                )
 
     def _validate_isalgorithm(self, isalgorithm, field, value):
         """Test if value is a subclass of BaseAlgorithm.
@@ -259,6 +271,11 @@ def validate(dico, name):
                     "items": [{"type": "function"}, {"type": "list", "nullable": True}],
                 },
             ]
+        },
+        "fallback": {
+            "type": "dict",
+            "keysrules": {"type": "integer"},
+            "valuesrules": {"isboundary": True},
         },
         "time_bc": {"type": "boolean", "default": False},
     }
