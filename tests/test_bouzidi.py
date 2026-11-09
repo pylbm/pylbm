@@ -170,3 +170,80 @@ def test_bouzidi_anti_bounce_back_diffusion(generator, delta):
     np.testing.assert_allclose(
         c[:, fluid], np.broadcast_to(exact, c[:, fluid].shape), atol=1e-12
     )
+
+
+def advection_diffusion_with_corners(method, generator):
+    """
+    Advection-diffusion with a d2Q9 scheme in a box that holds a square
+    obstacle, a disk and a notch in the bottom wall. Near the disk, a link
+    reads a population in the solid that another link of the condition
+    writes.
+    """
+    r2 = X**2 + Y**2
+
+    def value(f, m, x, y):
+        m[u] = 1.0 + x * y
+
+    dico = {
+        "box": {"x": [0.0, 1.0], "y": [0.0, 1.0], "label": 0},
+        "elements": [
+            pylbm.Parallelogram([0.4, 0.4], [0.23, 0], [0, 0.17], label=0),
+            pylbm.Parallelogram([0.0, 0.0], [0.3, 0], [0, 0.21], label=0),
+            pylbm.Circle([0.7, 0.3], 0.13, label=0),
+        ],
+        "space_step": 1.0 / 32,
+        "scheme_velocity": LA,
+        "schemes": [
+            {
+                "velocities": list(range(9)),
+                "conserved_moments": u,
+                "polynomials": [
+                    1,
+                    X,
+                    Y,
+                    3 * r2 - 4,
+                    (9 * r2**2 - 21 * r2 + 8) / 2,
+                    3 * X * r2 - 5 * X,
+                    3 * Y * r2 - 5 * Y,
+                    X**2 - Y**2,
+                    X * Y,
+                ],
+                "relaxation_parameters": [0, 1.5, 1.5, 1.2, 1.2, 1.5, 1.5, 1.2, 1.2],
+                "equilibrium": [u, 0.05 * u, 0.02 * u, -2 * u, u, 0, 0, 0, 0],
+            }
+        ],
+        "parameters": {LA: 1.0},
+        "init": {u: 0.0},
+        "boundary_conditions": {0: {"method": {0: method}, "value": value}},
+        "generator": generator,
+    }
+    sol = pylbm.Simulation(dico)
+    for _ in range(50):
+        sol.one_time_step()
+    return np.array(sol.F_halo[:])[:, 1:-1, 1:-1]
+
+
+@pytest.mark.parametrize(
+    "method", [pylbm.bc.BouzidiBounceBack, pylbm.bc.BouzidiAntiBounceBack]
+)
+def test_bouzidi_corners_numpy_and_cython(method):
+    """NumPy and Cython give the same populations near the corners."""
+    np.testing.assert_allclose(
+        advection_diffusion_with_corners(method, "cython"),
+        advection_diffusion_with_corners(method, "numpy"),
+        rtol=0,
+        atol=1e-14,
+    )
+
+
+@pytest.mark.gpu
+@pytest.mark.parametrize(
+    "method", [pylbm.bc.BouzidiBounceBack, pylbm.bc.BouzidiAntiBounceBack]
+)
+def test_bouzidi_corners_loopy(method):
+    np.testing.assert_allclose(
+        advection_diffusion_with_corners(method, "loopy"),
+        advection_diffusion_with_corners(method, "numpy"),
+        rtol=0,
+        atol=1e-14,
+    )
