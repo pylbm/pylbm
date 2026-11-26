@@ -340,7 +340,7 @@ class Variable:
             When not given, the data type will be guessed based on the
             assumptions on the symbol argument.
 
-        dimension : sequence containing tupes, optional
+        dimensions : sequence containing tupes, optional
             If present, the argument is interpreted as an array, where this
             sequence of tuples specifies (lower, upper) bounds for each
             index of the array.
@@ -433,7 +433,7 @@ class OutputArgument(Argument, ResultBase):
             When not given, the data type will be guessed based on the
             assumptions on the symbol argument.
 
-        dimension : sequence containing tupes, optional
+        dimensions : sequence containing tupes, optional
             If present, the argument is interpreted as an array, where this
             sequence of tuples specifies (lower, upper) bounds for each
             index of the array.
@@ -523,7 +523,7 @@ class Result(Variable, ResultBase):
             When not given, the data type will be guessed based on the
             assumptions on the expr argument.
 
-        dimension : sequence containing tupes, optional
+        dimensions : sequence containing tupes, optional
             If present, this variable is interpreted as an array,
             where this sequence of tuples specifies (lower, upper)
             bounds for each index of the array.
